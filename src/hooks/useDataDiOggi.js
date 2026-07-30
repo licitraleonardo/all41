@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { dataDiOggi, giornoPerData } from '../lib/giorni.js'
+import { dataDiOggi } from '../lib/giorni.js'
 
-// Il giorno corrente non è un valore fisso letto all'apertura: l'app può
-// restare aperta oltre la mezzanotte, e sul telefono viene congelata e
+// La data del dispositivo non è un valore fisso letto all'apertura: l'app
+// può restare aperta oltre la mezzanotte, e sul telefono viene congelata e
 // ripresa il giorno dopo invece che ricaricata. Senza questo, il 14 agosto
 // la riga "oggi" resterebbe sul 13.
-export function useGiornoCorrente() {
+export function useDataDiOggi() {
   const [data, setData] = useState(dataDiOggi)
 
   useEffect(() => {
@@ -45,5 +45,5 @@ export function useGiornoCorrente() {
     }
   }, [])
 
-  return giornoPerData(data)
+  return data
 }

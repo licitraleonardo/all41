@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { giornoDellaSettimana } from '../lib/giorni.js'
 
-export default function Giorno({ giorno, oggi }) {
+export default function Giorno({ giorno, oggi, ref }) {
   const [aperto, setAperto] = useState(oggi)
 
   // Se scatta la mezzanotte con l'app aperta, il giorno che diventa "oggi"
@@ -13,7 +13,7 @@ export default function Giorno({ giorno, oggi }) {
   const haCuriosita = Boolean(giorno.daSapere || giorno.daProvare)
 
   return (
-    <article className={oggi ? 'day oggi' : 'day'} data-tone={giorno.tono}>
+    <article ref={ref} className={oggi ? 'day oggi' : 'day'} data-tone={giorno.tono}>
       <div className="day-marker">{giorno.giorno}</div>
 
       <div className="day-card">

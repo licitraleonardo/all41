@@ -19,6 +19,26 @@ export function giornoCorrente(adesso = new Date()) {
 
 // Calcolato, non scritto a mano: i nomi dei giorni cambiano ogni anno.
 export function giornoDellaSettimana(data) {
-  const [anno, mese, giorno] = data.split('-').map(Number)
-  return new Date(anno, mese - 1, giorno).toLocaleDateString('it-IT', { weekday: 'long' })
+  return aData(data).toLocaleDateString('it-IT', { weekday: 'long' })
+}
+
+function aData(iso) {
+  const [anno, mese, giorno] = iso.split('-').map(Number)
+  return new Date(anno, mese - 1, giorno)
+}
+
+// Math.round e non floor: l'ora legale rende alcuni giorni di 23 o 25 ore,
+// e un troncamento sbaglierebbe il conteggio proprio a cavallo del cambio.
+function giorniTra(da, a) {
+  return Math.round((aData(a) - aData(da)) / 86400000)
+}
+
+// Le date ISO si confrontano bene come stringhe: 2026-08-09 < 2026-08-12.
+export function statoViaggio(data) {
+  const primo = GIORNI[0].data
+  const ultimo = GIORNI[GIORNI.length - 1].data
+
+  if (data < primo) return { fase: 'prima', mancano: giorniTra(data, primo) }
+  if (data > ultimo) return { fase: 'dopo' }
+  return { fase: 'durante' }
 }

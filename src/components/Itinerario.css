@@ -101,9 +101,22 @@
   background-repeat: repeat-y;
 }
 
+.attesa {
+  margin: 0 0 20px;
+  font-family: var(--font-titoli);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  border-left: 3px solid var(--gold);
+  padding-left: 11px;
+}
+
 .day {
   position: relative;
   padding: 0 0 34px 56px;
+  /* Lo scorrimento automatico non deve infilare la scheda sotto la barra
+     in alto, che è appiccicata e coprirebbe il pallino del giorno. */
+  scroll-margin-top: 72px;
 }
 
 .day:last-child {
