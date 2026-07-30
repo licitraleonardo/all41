@@ -7,8 +7,8 @@ const buildTime = __BUILD_TIME__
 function App() {
   return (
     <main className="schermata">
-      <div className="marchio">ALL41</div>
-      <h1>All For One</h1>
+      <h1 className="marchio">ALL41</h1>
+      <p className="nome">All For One</p>
       <p className="sottotitolo">Sardegna &middot; 12&ndash;16 agosto</p>
 
       <p className="allan">Non c&rsquo;&egrave; ancora niente qui. Ma il deploy funziona.</p>
