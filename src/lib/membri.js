@@ -62,6 +62,17 @@ export async function creaMembro({ nome, avatarStyle }) {
   throw new Error('Non sono riuscito a generare un codice libero.')
 }
 
+export async function aggiornaMembro(id, { nome, avatarStyle }) {
+  const { data, error } = await supabase
+    .from('members')
+    .update({ name: nome, avatar_seed: nome, avatar_style: avatarStyle })
+    .eq('id', id)
+    .select(CAMPI)
+    .single()
+  if (error) throw error
+  return daRiga(data)
+}
+
 export async function segnaVisita(id) {
   const { error } = await supabase
     .from('members')

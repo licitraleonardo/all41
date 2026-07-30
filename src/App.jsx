@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { supabaseConfigurato, assicuraSessione } from './lib/supabase.js'
-import { creaMembro, segnaVisita, trovaPerCodice, trovaPerId } from './lib/membri.js'
+import {
+  aggiornaMembro,
+  creaMembro,
+  segnaVisita,
+  trovaPerCodice,
+  trovaPerId,
+} from './lib/membri.js'
 import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/sessione.js'
 import Onboarding from './components/Onboarding.jsx'
 import Recupero from './components/Recupero.jsx'
 import CodiceNuovo from './components/CodiceNuovo.jsx'
 import Profilo from './components/Profilo.jsx'
+import ModificaProfilo from './components/ModificaProfilo.jsx'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -98,6 +105,30 @@ export default function App() {
     }
   }, [])
 
+  const salvaModifiche = useCallback(
+    async ({ nome, avatarStyle }) => {
+      setInCorso(true)
+      setErrore(null)
+      try {
+        const aggiornato = await aggiornaMembro(membro.id, { nome, avatarStyle })
+        setMembro(aggiornato)
+        setVista('dentro')
+      } catch (e) {
+        setErrore(descriviErrore(e))
+      } finally {
+        setInCorso(false)
+      }
+    },
+    [membro]
+  )
+
+  const esci = useCallback(() => {
+    dimenticaMemberId()
+    setMembro(null)
+    setErrore(null)
+    setVista('onboarding')
+  }, [])
+
   function vaiA(prossima) {
     setErrore(null)
     setVista(prossima)
@@ -145,7 +176,23 @@ export default function App() {
         <CodiceNuovo membro={membro} onAvanti={() => vaiA('dentro')} />
       )}
 
-      {vista === 'dentro' && <Profilo membro={membro} />}
+      {vista === 'dentro' && (
+        <Profilo
+          membro={membro}
+          onModifica={() => vaiA('modifica')}
+          onEsci={esci}
+        />
+      )}
+
+      {vista === 'modifica' && (
+        <ModificaProfilo
+          membro={membro}
+          onSalva={salvaModifiche}
+          onAnnulla={() => vaiA('dentro')}
+          inCorso={inCorso}
+          errore={errore}
+        />
+      )}
 
       <footer className="targhetta">
         {commit} · {buildTime}

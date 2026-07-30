@@ -1,8 +1,37 @@
+import { useState } from 'react'
 import { urlAvatar } from '../config/avatar.js'
 import { VIAGGIO } from '../config/viaggio.js'
 
 // Segnaposto: qui al punto 3 arriva l'itinerario e la struttura a tab.
-export default function Profilo({ membro }) {
+// Modifica e uscita traslocheranno nel tab Altro quando esisterà.
+export default function Profilo({ membro, onModifica, onEsci }) {
+  const [confermaUscita, setConfermaUscita] = useState(false)
+
+  if (confermaUscita) {
+    return (
+      <div className="pannello">
+        <h1 className="titolo">Sicuro?</h1>
+        <p className="allan">
+          Questo dispositivo si dimentica di te. Per rientrare serve il codice,
+          e l&rsquo;unico modo per riaverlo è questo:
+        </p>
+
+        <p className="codice-grande">{membro.codice}</p>
+
+        <button type="button" className="primario" onClick={onEsci}>
+          L&rsquo;ho segnato, esci
+        </button>
+        <button
+          type="button"
+          className="secondario"
+          onClick={() => setConfermaUscita(false)}
+        >
+          Lascia stare
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="pannello">
       <img
@@ -27,6 +56,17 @@ export default function Profilo({ membro }) {
       </dl>
 
       <p className="allan">Sei dentro. Per ora non c&rsquo;è altro da fare.</p>
+
+      <button type="button" className="secondario" onClick={onModifica}>
+        Cambia nome e avatar
+      </button>
+      <button
+        type="button"
+        className="secondario"
+        onClick={() => setConfermaUscita(true)}
+      >
+        Esci da questo dispositivo
+      </button>
     </div>
   )
 }

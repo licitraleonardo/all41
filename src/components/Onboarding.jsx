@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { STILI, STILE_PREDEFINITO, urlAvatar } from '../config/avatar.js'
+import SceltaAvatar from './SceltaAvatar.jsx'
+import { STILE_PREDEFINITO } from '../config/avatar.js'
 import { NOME } from '../config/viaggio.js'
 
 export default function Onboarding({ onEntra, onRecupera, inCorso, errore }) {
@@ -8,7 +9,6 @@ export default function Onboarding({ onEntra, onRecupera, inCorso, errore }) {
 
   const nomePulito = nome.trim()
   const puoEntrare = nomePulito.length >= NOME.lunghezzaMin && !inCorso
-  const seme = nomePulito || 'all41'
 
   function invia(e) {
     e.preventDefault()
@@ -34,23 +34,7 @@ export default function Onboarding({ onEntra, onRecupera, inCorso, errore }) {
         />
       </label>
 
-      <fieldset className="avatar-scelta">
-        <legend>Avatar</legend>
-        <div className="avatar-griglia">
-          {STILI.map((s) => (
-            <button
-              key={s}
-              type="button"
-              className={s === stile ? 'avatar scelto' : 'avatar'}
-              onClick={() => setStile(s)}
-              aria-pressed={s === stile}
-              aria-label={`Avatar stile ${s}`}
-            >
-              <img src={urlAvatar(s, seme)} alt="" width="64" height="64" />
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      <SceltaAvatar seme={nomePulito || 'all41'} stile={stile} onCambia={setStile} />
 
       {errore && <p className="errore">{errore}</p>}
 

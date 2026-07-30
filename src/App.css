@@ -179,6 +179,11 @@
   cursor: not-allowed;
 }
 
+/* Primo bottone dopo una riga di testo: serve più aria */
+.allan + .secondario {
+  margin-top: 26px;
+}
+
 .secondario {
   margin-top: 10px;
   color: var(--sand);
