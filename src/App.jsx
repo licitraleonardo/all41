@@ -14,6 +14,7 @@ import Recupero from './components/Recupero.jsx'
 import CodiceNuovo from './components/CodiceNuovo.jsx'
 import Profilo from './components/Profilo.jsx'
 import ModificaProfilo from './components/ModificaProfilo.jsx'
+import Itinerario from './components/Itinerario.jsx'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -112,7 +113,7 @@ export default function App() {
       try {
         const aggiornato = await aggiornaMembro(membro.id, { nome, avatarStyle })
         setMembro(aggiornato)
-        setVista('dentro')
+        setVista('profilo')
       } catch (e) {
         setErrore(descriviErrore(e))
       } finally {
@@ -132,6 +133,12 @@ export default function App() {
   function vaiA(prossima) {
     setErrore(null)
     setVista(prossima)
+  }
+
+  // L'itinerario è a tutta pagina e su fondo chiaro: sta fuori dal
+  // contenitore centrato e scuro delle schermate d'ingresso.
+  if (vista === 'dentro') {
+    return <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
   }
 
   return (
@@ -176,11 +183,12 @@ export default function App() {
         <CodiceNuovo membro={membro} onAvanti={() => vaiA('dentro')} />
       )}
 
-      {vista === 'dentro' && (
+      {vista === 'profilo' && (
         <Profilo
           membro={membro}
           onModifica={() => vaiA('modifica')}
           onEsci={esci}
+          onIndietro={() => vaiA('dentro')}
         />
       )}
 
@@ -188,7 +196,7 @@ export default function App() {
         <ModificaProfilo
           membro={membro}
           onSalva={salvaModifiche}
-          onAnnulla={() => vaiA('dentro')}
+          onAnnulla={() => vaiA('profilo')}
           inCorso={inCorso}
           errore={errore}
         />

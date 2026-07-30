@@ -7,7 +7,10 @@
   --juniper: #3F6E5C;
   --sand: #F7F4EC;
 
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-testo: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-titoli: 'Space Grotesk', var(--font-testo);
+
+  font-family: var(--font-testo);
   color-scheme: dark;
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;

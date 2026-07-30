@@ -4,7 +4,7 @@ import { VIAGGIO } from '../config/viaggio.js'
 
 // Segnaposto: qui al punto 3 arriva l'itinerario e la struttura a tab.
 // Modifica e uscita traslocheranno nel tab Altro quando esisterà.
-export default function Profilo({ membro, onModifica, onEsci }) {
+export default function Profilo({ membro, onModifica, onEsci, onIndietro }) {
   const [confermaUscita, setConfermaUscita] = useState(false)
 
   if (confermaUscita) {
@@ -55,7 +55,9 @@ export default function Profilo({ membro, onModifica, onEsci }) {
         </div>
       </dl>
 
-      <p className="allan">Sei dentro. Per ora non c&rsquo;è altro da fare.</p>
+      <button type="button" className="primario" onClick={onIndietro}>
+        Torna all&rsquo;itinerario
+      </button>
 
       <button type="button" className="secondario" onClick={onModifica}>
         Cambia nome e avatar
