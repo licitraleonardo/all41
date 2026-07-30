@@ -1,8 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { giornoDellaSettimana } from '../lib/giorni.js'
 
 export default function Giorno({ giorno, oggi }) {
   const [aperto, setAperto] = useState(oggi)
+
+  // Se scatta la mezzanotte con l'app aperta, il giorno che diventa "oggi"
+  // apre le sue curiosità. Non ne chiude nessuna: quello che hai aperto a
+  // mano resta aperto.
+  useEffect(() => {
+    if (oggi) setAperto(true)
+  }, [oggi])
   const haCuriosita = Boolean(giorno.daSapere || giorno.daProvare)
 
   return (

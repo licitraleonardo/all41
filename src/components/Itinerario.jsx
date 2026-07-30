@@ -1,12 +1,12 @@
 import './Itinerario.css'
 import Giorno from './Giorno.jsx'
 import { GIORNI } from '../config/itinerario.js'
-import { giornoCorrente } from '../lib/giorni.js'
+import { useGiornoCorrente } from '../hooks/useGiornoCorrente.js'
 import { urlAvatar } from '../config/avatar.js'
 import { VIAGGIO } from '../config/viaggio.js'
 
 export default function Itinerario({ membro, onProfilo }) {
-  const oggi = giornoCorrente()
+  const oggi = useGiornoCorrente()
 
   return (
     <div className="oggi-schermo">

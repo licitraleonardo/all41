@@ -9,9 +9,12 @@ export function dataDiOggi(adesso = new Date()) {
 }
 
 // Fuori dal 12–16 non c'è nessun giorno corrente, come da spec.
+export function giornoPerData(data) {
+  return GIORNI.find((g) => g.data === data) ?? null
+}
+
 export function giornoCorrente(adesso = new Date()) {
-  const oggi = dataDiOggi(adesso)
-  return GIORNI.find((g) => g.data === oggi) ?? null
+  return giornoPerData(dataDiOggi(adesso))
 }
 
 // Calcolato, non scritto a mano: i nomi dei giorni cambiano ogni anno.
