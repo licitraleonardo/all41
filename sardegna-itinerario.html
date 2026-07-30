@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sardegna 12–16 Agosto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --sea: #0B3550;
+    --sea-light: #14496a;
+    --gold: #F2A93B;
+    --coral: #E8604A;
+    --juniper: #3F6E5C;
+    --sand: #F7F4EC;
+    --ink: #16232C;
+    --ink-soft: #55636B;
+    --line: #E4DFD2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background-color:var(--sand);
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><g fill='none' stroke='rgba(11,53,80,0.075)' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(38,46)'><path d='M0 46 L0 10'/><path d='M-9 10 L-9 -6'/><path d='M9 10 L9 -6'/><path d='M-12 10 L12 10'/></g><g transform='translate(178,32)'><path d='M-18 30 L18 30 L12 40 L-12 40 Z'/><path d='M0 30 L0 4 L16 26 Z'/><path d='M0 4 L0 -2'/></g><g transform='translate(58,150)'><path d='M-16 34 L-10 -6 L10 -6 L16 34 Z'/><path d='M-5 34 L-5 20 A5 5 0 0 1 5 20 L5 34'/><g transform='translate(38,-16)'><circle r='5'/><path d='M0 -9 L0 -13 M0 9 L0 13 M-9 0 L-13 0 M9 0 L13 0 M-6 -6 L-9 -9 M6 -6 L9 -9 M-6 6 L-9 9 M6 6 L9 9'/></g></g><g transform='translate(186,168)'><path d='M-6 18 C-22 12 -22 -8 -4 -14 C-14 -4 -10 8 2 12'/><path d='M6 18 C22 12 22 -8 4 -14 C14 -4 10 8 -2 12'/></g><g transform='translate(120,96)'><circle r='4.5'/><path d='M-4 -4 L-9 -11 M4 -4 L9 -11'/><path d='M0 4.5 L0 26'/><path d='M0 9 L-15 -4 M0 9 L15 -4'/><path d='M0 26 L-9 42 M0 26 L9 42 M-9 42 L9 42'/></g><g transform='translate(125,200)'><path d='M-12 -14 C-14 -22 12 -22 12 -14 C14 0 10 16 0 19 C-10 16 -14 0 -12 -14 Z'/><path d='M-9 -9 L-3 -6'/><path d='M9 -9 L3 -6'/><path d='M-6 -3 L-6 3'/><path d='M6 -3 L6 3'/><path d='M0 -1 L0 8'/><path d='M-5 12 Q0 9 5 12'/><path d='M-5 22 L-5 26 M0 24 L0 28 M5 22 L5 26'/><circle cx='-5' cy='27' r='1.6'/><circle cx='0' cy='29' r='1.6'/><circle cx='5' cy='27' r='1.6'/></g></g></svg>");
+    background-repeat:repeat;
+    background-size:240px 240px;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .hero{
+    background:radial-gradient(120% 140% at 20% -10%, var(--sea-light), var(--sea) 60%);
+    color:#fff;
+    padding:52px 24px 68px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-1px; height:40px;
+    background:var(--sand);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'><path d='M0,30 C150,60 300,0 450,25 C600,50 750,5 900,28 C1050,50 1150,15 1200,30 L1200,60 L0,60 Z'/></svg>") bottom/100% 100% no-repeat;
+    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'><path d='M0,30 C150,60 300,0 450,25 C600,50 750,5 900,28 C1050,50 1150,15 1200,30 L1200,60 L0,60 Z'/></svg>") bottom/100% 100% no-repeat;
+  }
+  .eyebrow{
+    font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--gold); font-weight:600; margin-bottom:10px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(32px,8vw,46px);
+    line-height:1.05;
+    margin:0 0 14px;
+    font-weight:700;
+  }
+  .hero p{
+    max-width:520px; color:rgba(255,255,255,.82); font-size:15.5px; line-height:1.55; margin:0;
+  }
+  .wrap{
+    max-width:640px; margin:0 auto; padding:0 20px 80px;
+  }
+  .timeline{
+    position:relative;
+    margin-top:8px;
+    background:var(--sand);
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:19px; top:6px; bottom:6px;
+    width:2px;
+    background-image: linear-gradient(var(--line) 60%, transparent 0%);
+    background-size: 2px 10px;
+    background-repeat: repeat-y;
+  }
+  .day{
+    position:relative;
+    padding:0 0 40px 56px;
+  }
+  .day:last-child{padding-bottom:0;}
+  .day-marker{
+    position:absolute; left:0; top:0;
+    width:40px; height:40px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700; font-size:15px;
+    color:#fff;
+    border:4px solid var(--sand);
+    box-shadow:0 2px 8px rgba(11,53,80,.18);
+  }
+  .day[data-tone="gold"] .day-marker{background:var(--gold);}
+  .day[data-tone="coral"] .day-marker{background:var(--coral);}
+  .day[data-tone="sea"] .day-marker{background:var(--sea);}
+  .day[data-tone="juniper"] .day-marker{background:var(--juniper);}
+
+  .day-card{
+    background:#fff;
+    border-radius:16px;
+    padding:20px 20px 18px;
+    box-shadow:0 1px 3px rgba(22,35,44,.06), 0 8px 24px -12px rgba(22,35,44,.12);
+  }
+  .day-date{
+    font-size:12.5px; font-weight:600; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--ink-soft); margin-bottom:2px;
+  }
+  .day-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:21px; font-weight:700; margin:0 0 14px;
+  }
+  .badge{
+    display:inline-block; font-size:11px; font-weight:600; letter-spacing:.04em;
+    padding:3px 9px; border-radius:100px; margin-left:8px; vertical-align:middle;
+  }
+  .badge.confermato{ background:#E9F3EC; color:var(--juniper);}
+
+  .step{
+    display:flex; gap:12px; padding:9px 0; border-top:1px solid #F0EDE4;
+  }
+  .step:first-of-type{border-top:none;}
+  .step-time{
+    flex:0 0 46px; font-size:12.5px; font-weight:700; color:var(--sea); padding-top:1px;
+  }
+  .step-body p{margin:0; font-size:14.5px; line-height:1.5;}
+  .step-body .label{font-weight:600; display:flex; align-items:center; flex-wrap:wrap; gap:7px;}
+  .maps-link{
+    font-size:10.5px; font-weight:700; letter-spacing:.02em; color:var(--sea);
+    text-decoration:none; border:1px solid var(--line); padding:2px 8px 2px 6px;
+    border-radius:100px; white-space:nowrap; background:var(--sand);
+  }
+  .maps-link:hover{background:#fff; border-color:var(--sea);}
+  .step-body .meta{
+    display:block; font-size:12.5px; color:var(--ink-soft); margin-top:2px;
+  }
+  .step-body .meta.parking::before{content:"🅿️ "; }
+  .step-body .meta.tip::before{content:"→ ";}
+
+  .callout{
+    margin-top:14px; padding:12px 14px; border-radius:12px;
+    background:var(--sand); font-size:13.5px; line-height:1.5; color:var(--ink-soft);
+    border-left:3px solid var(--gold);
+  }
+
+  .parking-summary{
+    margin-top:48px; background:#fff; border-radius:16px; padding:22px 20px;
+    box-shadow:0 1px 3px rgba(22,35,44,.06), 0 8px 24px -12px rgba(22,35,44,.12);
+  }
+  .parking-summary h2{
+    font-family:'Space Grotesk',sans-serif; font-size:18px; margin:0 0 4px;
+  }
+  .parking-summary > p{margin:0 0 16px; font-size:13.5px; color:var(--ink-soft);}
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th,td{text-align:left; padding:9px 6px; border-top:1px solid #F0EDE4;}
+  th{color:var(--ink-soft); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em;}
+  td.cost{font-weight:600; color:var(--sea); white-space:nowrap;}
+
+  footer{
+    text-align:center; margin-top:40px; font-size:12.5px; color:var(--ink-soft);
+  }
+
+  .map-section{
+    margin:8px 0 32px;
+  }
+  .map-section h2{
+    font-family:'Space Grotesk',sans-serif; font-size:18px; margin:0 0 10px;
+  }
+  #map{
+    height:340px; width:100%; border-radius:16px;
+    box-shadow:0 1px 3px rgba(22,35,44,.06), 0 8px 24px -12px rgba(22,35,44,.12);
+  }
+  .legend{
+    display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; font-size:12px; color:var(--ink-soft);
+  }
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+  .legend i{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .leaflet-popup-content{font-family:'Inter',sans-serif; font-size:13px;}
+  .leaflet-popup-content b{font-family:'Space Grotesk',sans-serif;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">8 amici · 1 van · Villaggio S'oru 'e Mari</div>
+  <h1>Sardegna<br>12 – 16 Agosto</h1>
+  <p>Quartu Sant'Elena come base. Spesa lampo il primo giorno, van a manetta il secondo, barca il terzo, Villasimius il quarto. Bagno finale prima di ripartire.</p>
+</div>
+
+<div class="wrap">
+
+  <div class="timeline">
+
+    <div class="day" data-tone="gold">
+      <div class="day-marker">12</div>
+      <div class="day-card">
+        <div class="day-date">Martedì</div>
+        <h1 class="day-title">Arrivo &amp; spesa lampo</h1>
+
+        <div class="step">
+          <div class="step-time">07:00</div>
+          <div class="step-body"><p class="label">Arrivo a Quartu Sant'Elena</p></div>
+        </div>
+        <div class="step">
+          <div class="step-time">07:30</div>
+          <div class="step-body">
+            <p class="label">Bagnetto volante al Poetto <a class="maps-link" href="https://maps.google.com/?cid=16257758897338050385" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta parking">Gratuito lungo il Viale Golfo di Quartu — 10 min dal villaggio</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">13:00</div>
+          <div class="step-body">
+            <p class="label">Pranzo al Poetto</p>
+            <span class="meta">Qualcosa di semplice sul lungomare, senza spostarvi due volte</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">Pom.</div>
+          <div class="step-body">
+            <p class="label">Relax/seconda tintarella</p>
+            <span class="meta tip">Il check-in è alle 17, tanto vale sfruttare ancora la spiaggia invece di girare con le valigie in macchina</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">16:00</div>
+          <div class="step-body">
+            <p class="label">Spesa al Conad Superstore <a class="maps-link" href="https://maps.google.com/?cid=7003594510383738616" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta">Via Guglielmo Marconi — a ridosso del check-in, tutto va dritto in frigo</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">17:00</div>
+          <div class="step-body"><p class="label">Check-in — Villaggio S'oru 'e Mari</p></div>
+        </div>
+        <div class="step">
+          <div class="step-time">20:30</div>
+          <div class="step-body">
+            <p class="label">Cena: Antica Trattoria Dar Mammozzaro <a class="maps-link" href="https://maps.google.com/?cid=784069995673259709" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta tip">Prenotare online, tavolo per 8 — molto richiesto</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day" data-tone="coral">
+      <div class="day-marker">13</div>
+      <div class="day-card">
+        <div class="day-date">Mercoledì</div>
+        <h1 class="day-title">Van moderato: Costa Rei</h1>
+
+        <div class="step">
+          <div class="step-time">10:00</div>
+          <div class="step-body">
+            <p class="label">Si parte verso Cala Sinzias</p>
+            <span class="meta">Circa 40 min da Quartu — zona nuova, mai vista finora</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">10:45</div>
+          <div class="step-body">
+            <p class="label">Spiaggia di Cala Sinzias <a class="maps-link" href="https://maps.google.com/?cid=3455627146409489665" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta parking">Parcheggio a pagamento ~8–10€/giorno — niente oggetti di valore in vista in auto</span>
+            <span class="meta tip">Acqua cristallina, sabbia bianca, meno battuta di Villasimius</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">13:30</div>
+          <div class="step-body">
+            <p class="label">Pranzo: Chaplin Spaghetteria <a class="maps-link" href="https://maps.google.com/?cid=12095961795747864814" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta">Costa Rei, informale, giusto a fianco della spiaggia</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">Pom.</div>
+          <div class="step-body">
+            <p class="label">Si resta in spiaggia, o passeggiata verso le calette vicine</p>
+            <span class="meta tip">Docce a pagamento in loco (0,50–1€) per sciacquarvi prima di cena, niente bisogno di tornare al villaggio</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">20:00</div>
+          <div class="step-body">
+            <p class="label">Cena: L'Aragosta <a class="maps-link" href="https://maps.google.com/?cid=2520692375762075470" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta tip">Costa Rei, pesce, ottimo rapporto qualità/prezzo — prenotare</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day" data-tone="sea">
+      <div class="day-marker">14</div>
+      <div class="day-card">
+        <div class="day-date">Giovedì</div>
+        <h1 class="day-title">Escursione in barca <span class="badge confermato">confermata</span></h1>
+
+        <div class="step">
+          <div class="step-time">Tutto</div>
+          <div class="step-body">
+            <p class="label">Itinerario 1 — Cuccureddus, Punta Molentis, Porto Giunco, Baia di Vecchia Fortezza</p>
+            <span class="meta">Pranzo incluso a bordo</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">20:30</div>
+          <div class="step-body">
+            <p class="label">Cena: Sa Tankitta <a class="maps-link" href="https://maps.google.com/?cid=16226680899643951127" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta">Villasimius — sardo e pesce fresco, consigliato da Francesca. Senza prenotazione arrivate verso le 19</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">Alt.</div>
+          <div class="step-body">
+            <p class="label">Sa Baracca <a class="maps-link" href="https://maps.google.com/?cid=13557855018176982206" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta tip">Pesce, Quartu — se preferite rientrare verso il villaggio</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day" data-tone="juniper">
+      <div class="day-marker">15</div>
+      <div class="day-card">
+        <div class="day-date">Venerdì</div>
+        <h1 class="day-title">Villasimius via van</h1>
+
+        <div class="step">
+          <div class="step-time">Mattina</div>
+          <div class="step-body">
+            <p class="label">Spiaggia di Campulongu <a class="maps-link" href="https://maps.google.com/?cid=15757347426677060669" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta parking">Parcheggio in parte gratuito ma limitato — arrivate entro le 10</span>
+            <span class="meta tip">Acqua bassa e cristallina, meno caotica di Notteri</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">Alt.</div>
+          <div class="step-body">
+            <p class="label">Spiaggia di Notteri <a class="maps-link" href="https://maps.google.com/?cid=8007201126206639253" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta parking">Parcheggio Porto Giunco/Notteri: ~10€/giorno, ~5–6€ dopo le 16</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">13:00</div>
+          <div class="step-body">
+            <p class="label">Pranzo: Gnocco&amp; <a class="maps-link" href="https://maps.google.com/?cid=5762768926424311337" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta">Villasimius, informale, ottimo per gruppo</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">Pom.</div>
+          <div class="step-body">
+            <p class="label">Si resta in spiaggia, o sentiero verso il Faro di Capo Carbonara</p>
+            <span class="meta tip">Parte dalla zona Porto Giunco/Notteri, 30-40 min a/r, vista pazzesca</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">20:30</div>
+          <div class="step-body">
+            <p class="label">Cena: Arke <a class="maps-link" href="https://maps.google.com/?cid=5446753121097077314" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta tip">Quartu, più elegante — prenotare</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day" data-tone="gold">
+      <div class="day-marker">16</div>
+      <div class="day-card">
+        <div class="day-date">Sabato</div>
+        <h1 class="day-title">Ultimo bagno &amp; si parte</h1>
+
+        <div class="step">
+          <div class="step-time">Mattina</div>
+          <div class="step-body">
+            <p class="label">Poetto <a class="maps-link" href="https://maps.google.com/?cid=16257758897338050385" target="_blank" rel="noopener">📍 Maps</a></p>
+            <span class="meta parking">Gratuito, vicinissimo al villaggio — nessuno stress logistico</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-time">Pranzo</div>
+          <div class="step-body"><p class="label">Pranzo veloce e si riparte</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="map-section">
+    <h2>Tutte le tappe</h2>
+    <div id="map"></div>
+    <div class="legend">
+      <span><i style="background:#F2A93B"></i>12 · 16 — Arrivo/Partenza</span>
+      <span><i style="background:#E8604A"></i>13 — Costa Rei</span>
+      <span><i style="background:#0B3550"></i>14 — Barca</span>
+      <span><i style="background:#3F6E5C"></i>15 — Villasimius</span>
+    </div>
+  </div>
+
+  <div class="parking-summary">
+    <h2>Da sapere: cena senza tornare al villaggio, e sole</h2>
+    <p><strong>Borsa cena in macchina</strong> — cambio vestiti, deodorante, salviettine, un asciugamano pulito. Nei giorni con la spiaggia lontana (13 e 15) trovate docce a pagamento sul posto (0,50–1€): vi sciacquate lì, vi cambiate al volo, e filate dritti al ristorante senza rifare la strada avanti e indietro.</p>
+    <p><strong>Ombrelloni</strong> — nessuno di voi ne ha, e stare tutto il giorno al sole senza ombra non va bene. Conviene comprare 1-2 parasole/tende pop-up (si trovano in qualsiasi supermercato o tabaccheria sarda in agosto, 15–25€, si aprono in 10 secondi) — bastano due-tre a rotazione per il gruppo. Crema alta protezione riapplicata ogni 2h, cappellino, e nelle ore centrali (12–15) meglio l'ombra o l'acqua che sdraiati al sole.</p>
+  </div>
+
+  <div class="parking-summary">
+    <h2>Parcheggi in breve</h2>
+    <p>Nessuno di noi ha ombrelloni fissi — dove il parcheggio è a pagamento, conviene arrivare presto anche per l'ombra, non solo per il posto.</p>
+    <table>
+      <tr><th>Dove</th><th>Costo</th><th>Nota</th></tr>
+      <tr><td>Poetto (12 e 16)</td><td class="cost">Gratis</td><td>Strisce libere sul lungomare</td></tr>
+      <tr><td>Cala Sinzias (13)</td><td class="cost">8–10€/g</td><td>Niente valori in vista in auto</td></tr>
+      <tr><td>Campulongu (15)</td><td class="cost">In parte gratis</td><td>Posti limitati, arrivare presto</td></tr>
+      <tr><td>Notteri / Porto Giunco (15)</td><td class="cost">~10€/g</td><td>~5–6€ dopo le 16</td></tr>
+    </table>
+  </div>
+
+  <footer>Villaggio S'oru 'e Mari, 37 — Quartu Sant'Elena · fatto con ❤️ per il gruppo</footer>
+</div>
+
+<script>
+  const TONES = { gold:"#F2A93B", coral:"#E8604A", sea:"#0B3550", juniper:"#3F6E5C" };
+
+  const PLACES = [
+    { day:12, tone:"gold", name:"Poetto", note:"Bagnetto volante + pranzo", lat:39.2257079, lng:9.2049651, url:"https://maps.google.com/?cid=16257758897338050385" },
+    { day:12, tone:"gold", name:"Conad Superstore", note:"Spesa, ore 16:00", lat:39.2480926, lng:9.1952072, url:"https://maps.google.com/?cid=7003594510383738616" },
+    { day:12, tone:"gold", name:"Antica Trattoria Dar Mammozzaro", note:"Cena — prenotare", lat:39.2428565, lng:9.180852, url:"https://maps.google.com/?cid=784069995673259709" },
+
+    { day:13, tone:"coral", name:"Cala Sinzias", note:"Spiaggia — parcheggio 8–10€/g", lat:39.1910114, lng:9.5604255, url:"https://maps.google.com/?cid=3455627146409489665" },
+    { day:13, tone:"coral", name:"Chaplin Spaghetteria", note:"Pranzo, Costa Rei", lat:39.2445609, lng:9.5705147, url:"https://maps.google.com/?cid=12095961795747864814" },
+    { day:13, tone:"coral", name:"L'Aragosta", note:"Cena pesce — prenotare", lat:39.2492086, lng:9.5707406, url:"https://maps.google.com/?cid=2520692375762075470" },
+
+    { day:14, tone:"sea", name:"Itinerario barca", note:"Cuccureddus, Punta Molentis, Porto Giunco, Baia Vecchia Fortezza", lat:39.12, lng:9.53, url:null },
+    { day:14, tone:"sea", name:"Sa Tankitta", note:"Cena — consigliato da Francesca", lat:39.1468694, lng:9.5160235, url:"https://maps.google.com/?cid=16226680899643951127" },
+    { day:14, tone:"sea", name:"Sa Baracca", note:"Alternativa cena, Quartu", lat:39.2541754, lng:9.1928147, url:"https://maps.google.com/?cid=13557855018176982206" },
+
+    { day:15, tone:"juniper", name:"Spiaggia di Campulongu", note:"Base consigliata", lat:39.1286706, lng:9.5063462, url:"https://maps.google.com/?cid=15757347426677060669" },
+    { day:15, tone:"juniper", name:"Notteri", note:"Alternativa", lat:39.115884, lng:9.5177003, url:"https://maps.google.com/?cid=8007201126206639253" },
+    { day:15, tone:"juniper", name:"Gnocco&", note:"Pranzo", lat:39.1394124, lng:9.5222431, url:"https://maps.google.com/?cid=5762768926424311337" },
+    { day:15, tone:"juniper", name:"Arke", note:"Cena — prenotare", lat:39.2413721, lng:9.1776103, url:"https://maps.google.com/?cid=5446753121097077314" },
+
+    { day:16, tone:"gold", name:"Poetto", note:"Ultimo bagno prima di partire", lat:39.2257079, lng:9.2049651, url:"https://maps.google.com/?cid=16257758897338050385" }
+  ];
+
+  const map = L.map('map', { scrollWheelZoom:false }).setView([39.19, 9.36], 9.2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'&copy; OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(map);
+
+  const bounds = [];
+  PLACES.forEach(p => {
+    const marker = L.circleMarker([p.lat, p.lng], {
+      radius: 8,
+      color: "#fff",
+      weight: 2,
+      fillColor: TONES[p.tone],
+      fillOpacity: 1
+    }).addTo(map);
+
+    const link = p.url ? `<br><a href="${p.url}" target="_blank" rel="noopener">Apri in Maps ↗</a>` : "";
+    marker.bindPopup(`<b>Giorno ${p.day}</b><br>${p.name}<br>${p.note}${link}`);
+    bounds.push([p.lat, p.lng]);
+  });
+  map.fitBounds(bounds, { padding:[24,24] });
+</script>
+
+</body>
+</html>
