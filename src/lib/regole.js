@@ -2,6 +2,7 @@ import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { dataDiOggi } from './giorni.js'
 import { faiScattareLegge } from './punti.js'
+import { azzeraInsistenza, registraRifiuto } from './insistenza.js'
 
 // Rilevamento delle Leggi che scattano da sole. Ogni chiamata ha una
 // chiave deterministica: senza server è il client di chi sta usando l'app
@@ -52,6 +53,25 @@ export async function dopoFoto(memberId) {
   }
 
   return scattate
+}
+
+// Legge XIX: hai insistito su un bottone già bloccato dal limite. Da
+// chiamare a ogni tentativo rifiutato; decide da sola se costa qualcosa.
+export async function dopoRifiuto(memberId, tipo) {
+  const { tentativi, penalita, quante } = registraRifiuto(memberId, tipo)
+  if (penalita === 0) return { tentativi, scattata: false }
+
+  const esito = await faiScattareLegge(
+    'spam-insistente',
+    memberId,
+    `spam_${memberId}_${tipo}_${dataDiOggi()}_${quante}`,
+    penalita
+  )
+  return { tentativi, scattata: true, penalita, ...esito }
+}
+
+export function dopoInvioRiuscito(memberId, tipo) {
+  azzeraInsistenza(memberId, tipo)
 }
 
 // Legge VIII: soundboard lanciato tra l'01:00 e le 07:00. Una volta per

@@ -57,7 +57,7 @@ export const LEGGI = [
     testo: 'Hai vinto tre sfide della caccia al tesoro' },
   { n: 18, id: 'the-mute', punti: -2, attiva: false,
     testo: 'Nessun vocale registrato in tutto il viaggio' },
-  { n: 19, id: 'spam-insistente', punti: '-1 progressivo (max -5)', attiva: false,
+  { n: 19, id: 'spam-insistente', punti: '-1 progressivo (max -5)', attiva: true,
     testo: 'Hai insistito su un bottone già bloccato dal limite' },
 
   // ——— NASCOSTE: pecora e classifica ———

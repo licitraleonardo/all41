@@ -48,16 +48,20 @@ export async function assegnaPunti({
 //
 // dedupeKey è obbligatoria: senza, due telefoni che aprono l'app insieme
 // rilevano lo stesso evento e i punti si accreditano due volte.
-export async function faiScattareLegge(leggeId, memberId, dedupeKey) {
+export async function faiScattareLegge(leggeId, memberId, dedupeKey, puntiEspliciti = null) {
   const legge = PER_ID[leggeId]
   if (!legge) throw new Error(`Legge sconosciuta: ${leggeId}`)
-  if (typeof legge.punti !== 'number') {
-    throw new Error(`La Legge ${leggeId} non ha un punteggio fisso.`)
+
+  // Qualche Legge non ha un punteggio fisso — la XIX cresce con
+  // l'insistenza — e in quel caso chi chiama passa il valore.
+  const punti = puntiEspliciti ?? legge.punti
+  if (typeof punti !== 'number') {
+    throw new Error(`La Legge ${leggeId} vuole un punteggio esplicito.`)
   }
 
   const evento = await assegnaPunti({
     memberId,
-    punti: legge.punti,
+    punti,
     motivo: legge.testo,
     leggeId,
     dedupeKey,

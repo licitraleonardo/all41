@@ -5,7 +5,7 @@ import FoglioSOS from './FoglioSOS.jsx'
 import { useFeed } from '../hooks/useFeed.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
 import { descriviErrore } from '../lib/errori.js'
-import { dopoSuono } from '../lib/regole.js'
+import { dopoInvioRiuscito, dopoRifiuto, dopoSuono } from '../lib/regole.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
 import { SUONI } from '../config/suoni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
@@ -28,11 +28,20 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
       const esito = await inviaAzione({ tipo, payload, memberId: membro.id })
       if (!esito.ok) {
         // Allan: il tempo che manca, non una quota residua.
-        setAvviso(
-          esito.attesa ? `Aspetta ${esito.attesa}s.` : 'Per oggi hai finito.'
-        )
+        const attesa = esito.attesa ? `Aspetta ${esito.attesa}s.` : 'Per oggi hai finito.'
+        setAvviso(attesa)
+
+        // Legge XIX. I primi due rifiuti non costano niente: un doppio
+        // tap non è spam. Dal terzo comincia a pesare.
+        dopoRifiuto(membro.id, tipo)
+          .then((r) => {
+            if (r.scattata) setAvviso(`${attesa} E ti costa ${r.penalita}.`)
+          })
+          .catch(() => {})
+
         return false
       }
+      dopoInvioRiuscito(membro.id, tipo)
       inserisci(esito.azione)
       setFoglio(null)
       return true

@@ -24,6 +24,10 @@ export const LIMITI = {
   sos: null,
 }
 
-// La scala delle penalità (-1 al terzo tentativo rifiutato, fino a -5) non
-// sta ancora qui: toglie punti, e il motore punti arriva al punto 6.
-// Adesso un tentativo rifiutato mostra solo il tempo di attesa.
+// La scala delle penalità della Legge XIX. Cresce con l'insistenza e ha un
+// tetto: martellare un bottone bloccato non può costare più di -5.
+export const PENALITA = {
+  primaPenalita: 3, // i primi due rifiuti non costano niente
+  ogniQuanti: 3, // poi -1 ogni tre
+  massimoPerBlocco: 5,
+}
