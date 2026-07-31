@@ -6,6 +6,10 @@ export const VIAGGIO = {
   dataInizio: '2026-08-12',
   dataFine: '2026-08-16',
   etichetta: 'Sardegna · 12–16 agosto',
+  // Il conto alla rovescia punta qui, non alla mezzanotte: è la prima
+  // tappa del 12 (arrivo a Quartu). Contare fino a un orario vero rende
+  // il numero utile invece che decorativo.
+  inizioEffettivo: '2026-08-12T07:00:00',
 }
 
 // Vincoli dell'onboarding, tenuti fuori dai componenti.

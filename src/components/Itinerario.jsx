@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import './Itinerario.css'
 import Giorno from './Giorno.jsx'
+import RigaAttesa from './RigaAttesa.jsx'
 import { GIORNI } from '../config/itinerario.js'
-import { giornoPerData, statoViaggio } from '../lib/giorni.js'
+import { giornoPerData } from '../lib/giorni.js'
 import { useDataDiOggi } from '../hooks/useDataDiOggi.js'
 import { urlAvatar } from '../config/avatar.js'
 import { VIAGGIO } from '../config/viaggio.js'
@@ -10,7 +11,6 @@ import { VIAGGIO } from '../config/viaggio.js'
 export default function Itinerario({ membro, onProfilo }) {
   const data = useDataDiOggi()
   const oggi = giornoPerData(data)
-  const stato = statoViaggio(data)
   const rifOggi = useRef(null)
 
   // Durante il viaggio la scheda di oggi può essere due schermate più in
@@ -20,8 +20,6 @@ export default function Itinerario({ membro, onProfilo }) {
     if (!oggi || oggi.giorno === GIORNI[0].giorno) return
     rifOggi.current?.scrollIntoView({ block: 'start', behavior: 'auto' })
   }, [oggi])
-
-  const attesa = messaggioDiAttesa(stato)
 
   return (
     <div className="oggi-schermo">
@@ -44,7 +42,7 @@ export default function Itinerario({ membro, onProfilo }) {
       </header>
 
       <div className="wrap">
-        {attesa && <p className="attesa">{attesa}</p>}
+        <RigaAttesa />
 
         <div className="timeline">
           {GIORNI.map((g) => {
@@ -62,14 +60,4 @@ export default function Itinerario({ membro, onProfilo }) {
       </div>
     </div>
   )
-}
-
-// Voce di Allan: asciutta, punto fermo, nessun entusiasmo. Durante il
-// viaggio non dice niente — ci pensa il badge "oggi".
-function messaggioDiAttesa(stato) {
-  if (stato.fase === 'prima') {
-    return stato.mancano === 1 ? 'Si parte domani.' : `Mancano ${stato.mancano} giorni.`
-  }
-  if (stato.fase === 'dopo') return 'È finita.'
-  return null
 }

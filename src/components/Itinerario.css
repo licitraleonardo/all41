@@ -102,13 +102,26 @@
 }
 
 .attesa {
-  margin: 0 0 20px;
-  font-family: var(--font-titoli);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ink-soft);
+  margin: 0 0 22px;
   border-left: 3px solid var(--gold);
-  padding-left: 11px;
+  padding-left: 12px;
+}
+
+.attesa-conteggio {
+  display: block;
+  font-family: var(--font-titoli);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.attesa-commento {
+  display: block;
+  margin-top: 2px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
 }
 
 .day {
