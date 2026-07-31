@@ -46,6 +46,34 @@ create index if not exists quick_actions_feed_idx
 create index if not exists quick_actions_limiti_idx
   on quick_actions (author_id, kind, created_at desc);
 
+-- Voti. Per ora solo 'logistics' (sondaggio lampo); le altre categorie
+-- arrivano con la caccia al tesoro e le proposte di punti.
+create table if not exists votes (
+  id          uuid primary key default gen_random_uuid(),
+  trip_id     text not null references trips (id) on delete cascade,
+  category    text not null check (category in
+                ('logistics', 'point-proposal', 'photo-of-day', 'impostore')),
+  question    text not null,
+  options     text[] not null,
+  anonymous   boolean not null default false,
+
+  -- Conteggi aggregati: sono sempre la verità sul risultato.
+  tally       int[] not null,
+  -- Chi ha già votato, per impedire il doppio voto. Separato dalla
+  -- preferenza apposta: per i voti anonimi è l'unica cosa che si salva.
+  voted       uuid[] not null default '{}',
+  -- Chi ha votato cosa. Resta vuoto quando anonymous = true, altrimenti
+  -- l'anonimato sarebbe finto: chi apre il database vedrebbe tutto.
+  ballots     jsonb not null default '{}'::jsonb,
+
+  expires_at  timestamptz not null,
+  closed_at   timestamptz,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists votes_aperti_idx
+  on votes (trip_id, closed_at, expires_at);
+
 -- ------------------------------------------------------------------ seed
 
 insert into trips (id, name, start_date, end_date)
@@ -59,6 +87,7 @@ on conflict (id) do nothing;
 alter table trips         enable row level security;
 alter table members       enable row level security;
 alter table quick_actions enable row level security;
+alter table votes         enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -67,6 +96,8 @@ drop policy if exists "members: modifica per autenticati"  on members;
 drop policy if exists "azioni: lettura per autenticati"    on quick_actions;
 drop policy if exists "azioni: creazione per autenticati"  on quick_actions;
 drop policy if exists "azioni: modifica per autenticati"   on quick_actions;
+drop policy if exists "voti: lettura per autenticati"      on votes;
+drop policy if exists "voti: creazione per autenticati"    on votes;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -91,6 +122,77 @@ create policy "azioni: creazione per autenticati"
 create policy "azioni: modifica per autenticati"
   on quick_actions for update to authenticated using (true) with check (true);
 
+create policy "voti: lettura per autenticati"
+  on votes for select to authenticated using (true);
+
+create policy "voti: creazione per autenticati"
+  on votes for insert to authenticated with check (true);
+
+-- Nessuna policy di update: i voti non si modificano da fuori. Votare e
+-- chiudere passano dalle due funzioni qui sotto, che girano dentro una
+-- transazione con la riga bloccata. È la risposta alla domanda dello spec
+-- "chi chiude un voto scaduto senza un server": il primo client che se ne
+-- accorge, e se due ci provano insieme ne vince uno solo.
+
+create or replace function vota(p_voto uuid, p_membro uuid, p_opzione int)
+returns votes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v votes;
+begin
+  select * into v from votes where id = p_voto for update;
+
+  if not found then raise exception 'Questo sondaggio non esiste.'; end if;
+  if v.closed_at is not null then raise exception 'Il sondaggio è chiuso.'; end if;
+  if now() >= v.expires_at then raise exception 'Il sondaggio è scaduto.'; end if;
+  if p_membro = any(v.voted) then raise exception 'Hai già votato.'; end if;
+  if p_opzione < 0 or p_opzione >= array_length(v.options, 1) then
+    raise exception 'Opzione inesistente.';
+  end if;
+
+  -- Gli array in Postgres partono da 1, il client conta da 0.
+  update votes
+     set tally[p_opzione + 1] = tally[p_opzione + 1] + 1,
+         voted = voted || p_membro,
+         ballots = case
+           when anonymous then ballots
+           else ballots || jsonb_build_object(p_membro::text, p_opzione)
+         end
+   where id = p_voto
+  returning * into v;
+
+  return v;
+end $$;
+
+create or replace function chiudi_voto(p_voto uuid)
+returns votes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v votes;
+begin
+  select * into v from votes where id = p_voto for update;
+  if not found then raise exception 'Questo sondaggio non esiste.'; end if;
+
+  -- Si chiude solo se è ancora aperto e davvero scaduto. Una seconda
+  -- chiamata non fa niente invece di sovrascrivere l'ora di chiusura.
+  if v.closed_at is null and now() >= v.expires_at then
+    update votes set closed_at = now() where id = p_voto returning * into v;
+  end if;
+
+  return v;
+end $$;
+
+revoke execute on function vota(uuid, uuid, int) from public;
+revoke execute on function chiudi_voto(uuid) from public;
+grant execute on function vota(uuid, uuid, int) to authenticated;
+grant execute on function chiudi_voto(uuid) to authenticated;
+
 -- ------------------------------------------------------------- realtime
 -- Senza questo il feed non si aggiorna da solo sugli altri telefoni.
 
@@ -101,5 +203,12 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'quick_actions'
   ) then
     alter publication supabase_realtime add table quick_actions;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'votes'
+  ) then
+    alter publication supabase_realtime add table votes;
   end if;
 end $$;

@@ -1,7 +1,8 @@
+import Sondaggio from './Sondaggio.jsx'
 import { MINUTI_PER_ELIMINARE } from '../config/azioni.js'
 import { urlAvatar } from '../config/avatar.js'
 
-export default function Feed({ azioni, membri, ioId, onElimina }) {
+export default function Feed({ azioni, membri, ioId, onElimina, voti, onVota }) {
   const visibili = azioni.filter((a) => !a.eliminato)
 
   if (visibili.length === 0) {
@@ -27,6 +28,16 @@ export default function Feed({ azioni, membri, ioId, onElimina }) {
                 <span className="voce-nome">{autore?.nome ?? 'Qualcuno'}</span>{' '}
                 {descrivi(a)}
               </p>
+
+              {a.tipo === 'poll' && (
+                <Sondaggio
+                  voto={voti?.[a.payload.voteId]}
+                  ioId={ioId}
+                  membri={membri}
+                  onVota={onVota}
+                />
+              )}
+
               <span className="voce-ora">{ora(a.creatoIl)}</span>
             </div>
 
@@ -57,6 +68,8 @@ function descrivi(a) {
       return `dice che si riparte tra ${a.payload.minuti} minuti. 🚗`
     case 'soundboard':
       return `ha lanciato ${a.payload.etichetta ?? 'un suono'}. 🔊`
+    case 'poll':
+      return 'ha aperto un sondaggio. 📊'
     case 'free_text':
       return a.payload.testo
     default:

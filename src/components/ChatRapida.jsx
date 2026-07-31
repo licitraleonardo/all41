@@ -4,12 +4,17 @@ import Feed from './Feed.jsx'
 import FoglioSOS from './FoglioSOS.jsx'
 import { useFeed } from '../hooks/useFeed.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
+import { descriviErrore } from '../lib/errori.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
 import { SUONI } from '../config/suoni.js'
+import { SONDAGGI } from '../config/sondaggi.js'
 import { suona } from '../lib/audio.js'
+import { creaSondaggio } from '../lib/voti.js'
+import { useVoti } from '../hooks/useVoti.js'
 
 export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   const { azioni, membri, stato, errore, inserisci, sostituisci } = useFeed()
+  const { voti, vota, aggiorna: aggiornaVoto } = useVoti(azioni)
   const [foglio, setFoglio] = useState(null)
   const [testo, setTesto] = useState('')
   const [inCorso, setInCorso] = useState(false)
@@ -43,6 +48,32 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
     const pulito = testo.trim()
     if (!pulito || inCorso) return
     if (await manda('free_text', { testo: pulito })) setTesto('')
+  }
+
+  // Il sondaggio si crea prima e si annuncia dopo: se la creazione
+  // fallisce, nel feed non resta una riga che punta al nulla.
+  async function apriSondaggio(modello) {
+    setInCorso(true)
+    setAvviso(null)
+    try {
+      const nuovo = await creaSondaggio(modello)
+      aggiornaVoto(nuovo)
+      const esito = await inviaAzione({
+        tipo: 'poll',
+        payload: { voteId: nuovo.id },
+        memberId: membro.id,
+      })
+      if (!esito.ok) {
+        setAvviso(`Aspetta ${esito.attesa}s.`)
+        return
+      }
+      inserisci(esito.azione)
+      setFoglio(null)
+    } catch (e) {
+      setAvviso(descriviErrore(e))
+    } finally {
+      setInCorso(false)
+    }
   }
 
   // Prima si chiede il permesso, poi si suona: se il limite rifiuta, il
@@ -92,6 +123,16 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
           >
             🚗 Si riparte tra…
           </button>
+
+          <button
+            type="button"
+            className="azione larga"
+            onClick={() => setFoglio(foglio === 'sondaggio' ? null : 'sondaggio')}
+            disabled={inCorso}
+            aria-expanded={foglio === 'sondaggio'}
+          >
+            📊 Sondaggio lampo
+          </button>
         </div>
 
         {foglio === 'riparte' && (
@@ -105,6 +146,22 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
                 disabled={inCorso}
               >
                 {m} min
+              </button>
+            ))}
+          </div>
+        )}
+
+        {foglio === 'sondaggio' && (
+          <div className="scelte-sondaggio">
+            {SONDAGGI.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className="scelta-sondaggio"
+                onClick={() => apriSondaggio(s)}
+                disabled={inCorso}
+              >
+                {s.domanda}
               </button>
             ))}
           </div>
@@ -148,7 +205,14 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
       {stato === 'caricamento' && <p className="feed-vuoto">Un attimo.</p>}
       {stato === 'guasto' && <p className="feed-guasto">{errore}</p>}
       {stato === 'pronto' && (
-        <Feed azioni={azioni} membri={membri} ioId={membro.id} onElimina={elimina} />
+        <Feed
+          azioni={azioni}
+          membri={membri}
+          ioId={membro.id}
+          onElimina={elimina}
+          voti={voti}
+          onVota={(votoId, opzione) => vota(votoId, membro.id, opzione)}
+        />
       )}
 
       {foglio === 'sos' && (

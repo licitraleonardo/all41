@@ -108,6 +108,129 @@
   cursor: pointer;
 }
 
+.azione.larga {
+  grid-column: 1 / -1;
+}
+
+.scelte-sondaggio {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scelta-sondaggio {
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--juniper);
+  border-radius: 11px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.scelta-sondaggio:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----------------------------------------------------------- sondaggio */
+
+.sondaggio {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  background: var(--sand);
+  border-radius: 10px;
+}
+
+.sondaggio-domanda {
+  margin: 0 0 8px;
+  font-family: var(--font-titoli);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sondaggio-opzioni {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.opzione {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 11px;
+  cursor: pointer;
+}
+
+.opzione:disabled {
+  cursor: default;
+}
+
+.opzione.mia {
+  border-color: var(--juniper);
+  border-width: 2px;
+}
+
+.barra {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #E9F3EC;
+  transition: width 0.25s ease;
+}
+
+.barra.vince {
+  background: #d9ecdf;
+}
+
+.opzione-testo,
+.opzione-conto {
+  position: relative;
+}
+
+.opzione-conto {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.sondaggio-errore {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--coral);
+}
+
+.sondaggio-piede {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.voce-attesa {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra {
+    transition: none;
+  }
+}
+
 .soundboard {
   display: flex;
   flex-wrap: wrap;
