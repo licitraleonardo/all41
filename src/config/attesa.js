@@ -7,6 +7,8 @@
 // più su di giri delle altre, è sbagliata.
 
 export const ATTESA = {
+  etichetta: 'Mancano',
+
   // Il primo scaglione la cui soglia in ore è maggiore delle ore mancanti.
   // Dal più vicino al più lontano.
   //
@@ -21,7 +23,7 @@ export const ATTESA = {
   ],
 
   finito: {
-    conteggio: 'È finita.',
+    testo: 'È finita.',
     commento: 'Non c’è altro da contare.',
   },
 }

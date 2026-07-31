@@ -3,8 +3,6 @@ import { VIAGGIO } from '../config/viaggio.js'
 import { GIORNI } from '../config/itinerario.js'
 import { dataDiOggi } from './giorni.js'
 
-const UN_MINUTO = 60000
-
 // Tre fasi: prima della partenza si conta, durante il viaggio Allan tace
 // (ci pensa già il badge "oggi"), dopo l'ultimo giorno chiude.
 export function calcolaAttesa(adesso = new Date()) {
@@ -14,27 +12,35 @@ export function calcolaAttesa(adesso = new Date()) {
   if (dataDiOggi(adesso) > ultimoGiorno) return { fase: 'dopo' }
   if (adesso >= partenza) return { fase: 'durante' }
 
-  // Ceil: a 59 minuti e mezzo mancano ancora 60 minuti, non 59.
-  return { fase: 'prima', minuti: Math.ceil((partenza - adesso) / UN_MINUTO) }
+  // Ceil: mezzo secondo prima della partenza manca ancora un secondo.
+  return { fase: 'prima', secondi: Math.ceil((partenza - adesso) / 1000) }
 }
 
 export function frasiAttesa(adesso = new Date()) {
   const stato = calcolaAttesa(adesso)
 
   if (stato.fase === 'durante') return null
-  if (stato.fase === 'dopo') return ATTESA.finito
+  if (stato.fase === 'dopo') {
+    return { tipo: 'chiuso', testo: ATTESA.finito.testo, commento: ATTESA.finito.commento }
+  }
 
-  const { minuti } = stato
-  const ore = Math.floor(minuti / 60)
+  const ore = Math.floor(stato.secondi / 3600)
   const scaglione = ATTESA.scaglioni.find((s) => ore < s.entroOre)
 
-  return { conteggio: conteggio(minuti, ore), commento: scaglione.commento }
+  return {
+    tipo: 'conto',
+    etichetta: ATTESA.etichetta,
+    orologio: orologio(stato.secondi),
+    commento: scaglione.commento,
+  }
 }
 
-// Sotto le due ore si passa ai minuti: "Mancano 90 minuti" è più preciso
-// e più divertente di un "Manca un'ora" che resta appeso per sessanta.
-function conteggio(minuti, ore) {
-  if (minuti >= 120) return `Mancano ${ore} ore.`
-  if (minuti === 1) return 'Manca un minuto.'
-  return `Mancano ${minuti} minuti.`
+// Le ore non si azzerano a 24: a dodici giorni dalla partenza il numero è
+// 287, ed è quello il punto. padStart non taglia, quindi le tre cifre
+// passano intatte.
+function orologio(secondi) {
+  const due = (n) => String(n).padStart(2, '0')
+  const ore = Math.floor(secondi / 3600)
+  const minuti = Math.floor((secondi % 3600) / 60)
+  return `${due(ore)}:${due(minuti)}:${due(secondi % 60)}`
 }
