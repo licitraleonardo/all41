@@ -18,6 +18,7 @@ import Profilo from './components/Profilo.jsx'
 import ModificaProfilo from './components/ModificaProfilo.jsx'
 import Itinerario from './components/Itinerario.jsx'
 import ChatRapida from './components/ChatRapida.jsx'
+import Album from './components/Album.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 
@@ -154,11 +155,13 @@ export default function App() {
   if (vista === 'dentro') {
     return (
       <>
-        {tab === 'oggi' ? (
+        {tab === 'oggi' && (
           <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
-        ) : (
+        )}
+        {tab === 'gruppo' && (
           <ChatRapida membro={membro} suoniDisponibili={suoniDisponibili} />
         )}
+        {tab === 'foto' && <Album membro={membro} />}
         <BarraTab attivo={tab} onCambia={setTab} />
       </>
     )

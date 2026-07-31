@@ -1,0 +1,190 @@
+.album-schermo {
+  --ink: #16232C;
+  --ink-soft: #55636B;
+  --line: #E4DFD2;
+
+  min-height: 100dvh;
+  background-color: var(--sand);
+  color: var(--ink);
+  text-align: left;
+  padding: 16px 16px calc(20px + var(--altezza-tab));
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.album-testata {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.album-titolo {
+  font-family: var(--font-titoli);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.carica {
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--sea);
+  background: var(--gold);
+  border: 0;
+  border-radius: 11px;
+  padding: 11px 15px;
+  cursor: pointer;
+}
+
+.carica:disabled,
+.altre:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.carica:focus-visible,
+.altre:focus-visible,
+.cella-elimina:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
+.album-avviso {
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.album-guasto {
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--coral);
+}
+
+.album-vuoto {
+  margin: 24px 0 0;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------------- coda di ripresa */
+
+.coda {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coda li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  background: #fdeeeb;
+  border: 1px solid var(--coral);
+  border-radius: 10px;
+  padding: 9px 11px;
+}
+
+.coda span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coda button {
+  flex: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--coral);
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 11px;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------- griglia */
+
+.griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.cella {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e8e3d6;
+}
+
+.cella img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cella figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  padding: 14px 8px 6px;
+  background: linear-gradient(transparent, rgba(11, 53, 80, 0.75));
+}
+
+.cella-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.cella-elimina {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  font-size: 17px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(11, 53, 80, 0.55);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.altre {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 13px;
+  cursor: pointer;
+}

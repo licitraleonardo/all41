@@ -74,6 +74,35 @@ create table if not exists votes (
 create index if not exists votes_aperti_idx
   on votes (trip_id, closed_at, expires_at);
 
+-- Album foto. Il file vive nello storage, qui resta il riferimento.
+create table if not exists photos (
+  id           uuid primary key default gen_random_uuid(),
+  trip_id      text not null references trips (id) on delete cascade,
+  author_id    uuid not null references members (id) on delete cascade,
+  path         text not null,   -- percorso dentro il bucket
+  url          text not null,
+  width        int,
+  height       int,
+  challenge_id uuid,            -- caccia al tesoro, punto 8
+  deleted_at   timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists photos_griglia_idx
+  on photos (trip_id, created_at desc);
+
+create index if not exists photos_limiti_idx
+  on photos (author_id, created_at desc);
+
+-- ---------------------------------------------------------------- storage
+-- Bucket pubblico: i percorsi contengono un uuid, quindi non si indovinano,
+-- ma chi ha il link vede la foto. È lo stesso modello di sicurezza del
+-- resto dell'app — vale la pena saperlo, non è una svista.
+
+insert into storage.buckets (id, name, public)
+values ('foto', 'foto', true)
+on conflict (id) do nothing;
+
 -- ------------------------------------------------------------------ seed
 
 insert into trips (id, name, start_date, end_date)
@@ -88,6 +117,7 @@ alter table trips         enable row level security;
 alter table members       enable row level security;
 alter table quick_actions enable row level security;
 alter table votes         enable row level security;
+alter table photos        enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -98,6 +128,9 @@ drop policy if exists "azioni: creazione per autenticati"  on quick_actions;
 drop policy if exists "azioni: modifica per autenticati"   on quick_actions;
 drop policy if exists "voti: lettura per autenticati"      on votes;
 drop policy if exists "voti: creazione per autenticati"    on votes;
+drop policy if exists "foto: lettura per autenticati"      on photos;
+drop policy if exists "foto: creazione per autenticati"    on photos;
+drop policy if exists "foto: modifica per autenticati"     on photos;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -127,6 +160,27 @@ create policy "voti: lettura per autenticati"
 
 create policy "voti: creazione per autenticati"
   on votes for insert to authenticated with check (true);
+
+create policy "foto: lettura per autenticati"
+  on photos for select to authenticated using (true);
+
+create policy "foto: creazione per autenticati"
+  on photos for insert to authenticated with check (true);
+
+-- Serve per il "elimina" dell'autore: cancellazione morbida, non vera.
+create policy "foto: modifica per autenticati"
+  on photos for update to authenticated using (true) with check (true);
+
+-- Permessi sul bucket. Lettura aperta perché il bucket è pubblico; la
+-- scrittura richiede una sessione, anche anonima.
+drop policy if exists "storage foto: lettura"     on storage.objects;
+drop policy if exists "storage foto: caricamento" on storage.objects;
+
+create policy "storage foto: lettura"
+  on storage.objects for select using (bucket_id = 'foto');
+
+create policy "storage foto: caricamento"
+  on storage.objects for insert to authenticated with check (bucket_id = 'foto');
 
 -- Nessuna policy di update: i voti non si modificano da fuori. Votare e
 -- chiudere passano dalle due funzioni qui sotto, che girano dentro una
@@ -210,5 +264,12 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'votes'
   ) then
     alter publication supabase_realtime add table votes;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'photos'
+  ) then
+    alter publication supabase_realtime add table photos;
   end if;
 end $$;
