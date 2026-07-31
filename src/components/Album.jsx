@@ -21,7 +21,7 @@ export default function Album({ membro }) {
     setInCorso(true)
     setAvviso(null)
     try {
-      const esito = await caricaFoto(file, membro.id)
+      const esito = await caricaFoto(file, membro.id, { onStato: setAvviso })
       if (!esito.ok) {
         setAvviso(`Aspetta ${esito.attesa}s.`)
         return

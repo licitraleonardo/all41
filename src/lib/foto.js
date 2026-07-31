@@ -39,11 +39,11 @@ export async function leggiFoto({ primaDi = null, limite = PER_PAGINA } = {}) {
   return data.map(daRiga)
 }
 
-export async function caricaFoto(file, memberId) {
+export async function caricaFoto(file, memberId, { onStato } = {}) {
   const esito = await verificaLimite('photo', memberId)
   if (!esito.consentito) return { ok: false, ...esito }
 
-  const { blob, width, height, primaByte, dopoByte } = await comprimi(file)
+  const { blob, width, height, primaByte, dopoByte } = await comprimi(file, { onStato })
 
   const percorso = `${VIAGGIO.id}/${memberId}/${uuid()}.jpg`
   const { error: erroreUpload } = await supabase.storage

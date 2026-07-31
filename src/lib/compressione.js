@@ -3,8 +3,11 @@ import { LATO_LUNGO_MAX, QUALITA } from '../config/foto.js'
 // Ridimensiona e riesporta in JPEG. Restituisce il blob compresso più le
 // dimensioni finali, che servono alla griglia per non far ballare il
 // layout mentre le immagini arrivano.
-export async function comprimi(file) {
-  const immagine = await apri(file)
+//
+// onStato riceve un avviso quando serve un passaggio lento, così l'utente
+// non guarda un bottone fermo per cinque secondi.
+export async function comprimi(file, { onStato } = {}) {
+  const immagine = await apri(file, onStato)
   const { width, height } = misura(immagine.width, immagine.height)
 
   const tela = document.createElement('canvas')
@@ -21,13 +24,54 @@ export async function comprimi(file) {
   return { blob, width, height, primaByte: file.size, dopoByte: blob.size }
 }
 
-// L'HEIC è il formato di default delle foto iPhone. Nessun browser lo
-// decodifica senza una libreria a parte, quindi conviene dirlo chiaro
-// invece di lasciare un errore generico.
-function eHeic(file) {
-  return (
-    /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name || '')
-  )
+// I file della famiglia HEIF cominciano con una scatola "ftyp": i byte
+// 4-8 sono la sigla, gli 8-12 il marchio del formato. Si guardano dodici
+// byte invece di fidarsi dell'estensione, così si riconosce anche un HEIC
+// arrivato con nome .jpg — cosa che succede spesso passando dalle chat.
+//
+// L'AVIF usa la stessa scatola ma i browser lo aprono da soli, quindi non
+// è in elenco: mandarlo al decodificatore sarebbe lavoro sprecato.
+const MARCHI_HEIF = [
+  'heic',
+  'heix',
+  'hevc',
+  'hevx',
+  'heim',
+  'heis',
+  'hevm',
+  'hevs',
+  'mif1',
+  'msf1',
+]
+
+export async function eHeif(file) {
+  try {
+    const testa = new Uint8Array(await file.slice(0, 12).arrayBuffer())
+    if (testa.length < 12) return false
+
+    const sigla = String.fromCharCode(...testa.subarray(4, 8))
+    if (sigla !== 'ftyp') return false
+
+    // Il marchio occupa quattro byte, riempiti di zeri quando la sigla è
+    // più corta. Si filtrano come numeri invece che come testo, così nel
+    // sorgente non finisce nessun carattere di controllo.
+    const marchio = String.fromCharCode(
+      ...[...testa.subarray(8, 12)].filter((b) => b > 32)
+    )
+
+    return MARCHI_HEIF.includes(marchio)
+  } catch {
+    return false
+  }
+}
+
+// Il decodificatore pesa tre mega: si scarica solo qui, la prima volta
+// che qualcuno carica davvero un HEIC. Chi non ne carica mai non ne
+// prende un byte.
+async function decodificaHeif(file, onStato) {
+  onStato?.('È una foto iPhone. La converto, ci vuole qualche secondo.')
+  const { heicTo } = await import('heic-to')
+  return heicTo({ blob: file, type: 'bitmap' })
 }
 
 function descriviFile(file) {
@@ -37,14 +81,7 @@ function descriviFile(file) {
 
 // Le foto scattate in verticale hanno l'orientamento nei metadati, non nei
 // pixel: senza leggerlo, sul canvas finiscono coricate.
-async function apri(file) {
-  if (eHeic(file)) {
-    throw new Error(
-      'È una foto in HEIC, il formato dell’iPhone: il browser non sa aprirla. ' +
-        'Sul telefono che l’ha scattata, Impostazioni → Fotocamera → Formati → Massima compatibilità.'
-    )
-  }
-
+async function apri(file, onStato) {
   // Succede scegliendo da Google Foto una immagine che sta solo nel cloud:
   // Android consegna un file vuoto invece di scaricarla.
   if (file.size === 0) {
@@ -53,6 +90,8 @@ async function apri(file) {
         'solo su Google Foto e non sul telefono: scaricala prima, o scegli da Galleria.'
     )
   }
+
+  if (await eHeif(file)) return decodificaHeif(file, onStato)
 
   const motivi = []
 
