@@ -3,6 +3,7 @@ import './Album.css'
 import { useFoto } from '../hooks/useFoto.js'
 import { caricaFoto, eliminaFoto } from '../lib/foto.js'
 import { descriviErrore } from '../lib/errori.js'
+import { dopoFoto } from '../lib/regole.js'
 import { urlAvatar } from '../config/avatar.js'
 import { TIPI_ACCETTATI } from '../config/foto.js'
 
@@ -28,6 +29,15 @@ export default function Album({ membro }) {
       }
       inserisci(esito.foto)
       setAvviso(`Caricata. ${peso(esito.primaByte)} → ${peso(esito.dopoByte)}.`)
+
+      // Le Leggi non devono far fallire il caricamento: se il rilevamento
+      // va storto, la foto è comunque salva.
+      dopoFoto(membro.id)
+        .then((scattate) => {
+          const nuova = scattate.find((s) => s.scopertaNuova)
+          if (nuova) setAvviso(`📜 Nuova Legge scoperta. Guarda il Testamento.`)
+        })
+        .catch(() => {})
     } catch (e) {
       setInCoda((precedenti) => [...precedenti, { file, nome: file.name }])
       setAvviso(`Non è partita. ${descriviErrore(e)}`)

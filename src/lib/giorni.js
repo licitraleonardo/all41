@@ -26,3 +26,10 @@ function aData(iso) {
   const [anno, mese, giorno] = iso.split('-').map(Number)
   return new Date(anno, mese - 1, giorno)
 }
+
+// Le date ISO si confrontano bene come stringhe: 2026-08-09 < 2026-08-12.
+export function statoDelViaggio(data) {
+  if (data < GIORNI[0].data) return 'prima'
+  if (data > GIORNI[GIORNI.length - 1].data) return 'dopo'
+  return 'durante'
+}

@@ -5,6 +5,7 @@ const TAB = [
   { id: 'oggi', etichetta: 'Oggi', icona: '📅' },
   { id: 'gruppo', etichetta: 'Gruppo', icona: '💬' },
   { id: 'foto', etichetta: 'Foto', icona: '📷' },
+  { id: 'gioco', etichetta: 'Gioco', icona: '🏆' },
 ]
 
 export default function BarraTab({ attivo, onCambia, novita }) {

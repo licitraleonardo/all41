@@ -19,6 +19,7 @@ import ModificaProfilo from './components/ModificaProfilo.jsx'
 import Itinerario from './components/Itinerario.jsx'
 import ChatRapida from './components/ChatRapida.jsx'
 import Album from './components/Album.jsx'
+import Gioco from './components/Gioco.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 
@@ -162,6 +163,7 @@ export default function App() {
           <ChatRapida membro={membro} suoniDisponibili={suoniDisponibili} />
         )}
         {tab === 'foto' && <Album membro={membro} />}
+        {tab === 'gioco' && <Gioco membro={membro} />}
         <BarraTab attivo={tab} onCambia={setTab} />
       </>
     )

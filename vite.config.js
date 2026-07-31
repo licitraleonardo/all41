@@ -24,7 +24,10 @@ export default defineConfig({
   //
   // host: true fa ascoltare anche sulla rete locale, così non serve più
   // lanciare "npm run dev -- --host".
-  plugins: [react(), basicSsl()],
+  // Con SENZA_HTTPS=1 il server torna in HTTP: serve quando un browser
+  // rifiuta il certificato autofirmato senza dare modo di accettarlo.
+  // In quel caso però microfono, posizione e service worker non ci sono.
+  plugins: [react(), ...(process.env.SENZA_HTTPS ? [] : [basicSsl()])],
   server: { host: true },
   define: {
     __COMMIT__: JSON.stringify(commitCorrente()),

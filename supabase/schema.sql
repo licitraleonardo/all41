@@ -103,6 +103,48 @@ insert into storage.buckets (id, name, public)
 values ('foto', 'foto', true)
 on conflict (id) do nothing;
 
+-- ------------------------------------------------------------ punti
+-- Ogni punto dell'app passa da qui. Nessuna sezione tocca members.score
+-- direttamente: il punteggio e il suo storico devono restare d'accordo.
+
+create table if not exists point_events (
+  id          uuid primary key default gen_random_uuid(),
+  trip_id     text not null references trips (id) on delete cascade,
+  member_id   uuid not null references members (id) on delete cascade,
+  points      int not null,
+  reason      text not null,
+  rule_id     text,
+  vote_id     uuid references votes (id) on delete set null,
+  status      text not null default 'approved'
+              check (status in ('approved', 'pending', 'rejected')),
+
+  -- La chiave anti-doppione. Senza server, la chiusura di un voto o il
+  -- rilevamento di una regola avviene sul client di chi apre l'app in quel
+  -- momento: se due persone la aprono insieme, entrambi i client rilevano
+  -- lo stesso evento. Con una chiave deterministica la seconda scrittura
+  -- non fa niente invece di accreditare due volte.
+  -- Resta null per i punti assegnati a mano, che non si deduplicano.
+  dedupe_key  text unique,
+
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists point_events_classifica_idx
+  on point_events (trip_id, created_at desc);
+
+create index if not exists point_events_membro_idx
+  on point_events (member_id, created_at desc);
+
+-- Stato di scoperta delle Leggi. Il testo sta nel codice, qui c'è solo
+-- chi l'ha fatta scattare per primo e quando.
+create table if not exists leggi (
+  trip_id       text not null references trips (id) on delete cascade,
+  legge_id      text not null,
+  discovered_at timestamptz not null default now(),
+  discovered_by uuid references members (id) on delete set null,
+  primary key (trip_id, legge_id)
+);
+
 -- ------------------------------------------------------------------ seed
 
 insert into trips (id, name, start_date, end_date)
@@ -118,6 +160,8 @@ alter table members       enable row level security;
 alter table quick_actions enable row level security;
 alter table votes         enable row level security;
 alter table photos        enable row level security;
+alter table point_events  enable row level security;
+alter table leggi         enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -131,6 +175,8 @@ drop policy if exists "voti: creazione per autenticati"    on votes;
 drop policy if exists "foto: lettura per autenticati"      on photos;
 drop policy if exists "foto: creazione per autenticati"    on photos;
 drop policy if exists "foto: modifica per autenticati"     on photos;
+drop policy if exists "punti: lettura per autenticati"     on point_events;
+drop policy if exists "leggi: lettura per autenticati"     on leggi;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -170,6 +216,89 @@ create policy "foto: creazione per autenticati"
 -- Serve per il "elimina" dell'autore: cancellazione morbida, non vera.
 create policy "foto: modifica per autenticati"
   on photos for update to authenticated using (true) with check (true);
+
+-- Punti e Leggi si leggono, non si scrivono da fuori: passano solo dalle
+-- funzioni qui sotto. Altrimenti chiunque potrebbe regalarsi cento punti
+-- lasciando lo storico muto, ed è proprio quello che il motore deve
+-- impedire.
+create policy "punti: lettura per autenticati"
+  on point_events for select to authenticated using (true);
+
+create policy "leggi: lettura per autenticati"
+  on leggi for select to authenticated using (true);
+
+-- Il motore punti: scrive l'evento e aggiorna il punteggio nella stessa
+-- transazione, così storico e totale non possono divergere.
+create or replace function assegna_punti(
+  p_membro uuid,
+  p_punti int,
+  p_motivo text,
+  p_regola text default null,
+  p_chiave text default null,
+  p_voto uuid default null,
+  p_stato text default 'approved'
+)
+returns point_events
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  e point_events;
+  viaggio text;
+begin
+  select trip_id into viaggio from members where id = p_membro;
+  if not found then raise exception 'Questa persona non esiste.'; end if;
+
+  insert into point_events (trip_id, member_id, points, reason, rule_id, vote_id, status, dedupe_key)
+  values (viaggio, p_membro, p_punti, p_motivo, p_regola, p_voto, p_stato, p_chiave)
+  on conflict (dedupe_key) do nothing
+  returning * into e;
+
+  -- Niente riga = la chiave c'era già: qualcun altro ha assegnato lo
+  -- stesso punto un istante prima. Si restituisce quello, senza toccare
+  -- il punteggio una seconda volta.
+  if not found then
+    select * into e from point_events where dedupe_key = p_chiave;
+    return e;
+  end if;
+
+  -- Le proposte in attesa di voto non muovono ancora la classifica.
+  if e.status = 'approved' then
+    update members set score = score + p_punti where id = p_membro;
+  end if;
+
+  return e;
+end $$;
+
+-- Una Legge si scopre quando scatta, e da quel momento è svelata per
+-- tutto il gruppo. Restituisce true solo alla prima volta, così chi
+-- chiama sa se deve dare il punto extra della Legge XXII.
+create or replace function scopri_legge(p_legge text, p_membro uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  viaggio text;
+  righe int;
+begin
+  select trip_id into viaggio from members where id = p_membro;
+  if not found then raise exception 'Questa persona non esiste.'; end if;
+
+  insert into leggi (trip_id, legge_id, discovered_by)
+  values (viaggio, p_legge, p_membro)
+  on conflict (trip_id, legge_id) do nothing;
+
+  get diagnostics righe = row_count;
+  return righe > 0;
+end $$;
+
+revoke execute on function assegna_punti(uuid, int, text, text, text, uuid, text) from public;
+revoke execute on function scopri_legge(text, uuid) from public;
+grant execute on function assegna_punti(uuid, int, text, text, text, uuid, text) to authenticated;
+grant execute on function scopri_legge(text, uuid) to authenticated;
 
 -- Permessi sul bucket. Lettura aperta perché il bucket è pubblico; la
 -- scrittura richiede una sessione, anche anonima.
@@ -271,5 +400,27 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'photos'
   ) then
     alter publication supabase_realtime add table photos;
+  end if;
+
+  -- La classifica si muove sotto gli occhi di tutti mentre si gioca.
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'point_events'
+  ) then
+    alter publication supabase_realtime add table point_events;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'members'
+  ) then
+    alter publication supabase_realtime add table members;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'leggi'
+  ) then
+    alter publication supabase_realtime add table leggi;
   end if;
 end $$;

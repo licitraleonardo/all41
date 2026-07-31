@@ -5,6 +5,7 @@ import FoglioSOS from './FoglioSOS.jsx'
 import { useFeed } from '../hooks/useFeed.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
 import { descriviErrore } from '../lib/errori.js'
+import { dopoSuono } from '../lib/regole.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
 import { SUONI } from '../config/suoni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
@@ -81,6 +82,15 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   async function lanciaSuono(s) {
     if (await manda('soundboard', { file: s.file, etichetta: s.etichetta })) {
       suona(s.file)
+      // Legge VIII, per chi suona nel cuore della notte. Se il
+      // rilevamento fallisce, il suono è comunque partito.
+      dopoSuono(membro.id)
+        .then((scattate) => {
+          if (scattate.some((s2) => s2.scopertaNuova)) {
+            setAvviso('📜 Nuova Legge scoperta. Guarda il Testamento.')
+          }
+        })
+        .catch(() => {})
     }
   }
 
