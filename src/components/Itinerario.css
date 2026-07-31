@@ -9,9 +9,6 @@
 
   min-height: 100dvh;
   background-color: var(--sand);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><g fill='none' stroke='rgba(11,53,80,0.075)' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(38,46)'><path d='M0 46 L0 10'/><path d='M-9 10 L-9 -6'/><path d='M9 10 L9 -6'/><path d='M-12 10 L12 10'/></g><g transform='translate(178,32)'><path d='M-18 30 L18 30 L12 40 L-12 40 Z'/><path d='M0 30 L0 4 L16 26 Z'/><path d='M0 4 L0 -2'/></g><g transform='translate(58,150)'><path d='M-16 34 L-10 -6 L10 -6 L16 34 Z'/><path d='M-5 34 L-5 20 A5 5 0 0 1 5 20 L5 34'/><g transform='translate(38,-16)'><circle r='5'/><path d='M0 -9 L0 -13 M0 9 L0 13 M-9 0 L-13 0 M9 0 L13 0 M-6 -6 L-9 -9 M6 -6 L9 -9 M-6 6 L-9 9 M6 6 L9 9'/></g></g><g transform='translate(186,168)'><path d='M-6 18 C-22 12 -22 -8 -4 -14 C-14 -4 -10 8 2 12'/><path d='M6 18 C22 12 22 -8 4 -14 C14 -4 10 8 -2 12'/></g><g transform='translate(120,96)'><circle r='4.5'/><path d='M-4 -4 L-9 -11 M4 -4 L9 -11'/><path d='M0 4.5 L0 26'/><path d='M0 9 L-15 -4 M0 9 L15 -4'/><path d='M0 26 L-9 42 M0 26 L9 42 M-9 42 L9 42'/></g><g transform='translate(125,200)'><path d='M-12 -14 C-14 -22 12 -22 12 -14 C14 0 10 16 0 19 C-10 16 -14 0 -12 -14 Z'/><path d='M-9 -9 L-3 -6'/><path d='M9 -9 L3 -6'/><path d='M-6 -3 L-6 3'/><path d='M6 -3 L6 3'/><path d='M0 -1 L0 8'/><path d='M-5 12 Q0 9 5 12'/><path d='M-5 22 L-5 26 M0 24 L0 28 M5 22 L5 26'/><circle cx='-5' cy='27' r='1.6'/><circle cx='0' cy='29' r='1.6'/><circle cx='5' cy='27' r='1.6'/></g></g></svg>");
-  background-repeat: repeat;
-  background-size: 240px 240px;
   color: var(--ink);
   text-align: left;
 }

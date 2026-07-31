@@ -56,7 +56,7 @@ export default function Profilo({ membro, onModifica, onEsci, onIndietro }) {
       </dl>
 
       <button type="button" className="primario" onClick={onIndietro}>
-        Torna all&rsquo;itinerario
+        Indietro
       </button>
 
       <button type="button" className="secondario" onClick={onModifica}>
