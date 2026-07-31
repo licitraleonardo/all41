@@ -9,12 +9,15 @@ import {
   trovaPerId,
 } from './lib/membri.js'
 import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/sessione.js'
+import { descriviErrore } from './lib/errori.js'
 import Onboarding from './components/Onboarding.jsx'
 import Recupero from './components/Recupero.jsx'
 import CodiceNuovo from './components/CodiceNuovo.jsx'
 import Profilo from './components/Profilo.jsx'
 import ModificaProfilo from './components/ModificaProfilo.jsx'
 import Itinerario from './components/Itinerario.jsx'
+import ChatRapida from './components/ChatRapida.jsx'
+import BarraTab from './components/BarraTab.jsx'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -23,6 +26,7 @@ const buildTime = __BUILD_TIME__
 
 export default function App() {
   const [vista, setVista] = useState('avvio')
+  const [tab, setTab] = useState('oggi')
   const [membro, setMembro] = useState(null)
   const [errore, setErrore] = useState(null)
   const [inCorso, setInCorso] = useState(false)
@@ -135,10 +139,19 @@ export default function App() {
     setVista(prossima)
   }
 
-  // L'itinerario è a tutta pagina e su fondo chiaro: sta fuori dal
+  // L'app vera è a tutta pagina e su fondo chiaro: sta fuori dal
   // contenitore centrato e scuro delle schermate d'ingresso.
   if (vista === 'dentro') {
-    return <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
+    return (
+      <>
+        {tab === 'oggi' ? (
+          <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
+        ) : (
+          <ChatRapida membro={membro} />
+        )}
+        <BarraTab attivo={tab} onCambia={setTab} />
+      </>
+    )
   }
 
   return (
@@ -226,19 +239,3 @@ function NonConfigurato() {
   )
 }
 
-function descriviErrore(e) {
-  const testo = e?.message || String(e)
-  if (/anonymous.*disabled|signups? not allowed|anonymous_provider/i.test(testo)) {
-    return 'L’accesso anonimo non è attivo su Supabase. Va acceso in Authentication → Sign In / Providers.'
-  }
-  if (/relation .* does not exist|schema cache/i.test(testo)) {
-    return 'Le tabelle non ci sono. Va eseguito supabase/schema.sql nell’SQL Editor.'
-  }
-  if (/row-level security|violates row-level/i.test(testo)) {
-    return 'Le regole di sicurezza rifiutano la scrittura. Rilancia supabase/schema.sql.'
-  }
-  if (/fetch|network/i.test(testo)) {
-    return 'Niente rete, o URL di Supabase sbagliato.'
-  }
-  return testo
-}

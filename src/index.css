@@ -10,6 +10,9 @@
   --font-testo: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-titoli: 'Space Grotesk', var(--font-testo);
 
+  /* Spazio che la barra dei tab toglie in fondo a ogni schermata */
+  --altezza-tab: calc(58px + env(safe-area-inset-bottom));
+
   font-family: var(--font-testo);
   color-scheme: dark;
   -webkit-text-size-adjust: 100%;

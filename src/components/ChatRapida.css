@@ -1,0 +1,375 @@
+.gruppo-schermo {
+  --ink: #16232C;
+  --ink-soft: #55636B;
+  --line: #E4DFD2;
+
+  min-height: 100dvh;
+  background-color: var(--sand);
+  color: var(--ink);
+  text-align: left;
+  padding: 16px 16px calc(20px + var(--altezza-tab));
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* -------------------------------------------------------------- azioni */
+
+.azioni {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bottone-sos {
+  width: 100%;
+  font: inherit;
+  font-family: var(--font-titoli);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--coral);
+  border: 0;
+  border-radius: 12px;
+  padding: 15px;
+  cursor: pointer;
+}
+
+.azioni-riga {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.azione,
+.minuto {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 13px 10px;
+  cursor: pointer;
+}
+
+.azione:disabled,
+.minuto:disabled,
+.invia:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.minuti {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.minuto {
+  padding: 11px 4px;
+  font-size: 13.5px;
+}
+
+.riga-testo {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.riga-testo input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  /* 16px minimo: sotto questa soglia iOS zooma da solo al focus */
+  font-size: 16px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 12px 13px;
+}
+
+.riga-testo input::placeholder {
+  color: #9aa4ab;
+}
+
+.invia {
+  flex: none;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--sea);
+  background: var(--gold);
+  border: 0;
+  border-radius: 11px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.avviso {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--coral);
+}
+
+.bottone-sos:focus-visible,
+.azione:focus-visible,
+.minuto:focus-visible,
+.invia:focus-visible,
+.riga-testo input:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- feed */
+
+.feed {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feed-vuoto {
+  margin: 26px 0 0;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+}
+
+.feed-guasto {
+  margin: 22px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--coral);
+}
+
+.voce {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.voce.sos {
+  border-color: var(--coral);
+  border-left-width: 4px;
+}
+
+.voce-avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sand);
+}
+
+.voce-corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.voce-testo {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.voce-nome {
+  font-weight: 700;
+}
+
+.voce-sos {
+  font-weight: 700;
+  color: var(--coral);
+}
+
+.voce-ora {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.voce-elimina {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.voce-elimina:focus-visible {
+  outline: 2px solid var(--sea);
+}
+
+/* ------------------------------------------------------------- foglio */
+
+.foglio-sfondo {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(11, 53, 80, 0.55);
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+.foglio {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.foglio-titolo {
+  font-family: var(--font-titoli);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.motivi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.motivo {
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  color: var(--ink);
+  background: var(--sand);
+  border: 2px solid transparent;
+  border-radius: 11px;
+  padding: 13px 14px;
+  cursor: pointer;
+}
+
+.motivo.scelto {
+  border-color: var(--coral);
+  background: #fdeeeb;
+}
+
+.foglio .campo {
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.foglio .campo > span {
+  color: var(--ink-soft);
+  opacity: 1;
+}
+
+.foglio .campo input {
+  color: var(--ink);
+  background: var(--sand);
+  border-color: var(--line);
+}
+
+.foglio .campo input::placeholder {
+  color: #9aa4ab;
+}
+
+.sos-conferma {
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--coral);
+  border: 0;
+  border-radius: 11px;
+  padding: 15px;
+  cursor: pointer;
+}
+
+.sos-conferma:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.foglio .secondario {
+  color: var(--ink-soft);
+  border-color: var(--line);
+}
+
+/* ----------------------------------------------------------- barra tab */
+
+.barra-tab {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  background: var(--sea);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font: inherit;
+  color: rgba(247, 244, 236, 0.6);
+  background: transparent;
+  border: 0;
+  padding: 9px 4px 10px;
+  cursor: pointer;
+}
+
+.tab.attivo {
+  color: var(--gold);
+}
+
+.tab-icona {
+  position: relative;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.tab-punto {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
+.tab-etichetta {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}

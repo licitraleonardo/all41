@@ -20,8 +20,8 @@ dist-ssr
 # Vercel
 .vercel
 
-# Impostazioni locali di Claude Code
-.claude/settings.local.json
+# Impostazioni locali di Claude Code (compresi i temporanei di scrittura)
+.claude/settings.local.json*
 
 # Editor directories and files
 .vscode/*

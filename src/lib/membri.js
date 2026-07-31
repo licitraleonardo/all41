@@ -29,6 +29,18 @@ export async function trovaPerId(id) {
   return daRiga(data)
 }
 
+// Il gruppo è di otto persone: si leggono tutti in un colpo e si tengono
+// in memoria per dare un nome agli autori del feed.
+export async function leggiMembri() {
+  const { data, error } = await supabase
+    .from('members')
+    .select(CAMPI)
+    .eq('trip_id', VIAGGIO.id)
+    .limit(50)
+  if (error) throw error
+  return data.map(daRiga)
+}
+
 export async function trovaPerCodice(codice) {
   const { data, error } = await supabase
     .from('members')
