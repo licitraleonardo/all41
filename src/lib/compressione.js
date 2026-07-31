@@ -16,19 +16,58 @@ export async function comprimi(file) {
   const blob = await new Promise((risolvi) =>
     tela.toBlob(risolvi, 'image/jpeg', QUALITA)
   )
-  if (!blob) throw new Error('Non sono riuscito a comprimere la foto.')
+  if (!blob) throw new Error(`Compressione fallita (${descriviFile(file)}).`)
 
   return { blob, width, height, primaByte: file.size, dopoByte: blob.size }
 }
 
+// L'HEIC è il formato di default delle foto iPhone. Nessun browser lo
+// decodifica senza una libreria a parte, quindi conviene dirlo chiaro
+// invece di lasciare un errore generico.
+function eHeic(file) {
+  return (
+    /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name || '')
+  )
+}
+
+function descriviFile(file) {
+  const mb = (file.size / 1048576).toFixed(1)
+  return `${file.type || 'tipo sconosciuto'}, ${mb} MB`
+}
+
 // Le foto scattate in verticale hanno l'orientamento nei metadati, non nei
-// pixel: senza questo, sul canvas finiscono coricate.
+// pixel: senza leggerlo, sul canvas finiscono coricate.
 async function apri(file) {
+  if (eHeic(file)) {
+    throw new Error(
+      'È una foto in HEIC, il formato dell’iPhone: il browser non sa aprirla. ' +
+        'Sul telefono che l’ha scattata, Impostazioni → Fotocamera → Formati → Massima compatibilità.'
+    )
+  }
+
+  // Succede scegliendo da Google Foto una immagine che sta solo nel cloud:
+  // Android consegna un file vuoto invece di scaricarla.
+  if (file.size === 0) {
+    throw new Error(
+      'Il file arriva vuoto. Di solito succede scegliendo una foto che sta ' +
+        'solo su Google Foto e non sul telefono: scaricala prima, o scegli da Galleria.'
+    )
+  }
+
+  const motivi = []
+
   if (typeof createImageBitmap === 'function') {
     try {
       return await createImageBitmap(file, { imageOrientation: 'from-image' })
-    } catch {
-      // Browser vecchi che non conoscono l'opzione: si passa al fallback.
+    } catch (e) {
+      motivi.push(`bitmap: ${e?.message || e}`)
+    }
+    // Certi browser conoscono createImageBitmap ma non l'opzione
+    // sull'orientamento, e falliscono solo per quella.
+    try {
+      return await createImageBitmap(file)
+    } catch (e) {
+      motivi.push(`bitmap semplice: ${e?.message || e}`)
     }
   }
 
@@ -37,9 +76,14 @@ async function apri(file) {
     return await new Promise((risolvi, rifiuta) => {
       const img = new Image()
       img.onload = () => risolvi(img)
-      img.onerror = () => rifiuta(new Error('Non riesco ad aprire questo file.'))
+      img.onerror = () => rifiuta(new Error('img: decodifica rifiutata'))
       img.src = url
     })
+  } catch (e) {
+    motivi.push(e?.message || String(e))
+    throw new Error(
+      `Non riesco ad aprire questo file (${descriviFile(file)}). ${motivi.join(' · ')}`
+    )
   } finally {
     URL.revokeObjectURL(url)
   }

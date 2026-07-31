@@ -15,6 +15,7 @@ export default function Album({ membro }) {
   // bottone per riprovare.
   const [inCoda, setInCoda] = useState([])
   const campoFile = useRef(null)
+  const campoFoto = useRef(null)
 
   async function carica(file) {
     setInCorso(true)
@@ -61,17 +62,37 @@ export default function Album({ membro }) {
     <div className="album-schermo">
       <div className="album-testata">
         <h1 className="album-titolo">Album</h1>
-        <button
-          type="button"
-          className="carica"
-          onClick={() => campoFile.current?.click()}
-          disabled={inCorso}
-        >
-          {inCorso ? 'Carico…' : '📷 Aggiungi'}
-        </button>
-        {/* Niente capture="environment": forzerebbe la fotocamera e
-            toglierebbe la galleria. Senza, il telefono offre entrambe e
-            la selezione multipla funziona. */}
+
+        <div className="album-bottoni">
+          {/* Due ingressi separati invece di uno solo: "capture" e
+              "multiple" si escludono, quindi con un bottone unico o si
+              scatta o si sceglie dalla galleria, mai tutti e due. */}
+          <button
+            type="button"
+            className="carica"
+            onClick={() => campoFoto.current?.click()}
+            disabled={inCorso}
+          >
+            📷 Scatta
+          </button>
+          <button
+            type="button"
+            className="carica secondario-chiaro"
+            onClick={() => campoFile.current?.click()}
+            disabled={inCorso}
+          >
+            🖼 Scegli
+          </button>
+        </div>
+
+        <input
+          ref={campoFoto}
+          type="file"
+          accept={TIPI_ACCETTATI}
+          capture="environment"
+          onChange={scegli}
+          hidden
+        />
         <input
           ref={campoFile}
           type="file"
@@ -111,13 +132,26 @@ export default function Album({ membro }) {
               const autore = membri[f.autoreId]
               return (
                 <figure className="cella" key={f.id}>
-                  <img
-                    src={f.url}
-                    alt=""
-                    width={f.larghezza ?? 800}
-                    height={f.altezza ?? 800}
-                    loading="lazy"
-                  />
+                  <div className="cella-foto">
+                    <img
+                      src={f.url}
+                      alt=""
+                      width={f.larghezza ?? 800}
+                      height={f.altezza ?? 800}
+                      loading="lazy"
+                    />
+                    {f.autoreId === membro.id && (
+                      <button
+                        type="button"
+                        className="cella-elimina"
+                        onClick={() => elimina(f)}
+                        aria-label="Elimina"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+
                   <figcaption>
                     <img
                       className="cella-avatar"
@@ -126,18 +160,8 @@ export default function Album({ membro }) {
                       width="18"
                       height="18"
                     />
-                    {autore?.nome ?? 'Qualcuno'}
+                    <span>{autore?.nome ?? 'Qualcuno'}</span>
                   </figcaption>
-                  {f.autoreId === membro.id && (
-                    <button
-                      type="button"
-                      className="cella-elimina"
-                      onClick={() => elimina(f)}
-                      aria-label="Elimina"
-                    >
-                      ×
-                    </button>
-                  )}
                 </figure>
               )
             })}
