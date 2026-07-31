@@ -3,6 +3,7 @@ import { VIAGGIO } from '../config/viaggio.js'
 import { PER_PAGINA } from '../config/foto.js'
 import { comprimi } from './compressione.js'
 import { verificaLimite } from './limiti.js'
+import { uuid } from './id.js'
 
 const BUCKET = 'foto'
 const CAMPI = 'id, author_id, url, path, width, height, deleted_at, created_at'
@@ -44,7 +45,7 @@ export async function caricaFoto(file, memberId) {
 
   const { blob, width, height, primaByte, dopoByte } = await comprimi(file)
 
-  const percorso = `${VIAGGIO.id}/${memberId}/${crypto.randomUUID()}.jpg`
+  const percorso = `${VIAGGIO.id}/${memberId}/${uuid()}.jpg`
   const { error: erroreUpload } = await supabase.storage
     .from(BUCKET)
     .upload(percorso, blob, { contentType: 'image/jpeg', cacheControl: '31536000' })
