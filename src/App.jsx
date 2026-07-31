@@ -18,6 +18,7 @@ import ModificaProfilo from './components/ModificaProfilo.jsx'
 import Itinerario from './components/Itinerario.jsx'
 import ChatRapida from './components/ChatRapida.jsx'
 import BarraTab from './components/BarraTab.jsx'
+import { useSoundboard } from './hooks/useSoundboard.js'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -30,6 +31,10 @@ export default function App() {
   const [membro, setMembro] = useState(null)
   const [errore, setErrore] = useState(null)
   const [inCorso, setInCorso] = useState(false)
+
+  // Sta qui e non nella Chat Rapida: il suono lanciato da un altro deve
+  // sentirsi qualunque tab sia aperta.
+  const { disponibili: suoniDisponibili } = useSoundboard(membro?.id)
 
   useEffect(() => {
     if (!supabaseConfigurato) {
@@ -147,7 +152,7 @@ export default function App() {
         {tab === 'oggi' ? (
           <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
         ) : (
-          <ChatRapida membro={membro} />
+          <ChatRapida membro={membro} suoniDisponibili={suoniDisponibili} />
         )}
         <BarraTab attivo={tab} onCambia={setTab} />
       </>

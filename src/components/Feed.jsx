@@ -55,6 +55,8 @@ function descrivi(a) {
       return 'chiede dove siete. 📍'
     case 'si_riparte':
       return `dice che si riparte tra ${a.payload.minuti} minuti. 🚗`
+    case 'soundboard':
+      return `ha lanciato ${a.payload.etichetta ?? 'un suono'}. 🔊`
     case 'free_text':
       return a.payload.testo
     default:

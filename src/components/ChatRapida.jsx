@@ -5,8 +5,10 @@ import FoglioSOS from './FoglioSOS.jsx'
 import { useFeed } from '../hooks/useFeed.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
+import { SUONI } from '../config/suoni.js'
+import { suona } from '../lib/audio.js'
 
-export default function ChatRapida({ membro }) {
+export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   const { azioni, membri, stato, errore, inserisci, sostituisci } = useFeed()
   const [foglio, setFoglio] = useState(null)
   const [testo, setTesto] = useState('')
@@ -41,6 +43,14 @@ export default function ChatRapida({ membro }) {
     const pulito = testo.trim()
     if (!pulito || inCorso) return
     if (await manda('free_text', { testo: pulito })) setTesto('')
+  }
+
+  // Prima si chiede il permesso, poi si suona: se il limite rifiuta, il
+  // suono non deve partire lo stesso a chi ha premuto.
+  async function lanciaSuono(s) {
+    if (await manda('soundboard', { file: s.file, etichetta: s.etichetta })) {
+      suona(s.file)
+    }
   }
 
   async function elimina(id) {
@@ -113,6 +123,24 @@ export default function ChatRapida({ membro }) {
             Manda
           </button>
         </form>
+
+        <div className="soundboard">
+          {SUONI.map((s) => {
+            const manca = suoniDisponibili[s.file] === false
+            return (
+              <button
+                key={s.file}
+                type="button"
+                className="suono"
+                onClick={() => lanciaSuono(s)}
+                disabled={manca || inCorso}
+                title={manca ? 'File mancante' : undefined}
+              >
+                {s.etichetta}
+              </button>
+            )
+          })}
+        </div>
 
         {avviso && <p className="avviso">{avviso}</p>}
       </div>

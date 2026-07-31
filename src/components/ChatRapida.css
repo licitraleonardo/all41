@@ -108,6 +108,42 @@
   cursor: pointer;
 }
 
+.soundboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.suono {
+  flex: 1 1 auto;
+  min-width: 82px;
+  font: inherit;
+  font-family: var(--font-titoli);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--sea);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.suono:active {
+  background: var(--gold);
+}
+
+.suono:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.suono:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
 .avviso {
   margin: 0;
   font-size: 14px;
