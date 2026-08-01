@@ -94,15 +94,6 @@ create index if not exists photos_griglia_idx
 create index if not exists photos_limiti_idx
   on photos (author_id, created_at desc);
 
--- ---------------------------------------------------------------- storage
--- Bucket pubblico: i percorsi contengono un uuid, quindi non si indovinano,
--- ma chi ha il link vede la foto. È lo stesso modello di sicurezza del
--- resto dell'app — vale la pena saperlo, non è una svista.
-
-insert into storage.buckets (id, name, public)
-values ('foto', 'foto', true)
-on conflict (id) do nothing;
-
 -- ------------------------------------------------------------ punti
 -- Ogni punto dell'app passa da qui. Nessuna sezione tocca members.score
 -- direttamente: il punteggio e il suo storico devono restare d'accordo.
@@ -234,6 +225,11 @@ create policy "leggi: lettura per autenticati"
 
 -- Il motore punti: scrive l'evento e aggiorna il punteggio nella stessa
 -- transazione, così storico e totale non possono divergere.
+-- La firma è cambiata strada facendo (è arrivato proposed_by). Senza
+-- questa riga resterebbero due funzioni con lo stesso nome e la chiamata
+-- diventerebbe ambigua.
+drop function if exists assegna_punti(uuid, int, text, text, text, uuid, text);
+
 create or replace function assegna_punti(
   p_membro uuid,
   p_punti int,
@@ -369,17 +365,6 @@ revoke execute on function scopri_legge(text, uuid) from public;
 grant execute on function assegna_punti(uuid, int, text, text, text, uuid, text, uuid) to authenticated;
 grant execute on function scopri_legge(text, uuid) to authenticated;
 
--- Permessi sul bucket. Lettura aperta perché il bucket è pubblico; la
--- scrittura richiede una sessione, anche anonima.
-drop policy if exists "storage foto: lettura"     on storage.objects;
-drop policy if exists "storage foto: caricamento" on storage.objects;
-
-create policy "storage foto: lettura"
-  on storage.objects for select using (bucket_id = 'foto');
-
-create policy "storage foto: caricamento"
-  on storage.objects for insert to authenticated with check (bucket_id = 'foto');
-
 -- Nessuna policy di update: i voti non si modificano da fuori. Votare e
 -- chiudere passano dalle due funzioni qui sotto, che girano dentro una
 -- transazione con la riga bloccata. È la risposta alla domanda dello spec
@@ -492,4 +477,39 @@ begin
   ) then
     alter publication supabase_realtime add table leggi;
   end if;
+end $$;
+
+-- ---------------------------------------------------------------- storage
+--
+-- Sta in fondo di proposito, ed è l'unico pezzo che può fallire senza
+-- fermare il resto. Su certi progetti lo schema `storage` appartiene a un
+-- altro utente e queste istruzioni danno "must be owner of table objects":
+-- se succede, tutto il resto è comunque già stato creato, e il bucket si
+-- fa a mano da Storage → New bucket, nome `foto`, spuntando "Public".
+--
+-- Bucket pubblico: i percorsi contengono un uuid, quindi non si indovinano,
+-- ma chi ha il link vede la foto. È lo stesso modello di sicurezza del
+-- resto dell'app — vale la pena saperlo, non è una svista.
+
+do $$
+begin
+  insert into storage.buckets (id, name, public)
+  values ('foto', 'foto', true)
+  on conflict (id) do nothing;
+exception when others then
+  raise notice 'Bucket non creato (%). Crealo a mano: Storage -> New bucket, nome foto, Public.', sqlerrm;
+end $$;
+
+do $$
+begin
+  drop policy if exists "storage foto: lettura"     on storage.objects;
+  drop policy if exists "storage foto: caricamento" on storage.objects;
+
+  create policy "storage foto: lettura"
+    on storage.objects for select using (bucket_id = 'foto');
+
+  create policy "storage foto: caricamento"
+    on storage.objects for insert to authenticated with check (bucket_id = 'foto');
+exception when others then
+  raise notice 'Permessi sul bucket non impostati (%). Se le foto si caricano, va bene cosi.', sqlerrm;
 end $$;
