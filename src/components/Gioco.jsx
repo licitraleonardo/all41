@@ -2,13 +2,32 @@ import { useState } from 'react'
 import './Gioco.css'
 import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
+import Proposta from './Proposta.jsx'
 import { useGioco } from '../hooks/useGioco.js'
+import { creaProposta } from '../lib/proposte.js'
+import { descriviErrore } from '../lib/errori.js'
 
 export default function Gioco({ membro }) {
-  const { classifica, eventi, scoperte, stato, errore } = useGioco()
+  const { classifica, eventi, scoperte, stato, errore, ricarica } = useGioco()
   const [vista, setVista] = useState('classifica')
+  const [inCorso, setInCorso] = useState(false)
+  const [erroreProposta, setErroreProposta] = useState(null)
 
   const membri = Object.fromEntries(classifica.map((m) => [m.id, m]))
+
+  async function crea(dati) {
+    setInCorso(true)
+    setErroreProposta(null)
+    try {
+      await creaProposta({ proponenteId: membro.id, ...dati })
+      await ricarica()
+      setVista('classifica')
+    } catch (e) {
+      setErroreProposta(descriviErrore(e))
+    } finally {
+      setInCorso(false)
+    }
+  }
 
   return (
     <div className="gioco-schermo">
@@ -32,17 +51,36 @@ export default function Gioco({ membro }) {
         >
           Il Testamento
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={vista === 'proposta'}
+          className={vista === 'proposta' ? 'segmento attivo' : 'segmento'}
+          onClick={() => setVista('proposta')}
+        >
+          Proponi
+        </button>
       </div>
 
       {stato === 'caricamento' && <p className="gioco-vuoto">Un attimo.</p>}
       {stato === 'guasto' && <p className="gioco-guasto">{errore}</p>}
 
-      {stato === 'pronto' &&
-        (vista === 'classifica' ? (
-          <Classifica classifica={classifica} eventi={eventi} ioId={membro.id} />
-        ) : (
-          <Testamento scoperte={scoperte} membri={membri} />
-        ))}
+      {stato === 'pronto' && vista === 'classifica' && (
+        <Classifica classifica={classifica} eventi={eventi} ioId={membro.id} />
+      )}
+      {stato === 'pronto' && vista === 'testamento' && (
+        <Testamento scoperte={scoperte} membri={membri} />
+      )}
+      {stato === 'pronto' && vista === 'proposta' && (
+        <Proposta
+          membri={classifica}
+          ioId={membro.id}
+          onCrea={crea}
+          onAnnulla={() => setVista('classifica')}
+          inCorso={inCorso}
+          errore={erroreProposta}
+        />
+      )}
     </div>
   )
 }

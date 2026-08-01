@@ -28,6 +28,7 @@ export async function assegnaPunti({
   dedupeKey = null,
   votoId = null,
   stato = 'approved',
+  propostoDa = null,
 }) {
   const { data, error } = await supabase.rpc('assegna_punti', {
     p_membro: memberId,
@@ -37,6 +38,7 @@ export async function assegnaPunti({
     p_chiave: dedupeKey,
     p_voto: votoId,
     p_stato: stato,
+    p_proposto_da: propostoDa,
   })
   if (error) throw error
   return daRiga(data)

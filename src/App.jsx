@@ -7,10 +7,12 @@ import {
   segnaVisita,
   trovaPerCodice,
   trovaPerId,
+  leggiMembri,
 } from './lib/membri.js'
 import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/sessione.js'
 import { descriviErrore } from './lib/errori.js'
 import { chiudiScaduti } from './lib/voti.js'
+import { risolviProposte } from './lib/proposte.js'
 import Onboarding from './components/Onboarding.jsx'
 import Recupero from './components/Recupero.jsx'
 import CodiceNuovo from './components/CodiceNuovo.jsx'
@@ -80,6 +82,12 @@ export default function App() {
         // Senza un server, un sondaggio scaduto alle 23:59 mentre tutti
         // dormono resterebbe appeso per sempre: lo chiude chi apre l'app.
         chiudiScaduti().catch(() => {})
+
+        // Le proposte scadute vanno anche applicate, non solo chiuse: i
+        // punti in attesa entrano in classifica o vengono respinti.
+        leggiMembri()
+          .then((elenco) => risolviProposte(elenco.map((m) => m.id)))
+          .catch(() => {})
       } catch (e) {
         if (annullato) return
         setErrore(descriviErrore(e))

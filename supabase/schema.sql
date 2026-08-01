@@ -115,6 +115,11 @@ create table if not exists point_events (
   reason      text not null,
   rule_id     text,
   vote_id     uuid references votes (id) on delete set null,
+
+  -- Chi ha proposto, quando i punti li propone qualcun altro. Serve alle
+  -- Leggi XII e XIII, che premiano o puniscono il proponente e non chi
+  -- riceve i punti.
+  proposed_by uuid references members (id) on delete set null,
   status      text not null default 'approved'
               check (status in ('approved', 'pending', 'rejected')),
 
@@ -236,7 +241,8 @@ create or replace function assegna_punti(
   p_regola text default null,
   p_chiave text default null,
   p_voto uuid default null,
-  p_stato text default 'approved'
+  p_stato text default 'approved',
+  p_proposto_da uuid default null
 )
 returns point_events
 language plpgsql
@@ -250,8 +256,10 @@ begin
   select trip_id into viaggio from members where id = p_membro;
   if not found then raise exception 'Questa persona non esiste.'; end if;
 
-  insert into point_events (trip_id, member_id, points, reason, rule_id, vote_id, status, dedupe_key)
-  values (viaggio, p_membro, p_punti, p_motivo, p_regola, p_voto, p_stato, p_chiave)
+  insert into point_events
+    (trip_id, member_id, points, reason, rule_id, vote_id, status, dedupe_key, proposed_by)
+  values
+    (viaggio, p_membro, p_punti, p_motivo, p_regola, p_voto, p_stato, p_chiave, p_proposto_da)
   on conflict (dedupe_key) do nothing
   returning * into e;
 
@@ -295,9 +303,56 @@ begin
   return righe > 0;
 end $$;
 
-revoke execute on function assegna_punti(uuid, int, text, text, text, uuid, text) from public;
+-- Chiude una proposta di punti e ne applica l'esito, tutto insieme.
+-- Bloccando sia il voto sia l'evento in attesa, due telefoni che aprono
+-- l'app nello stesso istante non possono approvare due volte: il secondo
+-- non trova più niente in attesa.
+create or replace function risolvi_proposta(p_voto uuid)
+returns point_events
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v votes;
+  e point_events;
+  si int;
+  no int;
+begin
+  select * into v from votes where id = p_voto for update;
+  if not found then return null; end if;
+
+  select * into e from point_events
+   where vote_id = p_voto and status = 'pending'
+     for update;
+  if not found then return null; end if; -- già risolta da qualcun altro
+
+  if v.closed_at is null and now() >= v.expires_at then
+    update votes set closed_at = now() where id = p_voto returning * into v;
+  end if;
+  if v.closed_at is null then return null; end if; -- non è ancora ora
+
+  si := coalesce(v.tally[1], 0);
+  no := coalesce(v.tally[2], 0);
+
+  -- Il pareggio vale come bocciatura: i punti non si muovono. Chi ha
+  -- proposto se la vede con la Legge XI.
+  if si > no then
+    update point_events set status = 'approved' where id = e.id returning * into e;
+    update members set score = score + e.points where id = e.member_id;
+  else
+    update point_events set status = 'rejected' where id = e.id returning * into e;
+  end if;
+
+  return e;
+end $$;
+
+revoke execute on function risolvi_proposta(uuid) from public;
+grant execute on function risolvi_proposta(uuid) to authenticated;
+
+revoke execute on function assegna_punti(uuid, int, text, text, text, uuid, text, uuid) from public;
 revoke execute on function scopri_legge(text, uuid) from public;
-grant execute on function assegna_punti(uuid, int, text, text, text, uuid, text) to authenticated;
+grant execute on function assegna_punti(uuid, int, text, text, text, uuid, text, uuid) to authenticated;
 grant execute on function scopri_legge(text, uuid) to authenticated;
 
 -- Permessi sul bucket. Lettura aperta perché il bucket è pubblico; la

@@ -15,7 +15,7 @@
 
 export const LEGGI = [
   // ——— PUBBLICHE (rivelate dall'inizio) ———
-  { n: 1, id: 'poll-proposed', punti: '±10 (max ±15)', pubblica: true, attiva: false,
+  { n: 1, id: 'poll-proposed', punti: '±10 (max ±15)', pubblica: true, attiva: true,
     testo: 'Punti proposti da qualcuno e approvati dal gruppo a maggioranza' },
   { n: 2, id: 'challenge-won', punti: '10/15/20', pubblica: true, attiva: false,
     testo: 'Hai vinto una sfida della caccia al tesoro' },
@@ -39,13 +39,13 @@ export const LEGGI = [
     testo: 'Ultimo del gruppo a votare in un sondaggio' },
   { n: 10, id: 'lone-voter', punti: 1, attiva: false,
     testo: 'Unico ad aver votato in un sondaggio scaduto' },
-  { n: 11, id: 'poll-tie', punti: -1, bersaglio: 'tutti', attiva: false,
+  { n: 11, id: 'poll-tie', punti: -1, bersaglio: 'tutti', attiva: true,
     testo: 'Una proposta di punti è finita in pareggio' },
-  { n: 12, id: 'unanimous', punti: 5, attiva: false,
+  { n: 12, id: 'unanimous', punti: 5, attiva: true,
     testo: 'Una tua proposta è passata con voto unanime' },
-  { n: 13, id: 'proposal-rejected', punti: -2, attiva: false,
+  { n: 13, id: 'proposal-rejected', punti: -2, attiva: true,
     testo: 'Una tua proposta è stata bocciata dal gruppo' },
-  { n: 14, id: 'self-praise', punti: -3, attiva: false,
+  { n: 14, id: 'self-praise', punti: -3, attiva: true,
     testo: 'Hai proposto punti per te stesso' },
   { n: 15, id: 'wrong-side', punti: -1, attiva: false,
     testo: 'Hai votato l’opzione perdente tre volte di fila' },
