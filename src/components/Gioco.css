@@ -237,10 +237,63 @@
 
 /* ----------------------------------------------------------- proposta */
 
-.proposta-nota {
-  margin: 4px 0 0;
-  font-size: 13px;
+/* La classe .campo nasce per le schermate scure dell'ingresso: qui
+   scriverebbe color sabbia su fondo crema, cioè invisibile. */
+.gioco-schermo .campo {
+  margin-top: 8px;
+}
+
+.gioco-schermo .campo > span {
   color: var(--ink-soft);
+  opacity: 1;
+}
+
+.gioco-schermo .campo input {
+  color: var(--ink);
+  background: #fff;
+  border-color: var(--line);
+}
+
+.gioco-schermo .campo input::placeholder {
+  color: #9aa4ab;
+}
+
+.sezione-nota {
+  font-family: var(--font-testo);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.proposta-nota {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.proposta-regole {
+  margin: 6px 0 0;
+  padding: 11px 13px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.proposta-regole strong {
+  color: var(--ink);
+}
+
+.proposta-regole li {
+  margin-top: 4px;
+}
+
+.proposta-regole ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
 }
 
 .scelta-persone {
