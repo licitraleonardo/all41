@@ -1,12 +1,12 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
-import { OPZIONI_PROPOSTA, PROPOSTA } from '../config/proposte.js'
+import { OPZIONI_PROPOSTA, PROPOSTA, quorumRaggiunto } from '../config/proposte.js'
 import { assegnaPunti, faiScattareLegge } from './punti.js'
 
 // Crea la proposta: un voto di tre ore più un evento punti "in attesa",
 // che non muove la classifica finché il gruppo non ha deciso.
 export async function creaProposta({ proponenteId, destinatarioId, punti, motivo }) {
-  const scade = new Date(Date.now() + PROPOSTA.oreDiVoto * 3600000).toISOString()
+  const scade = new Date(Date.now() + PROPOSTA.minutiDiVoto * 60000).toISOString()
 
   const { data: voto, error: erroreVoto } = await supabase
     .from('votes')
@@ -51,8 +51,10 @@ export async function risolviProposte(membriIds = []) {
     .from('votes')
     .select('id, tally, voted, closed_at, expires_at')
     .eq('trip_id', VIAGGIO.id)
+    // Non solo le scadute: una proposta si chiude anche prima, se hanno
+    // votato tutti. Decide la funzione, che vede il conteggio vero.
     .eq('category', 'point-proposal')
-    .lt('expires_at', new Date().toISOString())
+    .is('closed_at', null)
     .limit(20)
   if (error) throw error
 
@@ -73,6 +75,11 @@ async function leggiDellEsito(voto, evento, membriIds) {
   const si = voto.tally?.[0] ?? 0
   const no = voto.tally?.[1] ?? 0
   const votanti = voto.voted?.length ?? 0
+
+  // Proposta annullata per mancanza di quorum: non l'ha giudicata
+  // nessuno, quindi nessuna Legge scatta. Chi ha proposto non merita la
+  // penalità della XIII per il disinteresse degli altri.
+  if (!quorumRaggiunto(votanti, membriIds.length)) return
   // Il pareggio è una regola di gruppo: colpisce tutti, anche chi non
   // aveva niente a che fare con la proposta. Va valutato prima, perché
   // non dipende da chi ha proposto.

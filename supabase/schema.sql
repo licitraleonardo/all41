@@ -318,6 +318,8 @@ declare
   e point_events;
   si int;
   no int;
+  votanti int;
+  totale int;
 begin
   select * into v from votes where id = p_voto for update;
   if not found then return null; end if;
@@ -327,13 +329,25 @@ begin
      for update;
   if not found then return null; end if; -- già risolta da qualcun altro
 
-  if v.closed_at is null and now() >= v.expires_at then
+  select count(*) into totale from members where trip_id = v.trip_id;
+  votanti := coalesce(array_length(v.voted, 1), 0);
+
+  -- Si chiude allo scadere, oppure prima se hanno votato tutti: non ha
+  -- senso far aspettare un'ora quando la risposta c'è già.
+  if v.closed_at is null and (votanti >= totale or now() >= v.expires_at) then
     update votes set closed_at = now() where id = p_voto returning * into v;
   end if;
   if v.closed_at is null then return null; end if; -- non è ancora ora
 
   si := coalesce(v.tally[1], 0);
   no := coalesce(v.tally[2], 0);
+
+  -- Quorum: se ha votato meno di metà gruppo la proposta si annulla. Non
+  -- è stata bocciata, semplicemente non l'ha guardata nessuno.
+  if votanti * 2 < totale then
+    update point_events set status = 'rejected' where id = e.id returning * into e;
+    return e;
+  end if;
 
   -- Il pareggio vale come bocciatura: i punti non si muovono. Chi ha
   -- proposto se la vede con la Legge XI.

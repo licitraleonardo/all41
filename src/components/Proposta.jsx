@@ -6,32 +6,14 @@ export default function Proposta({ membri, ioId, onCrea, onAnnulla, inCorso, err
   const [destinatario, setDestinatario] = useState(null)
   const [punti, setPunti] = useState(3)
   const [motivo, setMotivo] = useState('')
-  const [estendi, setEstendi] = useState(false)
 
-  const limite = estendi ? PROPOSTA.estremo : PROPOSTA.massimo
   const puoInviare = destinatario && motivo.trim().length > 2 && punti !== 0 && !inCorso
-
-  function cambiaPunti(valore) {
-    setPunti(Math.max(-limite, Math.min(limite, valore)))
-  }
 
   return (
     <div className="gioco-corpo">
       <h2 className="testamento-titolo">Proponi punti</h2>
 
-      <div className="proposta-regole">
-        <strong>Come funziona</strong>
-        <ul>
-          <li>Il gruppo vota per {PROPOSTA.oreDiVoto} ore.</li>
-          <li>Passa a maggioranza. In pareggio non passa.</li>
-          <li>
-            Fino ad allora i punti restano in attesa e non contano in classifica.
-          </li>
-          <li>Puoi proporre anche punti in meno: basta portare lo slider sotto zero.</li>
-        </ul>
-      </div>
-
-      <h3 className="sezione">A chi</h3>
+      <h3 className="sezione">A chi li assegni?</h3>
       <div className="scelta-persone">
         {membri.map((m) => (
           <button
@@ -47,38 +29,24 @@ export default function Proposta({ membri, ioId, onCrea, onAnnulla, inCorso, err
         ))}
       </div>
 
-      <h3 className="sezione">
-        Quanti <span className="sezione-nota">da −{limite} a +{limite}</span>
-      </h3>
+      <h3 className="sezione">Quanti</h3>
       <div className="slider-riga">
         <output className={punti < 0 ? 'slider-valore meno' : 'slider-valore piu'}>
           {punti > 0 ? `+${punti}` : punti}
         </output>
         <input
           type="range"
-          min={-limite}
-          max={limite}
+          min={-PROPOSTA.limite}
+          max={PROPOSTA.limite}
           step="1"
           value={punti}
-          onChange={(e) => cambiaPunti(Number(e.target.value))}
+          onChange={(e) => setPunti(Number(e.target.value))}
           aria-label="Quanti punti"
         />
       </div>
 
-      {!estendi && (
-        <button type="button" className="secondario-chiaro estendi" onClick={() => setEstendi(true)}>
-          Sblocca fino a ±{PROPOSTA.estremo}
-        </button>
-      )}
-      {estendi && (
-        <p className="proposta-nota">
-          Slider esteso a ±{PROPOSTA.estremo}. Oltre non si va: è il tetto delle Leggi.
-        </p>
-      )}
-
       <h3 className="sezione">Perché</h3>
       <label className="campo">
-        <span>Lo leggerà il gruppo prima di votare</span>
         <input
           type="text"
           value={motivo}
@@ -105,6 +73,10 @@ export default function Proposta({ membri, ioId, onCrea, onAnnulla, inCorso, err
       >
         {inCorso ? 'Un attimo…' : 'Metti ai voti'}
       </button>
+
+      <p className="proposta-nota">
+        Un&rsquo;ora di voto, o meno se votano tutti.
+      </p>
 
       <button type="button" className="secondario-chiaro" onClick={onAnnulla}>
         Lascia stare
