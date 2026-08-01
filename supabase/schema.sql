@@ -513,3 +513,8 @@ begin
 exception when others then
   raise notice 'Permessi sul bucket non impostati (%). Se le foto si caricano, va bene cosi.', sqlerrm;
 end $$;
+
+-- PostgREST tiene in memoria le firme delle funzioni: dopo averle
+-- cambiate va avvisato, altrimenti continua a cercare quella vecchia e
+-- risponde "function does not exist" anche se la nuova esiste.
+notify pgrst, 'reload schema';
