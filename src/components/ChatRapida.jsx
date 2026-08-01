@@ -5,7 +5,7 @@ import FoglioSOS from './FoglioSOS.jsx'
 import { useFeed } from '../hooks/useFeed.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
 import { descriviErrore } from '../lib/errori.js'
-import { dopoInvioRiuscito, dopoRifiuto, dopoSuono } from '../lib/regole.js'
+import { dopoInvioRiuscito, dopoRifiuto, dopoSuono, dopoTesto } from '../lib/regole.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
 import { SUONI } from '../config/suoni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
@@ -44,10 +44,12 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
       dopoInvioRiuscito(membro.id, tipo)
       inserisci(esito.azione)
       setFoglio(null)
-      return true
+      // Restituisce l'azione, non un sì: l'id serve come chiave
+      // anti-doppione alle Leggi che scattano su un messaggio.
+      return esito.azione
     } catch {
       setAvviso('Non è partita. Riprova quando torna il segnale.')
-      return false
+      return null
     } finally {
       setInCorso(false)
     }
@@ -57,7 +59,14 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
     e.preventDefault()
     const pulito = testo.trim()
     if (!pulito || inCorso) return
-    if (await manda('free_text', { testo: pulito })) setTesto('')
+    const azione = await manda('free_text', { testo: pulito })
+    if (!azione) return
+    setTesto('')
+
+    // Legge XXVI. Non blocca l'invio: il messaggio resta come prova.
+    dopoTesto(membro.id, pulito, azione.id)
+      .then((r) => r.scattata && setAvviso(`Quella parola ti costa -2.`))
+      .catch(() => {})
   }
 
   // Il sondaggio si crea prima e si annuncia dopo: se la creazione

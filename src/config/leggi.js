@@ -73,6 +73,12 @@ export const LEGGI = [
     testo: 'Hai votato l’impostore giusto' },
   { n: 25, id: 'sheep-trip', punti: 5, attiva: false,
     testo: 'Record della Pecora al termine del viaggio' },
+
+  // ——— AGGIUNTE DAL GRUPPO ———
+  // Lo spec prevede che le Leggi si aggiungano strada facendo: il
+  // denominatore cresce insieme al gruppo, ed è parte del gioco.
+  { n: 26, id: 'parola-proibita', punti: -2, attiva: true,
+    testo: 'Hai scritto una parola che il Testamento non tollera' },
 ]
 
 export const PER_ID = Object.fromEntries(LEGGI.map((l) => [l.id, l]))

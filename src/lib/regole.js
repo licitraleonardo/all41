@@ -3,6 +3,7 @@ import { VIAGGIO } from '../config/viaggio.js'
 import { dataDiOggi } from './giorni.js'
 import { faiScattareLegge } from './punti.js'
 import { azzeraInsistenza, registraRifiuto } from './insistenza.js'
+import { parolaProibitaIn } from '../config/paroleProibite.js'
 
 // Rilevamento delle Leggi che scattano da sole. Ogni chiamata ha una
 // chiave deterministica: senza server è il client di chi sta usando l'app
@@ -53,6 +54,20 @@ export async function dopoFoto(memberId) {
   }
 
   return scattate
+}
+
+// Legge XXVI: parola proibita in un messaggio. Scatta dopo l'invio, non
+// prima: il messaggio resta lì come prova.
+export async function dopoTesto(memberId, testo, azioneId) {
+  const parola = parolaProibitaIn(testo)
+  if (!parola) return { scattata: false }
+
+  const esito = await faiScattareLegge(
+    'parola-proibita',
+    memberId,
+    `parola-proibita_${azioneId}`
+  )
+  return { scattata: true, parola, ...esito }
 }
 
 // Legge XIX: hai insistito su un bottone già bloccato dal limite. Da
