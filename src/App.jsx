@@ -22,6 +22,8 @@ import Album from './components/Album.jsx'
 import Gioco from './components/Gioco.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
+import { useScoperte } from './hooks/useScoperte.js'
+import Celebrazione from './components/Celebrazione.jsx'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -38,6 +40,10 @@ export default function App() {
   // Sta qui e non nella Chat Rapida: il suono lanciato da un altro deve
   // sentirsi qualunque tab sia aperta.
   const { disponibili: suoniDisponibili } = useSoundboard(membro?.id)
+
+  // Una Legge scoperta si celebra su tutti i telefoni, qualunque tab sia
+  // aperta: è il momento di paga di tutto il sistema di punti.
+  const { celebrazione, chiudi: chiudiCelebrazione } = useScoperte(vista === 'dentro')
 
   useEffect(() => {
     if (!supabaseConfigurato) {
@@ -165,6 +171,7 @@ export default function App() {
         {tab === 'foto' && <Album membro={membro} />}
         {tab === 'gioco' && <Gioco membro={membro} />}
         <BarraTab attivo={tab} onCambia={setTab} />
+        <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
       </>
     )
   }

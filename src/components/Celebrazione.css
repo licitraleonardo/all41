@@ -1,0 +1,81 @@
+.celebrazione {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(11, 53, 80, 0.72);
+  backdrop-filter: blur(2px);
+  animation: comparsa 0.25s ease;
+}
+
+.coriandoli {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Aria di pergamena: fondo caldo, bordo inciso, niente card moderna. */
+.pergamena {
+  position: relative;
+  max-width: 340px;
+  text-align: center;
+  color: #2a1c0c;
+  background: linear-gradient(#f6ecd6, #eadcbe);
+  border: 2px solid #b08a4e;
+  border-radius: 4px;
+  padding: 26px 22px 22px;
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  animation: sale 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.celebrazione-occhiello {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a6a34;
+}
+
+.celebrazione-numero {
+  margin: 8px 0 0;
+  font-family: var(--font-titoli);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.celebrazione-testo {
+  margin: 10px 0 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.celebrazione-chi {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(176, 138, 78, 0.5);
+  font-size: 13px;
+  font-style: italic;
+  color: #6b5227;
+}
+
+@keyframes comparsa {
+  from { opacity: 0; }
+}
+
+@keyframes sale {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebrazione,
+  .pergamena {
+    animation: none;
+  }
+}
