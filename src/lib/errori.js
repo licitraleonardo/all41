@@ -5,6 +5,16 @@
 export function descriviErrore(e) {
   const testo = e?.message || String(e)
 
+  // La frase tradotta serve a chi usa l'app; questa serve a chi la ripara.
+  // Senza, un errore mal classificato manda a cercare nel posto sbagliato,
+  // ed è già successo.
+  console.error('[all41] errore grezzo:', {
+    messaggio: testo,
+    codice: e?.code,
+    dettagli: e?.details,
+    suggerimento: e?.hint,
+  })
+
   if (/anonymous.*disabled|signups? not allowed|anonymous_provider/i.test(testo)) {
     return 'L’accesso anonimo non è attivo su Supabase. Va acceso in Authentication → Sign In / Providers.'
   }
