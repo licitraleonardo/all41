@@ -8,7 +8,7 @@ import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
 
 export default function Gioco({ membro }) {
-  const { classifica, eventi, scoperte, stato, errore, ricarica } = useGioco()
+  const { classifica, eventi, scoperte, voti, vota, stato, errore, ricarica } = useGioco()
   const [vista, setVista] = useState('classifica')
   const [inCorso, setInCorso] = useState(false)
   const [erroreProposta, setErroreProposta] = useState(null)
@@ -66,7 +66,13 @@ export default function Gioco({ membro }) {
       {stato === 'guasto' && <p className="gioco-guasto">{errore}</p>}
 
       {stato === 'pronto' && vista === 'classifica' && (
-        <Classifica classifica={classifica} eventi={eventi} ioId={membro.id} />
+        <Classifica
+          classifica={classifica}
+          eventi={eventi}
+          ioId={membro.id}
+          voti={voti}
+          onVota={vota}
+        />
       )}
       {stato === 'pronto' && vista === 'testamento' && (
         <Testamento scoperte={scoperte} membri={membri} />

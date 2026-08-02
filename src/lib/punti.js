@@ -2,7 +2,8 @@ import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { PER_ID } from '../config/leggi.js'
 
-const CAMPI = 'id, member_id, points, reason, rule_id, vote_id, status, created_at'
+const CAMPI =
+  'id, member_id, points, reason, rule_id, vote_id, proposed_by, status, created_at'
 
 export const TETTO_STORICO = 40
 
@@ -14,6 +15,7 @@ function daRiga(riga) {
     motivo: riga.reason,
     leggeId: riga.rule_id,
     votoId: riga.vote_id,
+    propostoDa: riga.proposed_by,
     stato: riga.status,
     creatoIl: riga.created_at,
   }

@@ -56,11 +56,10 @@ export default function Proposta({ membri, ioId, onCrea, onAnnulla, inCorso, err
         />
       </label>
 
+      {/* Velato di proposito: non dice quale Legge né quanto costa.
+          Scoprirlo è metà del gioco. */}
       {destinatario === ioId && (
-        <p className="proposta-avviso">
-          Stai proponendo punti per te stesso. C&rsquo;è una Legge apposta, e non ti
-          piacerà.
-        </p>
+        <p className="proposta-avviso">Il Testamento ha notato.</p>
       )}
 
       {errore && <p className="sondaggio-errore">{errore}</p>}

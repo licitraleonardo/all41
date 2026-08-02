@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { leggiClassifica, leggiEventi, leggiScoperte } from '../lib/punti.js'
+import { leggiVoti, vota as votaSulDatabase } from '../lib/voti.js'
 import { descriviErrore } from '../lib/errori.js'
 
 export function useGioco() {
@@ -10,11 +11,28 @@ export function useGioco() {
   const [stato, setStato] = useState('caricamento')
   const [errore, setErrore] = useState(null)
 
+  const [voti, setVoti] = useState({})
+
   const ricarica = useCallback(async () => {
     const [c, e, s] = await Promise.all([leggiClassifica(), leggiEventi(), leggiScoperte()])
     setClassifica(c)
     setEventi(e)
     setScoperte(s)
+
+    // I voti delle proposte in attesa: si vota direttamente dalla
+    // classifica, dove la proposta è già in bella vista.
+    const ids = e.filter((x) => x.stato === 'pending' && x.votoId).map((x) => x.votoId)
+    if (ids.length > 0) {
+      const elenco = await leggiVoti(ids)
+      setVoti(Object.fromEntries(elenco.map((v) => [v.id, v])))
+    } else {
+      setVoti({})
+    }
+  }, [])
+
+  const vota = useCallback(async (votoId, memberId, opzione) => {
+    const aggiornato = await votaSulDatabase(votoId, memberId, opzione)
+    setVoti((precedenti) => ({ ...precedenti, [aggiornato.id]: aggiornato }))
   }, [])
 
   useEffect(() => {
@@ -48,5 +66,5 @@ export function useGioco() {
     }
   }, [ricarica])
 
-  return { classifica, eventi, scoperte, stato, errore, ricarica }
+  return { classifica, eventi, scoperte, voti, vota, stato, errore, ricarica }
 }

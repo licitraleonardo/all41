@@ -338,6 +338,95 @@
   background: #fdeeeb;
 }
 
+/* ---------------------------------------------------- proposte da votare */
+
+.attese {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attesa-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 12px;
+  padding: 11px 13px;
+}
+
+.attesa-testa {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.attesa-testo {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.attesa-chi {
+  display: block;
+  font-size: 11.5px;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.attesa-bottoni {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.voto-si,
+.voto-no {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 11px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.voto-si {
+  color: var(--juniper);
+  background: #E9F3EC;
+  border-color: #cfe4d6;
+}
+
+.voto-no {
+  color: var(--coral);
+  background: #fdeeeb;
+  border-color: #f6d6cf;
+}
+
+.voto-si:disabled,
+.voto-no:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voto-si:focus-visible,
+.voto-no:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
+.attesa-nota {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 .proposta-avviso {
   margin: 14px 0 0;
   font-size: 13px;
