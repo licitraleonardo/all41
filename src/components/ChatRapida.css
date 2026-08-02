@@ -2,7 +2,8 @@
   --ink: #16232C;
   --ink-soft: #55636B;
   --line: #E4DFD2;
-  --altezza-scrittura: 64px;
+  /* Barra di scrittura più la riga dei pulsanti rapidi. */
+  --altezza-scrittura: 112px;
 
   min-height: 100dvh;
   background-color: var(--sand);
@@ -18,12 +19,30 @@
 
 /* ------------------------------------------------------ azioni rapide */
 
+/* Una riga sola che scorre di lato: sopra la barra di scrittura lo
+   spazio verticale è prezioso, e andando a capo mangerebbe la chat. */
 .azioni-rapide {
   display: flex;
-  flex-wrap: wrap;
   gap: 7px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--line);
+  max-width: 616px;
+  margin: 0 auto 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.azioni-rapide::-webkit-scrollbar {
+  display: none;
+}
+
+.azioni-rapide > * {
+  flex: none;
+}
+
+.azione.aperta {
+  color: var(--sea);
+  background: var(--gold);
+  border-color: var(--gold);
 }
 
 .bottone-sos {
@@ -60,6 +79,12 @@
 .azione:focus-visible {
   outline: 2px solid var(--sea);
   outline-offset: 2px;
+}
+
+/* L'ancora dello scorrimento automatico: senza questo margine il
+   messaggio appena mandato finirebbe dietro la barra di scrittura. */
+.fine-chat {
+  scroll-margin-bottom: calc(var(--altezza-tab) + var(--altezza-scrittura) + 12px);
 }
 
 /* ---------------------------------------------------------------- feed */

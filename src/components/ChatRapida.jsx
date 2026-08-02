@@ -24,9 +24,10 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   const [battuteAllan, setBattuteAllan] = useState([])
   const fondo = useRef(null)
 
-  // La chat si legge dal basso: all'arrivo di roba nuova si scende.
+  // La chat si legge dal basso: all'arrivo di roba nuova si scende, con
+  // un filo di scorrimento visibile così si capisce che è partito.
   useEffect(() => {
-    fondo.current?.scrollIntoView({ block: 'end' })
+    fondo.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
   }, [azioni.length, battuteAllan.length])
 
   async function manda(tipo, payload = {}) {
@@ -114,36 +115,6 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   return (
     <div className="gruppo-schermo">
       <div className="conversazione">
-        <div className="azioni-rapide">
-          <button type="button" className="bottone-sos" onClick={() => setFoglio('sos')}>
-            🆘 SOS
-          </button>
-          <button
-            type="button"
-            className="azione"
-            onClick={() => manda('dove_siete', { posizione: null })}
-            disabled={inCorso}
-          >
-            📍 Dove siete
-          </button>
-          <button
-            type="button"
-            className="azione"
-            onClick={() => alterna('riparte')}
-            disabled={inCorso}
-          >
-            🚗 Si riparte
-          </button>
-          <button
-            type="button"
-            className="azione"
-            onClick={() => alterna('sondaggio')}
-            disabled={inCorso}
-          >
-            📊 Sondaggio
-          </button>
-        </div>
-
         {stato === 'caricamento' && <p className="feed-vuoto">Un attimo.</p>}
         {stato === 'guasto' && <p className="feed-guasto">{errore}</p>}
         {stato === 'pronto' && (
@@ -158,12 +129,44 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
           />
         )}
 
-        <div ref={fondo} />
+        <div ref={fondo} className="fine-chat" />
       </div>
 
       {/* ------------------------------------------ barra di scrittura */}
       <div className="barra-scrittura">
         {avviso && <p className="avviso">{avviso}</p>}
+
+        {/* Attaccati alla barra e non in cima alla chat: è dov'è il
+            pollice, e non fanno scorrere via la conversazione. */}
+        <div className="azioni-rapide">
+          <button type="button" className="bottone-sos" onClick={() => setFoglio('sos')}>
+            🆘 SOS
+          </button>
+          <button
+            type="button"
+            className="azione"
+            onClick={() => manda('dove_siete', { posizione: null })}
+            disabled={inCorso}
+          >
+            📍 Dove siete
+          </button>
+          <button
+            type="button"
+            className={foglio === 'riparte' ? 'azione aperta' : 'azione'}
+            onClick={() => alterna('riparte')}
+            disabled={inCorso}
+          >
+            🚗 Si riparte
+          </button>
+          <button
+            type="button"
+            className={foglio === 'sondaggio' ? 'azione aperta' : 'azione'}
+            onClick={() => alterna('sondaggio')}
+            disabled={inCorso}
+          >
+            📊 Sondaggio
+          </button>
+        </div>
 
         {foglio === 'riparte' && (
           <div className="menu-su">
