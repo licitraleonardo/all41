@@ -27,6 +27,14 @@ export function descriviErrore(e) {
       'l’errore resta esegui: notify pgrst, \'reload schema\';'
     )
   }
+  // Una colonna mancante vuol dire che la tabella c'era già da prima e non
+  // è stata adeguata: mandare a cercare "una tabella" fa perdere tempo.
+  if (/column .* does not exist|42703/i.test(testo)) {
+    return (
+      'Al database manca una colonna: la tabella esiste da prima e non è ' +
+      'stata aggiornata. Rilancia supabase/schema.sql, che ora la aggiunge.'
+    )
+  }
   if (/relation .* does not exist|schema cache|PGRST205/i.test(testo)) {
     return 'Manca una tabella. Va rieseguito supabase/schema.sql nell’SQL Editor.'
   }

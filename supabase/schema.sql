@@ -141,6 +141,24 @@ create table if not exists leggi (
   primary key (trip_id, legge_id)
 );
 
+-- ------------------------------------------------------------ adeguamenti
+--
+-- "create table if not exists" crea la tabella la prima volta e poi non
+-- fa più niente: su un database dove la tabella esiste già, le colonne
+-- aggiunte dopo non comparirebbero mai. Vanno dichiarate qui.
+--
+-- Ogni colonna aggiunta a una tabella esistente va messa in questo
+-- elenco, altrimenti funziona solo per chi parte da zero.
+
+alter table point_events add column if not exists proposed_by uuid
+  references members (id) on delete set null;
+
+alter table members add column if not exists last_known_location jsonb;
+
+alter table photos add column if not exists challenge_id uuid;
+
+alter table votes add column if not exists ballots jsonb not null default '{}'::jsonb;
+
 -- ------------------------------------------------------------------ seed
 
 insert into trips (id, name, start_date, end_date)
