@@ -1,77 +1,147 @@
-import Sondaggio from './Sondaggio.jsx'
 import { MINUTI_PER_ELIMINARE } from '../config/azioni.js'
 import { urlAvatar } from '../config/avatar.js'
+import Sondaggio from './Sondaggio.jsx'
 
-export default function Feed({ azioni, membri, ioId, onElimina, voti, onVota }) {
+export default function Feed({
+  azioni,
+  membri,
+  ioId,
+  onElimina,
+  voti,
+  onVota,
+  battuteAllan = [],
+}) {
   const visibili = azioni.filter((a) => !a.eliminato)
 
-  if (visibili.length === 0) {
+  if (visibili.length === 0 && battuteAllan.length === 0) {
     return <p className="feed-vuoto">Ancora niente. Qualcuno si muova.</p>
   }
 
+  // Il feed arriva dal più recente al più vecchio: qui si legge come una
+  // chat, dall'alto verso il basso, con l'ultimo in fondo.
+  const inOrdine = [...visibili].reverse()
+
   return (
     <ul className="feed">
-      {visibili.map((a) => {
-        const autore = membri[a.autoreId]
-        return (
-          <li key={a.id} className={a.tipo === 'sos' ? 'voce sos' : 'voce'}>
-            <img
-              className="voce-avatar"
-              src={urlAvatar(autore?.avatarStyle, autore?.avatarSeed || '?')}
-              alt=""
-              width="32"
-              height="32"
-            />
+      {inOrdine.map((a) => (
+        <Riga
+          key={a.id}
+          azione={a}
+          autore={membri[a.autoreId]}
+          mio={a.autoreId === ioId}
+          ioId={ioId}
+          membri={membri}
+          onElimina={onElimina}
+          voti={voti}
+          onVota={onVota}
+        />
+      ))}
 
-            <div className="voce-corpo">
-              <p className="voce-testo">
-                <span className="voce-nome">{autore?.nome ?? 'Qualcuno'}</span>{' '}
-                {descrivi(a)}
-              </p>
-
-              {a.tipo === 'poll' && (
-                <Sondaggio
-                  voto={voti?.[a.payload.voteId]}
-                  ioId={ioId}
-                  membri={membri}
-                  onVota={onVota}
-                />
-              )}
-
-              <span className="voce-ora">{ora(a.creatoIl)}</span>
-            </div>
-
-            {a.autoreId === ioId && ritirabile(a.creatoIl) && (
-              <button
-                type="button"
-                className="voce-elimina"
-                onClick={() => onElimina(a.id)}
-                aria-label="Elimina"
-              >
-                ×
-              </button>
-            )}
-          </li>
-        )
-      })}
+      {battuteAllan.map((b) => (
+        <li className="voce allan" key={b.id}>
+          <span className="bolla-nome">Allan</span>
+          <div className="bolla">{b.testo}</div>
+        </li>
+      ))}
     </ul>
   )
 }
 
-function descrivi(a) {
+function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
+  // SOS e sondaggi non sono chiacchiere: occupano tutta la larghezza e
+  // non stanno da un lato o dall'altro.
+  if (azione.tipo === 'sos') {
+    return (
+      <li className="voce piena sos">
+        <span className="sos-testa">🆘 {autore?.nome ?? 'Qualcuno'}</span>
+        <p className="sos-motivo">{azione.payload.motivo}</p>
+        <Ora azione={azione} mio={mio} onElimina={onElimina} />
+      </li>
+    )
+  }
+
+  if (azione.tipo === 'poll') {
+    return (
+      <li className="voce piena">
+        <span className="bolla-nome">{autore?.nome ?? 'Qualcuno'} ha aperto un voto</span>
+        <Sondaggio
+          voto={voti?.[azione.payload.voteId]}
+          ioId={ioId}
+          membri={membri}
+          onVota={onVota}
+        />
+        <Ora azione={azione} mio={mio} onElimina={onElimina} />
+      </li>
+    )
+  }
+
+  // Le azioni rapide sono annunci, non conversazione: riga centrata.
+  if (azione.tipo !== 'free_text') {
+    return (
+      <li className="voce annuncio">
+        <span>
+          {autore?.nome ?? 'Qualcuno'} {descriviAzione(azione)}
+        </span>
+        {mio && ritirabile(azione.creatoIl) && (
+          <button
+            type="button"
+            className="annuncio-elimina"
+            onClick={() => onElimina(azione.id)}
+            aria-label="Elimina"
+          >
+            ×
+          </button>
+        )}
+      </li>
+    )
+  }
+
+  return (
+    <li className={mio ? 'voce mia' : 'voce'}>
+      {!mio && (
+        <img
+          className="voce-avatar"
+          src={urlAvatar(autore?.avatarStyle, autore?.avatarSeed || '?')}
+          alt=""
+          width="28"
+          height="28"
+        />
+      )}
+      <div className="bolla-blocco">
+        {!mio && <span className="bolla-nome">{autore?.nome ?? 'Qualcuno'}</span>}
+        <div className="bolla">{azione.payload.testo}</div>
+        <Ora azione={azione} mio={mio} onElimina={onElimina} />
+      </div>
+    </li>
+  )
+}
+
+function Ora({ azione, mio, onElimina }) {
+  return (
+    <span className="voce-ora">
+      {ora(azione.creatoIl)}
+      {mio && ritirabile(azione.creatoIl) && (
+        <button
+          type="button"
+          className="voce-elimina"
+          onClick={() => onElimina(azione.id)}
+          aria-label="Elimina"
+        >
+          ×
+        </button>
+      )}
+    </span>
+  )
+}
+
+function descriviAzione(a) {
   switch (a.tipo) {
-    case 'sos':
-      return <span className="voce-sos">🆘 {a.payload.motivo}</span>
     case 'dove_siete':
       return 'chiede dove siete. 📍'
     case 'si_riparte':
       return `dice che si riparte tra ${a.payload.minuti} minuti. 🚗`
     case 'soundboard':
       return `ha lanciato ${a.payload.etichetta ?? 'un suono'}. 🔊`
-    case 'poll':
-      return 'ha aperto un sondaggio. 📊'
-    case 'free_text':
-      return a.payload.testo
     default:
       return a.tipo
   }

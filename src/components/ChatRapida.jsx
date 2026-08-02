@@ -1,17 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './ChatRapida.css'
 import Feed from './Feed.jsx'
 import FoglioSOS from './FoglioSOS.jsx'
 import { useFeed } from '../hooks/useFeed.js'
+import { useVoti } from '../hooks/useVoti.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
 import { descriviErrore } from '../lib/errori.js'
-import { dopoInvioRiuscito, dopoRifiuto, dopoSuono, dopoTesto } from '../lib/regole.js'
+import { dopoSuono, dopoTesto } from '../lib/regole.js'
+import { forseAllanCommenta } from '../lib/allan.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
-import { SUONI } from '../config/suoni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
+import { SUONI } from '../config/suoni.js'
 import { suona } from '../lib/audio.js'
 import { creaSondaggio } from '../lib/voti.js'
-import { useVoti } from '../hooks/useVoti.js'
 
 export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   const { azioni, membri, stato, errore, inserisci, sostituisci } = useFeed()
@@ -20,6 +21,13 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   const [testo, setTesto] = useState('')
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
+  const [battuteAllan, setBattuteAllan] = useState([])
+  const fondo = useRef(null)
+
+  // La chat si legge dal basso: all'arrivo di roba nuova si scende.
+  useEffect(() => {
+    fondo.current?.scrollIntoView({ block: 'end' })
+  }, [azioni.length, battuteAllan.length])
 
   async function manda(tipo, payload = {}) {
     setInCorso(true)
@@ -27,28 +35,14 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
     try {
       const esito = await inviaAzione({ tipo, payload, memberId: membro.id })
       if (!esito.ok) {
-        // Allan: il tempo che manca, non una quota residua.
-        const attesa = esito.attesa ? `Aspetta ${esito.attesa}s.` : 'Per oggi hai finito.'
-        setAvviso(attesa)
-
-        // Legge XIX. I primi due rifiuti non costano niente: un doppio
-        // tap non è spam. Dal terzo comincia a pesare.
-        dopoRifiuto(membro.id, tipo)
-          .then((r) => {
-            if (r.scattata) setAvviso(`${attesa} E ti costa ${r.penalita}.`)
-          })
-          .catch(() => {})
-
+        setAvviso(esito.attesa ? `Aspetta ${esito.attesa}s.` : 'Per oggi hai finito.')
         return false
       }
-      dopoInvioRiuscito(membro.id, tipo)
       inserisci(esito.azione)
       setFoglio(null)
-      // Restituisce l'azione, non un sì: l'id serve come chiave
-      // anti-doppione alle Leggi che scattano su un messaggio.
       return esito.azione
-    } catch {
-      setAvviso('Non è partita. Riprova quando torna il segnale.')
+    } catch (e) {
+      setAvviso(descriviErrore(e))
       return null
     } finally {
       setInCorso(false)
@@ -63,14 +57,22 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
     if (!azione) return
     setTesto('')
 
-    // Legge XXVI. Non blocca l'invio: il messaggio resta come prova.
+    const battuta = forseAllanCommenta()
+    if (battuta) setBattuteAllan((p) => [...p, battuta])
+
     dopoTesto(membro.id, pulito, azione.id)
-      .then((r) => r.scattata && setAvviso(`Quella parola ti costa -2.`))
+      .then((r) => r.scattata && setAvviso('Quella parola ti costa -2.'))
       .catch(() => {})
   }
 
-  // Il sondaggio si crea prima e si annuncia dopo: se la creazione
-  // fallisce, nel feed non resta una riga che punta al nulla.
+  async function lanciaSuono(s) {
+    setFoglio(null)
+    if (await manda('soundboard', { file: s.file, etichetta: s.etichetta })) {
+      suona(s.file)
+      dopoSuono(membro.id).catch(() => {})
+    }
+  }
+
   async function apriSondaggio(modello) {
     setInCorso(true)
     setAvviso(null)
@@ -95,23 +97,6 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
     }
   }
 
-  // Prima si chiede il permesso, poi si suona: se il limite rifiuta, il
-  // suono non deve partire lo stesso a chi ha premuto.
-  async function lanciaSuono(s) {
-    if (await manda('soundboard', { file: s.file, etichetta: s.etichetta })) {
-      suona(s.file)
-      // Legge VIII, per chi suona nel cuore della notte. Se il
-      // rilevamento fallisce, il suono è comunque partito.
-      dopoSuono(membro.id)
-        .then((scattate) => {
-          if (scattate.some((s2) => s2.scopertaNuova)) {
-            setAvviso('📜 Nuova Legge scoperta. Guarda il Testamento.')
-          }
-        })
-        .catch(() => {})
-    }
-  }
-
   async function elimina(id) {
     sostituisci({ id, eliminato: true })
     try {
@@ -122,17 +107,17 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
     }
   }
 
+  function alterna(quale) {
+    setFoglio((f) => (f === quale ? null : quale))
+  }
+
   return (
     <div className="gruppo-schermo">
-      <div className="azioni">
-        {/* SOS non è mai bloccato da niente, in nessuna combinazione. */}
-        <button type="button" className="bottone-sos" onClick={() => setFoglio('sos')}>
-          🆘 SOS
-        </button>
-
-        <div className="azioni-riga">
-          {/* Restano cliccabili anche a limite raggiunto: rifiutano
-              mostrando l'attesa, invece di spegnersi in silenzio. */}
+      <div className="conversazione">
+        <div className="azioni-rapide">
+          <button type="button" className="bottone-sos" onClick={() => setFoglio('sos')}>
+            🆘 SOS
+          </button>
           <button
             type="button"
             className="azione"
@@ -141,35 +126,52 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
           >
             📍 Dove siete
           </button>
-
           <button
             type="button"
             className="azione"
-            onClick={() => setFoglio(foglio === 'riparte' ? null : 'riparte')}
+            onClick={() => alterna('riparte')}
             disabled={inCorso}
-            aria-expanded={foglio === 'riparte'}
           >
-            🚗 Si riparte tra…
+            🚗 Si riparte
           </button>
-
           <button
             type="button"
-            className="azione larga"
-            onClick={() => setFoglio(foglio === 'sondaggio' ? null : 'sondaggio')}
+            className="azione"
+            onClick={() => alterna('sondaggio')}
             disabled={inCorso}
-            aria-expanded={foglio === 'sondaggio'}
           >
-            📊 Sondaggio lampo
+            📊 Sondaggio
           </button>
         </div>
 
+        {stato === 'caricamento' && <p className="feed-vuoto">Un attimo.</p>}
+        {stato === 'guasto' && <p className="feed-guasto">{errore}</p>}
+        {stato === 'pronto' && (
+          <Feed
+            azioni={azioni}
+            membri={membri}
+            ioId={membro.id}
+            onElimina={elimina}
+            voti={voti}
+            onVota={(votoId, opzione) => vota(votoId, membro.id, opzione)}
+            battuteAllan={battuteAllan}
+          />
+        )}
+
+        <div ref={fondo} />
+      </div>
+
+      {/* ------------------------------------------ barra di scrittura */}
+      <div className="barra-scrittura">
+        {avviso && <p className="avviso">{avviso}</p>}
+
         {foglio === 'riparte' && (
-          <div className="minuti">
+          <div className="menu-su">
             {MINUTI_RIPARTENZA.map((m) => (
               <button
                 key={m}
                 type="button"
-                className="minuto"
+                className="voce-menu"
                 onClick={() => manda('si_riparte', { minuti: m })}
                 disabled={inCorso}
               >
@@ -180,12 +182,12 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
         )}
 
         {foglio === 'sondaggio' && (
-          <div className="scelte-sondaggio">
+          <div className="menu-su colonna">
             {SONDAGGI.map((s) => (
               <button
                 key={s.id}
                 type="button"
-                className="scelta-sondaggio"
+                className="voce-menu larga"
                 onClick={() => apriSondaggio(s)}
                 disabled={inCorso}
               >
@@ -195,7 +197,33 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
           </div>
         )}
 
-        <form className="riga-testo" onSubmit={mandaTesto}>
+        {foglio === 'suoni' && (
+          <div className="menu-su">
+            {SUONI.map((s) => (
+              <button
+                key={s.file}
+                type="button"
+                className="voce-menu"
+                onClick={() => lanciaSuono(s)}
+                disabled={inCorso || suoniDisponibili[s.file] === false}
+              >
+                {s.etichetta}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <form className="riga-scrittura" onSubmit={mandaTesto}>
+          <button
+            type="button"
+            className={foglio === 'suoni' ? 'tasto-suoni aperto' : 'tasto-suoni'}
+            onClick={() => alterna('suoni')}
+            aria-label="Suoni"
+            aria-expanded={foglio === 'suoni'}
+          >
+            🔊
+          </button>
+
           <input
             type="text"
             value={testo}
@@ -204,44 +232,17 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
             placeholder="Scrivi qualcosa di breve"
             aria-label="Messaggio"
           />
-          <button type="submit" className="invia" disabled={!testo.trim() || inCorso}>
-            Manda
+
+          <button
+            type="submit"
+            className="tasto-invio"
+            disabled={!testo.trim() || inCorso}
+            aria-label="Manda"
+          >
+            ➤
           </button>
         </form>
-
-        <div className="soundboard">
-          {SUONI.map((s) => {
-            const manca = suoniDisponibili[s.file] === false
-            return (
-              <button
-                key={s.file}
-                type="button"
-                className="suono"
-                onClick={() => lanciaSuono(s)}
-                disabled={manca || inCorso}
-                title={manca ? 'File mancante' : undefined}
-              >
-                {s.etichetta}
-              </button>
-            )
-          })}
-        </div>
-
-        {avviso && <p className="avviso">{avviso}</p>}
       </div>
-
-      {stato === 'caricamento' && <p className="feed-vuoto">Un attimo.</p>}
-      {stato === 'guasto' && <p className="feed-guasto">{errore}</p>}
-      {stato === 'pronto' && (
-        <Feed
-          azioni={azioni}
-          membri={membri}
-          ioId={membro.id}
-          onElimina={elimina}
-          voti={voti}
-          onVota={(votoId, opzione) => vota(votoId, membro.id, opzione)}
-        />
-      )}
 
       {foglio === 'sos' && (
         <FoglioSOS
