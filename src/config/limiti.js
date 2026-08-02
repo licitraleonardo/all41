@@ -11,7 +11,11 @@
 // null al posto dell'oggetto = nessun limite, mai.
 
 export const LIMITI = {
-  soundboard: { cooldown: 10, raffica: 5, finestra: 120, giorno: null },
+  // Il soundboard non ha freni: si può pestare a raffica, il suono
+  // riparte da capo e chi lo preme lo sente subito. A regolarlo ci pensa
+  // la Legge dell'abuso qui sotto, che invece di rallentare tutti
+  // colpisce chi esagera — ed è più divertente e più giusto.
+  soundboard: { cooldown: 0, raffica: null, finestra: null, giorno: null },
   free_text: { cooldown: 3, raffica: 10, finestra: 300, giorno: null },
   voice: { cooldown: 30, raffica: 3, finestra: 600, giorno: 15, durataMax: 60 },
   photo: { cooldown: 0, raffica: 20, finestra: 600, giorno: null },
@@ -30,4 +34,13 @@ export const PENALITA = {
   primaPenalita: 3, // i primi due rifiuti non costano niente
   ogniQuanti: 3, // poi -1 ogni tre
   massimoPerBlocco: 5,
+}
+
+// Abuso di un suono (Legge XXVII). Non rallenta nessuno: chi pesta lo
+// stesso bottone all'infinito se lo vede togliere, e solo quello. Meglio
+// una punizione mirata che un freno addosso a tutti.
+export const ABUSO_SUONO = {
+  pressioni: 5,
+  entroSecondi: 60,
+  bloccoMinuti: 60,
 }

@@ -6,7 +6,14 @@ import { useFeed } from '../hooks/useFeed.js'
 import { useVoti } from '../hooks/useVoti.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
 import { descriviErrore } from '../lib/errori.js'
-import { dopoSuono, dopoTesto } from '../lib/regole.js'
+import {
+  dopoInvioRiuscito,
+  dopoRifiuto,
+  dopoSuono,
+  dopoSuonoPremuto,
+  dopoTesto,
+  suoniBloccati,
+} from '../lib/regole.js'
 import { forseAllanCommenta } from '../lib/allan.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
@@ -22,7 +29,16 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [battuteAllan, setBattuteAllan] = useState([])
+  const [bloccati, setBloccati] = useState(new Set())
   const fondo = useRef(null)
+
+  // Un suono spento resta spento anche ricaricando: si deduce dalle
+  // penalità nel database, non da uno stato in memoria.
+  useEffect(() => {
+    suoniBloccati(membro.id)
+      .then(setBloccati)
+      .catch(() => {})
+  }, [membro.id])
 
   // La chat si legge dal basso: all'arrivo di roba nuova si scende, con
   // un filo di scorrimento visibile così si capisce che è partito.
@@ -36,9 +52,16 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
     try {
       const esito = await inviaAzione({ tipo, payload, memberId: membro.id })
       if (!esito.ok) {
-        setAvviso(esito.attesa ? `Aspetta ${esito.attesa}s.` : 'Per oggi hai finito.')
+        // Legge XIX: insistere su un bottone bloccato costa, con la scala
+        // che perdona i primi due tentativi.
+        const scala = await dopoRifiuto(membro.id, tipo).catch(() => null)
+        setAvviso(
+          (esito.attesa ? `Aspetta ${esito.attesa}s.` : 'Per oggi hai finito.') +
+            (scala?.penalita ? ' E ti costa -1.' : '')
+        )
         return false
       }
+      dopoInvioRiuscito(membro.id, tipo)
       inserisci(esito.azione)
       setFoglio(null)
       return esito.azione
@@ -66,12 +89,27 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
       .catch(() => {})
   }
 
+  // Il suono parte subito e riparte da capo: il bottone non ha freni, e
+  // il menu resta aperto per poterne premere un altro. A regolare gli
+  // eccessi ci pensa la Legge XXVII, che spegne il bottone abusato.
   async function lanciaSuono(s) {
-    setFoglio(null)
-    if (await manda('soundboard', { file: s.file, etichetta: s.etichetta })) {
-      suona(s.file)
-      dopoSuono(membro.id).catch(() => {})
+    if (bloccati.has(s.file)) {
+      setAvviso('Quel suono si è stancato di te. Riprova fra un po’.')
+      return
     }
+
+    suona(s.file)
+    const azione = await manda('soundboard', { file: s.file, etichetta: s.etichetta })
+    if (!azione) return
+
+    dopoSuono(membro.id).catch(() => {})
+    dopoSuonoPremuto(membro.id, s.file)
+      .then((r) => {
+        if (!r.abuso) return
+        setBloccati((p) => new Set(p).add(s.file))
+        setAvviso(`${s.etichetta} si è stancato di te. Spento per un’ora.`)
+      })
+      .catch(() => {})
   }
 
   async function apriSondaggio(modello) {
@@ -137,8 +175,10 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
         {avviso && <p className="avviso">{avviso}</p>}
 
         {/* Attaccati alla barra e non in cima alla chat: è dov'è il
-            pollice, e non fanno scorrere via la conversazione. */}
-        <div className="azioni-rapide">
+            pollice, e non fanno scorrere via la conversazione. Col menu
+            dei suoni aperto spariscono: due file di pillole diverse una
+            sopra l'altra si confondono. */}
+        <div className="azioni-rapide" hidden={foglio === 'suoni'}>
           <button type="button" className="bottone-sos" onClick={() => setFoglio('sos')}>
             🆘 SOS
           </button>
@@ -208,9 +248,9 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
                 type="button"
                 className="voce-menu"
                 onClick={() => lanciaSuono(s)}
-                disabled={inCorso || suoniDisponibili[s.file] === false}
+                disabled={suoniDisponibili[s.file] === false || bloccati.has(s.file)}
               >
-                {s.etichetta}
+                {bloccati.has(s.file) ? `${s.etichetta} 🚫` : s.etichetta}
               </button>
             ))}
           </div>

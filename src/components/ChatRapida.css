@@ -251,12 +251,18 @@
   padding: 8px 12px;
 }
 
+/* Prima era una riga smilza che passava inosservata: chi preme un tasto
+   rapido deve capire subito se è partito o se è stato rifiutato. */
 .avviso {
   max-width: 616px;
-  margin: 0 auto 7px;
-  font-size: 13px;
+  margin: 0 auto 8px;
+  font-size: 13.5px;
   font-weight: 600;
-  color: var(--coral);
+  color: #7d2d1c;
+  background: #fdeeeb;
+  border: 1px solid var(--coral);
+  border-radius: 10px;
+  padding: 9px 12px;
 }
 
 .riga-scrittura {

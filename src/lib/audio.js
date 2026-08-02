@@ -59,15 +59,30 @@ export async function precarica(file) {
   return decodificato
 }
 
+// Una sorgente per file: ripremendo, quella in corso si ferma e il suono
+// riparte da capo invece di sovrapporsi a sé stesso.
+const inRiproduzione = new Map()
+
 export async function suona(file) {
   const c = ctx()
   if (!c) return false
   try {
     if (c.state === 'suspended') await c.resume()
     const b = buffer.get(file) ?? (await precarica(file))
+
+    try {
+      inRiproduzione.get(file)?.stop()
+    } catch {
+      // Era già finita da sola: non è un problema.
+    }
+
     const sorgente = c.createBufferSource()
     sorgente.buffer = b
     sorgente.connect(c.destination)
+    sorgente.onended = () => {
+      if (inRiproduzione.get(file) === sorgente) inRiproduzione.delete(file)
+    }
+    inRiproduzione.set(file, sorgente)
     sorgente.start(0)
     return true
   } catch {

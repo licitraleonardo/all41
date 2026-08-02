@@ -79,6 +79,8 @@ export const LEGGI = [
   // denominatore cresce insieme al gruppo, ed è parte del gioco.
   { n: 26, id: 'parola-proibita', punti: -2, attiva: true,
     testo: 'Hai scritto una parola che il Testamento non tollera' },
+  { n: 27, id: 'sound-abuse', punti: -3, attiva: true,
+    testo: 'Hai pestato lo stesso suono finché non si è stancato di te' },
 ]
 
 export const PER_ID = Object.fromEntries(LEGGI.map((l) => [l.id, l]))

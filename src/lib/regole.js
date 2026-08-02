@@ -4,6 +4,7 @@ import { dataDiOggi } from './giorni.js'
 import { faiScattareLegge } from './punti.js'
 import { azzeraInsistenza, registraRifiuto } from './insistenza.js'
 import { parolaProibitaIn } from '../config/paroleProibite.js'
+import { ABUSO_SUONO } from '../config/limiti.js'
 
 // Rilevamento delle Leggi che scattano da sole. Ogni chiamata ha una
 // chiave deterministica: senza server è il client di chi sta usando l'app
@@ -87,6 +88,58 @@ export async function dopoRifiuto(memberId, tipo) {
 
 export function dopoInvioRiuscito(memberId, tipo) {
   azzeraInsistenza(memberId, tipo)
+}
+
+// Legge XXVII: abuso di un suono. Cinque pressioni dello stesso bottone
+// entro un minuto e quel bottone si spegne per un'ora — solo quello, e
+// solo per chi ha esagerato.
+//
+// Il blocco non si salva da nessuna parte: si deduce dall'esistenza della
+// penalità. Se c'è un evento di abuso per quel suono nell'ultima ora, il
+// bottone è spento. Così sopravvive a un ricaricamento e a un cambio di
+// telefono, senza una tabella in più.
+export async function dopoSuonoPremuto(memberId, file) {
+  const da = new Date(Date.now() - ABUSO_SUONO.entroSecondi * 1000).toISOString()
+
+  const { count, error } = await supabase
+    .from('quick_actions')
+    .select('id', { count: 'exact', head: true })
+    .eq('author_id', memberId)
+    .eq('kind', 'soundboard')
+    .eq('payload->>file', file)
+    .gte('created_at', da)
+  if (error) throw error
+
+  if ((count ?? 0) < ABUSO_SUONO.pressioni) return { abuso: false }
+
+  const blocco = Math.floor(Date.now() / (ABUSO_SUONO.bloccoMinuti * 60000))
+  const esito = await faiScattareLegge(
+    'sound-abuse',
+    memberId,
+    `sound-abuse_${memberId}_${file}_${blocco}`
+  )
+  return { abuso: true, file, ...esito }
+}
+
+// Quali suoni sono spenti adesso per questa persona.
+export async function suoniBloccati(memberId) {
+  const da = new Date(Date.now() - ABUSO_SUONO.bloccoMinuti * 60000).toISOString()
+
+  const { data, error } = await supabase
+    .from('point_events')
+    .select('dedupe_key, created_at')
+    .eq('member_id', memberId)
+    .eq('rule_id', 'sound-abuse')
+    .gte('created_at', da)
+    .limit(20)
+  if (error) throw error
+
+  // dedupe_key: sound-abuse_<membro>_<file>_<blocco>
+  return new Set(
+    data
+      .map((r) => r.dedupe_key?.split('_')?.[2])
+      .filter(Boolean)
+  )
 }
 
 // Legge VIII: soundboard lanciato tra l'01:00 e le 07:00. Una volta per
