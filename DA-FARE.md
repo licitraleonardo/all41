@@ -48,9 +48,16 @@ Stato: punti 1-5 dello spec completi (minimo spedibile), più il punto 6
    aggressivo o annoiato. Da tenere raro e locale: se commenta troppo
    diventa rumore, e se lo si scrive nel database va deciso chi lo scrive.
 
-5. **Il Testamento con un'estetica vera** (~1 ora). Adesso è un elenco
-   puntato. Serve epicità: legno inciso o pietra, numeri romani in rilievo,
-   sigilli sulle Leggi ancora chiuse. Aria di antico, non di tabella.
+5. **Il Testamento con un'estetica vera** — *in sospeso, non urgente*.
+
+   ⚠️ Provato il 1 agosto e scartato: pannello scuro tipo stele di pietra,
+   venatura di legno, numeri romani incisi in oro, solchi vuoti al posto
+   dei blocchi neri. Non piaceva. Il minimale attuale va bene così.
+
+   Se si riprova, **non ripartire da lì**: il problema non era la mancanza
+   di dettagli, semmai il contrario. Meglio cercare l'epicità con una cosa
+   sola e forte — la tipografia dei numeri romani, per dire — che con
+   texture e fondi scuri.
 
 ## Al suo turno (punto 8 dello spec)
 
