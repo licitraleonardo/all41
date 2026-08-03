@@ -14,10 +14,12 @@ import {
   passo,
   punteggio,
   riquadroGiocatore,
+  staccoExtra,
+  probabilitaVolante,
   ALTEZZA_SALTO,
   TEMPO_DI_VOLO,
 } from '../src/lib/pecora.js'
-import { FISICA, SAGOME, TEMA } from '../src/config/pecora.js'
+import { FISICA, NAVICELLA, RITMO, SAGOME, TEMA } from '../src/config/pecora.js'
 
 let falliti = 0
 function prova(nome, condizione, dettaglio) {
@@ -112,6 +114,65 @@ prova(
   ALTEZZA_SALTO + pecora.altezza > gabbiano.quota
 )
 
+console.log('\nla difficoltà cresce')
+prova(
+  'il respiro fra gli ostacoli si stringe',
+  staccoExtra(0) > staccoExtra(2000) && staccoExtra(2000) > staccoExtra(4500)
+)
+prova(
+  'ma non scende mai sotto lo zero: il minimo resta intatto',
+  staccoExtra(999999) >= 0,
+  { finale: staccoExtra(999999) }
+)
+prova('il gabbiano non c’è nei primi metri', probabilitaVolante(100) === 0)
+prova(
+  'e poi si fa vedere sempre più spesso',
+  probabilitaVolante(1000) < probabilitaVolante(4500),
+  { a1000: probabilitaVolante(1000), a4500: probabilitaVolante(4500) }
+)
+
+console.log('\nla navicella')
+m = avvia(nuovoMondo(21, 0))
+prova('non c’è all’inizio', m.navicella === false)
+prova('la soglia minima vale per chi non ha record', m.daBattere === NAVICELLA.recordMinimo)
+
+let tipiVisti = new Set()
+for (let i = 0; i < 60 * 120; i += 1) {
+  m = passo(m, DT)
+  if (m.stato === 'finita') m = { ...m, stato: 'corsa' }
+  for (const o of m.ostacoli) tipiVisti.add(o.tipo)
+  if (punteggio(m) > m.daBattere + 400) break
+}
+prova('arriva dopo aver superato il record', m.navicella === true, {
+  punti: punteggio(m),
+  daBattere: m.daBattere,
+})
+prova(
+  'e da lì in poi spara',
+  TEMA.raggi.some((r) => tipiVisti.has(r)),
+  { tipiVisti: [...tipiVisti] }
+)
+
+// Con un record alto la navicella non deve arrivare presto.
+let n = avvia(nuovoMondo(21, 5000))
+for (let i = 0; i < 60 * 30; i += 1) {
+  n = passo(n, DT)
+  if (n.stato === 'finita') n = { ...n, stato: 'corsa' }
+}
+prova('con un record alto resta a casa', n.navicella === false, {
+  punti: punteggio(n),
+})
+
+console.log('\ni raggi si schivano')
+const basso = SAGOME['raggio-basso']
+const alto = SAGOME['raggio-alto']
+prova('quello basso si salta', ALTEZZA_SALTO > basso.altezza)
+prova(
+  'quello alto si passa sotto restando giù',
+  SAGOME[TEMA.protagonista].altezza <= alto.quota
+)
+prova('e saltando ci si sbatte contro', ALTEZZA_SALTO + SAGOME[TEMA.protagonista].altezza > alto.quota)
+
 console.log('\nfermi si muore')
 m = avvia(nuovoMondo(3))
 let morto = false
@@ -171,6 +232,7 @@ function pilota(mondo) {
 
 let sopravvissuto = 0
 let mortePilota = null
+const tipiIncontrati = new Set()
 for (const seme of [1, 7, 42, 99, 512, 20260812]) {
   let g = avvia(nuovoMondo(seme))
   // Dieci minuti simulati per ogni seme: ben oltre qualunque partita
@@ -178,8 +240,14 @@ for (const seme of [1, 7, 42, 99, 512, 20260812]) {
   for (let i = 0; i < 60 * 60 * 10; i += 1) {
     g = pilota(g)
     g = passo(g, DT)
+    for (const o of g.ostacoli) tipiIncontrati.add(o.tipo)
     if (g.stato === 'finita') {
-      mortePilota = { seme, punteggio: punteggio(g), secondi: Math.round(g.tempo) }
+      mortePilota = {
+        seme,
+        punteggio: punteggio(g),
+        secondi: Math.round(g.tempo),
+        ostacoli: g.ostacoli.map((o) => ({ tipo: o.tipo, x: Math.round(o.x) })),
+      }
       break
     }
   }
@@ -191,22 +259,37 @@ prova(
   sopravvissuto === 6,
   mortePilota
 )
+prova(
+  'e nel frattempo ha incontrato di tutto, raggi compresi',
+  [...TEMA.ostacoli, TEMA.volante, ...TEMA.raggi].every((t) => tipiIncontrati.has(t)),
+  { incontrati: [...tipiIncontrati] }
+)
 
-const finale = (() => {
+const aUnMinuto = (() => {
   let g = avvia(nuovoMondo(5))
-  for (let i = 0; i < 60 * 60; i += 1) {
+  const tappe = []
+  for (let i = 0; i < 60 * 150; i += 1) {
     g = pilota(g)
     g = passo(g, DT)
+    if (i === 60 * 60) tappe.push({ quando: 60, velocita: g.velocita, punti: punteggio(g) })
   }
-  return g
+  return { g, tappe }
 })()
-prova('e intanto il punteggio sale', punteggio(finale) > 1000, {
-  punti: punteggio(finale),
-})
+
+prova('a un minuto il punteggio è già alto', aUnMinuto.tappe[0].punti > 1000, aUnMinuto.tappe[0])
 prova(
-  'la velocità arriva al tetto e ci resta',
-  finale.velocita === FISICA.velocitaMax,
-  { velocita: finale.velocita }
+  'a un minuto corre già molto più che all’inizio',
+  aUnMinuto.tappe[0].velocita > FISICA.velocitaIniziale * 2,
+  aUnMinuto.tappe[0]
+)
+prova(
+  'la velocità arriva al tetto e non lo supera mai',
+  aUnMinuto.g.velocita === FISICA.velocitaMax,
+  { velocita: aUnMinuto.g.velocita }
+)
+prova(
+  'a quel punto lo stacco in più è quello finale',
+  Math.abs(staccoExtra(aUnMinuto.g.distanza) - RITMO.staccoExtraFinale) < 0.001
 )
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)

@@ -6,7 +6,15 @@
 // li passa avanti a chi disegna. Cambiare ambientazione non tocca questo
 // file.
 
-import { FISICA, MONDO, RITMO, SAGOME, TEMA, UNITA_PER_PUNTO } from '../config/pecora.js'
+import {
+  FISICA,
+  MONDO,
+  NAVICELLA,
+  RITMO,
+  SAGOME,
+  TEMA,
+  UNITA_PER_PUNTO,
+} from '../config/pecora.js'
 
 // Generatore con seme: la stessa partita si può rigiocare identica, che
 // è l'unico modo di provare un gioco pieno di numeri a caso.
@@ -25,7 +33,27 @@ export function distanzaMinima(velocita) {
   return velocita * TEMPO_DI_VOLO * RITMO.stacco
 }
 
-export function nuovoMondo(seme = 1) {
+// Quanto respiro in più, oltre al minimo, viene lasciato fra un ostacolo
+// e l'altro. Cala andando avanti: è così che il gioco si fa difficile
+// senza mai diventare ingiusto — lo stacco minimo non si tocca.
+export function staccoExtra(distanza) {
+  const avanzamento = Math.min(1, distanza / RITMO.distanzaDiRodaggio)
+  return (
+    RITMO.staccoExtraIniziale +
+    (RITMO.staccoExtraFinale - RITMO.staccoExtraIniziale) * avanzamento
+  )
+}
+
+export function probabilitaVolante(distanza) {
+  if (distanza <= RITMO.volanteDopo) return 0
+  const avanzamento = Math.min(1, distanza / RITMO.distanzaDiRodaggio)
+  return (
+    RITMO.volanteDaProbabilita +
+    (RITMO.volanteAProbabilita - RITMO.volanteDaProbabilita) * avanzamento
+  )
+}
+
+export function nuovoMondo(seme = 1, record = 0) {
   return {
     stato: 'pronto',
     tempo: 0,
@@ -36,12 +64,17 @@ export function nuovoMondo(seme = 1) {
     prossimoStacco: MONDO.larghezza * 0.9,
     seme: seme >>> 0,
     prossimoId: 1,
+    // Superato questo punteggio arriva la navicella. Chi non ha ancora
+    // un record ha comunque una soglia, o alla prima partita non la
+    // vedrebbe mai.
+    daBattere: Math.max(record, NAVICELLA.recordMinimo),
+    navicella: false,
   }
 }
 
 export function avvia(mondo) {
   if (mondo.stato === 'corsa') return mondo
-  return { ...nuovoMondo(mondo.seme), stato: 'corsa' }
+  return { ...nuovoMondo(mondo.seme, mondo.daBattere), stato: 'corsa' }
 }
 
 // Si salta solo da terra: niente doppio salto, che in un runner toglie
@@ -86,15 +119,26 @@ function riquadroOstacolo(o) {
 function generaOstacolo(mondo) {
   let seme = mondo.seme
   let caso
+  let tipo = null
 
-  ;[seme, caso] = prossimoCaso(seme)
-  const volante =
-    mondo.distanza > RITMO.volanteDopo && caso < RITMO.probabilitaVolante
-
-  let tipo = TEMA.volante
-  if (!volante) {
+  // Quando è arrivata la navicella, ai nuraghi si aggiungono i suoi
+  // raggi: uno costringe a saltare, l'altro a restare giù.
+  if (mondo.navicella) {
     ;[seme, caso] = prossimoCaso(seme)
-    tipo = TEMA.ostacoli[Math.floor(caso * TEMA.ostacoli.length)]
+    if (caso < NAVICELLA.probabilitaRaggio) {
+      ;[seme, caso] = prossimoCaso(seme)
+      tipo = TEMA.raggi[Math.floor(caso * TEMA.raggi.length)]
+    }
+  }
+
+  if (tipo === null) {
+    ;[seme, caso] = prossimoCaso(seme)
+    if (caso < probabilitaVolante(mondo.distanza)) {
+      tipo = TEMA.volante
+    } else {
+      ;[seme, caso] = prossimoCaso(seme)
+      tipo = TEMA.ostacoli[Math.floor(caso * TEMA.ostacoli.length)]
+    }
   }
 
   const sagoma = SAGOME[tipo]
@@ -108,10 +152,11 @@ function generaOstacolo(mondo) {
   }
 
   // Lo stacco non scende mai sotto il minimo, e quanto si allunga oltre
-  // è l'unica cosa lasciata al caso: così il ritmo cambia senza mai
-  // produrre una coppia impossibile.
+  // è l'unica cosa lasciata al caso — e si stringe andando avanti. Così
+  // il ritmo si fa serrato senza mai produrre una coppia impossibile.
   ;[seme, caso] = prossimoCaso(seme)
-  const stacco = distanzaMinima(mondo.velocita) * (1 + caso * RITMO.staccoExtra)
+  const stacco =
+    distanzaMinima(mondo.velocita) * (1 + caso * staccoExtra(mondo.distanza))
 
   return { ostacolo, seme, stacco }
 }
@@ -150,8 +195,12 @@ export function passo(mondo, dt) {
   let prossimoId = mondo.prossimoId
   let prossimoStacco = mondo.prossimoStacco - avanzamento
 
+  // Superato il record arriva la navicella, e da lì in poi si spara.
+  const navicella =
+    mondo.navicella || Math.floor(distanza / UNITA_PER_PUNTO) > mondo.daBattere
+
   if (prossimoStacco <= 0) {
-    const generato = generaOstacolo({ ...mondo, velocita, prossimoId })
+    const generato = generaOstacolo({ ...mondo, distanza, velocita, navicella, prossimoId })
     ostacoli = [...ostacoli, generato.ostacolo]
     seme = generato.seme
     prossimoStacco = generato.stacco
@@ -168,6 +217,7 @@ export function passo(mondo, dt) {
     prossimoStacco,
     seme,
     prossimoId,
+    navicella,
   }
 
   const io = riquadroGiocatore(prossimo)

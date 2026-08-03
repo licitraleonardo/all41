@@ -59,6 +59,51 @@
   font-variant-numeric: tabular-nums;
 }
 
+.pecora-nuovo {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* I record sotto il gioco, come chiesto */
+.pecora-record {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.pecora-record > div {
+  flex: 1;
+  background: rgba(22, 35, 44, 0.05);
+  border: 1px solid var(--line, rgba(22, 35, 44, 0.12));
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.pecora-record dt {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.pecora-record dd {
+  margin: 2px 0 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nella schermata senza rete il fondo è scuro: i riquadri si invertono */
+.pecora-compatta .pecora-record > div {
+  background: rgba(247, 244, 236, 0.07);
+  border-color: rgba(247, 244, 236, 0.14);
+}
+
 .pecora-ancora {
   font: inherit;
   font-size: 15px;
