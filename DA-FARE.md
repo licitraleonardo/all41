@@ -59,6 +59,32 @@ Stato: punti 1-5 dello spec completi (minimo spedibile), più il punto 6
    sola e forte — la tipografia dei numeri romani, per dire — che con
    texture e fondi scuri.
 
+## Dove si vota una proposta — da rifare
+
+Adesso le proposte in attesa stanno **dentro la Classifica**, con i bottoni
+Sì/No sulla riga. Sbagliato: la classifica è il posto dove si guarda il
+risultato, non dove si prendono decisioni. Mettendoci dei bottoni diventa
+un modulo da compilare.
+
+Come va fatto:
+
+- **Un banner che resta aperto** finché non hai deciso, così la proposta
+  ti trova invece di doverla cercare
+- **Tre scelte, non due**: Sì, No, e **"Non mi va, voto dopo"**. La terza
+  è quella che manca ovunque: se ti obbligo a scegliere fra sì e no per
+  far sparire il banner, voti a caso — e un voto a caso vale meno di un
+  voto in meno
+- Chi rimanda **la ritrova nel tab Proponi**, che diventa il posto dove
+  stanno le proposte aperte oltre che dove se ne fanno di nuove
+- La Classifica torna a essere solo classifica: le proposte in attesa si
+  possono ancora **vedere** lì, ma senza bottoni
+
+⚠️ Da decidere quando si costruisce: se il banner compare **in tutta
+l'app** o solo nel tab Gruppo. Io lo farei globale — una proposta di punti
+riguarda tutti e scade in un'ora, quindi ha senso che ti raggiunga dove
+sei, come la celebrazione delle Leggi. Ma occupa spazio in cima a ogni
+schermata, quindi va tenuto basso e richiudibile.
+
 ## Al suo turno (punto 8 dello spec)
 
 **Caccia al tesoro.** Vincoli dati dal gruppo, da rispettare quando si
