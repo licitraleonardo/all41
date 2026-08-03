@@ -1,0 +1,148 @@
+/* Il banner è alto per davvero: al posto di sovrapporsi alle schermate
+   le spinge giù, così niente finisce mai sotto. --altezza-banner è la
+   misura da cui dipendono tutti gli spostamenti. */
+:root {
+  --altezza-banner: 132px;
+}
+
+.banner-proposta {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--sea);
+  color: var(--sand);
+  box-shadow: 0 6px 18px -10px rgba(11, 53, 80, 0.8);
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+}
+
+.banner-dentro {
+  max-width: 616px;
+  margin: 0 auto;
+}
+
+.banner-testa {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.banner-punti {
+  flex: none;
+  min-width: 38px;
+  text-align: center;
+  font-family: var(--font-titoli);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: 100px;
+  padding: 4px 7px;
+}
+
+.banner-punti.piu {
+  color: #0f3b28;
+  background: #bfe3cd;
+}
+
+.banner-punti.meno {
+  color: #4d1408;
+  background: #f6bfb4;
+}
+
+.banner-testo {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+
+.banner-motivo {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: rgba(247, 244, 236, 0.72);
+}
+
+.banner-scelte {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.banner-si,
+.banner-no,
+.banner-dopo {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 6px;
+  cursor: pointer;
+}
+
+.banner-si {
+  color: #0f3b28;
+  background: #bfe3cd;
+}
+
+.banner-no {
+  color: #4d1408;
+  background: #f6bfb4;
+}
+
+/* Deve essere una scelta vera, non un ripiego nascosto: si legge quanto
+   le altre due, ma non tira. */
+.banner-dopo {
+  font-weight: 600;
+  color: var(--sand);
+  background: transparent;
+  border-color: rgba(247, 244, 236, 0.35);
+}
+
+.banner-si:disabled,
+.banner-no:disabled,
+.banner-dopo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.banner-si:focus-visible,
+.banner-no:focus-visible,
+.banner-dopo:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.banner-piede {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: rgba(247, 244, 236, 0.65);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------- spostamenti */
+
+body.con-banner .gruppo-schermo,
+body.con-banner .album-schermo,
+body.con-banner .gioco-schermo {
+  padding-top: calc(16px + var(--altezza-banner));
+}
+
+/* L'itinerario ha la sua barra appiccicata in cima: scende sotto il
+   banner invece di finirci dietro. */
+body.con-banner .barra-alta {
+  top: var(--altezza-banner);
+}
+
+body.con-banner .oggi-schermo {
+  padding-top: var(--altezza-banner);
+}
+
+body.con-banner .day {
+  scroll-margin-top: calc(72px + var(--altezza-banner));
+}

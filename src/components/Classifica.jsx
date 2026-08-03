@@ -1,9 +1,8 @@
 import { urlAvatar } from '../config/avatar.js'
 import { dataDiOggi, statoDelViaggio } from '../lib/giorni.js'
 import { magliaNeraDelGiorno, mvpDelGiorno, saldiDelGiorno } from '../lib/classifica.js'
-import PropostaInAttesa from './PropostaInAttesa.jsx'
 
-export default function Classifica({ classifica, eventi, ioId, voti, onVota }) {
+export default function Classifica({ classifica, eventi, ioId }) {
   const oggi = dataDiOggi()
   const saldi = saldiDelGiorno(eventi, oggi)
   const mvp = mvpDelGiorno(saldi)
@@ -60,19 +59,24 @@ export default function Classifica({ classifica, eventi, ioId, voti, onVota }) {
         ))}
       </ol>
 
+      {/* Solo in lettura: la classifica è dove si guarda il risultato, non
+          dove si decide. Si vota dal banner in cima o dal tab Proponi. */}
       {inAttesa.length > 0 && (
         <>
-          <h3 className="sezione">Da votare</h3>
-          <ul className="attese">
+          <h3 className="sezione">In attesa di voto</h3>
+          <ul className="storico">
             {inAttesa.map((e) => (
-              <PropostaInAttesa
-                key={e.id}
-                evento={e}
-                voto={voti?.[e.votoId]}
-                membri={perId}
-                ioId={ioId}
-                onVota={(votoId, opzione) => onVota(votoId, ioId, opzione)}
-              />
+              <li key={e.id}>
+                <span className="storico-punti attesa">{segno(e.punti)}</span>
+                <span className="storico-motivo">
+                  <strong>{nome(e.membroId)}</strong> — {e.motivo}
+                  {e.propostoDa && (
+                    <span className="storico-quando">
+                      proposta da {nome(e.propostoDa)}
+                    </span>
+                  )}
+                </span>
+              </li>
             ))}
           </ul>
         </>

@@ -44,6 +44,48 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
   return { votoId: voto.id, evento }
 }
 
+// Le proposte ancora aperte, con dentro tutto quello che serve a
+// mostrarle: il voto e l'evento punti in attesa che gli è agganciato.
+export async function leggiProposteAperte() {
+  const { data: voti, error } = await supabase
+    .from('votes')
+    .select('id, question, options, tally, voted, expires_at, closed_at')
+    .eq('trip_id', VIAGGIO.id)
+    .eq('category', 'point-proposal')
+    .is('closed_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: true })
+    .limit(10)
+  if (error) throw error
+  if (voti.length === 0) return []
+
+  const { data: eventi, error: erroreEventi } = await supabase
+    .from('point_events')
+    .select('id, member_id, points, reason, proposed_by, vote_id')
+    .in(
+      'vote_id',
+      voti.map((v) => v.id)
+    )
+    .eq('status', 'pending')
+    .limit(10)
+  if (erroreEventi) throw erroreEventi
+
+  const perVoto = Object.fromEntries(eventi.map((e) => [e.vote_id, e]))
+
+  return voti
+    .filter((v) => perVoto[v.id])
+    .map((v) => ({
+      votoId: v.id,
+      conteggi: v.tally,
+      hannoVotato: v.voted ?? [],
+      scadeIl: v.expires_at,
+      punti: perVoto[v.id].points,
+      motivo: perVoto[v.id].reason,
+      destinatarioId: perVoto[v.id].member_id,
+      proponenteId: perVoto[v.id].proposed_by,
+    }))
+}
+
 // Risolve le proposte scadute: le chiude, applica l'esito e fa scattare
 // le Leggi che dipendono da com'è andata. Chiamata all'avvio dell'app.
 export async function risolviProposte(membriIds = []) {

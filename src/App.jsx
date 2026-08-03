@@ -25,7 +25,9 @@ import Gioco from './components/Gioco.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
+import { useProposteAperte } from './hooks/useProposteAperte.js'
 import Celebrazione from './components/Celebrazione.jsx'
+import BannerProposta from './components/BannerProposta.jsx'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -46,6 +48,18 @@ export default function App() {
   // Una Legge scoperta si celebra su tutti i telefoni, qualunque tab sia
   // aperta: è il momento di paga di tutto il sistema di punti.
   const { celebrazione, chiudi: chiudiCelebrazione } = useScoperte(vista === 'dentro')
+
+  // Le proposte aperte vivono qui e non dentro una scheda: il banner deve
+  // raggiungerti su qualunque tab, come la celebrazione delle Leggi.
+  const proposte = useProposteAperte(vista === 'dentro' ? membro?.id : null)
+  const [membriPerId, setMembriPerId] = useState({})
+
+  useEffect(() => {
+    if (vista !== 'dentro') return
+    leggiMembri()
+      .then((elenco) => setMembriPerId(Object.fromEntries(elenco.map((m) => [m.id, m]))))
+      .catch(() => {})
+  }, [vista])
 
   useEffect(() => {
     if (!supabaseConfigurato) {
@@ -177,8 +191,20 @@ export default function App() {
           <ChatRapida membro={membro} suoniDisponibili={suoniDisponibili} />
         )}
         {tab === 'foto' && <Album membro={membro} />}
-        {tab === 'gioco' && <Gioco membro={membro} />}
+        {tab === 'gioco' && (
+          <Gioco
+            membro={membro}
+            proposteAperte={proposte.aperte}
+            onVotaProposta={proposte.vota}
+          />
+        )}
         <BarraTab attivo={tab} onCambia={setTab} />
+        <BannerProposta
+          proposte={proposte.daDecidere}
+          membri={membriPerId}
+          onVota={proposte.vota}
+          onRimanda={proposte.rimanda}
+        />
         <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
       </>
     )
