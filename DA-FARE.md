@@ -15,22 +15,22 @@ tutorial).
 Delle 27 Leggi ne sono vive 13: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
 XIX, XXII, XXVI, XXVII. Le altre aspettano le sezioni che le alimentano.
 
-### Offline: a metà
+### Offline: manca solo la Pecora
 
-Lo spec vuole tre cose in aereo mode. L'app **si apre** (service worker
-attivo) e senza rete **parla Allan** invece di dare un errore tecnico, e
-riprende da sola quando torna il segnale. Mancano le altre due:
+Lo spec vuole tre cose in aereo mode, e due ci sono: l'app **si apre**
+(service worker attivo) e **mostra i dati già scaricati**, dicendo in
+cima che sono vecchi e che quello che scrivi non parte. Resta:
 
-- **mostrare i dati già scaricati** — con Supabase la cache va scritta a
-  mano, non è una riga di configurazione come dice lo spec (quello vale
-  per Firestore). Qualche ora di lavoro
-- **la Pecora** — punto 11, e il posto dove va è esattamente quella
-  schermata
+- **la Pecora** — punto 11. Il posto dove va **non è più** la schermata
+  senza rete: quella adesso mostra l'app vera. La Pecora sta nel tab
+  Gioco, e la schermata di Allan resta solo per chi apre senza rete e
+  senza aver mai scaricato niente
 
 **Verifica bloccante ancora aperta**: la n.3 dello spec, i formati audio
-su iPhone. Mai fatta perché in casa c'è solo un Android. Serve prima del
-punto 9. Il modo più semplice: mandare il link del deploy a qualcuno del
-gruppo che ha un iPhone.
+su iPhone. Mai fatta perché in casa c'è solo un Android, e prima della
+partenza non si è trovato nessuno del gruppo disponibile. **Si fa il
+12**, quando siamo tutti nella stessa stanza: serve prima del punto 9, e
+lo spec dice che dal punto 6 in poi si può deployare la sera.
 
 ⚠️ Per provare le sfide e il giorno corrente si sposta l'orologio del PC.
 Se un file o un commit sembra datato in mezzo al viaggio, viene da lì.
@@ -56,6 +56,15 @@ Costate tempo una volta; sarebbe stupido ripagarle.
   server è in HTTPS (`SENZA_HTTPS=1` lo riporta in chiaro).
 - **L'attributo `hidden` perde contro `display: flex`.** Per nascondere
   un blocco, non disegnarlo.
+- **Due componenti fissi in cima si tolgono la classe a vicenda.** Il
+  banner delle proposte e la striscia senza rete spostano le schermate
+  con la stessa classe su `body`: quello che si smonta la toglieva anche
+  all'altro, e il contenuto finiva sotto. In `useAltezzaBanner` si conta
+  chi la sta usando invece di togliere e basta.
+- **Una copia locale non deve mai coprire un guasto vero.** La cache
+  offline risponde al posto del database solo quando l'errore è di rete
+  (`sembraRete`). Su una tabella mancante l'errore deve restare visibile,
+  o si torna a cercare il problema dove non è.
 - **Le classi `.campo` sono nate per le schermate scure.** Riusate su
   fondo chiaro scrivono color sabbia su crema: testo invisibile. Succede
   ogni volta che si porta un campo di testo in una sezione nuova.
@@ -79,6 +88,11 @@ componente nel browser con dati finti, senza scrivere nel database.
 scheda non compone fotogrammi. Coriandoli, animazioni e `ResizeObserver`
 lì non funzionano, e non è un bug del codice. Dove serve una misura, farla
 in modo sincrono.
+
+⚠️ **Il pannello non apre il dev server**: rifiuta il certificato
+autofirmato dell'HTTPS locale, e i file aperti con `file://` li rende
+come istantanee statiche, senza JavaScript. Per guardare davvero una
+schermata servono il browser vero o il deploy.
 
 ---
 
@@ -120,14 +134,13 @@ tipografia dei numeri romani — che texture e fondi scuri insieme.
 
 In ordine di quanto servono davvero, non di numero:
 
-1. **Cache offline dei dati** — è la metà mancante dell'offline, e si
-   sente ogni volta che manca il segnale. Qualche ora
-2. **Spese** (10) — modello a due fatti, `expenses` meno `payments`, mai
+1. **Spese** (10) — modello a due fatti, `expenses` meno `payments`, mai
    un flag "pagato" da preservare. È l'unica sezione fuori dal sistema
    punti e dalle battute di Allan
-3. **Pecora offline** (11) — va nella schermata senza rete
-4. **Chat Vocale** (9) — prima serve la verifica bloccante n.3
-5. **Documenti** (13), **Mappa** (12), **Tutorial** (14),
+2. **Pecora** (11) — nel tab Gioco, non più nella schermata senza rete
+3. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
+   programma il 12
+4. **Documenti** (13), **Mappa** (12), **Tutorial** (14),
    **L'Impostore** (15)
 
 Lo spec dice esplicitamente che dal punto 6 in poi tutto può arrivare

@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
+import { conCache } from './cache.js'
 import { PER_ID } from '../config/leggi.js'
 
 const CAMPI =
@@ -92,7 +93,7 @@ export async function faiScattareLegge(leggeId, memberId, dedupeKey, puntiEsplic
   return { evento, scopertaNuova: nuova }
 }
 
-export async function leggiClassifica() {
+export const leggiClassifica = conCache('classifica', async function leggiClassifica() {
   const { data, error } = await supabase
     .from('members')
     .select('id, name, avatar_seed, avatar_style, score')
@@ -108,21 +109,24 @@ export async function leggiClassifica() {
     avatarStyle: r.avatar_style,
     punteggio: r.score,
   }))
-}
+})
 
-export async function leggiEventi(limite = TETTO_STORICO) {
-  const { data, error } = await supabase
-    .from('point_events')
-    .select(CAMPI)
-    .eq('trip_id', VIAGGIO.id)
-    .order('created_at', { ascending: false })
-    .limit(limite)
+export const leggiEventi = conCache(
+  (limite = TETTO_STORICO) => (limite === TETTO_STORICO ? 'eventi' : null),
+  async function leggiEventi(limite = TETTO_STORICO) {
+    const { data, error } = await supabase
+      .from('point_events')
+      .select(CAMPI)
+      .eq('trip_id', VIAGGIO.id)
+      .order('created_at', { ascending: false })
+      .limit(limite)
 
-  if (error) throw error
-  return data.map(daRiga)
-}
+    if (error) throw error
+    return data.map(daRiga)
+  }
+)
 
-export async function leggiScoperte() {
+export const leggiScoperte = conCache('scoperte', async function leggiScoperte() {
   const { data, error } = await supabase
     .from('leggi')
     .select('legge_id, discovered_at, discovered_by')
@@ -136,4 +140,4 @@ export async function leggiScoperte() {
       { quando: r.discovered_at, chi: r.discovered_by },
     ])
   )
-}
+})

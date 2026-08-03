@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js'
 import { generaCodice } from './codice.js'
+import { conCache, inCache } from './cache.js'
 import { VIAGGIO } from '../config/viaggio.js'
 
 const CAMPI = 'id, name, avatar_seed, avatar_style, access_code, score, last_seen_at'
@@ -19,19 +20,25 @@ function daRiga(riga) {
   }
 }
 
-export async function trovaPerId(id) {
-  const { data, error } = await supabase
-    .from('members')
-    .select(CAMPI)
-    .eq('id', id)
-    .maybeSingle()
-  if (error) throw error
-  return daRiga(data)
-}
+// Senza copia, aprire l'app in aereo mode non passa nemmeno di qui: il
+// profilo non si legge e si finisce sulla schermata di Allan invece che
+// dentro l'app.
+export const trovaPerId = conCache(
+  (id) => `membro.${id}`,
+  async function trovaPerId(id) {
+    const { data, error } = await supabase
+      .from('members')
+      .select(CAMPI)
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw error
+    return daRiga(data)
+  }
+)
 
 // Il gruppo è di otto persone: si leggono tutti in un colpo e si tengono
 // in memoria per dare un nome agli autori del feed.
-export async function leggiMembri() {
+export const leggiMembri = conCache('membri', async function leggiMembri() {
   const { data, error } = await supabase
     .from('members')
     .select(CAMPI)
@@ -39,7 +46,7 @@ export async function leggiMembri() {
     .limit(50)
   if (error) throw error
   return data.map(daRiga)
-}
+})
 
 export async function trovaPerCodice(codice) {
   const { data, error } = await supabase
@@ -68,7 +75,14 @@ export async function creaMembro({ nome, avatarStyle }) {
       .select(CAMPI)
       .single()
 
-    if (!error) return daRiga(data)
+    if (!error) {
+      const nuovo = daRiga(data)
+      // Chi si iscrive e resta subito senza segnale deve poter riaprire
+      // l'app lo stesso: senza copia, alla riapertura non ci sarebbe
+      // nessun profilo da trovare.
+      inCache(`membro.${nuovo.id}`, nuovo)
+      return nuovo
+    }
     if (error.code !== '23505') throw error // 23505 = unique_violation
   }
   throw new Error('Non sono riuscito a generare un codice libero.')
@@ -82,7 +96,10 @@ export async function aggiornaMembro(id, { nome, avatarStyle }) {
     .select(CAMPI)
     .single()
   if (error) throw error
-  return daRiga(data)
+
+  const aggiornato = daRiga(data)
+  inCache(`membro.${id}`, aggiornato)
+  return aggiornato
 }
 
 export async function segnaVisita(id) {

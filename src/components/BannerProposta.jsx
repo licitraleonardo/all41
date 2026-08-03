@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAltezzaBanner } from '../hooks/useAltezzaBanner.js'
 import './BannerProposta.css'
 
 // Sta in cima a tutta l'app, come la celebrazione delle Leggi: una
@@ -11,36 +12,10 @@ export default function BannerProposta({ proposte, membri, onVota, onRimanda }) 
   const restano = useContoAllaRovescia(proposta?.scadeIl)
 
   // Il banner occupa spazio vero: le schermate si spostano giù invece di
-  // finirci sotto. L'altezza si misura e non si indovina — un motivo
-  // lungo manda il banner a due righe, e con un numero fisso il
-  // contenuto finirebbe nascosto proprio nei casi peggiori.
+  // finirci sotto. La misura sta nel hook, condivisa con la striscia
+  // senza rete.
   const [riquadro, setRiquadro] = useState(null)
-
-  useEffect(() => {
-    document.body.classList.toggle('con-banner', Boolean(proposta))
-    if (!proposta || !riquadro) {
-      document.documentElement.style.removeProperty('--altezza-banner')
-      return () => document.body.classList.remove('con-banner')
-    }
-
-    const misura = () => {
-      const alto = Math.ceil(riquadro.getBoundingClientRect().height)
-      document.documentElement.style.setProperty('--altezza-banner', `${alto}px`)
-    }
-
-    // Subito, senza aspettare l'osservatore: ResizeObserver consegna al
-    // prossimo fotogramma, e una scheda che non sta disegnando non ne ha.
-    misura()
-
-    const osserva = new ResizeObserver(misura)
-    osserva.observe(riquadro)
-
-    return () => {
-      osserva.disconnect()
-      document.body.classList.remove('con-banner')
-      document.documentElement.style.removeProperty('--altezza-banner')
-    }
-  }, [proposta, riquadro])
+  useAltezzaBanner(riquadro, proposta)
 
   if (!proposta) return null
 

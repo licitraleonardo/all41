@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
+import { conCache } from './cache.js'
 import { verificaLimite } from './limiti.js'
 
 const CAMPI = 'id, author_id, kind, payload, deleted_at, created_at'
@@ -20,17 +21,22 @@ function daRiga(riga) {
   }
 }
 
-export async function leggiFeed(limite = TETTO_FEED) {
-  const { data, error } = await supabase
-    .from('quick_actions')
-    .select(CAMPI)
-    .eq('trip_id', VIAGGIO.id)
-    .order('created_at', { ascending: false })
-    .limit(limite)
+export const leggiFeed = conCache(
+  // Solo il feed intero: una lettura più corta non deve sostituire una
+  // copia più lunga già buona.
+  (limite = TETTO_FEED) => (limite === TETTO_FEED ? 'feed' : null),
+  async function leggiFeed(limite = TETTO_FEED) {
+    const { data, error } = await supabase
+      .from('quick_actions')
+      .select(CAMPI)
+      .eq('trip_id', VIAGGIO.id)
+      .order('created_at', { ascending: false })
+      .limit(limite)
 
-  if (error) throw error
-  return data.map(daRiga)
-}
+    if (error) throw error
+    return data.map(daRiga)
+  }
+)
 
 // Restituisce { ok } oppure { ok: false, attesa } senza sollevare: un
 // limite raggiunto non è un errore, è una risposta.

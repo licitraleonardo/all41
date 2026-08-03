@@ -23,7 +23,11 @@ export function useGioco() {
     // classifica, dove la proposta è già in bella vista.
     const ids = e.filter((x) => x.stato === 'pending' && x.votoId).map((x) => x.votoId)
     if (ids.length > 0) {
-      const elenco = await leggiVoti(ids)
+      // I conteggi di un voto aperto non si tengono da parte: senza rete
+      // non si può votare comunque, e una copia vecchia direbbe il falso
+      // su quanti hanno già deciso. Se non arrivano, classifica e
+      // storico si vedono lo stesso.
+      const elenco = await leggiVoti(ids).catch(() => [])
       setVoti(Object.fromEntries(elenco.map((v) => [v.id, v])))
     } else {
       setVoti({})

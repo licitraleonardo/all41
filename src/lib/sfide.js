@@ -1,11 +1,12 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
+import { conCache } from './cache.js'
 import { SFIDE, SFIDE_PER_ID } from '../config/sfide.js'
 import { dataDiOggi } from './giorni.js'
 import { faiScattareLegge } from './punti.js'
 import { chiudiVoto } from './voti.js'
 
-export async function leggiSfideVinte() {
+export const leggiSfideVinte = conCache('sfideVinte', async function leggiSfideVinte() {
   const { data, error } = await supabase
     .from('challenges')
     .select('challenge_id, won_by_photo, won_by_member, closed_at')
@@ -19,32 +20,37 @@ export async function leggiSfideVinte() {
       { fotoId: r.won_by_photo, membroId: r.won_by_member, quando: r.closed_at },
     ])
   )
-}
+})
 
 // Le foto già mandate a una sfida, per sapere chi ha partecipato.
-export async function leggiPartecipazioni(sfideIds) {
-  if (sfideIds.length === 0) return {}
+export const leggiPartecipazioni = conCache(
+  // Solo l'elenco intero: dopo un caricamento in gara si rilegge una
+  // sfida sola, e quella non deve sostituire la copia di tutte.
+  (sfideIds) => (sfideIds.length === SFIDE.length ? 'partecipazioni' : null),
+  async function leggiPartecipazioni(sfideIds) {
+    if (sfideIds.length === 0) return {}
 
-  const { data, error } = await supabase
-    .from('photos')
-    .select('id, author_id, url, challenge_id, created_at')
-    .eq('trip_id', VIAGGIO.id)
-    .in('challenge_id', sfideIds)
-    .is('deleted_at', null)
-    .limit(200)
-  if (error) throw error
+    const { data, error } = await supabase
+      .from('photos')
+      .select('id, author_id, url, challenge_id, created_at')
+      .eq('trip_id', VIAGGIO.id)
+      .in('challenge_id', sfideIds)
+      .is('deleted_at', null)
+      .limit(200)
+    if (error) throw error
 
-  const per = {}
-  for (const f of data) {
-    ;(per[f.challenge_id] ??= []).push({
-      id: f.id,
-      autoreId: f.author_id,
-      url: f.url,
-      creataIl: f.created_at,
-    })
+    const per = {}
+    for (const f of data) {
+      ;(per[f.challenge_id] ??= []).push({
+        id: f.id,
+        autoreId: f.author_id,
+        url: f.url,
+        creataIl: f.created_at,
+      })
+    }
+    return per
   }
-  return per
-}
+)
 
 // Fine della giornata in ora locale: il voto di una sfida dura fino a
 // mezzanotte, come dice lo spec.
@@ -55,7 +61,7 @@ function fineGiornata() {
 }
 
 // I voti aperti delle sfide, per mostrarli e per votarci.
-export async function leggiVotiSfide() {
+export const leggiVotiSfide = conCache('votiSfide', async function leggiVotiSfide() {
   const { data, error } = await supabase
     .from('votes')
     .select('id, challenge_id, options, tally, voted, expires_at, closed_at')
@@ -77,7 +83,7 @@ export async function leggiVotiSfide() {
       },
     ])
   )
-}
+})
 
 // Con due o più foto in gara si apre il voto; quelle che arrivano dopo si
 // accodano al voto già aperto.

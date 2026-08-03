@@ -29,6 +29,7 @@ import { useProposteAperte } from './hooks/useProposteAperte.js'
 import { useConnessione } from './hooks/useConnessione.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
+import StrisciaOffline from './components/StrisciaOffline.jsx'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -88,7 +89,14 @@ export default function App() {
 
     async function avvia() {
       try {
-        await assicuraSessione()
+        // Senza rete la sessione anonima non si può creare, e non è un
+        // motivo per restare fuori: se il profilo è già stato letto una
+        // volta, da qui in poi si va avanti con le copie locali.
+        try {
+          await assicuraSessione()
+        } catch (e) {
+          if (navigator.onLine !== false) throw e
+        }
 
         const id = memberIdSalvato()
         if (!id) {
@@ -216,8 +224,12 @@ export default function App() {
           />
         )}
         <BarraTab attivo={tab} onCambia={setTab} />
+        <StrisciaOffline attiva={!inLinea} />
+        {/* Senza rete il voto non partirebbe: il banner si toglie invece
+            di restare lì con due bottoni che falliscono. Torna da solo
+            col segnale, e intanto quel posto lo occupa la striscia. */}
         <BannerProposta
-          proposte={proposte.daDecidere}
+          proposte={inLinea ? proposte.daDecidere : []}
           membri={membriPerId}
           onVota={proposte.vota}
           onRimanda={proposte.rimanda}

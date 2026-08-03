@@ -63,6 +63,33 @@ export default defineConfig({
         // e si scarica solo quando serve davvero.
         globIgnores: ['**/heic-to*'],
         maximumFileSizeToCacheInBytes: 1500000,
+        // Le immagini che arrivano da fuori restano fuori dal pacchetto,
+        // ma quelle già viste si tengono: senza, la copia locale dei dati
+        // mostrerebbe una griglia di icone rotte e avatar mancanti, che
+        // sembra un guasto invece di una vacanza senza campo.
+        //
+        // Si scarica solo quello che è stato davvero guardato: è
+        // l'opposto del precaricare tutto l'album, che resta escluso.
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\.dicebear\.com\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'avatar',
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/storage\/v1\/object\/public\/foto\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'foto-viste',
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

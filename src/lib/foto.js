@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { PER_PAGINA } from '../config/foto.js'
+import { conCache } from './cache.js'
 import { comprimi } from './compressione.js'
 import { verificaLimite } from './limiti.js'
 import { uuid } from './id.js'
@@ -25,21 +26,26 @@ function daRiga(riga) {
 
 // Caricamento a pagine: si legge una finestra per volta invece di tutta
 // la collezione, altrimenti la quota si brucia a metà viaggio.
-export async function leggiFoto({ primaDi = null, limite = PER_PAGINA } = {}) {
-  let query = supabase
-    .from('photos')
-    .select(CAMPI)
-    .eq('trip_id', VIAGGIO.id)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .limit(limite)
+export const leggiFoto = conCache(
+  // Si copia solo la prima pagina: le successive scriverebbero un pezzo
+  // di mezzo sopra l'inizio dell'album.
+  ({ primaDi = null } = {}) => (primaDi ? null : 'foto'),
+  async function leggiFoto({ primaDi = null, limite = PER_PAGINA } = {}) {
+    let query = supabase
+      .from('photos')
+      .select(CAMPI)
+      .eq('trip_id', VIAGGIO.id)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(limite)
 
-  if (primaDi) query = query.lt('created_at', primaDi)
+    if (primaDi) query = query.lt('created_at', primaDi)
 
-  const { data, error } = await query
-  if (error) throw error
-  return data.map(daRiga)
-}
+    const { data, error } = await query
+    if (error) throw error
+    return data.map(daRiga)
+  }
+)
 
 export async function caricaFoto(file, memberId, { onStato, sfidaId = null } = {}) {
   const esito = await verificaLimite('photo', memberId)
