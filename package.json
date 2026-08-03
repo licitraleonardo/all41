@@ -10,6 +10,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "prova:conti": "node prove/conti.mjs && node prove/conti-casuali.mjs",
+    "prova:pecora": "node prove/pecora.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

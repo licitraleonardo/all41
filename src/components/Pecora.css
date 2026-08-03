@@ -1,0 +1,85 @@
+/* Il gioco è un rettangolo e basta: sta dentro al tab Gioco come dentro
+   alla schermata senza rete, senza sapere dove si trova. */
+
+.pecora {
+  margin-top: 16px;
+}
+
+.pecora-tela {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  /* Il tocco deve far saltare, non selezionare o far scorrere la pagina */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
+.pecora-tela canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Il disegno è fatto di forme piene: senza questo, in scala si
+     ammorbidisce e la pecora sembra sfocata sui telefoni densi. */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.pecora-avviso,
+.pecora-fine {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  text-align: center;
+  color: var(--sand);
+}
+
+.pecora-avviso {
+  font-size: 14px;
+  /* Non deve rubare il tocco alla tela che sta sotto */
+  pointer-events: none;
+  text-shadow: 0 1px 6px rgba(11, 53, 80, 0.9);
+}
+
+.pecora-fine {
+  background: rgba(11, 53, 80, 0.72);
+}
+
+.pecora-punti {
+  margin: 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 34px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pecora-ancora {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sea);
+  background: var(--gold);
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+
+.pecora-ancora:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: 2px;
+}
+
+/* Nella schermata senza rete lo spazio è quello che è, e sotto ci vanno
+   le parole di Allan. */
+.pecora-compatta {
+  margin-top: 20px;
+  width: 100%;
+  max-width: 420px;
+}

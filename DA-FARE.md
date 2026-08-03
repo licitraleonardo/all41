@@ -15,16 +15,16 @@ tutorial) e le **Spese** (punto 10).
 Delle 27 Leggi ne sono vive 13: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
 XIX, XXII, XXVI, XXVII. Le altre aspettano le sezioni che le alimentano.
 
-### Offline: manca solo la Pecora
+### Offline: c'è tutto
 
-Lo spec vuole tre cose in aereo mode, e due ci sono: l'app **si apre**
-(service worker attivo) e **mostra i dati già scaricati**, dicendo in
-cima che sono vecchi e che quello che scrivi non parte. Resta:
+Le tre cose che lo spec vuole in aereo mode ci sono: l'app **si apre**
+(service worker attivo), **mostra i dati già scaricati** dicendo in cima
+che sono vecchi, e c'è **la Pecora**.
 
-- **la Pecora** — punto 11. Il posto dove va **non è più** la schermata
-  senza rete: quella adesso mostra l'app vera. La Pecora sta nel tab
-  Gioco, e la schermata di Allan resta solo per chi apre senza rete e
-  senza aver mai scaricato niente
+Il gioco sta nel tab Gioco, alla scheda "Al", e compare anche nella
+schermata senza rete — dove però non ci si arriva quasi più, perché con
+una copia dei dati si entra nell'app vera. Resta per chi apre senza rete
+e senza aver mai scaricato niente.
 
 **Verifica bloccante ancora aperta**: la n.3 dello spec, i formati audio
 su iPhone. Mai fatta perché in casa c'è solo un Android, e prima della
@@ -102,6 +102,18 @@ Il generatore ha un seme fisso: se un caso fallisce, si rilancia identico
 invece di sperare che ricapiti. Questo è il modo di rispondere a "non so
 come provare tutte le combinazioni": non si provano le combinazioni, si
 provano le proprietà.
+
+**Il gioco si prova allo stesso modo**: `npm run prova:pecora`. La
+proprietà che conta è che un pilota automatico sopravviva all'infinito —
+se il generatore mettesse due ostacoli troppo vicini uscirebbe prima o
+poi una combinazione impossibile, e un gioco che uccide senza scampo non
+è difficile, è rotto. Sessanta minuti simulati su sei semi diversi.
+
+⚠️ **Un gioco in canvas si può far girare anche nel pannello**, che non
+compone fotogrammi: si sostituisce `requestAnimationFrame` con una coda e
+si chiamano i fotogrammi a mano con un orologio finto. Non usare
+`setTimeout`: in una scheda nascosta viene strozzato a uno al secondo e
+sembra che il gioco sia fermo.
 
 ⚠️ Nel pannello di anteprima **`requestAnimationFrame` non scatta**: la
 scheda non compone fotogrammi. Coriandoli, animazioni e `ResizeObserver`
@@ -190,7 +202,12 @@ tipografia dei numeri romani — che texture e fondi scuri insieme.
 
 In ordine di quanto servono davvero, non di numero:
 
-1. **Pecora** (11) — nel tab Gioco, non più nella schermata senza rete
+1. **Pecora, seconda passata** — record condiviso (`sheep/record`:
+   punteggio, detentore, quando) e le due Leggi che ne dipendono: la XX
+   (+3 a chi ha il record a fine giornata, con `dedupeKey` sulla data) e
+   la XXV (+5 a chi ce l'ha alla fine del viaggio). **Nessun punto per il
+   singolo record battuto**: un runner è ripetibile e chi ci è bravo
+   diventerebbe MVP a colpi di partite in spiaggia
 2. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
    programma il 12
 3. **Documenti** (13), **Mappa** (12), **Tutorial** (14),

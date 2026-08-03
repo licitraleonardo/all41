@@ -4,6 +4,7 @@ import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
 import Proposta from './Proposta.jsx'
 import PropostaInAttesa from './PropostaInAttesa.jsx'
+import Pecora from './Pecora.jsx'
 import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
@@ -61,10 +62,29 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta }) {
         >
           Proponi
         </button>
+        {/* Al si raggiunge anche con la rete: lo spec lo vuole nel tab
+            Gioco, non solo come schermata di emergenza. */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={vista === 'pecora'}
+          className={vista === 'pecora' ? 'segmento attivo' : 'segmento'}
+          onClick={() => setVista('pecora')}
+        >
+          Al
+        </button>
       </div>
 
-      {stato === 'caricamento' && <p className="gioco-vuoto">Un attimo.</p>}
-      {stato === 'guasto' && <p className="gioco-guasto">{errore}</p>}
+      {/* Fuori dal blocco che aspetta i dati: il gioco è tutto locale e
+          si apre anche se il database non risponde. */}
+      {vista === 'pecora' && <Pecora />}
+
+      {vista !== 'pecora' && stato === 'caricamento' && (
+        <p className="gioco-vuoto">Un attimo.</p>
+      )}
+      {vista !== 'pecora' && stato === 'guasto' && (
+        <p className="gioco-guasto">{errore}</p>
+      )}
 
       {stato === 'pronto' && vista === 'classifica' && (
         <Classifica classifica={classifica} eventi={eventi} ioId={membro.id} />

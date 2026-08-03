@@ -31,6 +31,7 @@ import { useConnessione } from './hooks/useConnessione.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
+import Pecora from './components/Pecora.jsx'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -248,12 +249,15 @@ export default function App() {
       {vista === 'nonConfigurato' && <NonConfigurato />}
 
       {/* Senza rete non è un guasto, ed è inutile dare la colpa a
-          Supabase: l'app si è aperta lo stesso, ed è già qualcosa. Qui
-          arriverà la Pecora, al punto 11. */}
+          Supabase: l'app si è aperta lo stesso. Qui non ci si arriva
+          quasi più — con una copia dei dati si entra nell'app vera — ma
+          chi apre senza rete e senza aver mai scaricato niente trova
+          almeno Al da far saltare. */}
       {vista === 'guasto' && !inLinea && (
         <div className="pannello">
           <h1 className="titolo">Niente rete.</h1>
           <p className="allan">Mi annoio.</p>
+          <Pecora compatta />
           <p className="istruzioni">
             L&rsquo;app c&rsquo;è, i dati no. Torna il segnale e riprende da sola.
           </p>
