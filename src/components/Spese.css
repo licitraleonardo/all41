@@ -98,6 +98,12 @@
   border: 0;
   border-bottom: 1px solid var(--line);
   padding: 10px 2px;
+}
+
+/* Solo le righe su cui c'è qualcosa da fare sono un bottone: chi non ha
+   conti in sospeso con te resta una riga da leggere, senza freccia e
+   senza invito a toccarla. */
+button.saldo-riga {
   cursor: pointer;
 }
 

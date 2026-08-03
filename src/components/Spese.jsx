@@ -83,42 +83,61 @@ function SaldoMio({ conti, ioId }) {
 }
 
 function ComeStannoTutti({ conti, ioId, onScegli }) {
-  const { membri, saldi } = conti
+  const { membri, saldi, passaggi } = conti
+
+  // Si apre solo quello che si può fare: il tuo, e quello di chi ha un
+  // conto in sospeso con te. Gli altri restano righe da leggere — sapere
+  // che Turi deve dei soldi a Leo non è una cosa su cui puoi agire.
+  const apribile = (id) =>
+    id === ioId ||
+    passaggi.some(
+      (p) => (p.da === ioId && p.a === id) || (p.a === ioId && p.da === id)
+    )
 
   return (
     <ul className="saldi">
       {membri.map((m) => {
         const saldo = saldi[m.id] ?? 0
-        return (
-          <li key={m.id}>
-            <button
-              type="button"
-              className={m.id === ioId ? 'saldo-riga io' : 'saldo-riga'}
-              onClick={() => onScegli(m.id)}
+        const dentro = (
+          <>
+            <img
+              className="saldo-avatar"
+              src={urlAvatar(m.avatarStyle, m.avatarSeed)}
+              alt=""
+              width="30"
+              height="30"
+            />
+            <span className="saldo-nome">{m.nome}</span>
+            <span
+              className={
+                saldo < 0
+                  ? 'saldo-cifra-riga meno'
+                  : saldo > 0
+                    ? 'saldo-cifra-riga piu'
+                    : 'saldo-cifra-riga'
+              }
             >
-              <img
-                className="saldo-avatar"
-                src={urlAvatar(m.avatarStyle, m.avatarSeed)}
-                alt=""
-                width="30"
-                height="30"
-              />
-              <span className="saldo-nome">{m.nome}</span>
-              <span
-                className={
-                  saldo < 0
-                    ? 'saldo-cifra-riga meno'
-                    : saldo > 0
-                      ? 'saldo-cifra-riga piu'
-                      : 'saldo-cifra-riga'
-                }
-              >
-                {saldo === 0 ? '—' : formattaEuro(saldo)}
-              </span>
+              {saldo === 0 ? '—' : formattaEuro(saldo)}
+            </span>
+            {apribile(m.id) && (
               <span className="saldo-freccia" aria-hidden="true">
                 ›
               </span>
-            </button>
+            )}
+          </>
+        )
+
+        const classe = m.id === ioId ? 'saldo-riga io' : 'saldo-riga'
+
+        return (
+          <li key={m.id}>
+            {apribile(m.id) ? (
+              <button type="button" className={classe} onClick={() => onScegli(m.id)}>
+                {dentro}
+              </button>
+            ) : (
+              <div className={classe}>{dentro}</div>
+            )}
           </li>
         )
       })}
@@ -208,7 +227,7 @@ function Cronologia({ conti, ioId }) {
           className={quale === 'rimborsi' ? 'segmento attivo' : 'segmento'}
           onClick={() => setQuale('rimborsi')}
         >
-          Rimborsi{iRimborsi.length > 0 && ` (${iRimborsi.length})`}
+          Rimborsi
         </button>
       </div>
 
@@ -273,77 +292,60 @@ function Cronologia({ conti, ioId }) {
   )
 }
 
-// Il saldo di una persona è verso il gruppo, non verso di te: qui dentro
-// si mostra il passaggio suggerito, che è la cosa che si può davvero
-// fare. Il tasto lo può premere chiunque dei due — se i contanti te li
-// mette in mano lui, sei tu ad avere l'app aperta.
+// Tutto scritto dal punto di vista di chi guarda: "devi dare" e "ti deve
+// dare", non "Turi → Leo". Chi apre l'app vuole sapere cosa tocca a lui,
+// non leggere un tabellone in terza persona.
+//
+// Il tasto lo può premere chiunque dei due: se i contanti te li mette in
+// mano lui, sei tu ad avere l'app aperta.
 function FoglioPersona({ conti, ioId, personaId, onChiudi }) {
   const { passaggi, membriPerId, registraRimborso, saldi } = conti
-  const [mostraAltri, setMostraAltri] = useState(false)
   const persona = membriPerId[personaId]
   const nome = (id) => membriPerId[id]?.nome ?? 'Qualcuno'
+  const io = personaId === ioId
 
-  const suoi = passaggi.filter((p) => p.da === personaId || p.a === personaId)
-  const saldo = saldi[personaId] ?? 0
+  // Sul proprio foglio tutti i conti aperti; su quello di un altro solo
+  // quello fra voi due, che è l'unico su cui puoi fare qualcosa.
+  const miei = passaggi.filter((p) =>
+    io
+      ? p.da === ioId || p.a === ioId
+      : (p.da === ioId && p.a === personaId) || (p.a === ioId && p.da === personaId)
+  )
 
-  // Quello che conta è il passaggio fra te e lui: aprire la riga di chi
-  // ha in mano i soldi di tutti e trovarsi sei righe, cinque delle quali
-  // non ti riguardano, è un tabellone da leggere invece di una cosa da
-  // fare. Gli altri restano, ma chiusi.
-  const miei = suoi.filter((p) => p.da === ioId || p.a === ioId)
-  const altri = suoi.filter((p) => p.da !== ioId && p.a !== ioId)
+  const mio = saldi[ioId] ?? 0
 
   return (
     <div className="foglio-sfondo" role="dialog" aria-modal="true" aria-label={persona?.nome}>
       <div className="foglio foglio-alto">
-        <h2 className="foglio-titolo">{persona?.nome ?? 'Qualcuno'}</h2>
+        <h2 className="foglio-titolo">{io ? 'I tuoi conti' : persona?.nome}</h2>
 
-        <p className="foglio-saldo">
-          {saldo === 0
-            ? 'In pari col gruppo.'
-            : saldo > 0
-              ? `Deve ricevere ${formattaEuro(saldo)}`
-              : `Deve dare ${formattaEuro(-saldo)}`}
-        </p>
+        {io && (
+          <p className="foglio-saldo">
+            {mio === 0
+              ? 'Sei in pari.'
+              : mio > 0
+                ? `In tutto devi ricevere ${formattaEuro(mio)}`
+                : `In tutto devi dare ${formattaEuro(-mio)}`}
+          </p>
+        )}
+
+        {miei.length === 0 && (
+          <p className="spese-vuoto">
+            {io ? 'Non devi dare né ricevere niente.' : `Fra te e ${persona?.nome} è tutto a posto.`}
+          </p>
+        )}
 
         {miei.map((p) => (
           <Salda
             key={`${p.da}-${p.a}`}
             passaggio={p}
+            ioId={ioId}
             nome={nome}
+            conNome={io}
             onRegistra={registraRimborso}
             onFatto={onChiudi}
           />
         ))}
-
-        {suoi.length === 0 && <p className="spese-vuoto">Niente da saldare.</p>}
-
-        {miei.length === 0 && altri.length > 0 && (
-          <p className="spese-vuoto">Fra te e {persona?.nome} non c&rsquo;è niente in sospeso.</p>
-        )}
-
-        {altri.length > 0 && !mostraAltri && (
-          <button
-            type="button"
-            className="riga-secondaria"
-            onClick={() => setMostraAltri(true)}
-          >
-            {altri.length === 1
-              ? 'Mostra anche l’altro passaggio'
-              : `Mostra anche gli altri ${altri.length}`}
-          </button>
-        )}
-
-        {mostraAltri &&
-          altri.map((p) => (
-            <Salda
-              key={`${p.da}-${p.a}`}
-              passaggio={p}
-              nome={nome}
-              onRegistra={registraRimborso}
-              onFatto={onChiudi}
-            />
-          ))}
 
         <button type="button" className="secondario-foglio" onClick={onChiudi}>
           Chiudi
@@ -353,7 +355,10 @@ function FoglioPersona({ conti, ioId, personaId, onChiudi }) {
   )
 }
 
-function Salda({ passaggio, nome, onRegistra, onFatto }) {
+// `conNome` distingue i due fogli: sul proprio serve sapere con chi è il
+// conto, su quello di una persona il nome sta già in testata e ripeterlo
+// a ogni riga è rumore.
+function Salda({ passaggio, ioId, nome, conNome, onRegistra, onFatto }) {
   const [apri, setApri] = useState(false)
   const [importo, setImporto] = useState('')
   const [inCorso, setInCorso] = useState(false)
@@ -362,6 +367,10 @@ function Salda({ passaggio, nome, onRegistra, onFatto }) {
   const scritto = inCentesimi(importo)
   const centesimi = apri ? scritto : passaggio.centesimi
   const valido = centesimi !== null && centesimi > 0 && centesimi <= MAX_CENTESIMI
+
+  const paghiTu = passaggio.da === ioId
+  const altro = nome(paghiTu ? passaggio.a : passaggio.da)
+  const quanto = formattaEuro(passaggio.centesimi)
 
   async function salda() {
     setInCorso(true)
@@ -378,8 +387,17 @@ function Salda({ passaggio, nome, onRegistra, onFatto }) {
   return (
     <div className="salda">
       <p className="salda-riga">
-        <strong>{nome(passaggio.da)}</strong> <span aria-hidden="true">→</span>{' '}
-        <strong>{nome(passaggio.a)}</strong>
+        {paghiTu ? (
+          <>
+            Devi dare <strong>{quanto}</strong>
+            {conNome && <> a {altro}</>}
+          </>
+        ) : (
+          <>
+            {conNome ? `${altro} ti deve dare ` : 'Ti deve dare '}
+            <strong>{quanto}</strong>
+          </>
+        )}
       </p>
 
       {apri && (
@@ -390,7 +408,7 @@ function Salda({ passaggio, nome, onRegistra, onFatto }) {
             inputMode="decimal"
             value={importo}
             onChange={(e) => setImporto(e.target.value)}
-            placeholder={formattaEuro(passaggio.centesimi).replace(' €', '')}
+            placeholder={quanto.replace(' €', '')}
           />
         </label>
       )}
@@ -410,7 +428,7 @@ function Salda({ passaggio, nome, onRegistra, onFatto }) {
           è un fatto avvenuto quanto il resto, e va potuto registrare. */}
       {!apri && (
         <button type="button" className="riga-secondaria" onClick={() => setApri(true)}>
-          Ne ha dati di meno
+          {paghiTu ? 'Ne ho dati di meno' : 'Ne ha dati di meno'}
         </button>
       )}
     </div>
