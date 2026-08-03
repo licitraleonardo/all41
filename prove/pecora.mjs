@@ -132,46 +132,69 @@ prova(
 )
 
 console.log('\nla navicella')
-m = avvia(nuovoMondo(21, 0))
-prova('non c’è all’inizio', m.navicella === false)
-prova('la soglia minima vale per chi non ha record', m.daBattere === NAVICELLA.recordMinimo)
+m = avvia(nuovoMondo(21))
+prova('non c’è all’inizio', m.navicella.arrivata === false)
+prova('parte da sopra il cielo', m.navicella.quota === NAVICELLA.quotaDArrivo)
 
-let tipiVisti = new Set()
-for (let i = 0; i < 60 * 120; i += 1) {
+const tipiVisti = new Set()
+const quoteSparate = new Set()
+let scesa = null
+for (let i = 0; i < 60 * 180; i += 1) {
   m = passo(m, DT)
   if (m.stato === 'finita') m = { ...m, stato: 'corsa' }
-  for (const o of m.ostacoli) tipiVisti.add(o.tipo)
-  if (punteggio(m) > m.daBattere + 400) break
+  if (m.navicella.arrivata && scesa === null && m.navicella.quota <= NAVICELLA.quote[2]) {
+    scesa = Math.round(m.navicella.quota)
+  }
+  for (const o of m.ostacoli) {
+    tipiVisti.add(o.tipo)
+    if (o.tipo === TEMA.raggio) quoteSparate.add(o.quota)
+  }
+  if (punteggio(m) > NAVICELLA.soglia + 4000) break
 }
-prova('arriva dopo aver superato il record', m.navicella === true, {
-  punti: punteggio(m),
-  daBattere: m.daBattere,
+
+prova('arriva sempre allo stesso punteggio', m.navicella.arrivata === true)
+prova('ed è scesa dal cielo fino alle sue quote', scesa !== null, { scesa })
+prova('e da lì in poi spara', tipiVisti.has(TEMA.raggio), {
+  tipiVisti: [...tipiVisti],
 })
 prova(
-  'e da lì in poi spara',
-  TEMA.raggi.some((r) => tipiVisti.has(r)),
-  { tipiVisti: [...tipiVisti] }
+  'i raggi escono solo dalle tre quote della navicella',
+  [...quoteSparate].every((q) => NAVICELLA.quote.includes(q)),
+  { quoteSparate: [...quoteSparate] }
 )
+prova('e prima o poi le usa tutte e tre', quoteSparate.size === 3, {
+  quoteSparate: [...quoteSparate],
+})
 
-// Con un record alto la navicella non deve arrivare presto.
-let n = avvia(nuovoMondo(21, 5000))
-for (let i = 0; i < 60 * 30; i += 1) {
+// Prima della soglia non deve arrivare.
+let n = avvia(nuovoMondo(21))
+for (let i = 0; i < 60 * 5; i += 1) {
   n = passo(n, DT)
   if (n.stato === 'finita') n = { ...n, stato: 'corsa' }
 }
-prova('con un record alto resta a casa', n.navicella === false, {
+prova('prima della soglia non si vede', n.navicella.arrivata === false, {
   punti: punteggio(n),
 })
 
 console.log('\ni raggi si schivano')
-const basso = SAGOME['raggio-basso']
-const alto = SAGOME['raggio-alto']
-prova('quello basso si salta', ALTEZZA_SALTO > basso.altezza)
-prova(
-  'quello alto si passa sotto restando giù',
-  SAGOME[TEMA.protagonista].altezza <= alto.quota
-)
-prova('e saltando ci si sbatte contro', ALTEZZA_SALTO + SAGOME[TEMA.protagonista].altezza > alto.quota)
+const raggio = SAGOME[TEMA.raggio]
+const alan = SAGOME[TEMA.protagonista]
+const [rasoTerra, centro, alto] = NAVICELLA.quote
+
+// Raso terra: prende chi resta giù, si scavalca saltando.
+prova('raso terra prende chi non salta', alan.altezza > rasoTerra)
+prova('e si scavalca saltando', ALTEZZA_SALTO > rasoTerra + raggio.altezza)
+
+// Al centro: passa sopra la testa di chi sta a terra, ma la traiettoria
+// del salto lo attraversa due volte, salendo e scendendo. Chi salta a
+// caso lo prende; chi salta al momento giusto ci passa sopra — ed è
+// giusto così, è l'unico punto del gioco dove conta il tempismo e non
+// solo il riflesso.
+prova('al centro non tocca chi resta a terra', alan.altezza <= centro)
+prova('ma il salto lo attraversa', ALTEZZA_SALTO > centro + raggio.altezza)
+
+// In alto: l'apice del salto resta sotto. È un respiro.
+prova('in alto passa sopra anche saltando', ALTEZZA_SALTO + alan.altezza < alto)
 
 console.log('\nfermi si muore')
 m = avvia(nuovoMondo(3))
@@ -261,7 +284,7 @@ prova(
 )
 prova(
   'e nel frattempo ha incontrato di tutto, raggi compresi',
-  [...TEMA.ostacoli, TEMA.volante, ...TEMA.raggi].every((t) => tipiIncontrati.has(t)),
+  [...TEMA.ostacoli, TEMA.volante, TEMA.raggio].every((t) => tipiIncontrati.has(t)),
   { incontrati: [...tipiIncontrati] }
 )
 

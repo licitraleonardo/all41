@@ -53,7 +53,7 @@ export function probabilitaVolante(distanza) {
   )
 }
 
-export function nuovoMondo(seme = 1, record = 0) {
+export function nuovoMondo(seme = 1) {
   return {
     stato: 'pronto',
     tempo: 0,
@@ -64,17 +64,26 @@ export function nuovoMondo(seme = 1, record = 0) {
     prossimoStacco: MONDO.larghezza * 0.9,
     seme: seme >>> 0,
     prossimoId: 1,
-    // Superato questo punteggio arriva la navicella. Chi non ha ancora
-    // un record ha comunque una soglia, o alla prima partita non la
-    // vedrebbe mai.
-    daBattere: Math.max(record, NAVICELLA.recordMinimo),
-    navicella: false,
+    // La navicella arriva sempre allo stesso punteggio, scende dal cielo
+    // e da lì in poi resta lì a sparare.
+    navicella: {
+      arrivata: false,
+      quota: NAVICELLA.quotaDArrivo,
+      obiettivo: NAVICELLA.quote[1],
+      lampo: 0,
+    },
   }
 }
 
 export function avvia(mondo) {
   if (mondo.stato === 'corsa') return mondo
-  return { ...nuovoMondo(mondo.seme, mondo.daBattere), stato: 'corsa' }
+  return { ...nuovoMondo(mondo.seme), stato: 'corsa' }
+}
+
+// È in posizione quando ha finito di spostarsi: spara solo da ferma, o
+// il raggio uscirebbe da un punto in cui la navicella non è.
+export function inPosizione(navicella) {
+  return navicella.arrivata && Math.abs(navicella.quota - navicella.obiettivo) < 1.5
 }
 
 // Si salta solo da terra: niente doppio salto, che in un runner toglie
@@ -120,14 +129,23 @@ function generaOstacolo(mondo) {
   let seme = mondo.seme
   let caso
   let tipo = null
+  let quota = 0
+  let sparato = false
+  let nuovoObiettivo = mondo.navicella.obiettivo
 
-  // Quando è arrivata la navicella, ai nuraghi si aggiungono i suoi
-  // raggi: uno costringe a saltare, l'altro a restare giù.
-  if (mondo.navicella) {
+  // La navicella spara solo da ferma, e il raggio prende la quota da
+  // dove sta lei: è quello che lo lega alla navicella invece di farlo
+  // sembrare un ostacolo qualunque piovuto dal nulla.
+  if (inPosizione(mondo.navicella)) {
     ;[seme, caso] = prossimoCaso(seme)
     if (caso < NAVICELLA.probabilitaRaggio) {
+      tipo = TEMA.raggio
+      quota = mondo.navicella.quota
+      sparato = true
+      // Sparato il colpo si sposta: la prossima volta arriva da un'altra
+      // altezza, e intanto la si vede muoversi.
       ;[seme, caso] = prossimoCaso(seme)
-      tipo = TEMA.raggi[Math.floor(caso * TEMA.raggi.length)]
+      nuovoObiettivo = NAVICELLA.quote[Math.floor(caso * NAVICELLA.quote.length)]
     }
   }
 
@@ -135,9 +153,11 @@ function generaOstacolo(mondo) {
     ;[seme, caso] = prossimoCaso(seme)
     if (caso < probabilitaVolante(mondo.distanza)) {
       tipo = TEMA.volante
+      quota = SAGOME[tipo].quota
     } else {
       ;[seme, caso] = prossimoCaso(seme)
       tipo = TEMA.ostacoli[Math.floor(caso * TEMA.ostacoli.length)]
+      quota = SAGOME[tipo].quota
     }
   }
 
@@ -148,7 +168,7 @@ function generaOstacolo(mondo) {
     x: MONDO.larghezza + 8,
     larghezza: sagoma.larghezza,
     altezza: sagoma.altezza,
-    quota: sagoma.quota,
+    quota,
   }
 
   // Lo stacco non scende mai sotto il minimo, e quanto si allunga oltre
@@ -158,7 +178,7 @@ function generaOstacolo(mondo) {
   const stacco =
     distanzaMinima(mondo.velocita) * (1 + caso * staccoExtra(mondo.distanza))
 
-  return { ostacolo, seme, stacco }
+  return { ostacolo, seme, stacco, sparato, nuovoObiettivo }
 }
 
 export function passo(mondo, dt) {
@@ -195,9 +215,26 @@ export function passo(mondo, dt) {
   let prossimoId = mondo.prossimoId
   let prossimoStacco = mondo.prossimoStacco - avanzamento
 
-  // Superato il record arriva la navicella, e da lì in poi si spara.
-  const navicella =
-    mondo.navicella || Math.floor(distanza / UNITA_PER_PUNTO) > mondo.daBattere
+  // Arriva sempre allo stesso punteggio, e scende dal cielo fino alla
+  // sua quota invece di comparire dal nulla.
+  const arrivata =
+    mondo.navicella.arrivata ||
+    Math.floor(distanza / UNITA_PER_PUNTO) >= NAVICELLA.soglia
+
+  let navicella = {
+    ...mondo.navicella,
+    arrivata,
+    lampo: Math.max(0, mondo.navicella.lampo - d),
+  }
+
+  if (arrivata) {
+    const verso = Math.sign(navicella.obiettivo - navicella.quota)
+    const salto = NAVICELLA.velocitaVerticale * d
+    navicella.quota =
+      Math.abs(navicella.obiettivo - navicella.quota) <= salto
+        ? navicella.obiettivo
+        : navicella.quota + verso * salto
+  }
 
   if (prossimoStacco <= 0) {
     const generato = generaOstacolo({ ...mondo, distanza, velocita, navicella, prossimoId })
@@ -205,6 +242,14 @@ export function passo(mondo, dt) {
     seme = generato.seme
     prossimoStacco = generato.stacco
     prossimoId += 1
+
+    if (generato.sparato) {
+      navicella = {
+        ...navicella,
+        obiettivo: generato.nuovoObiettivo,
+        lampo: NAVICELLA.lampo,
+      }
+    }
   }
 
   const prossimo = {

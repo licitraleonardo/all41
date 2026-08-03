@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './Pecora.css'
-import { CHIAVE_RECORD, MONDO, NUVOLE, SAGOME, TEMA } from '../config/pecora.js'
+import { CHIAVE_RECORD, MONDO, NAVICELLA, NUVOLE, SAGOME, TEMA } from '../config/pecora.js'
 import { avvia, nuovoMondo, passo, punteggio, salta } from '../lib/pecora.js'
 
 // Allan quando non c'è rete: si annoia, e tocca farlo saltare.
@@ -20,73 +20,84 @@ const FICO = '#3F6E5C'
 const LASER = '#E8604A'
 
 const DISEGNI = {
-  // Alan: dragone, non pecora. Il giubbotto di lana è quello che si mette
-  // in Sardegna — altrove sarebbe un'altra voce di questa mappa, e il
-  // motore non se ne accorgerebbe.
-  'alan-sardegna'(ctx, x, y, l, a, fase) {
+  // Alan e basta: draghetto verde, niente vestiti. A questa dimensione
+  // ogni dettaglio in più diventa una macchia, e quello che si deve
+  // riconoscere è la sagoma.
+  alan(ctx, x, y, l, a, fase) {
     const avanti = Math.sin(fase) > 0
     const cx = x + l / 2
 
     // Coda
     ctx.fillStyle = VERDE
     ctx.beginPath()
-    ctx.moveTo(x + 4, y + a - 12)
-    ctx.quadraticCurveTo(x - 8, y + a - 18, x - 4, y + a - 26)
-    ctx.quadraticCurveTo(x + 2, y + a - 18, x + 10, y + a - 10)
+    ctx.moveTo(x + 5, y + a - 13)
+    ctx.quadraticCurveTo(x - 9, y + a - 17, x - 5, y + a - 27)
+    ctx.quadraticCurveTo(x + 3, y + a - 18, x + 12, y + a - 10)
     ctx.fill()
 
     // Zampe, alternate: si vede che corre invece di scivolare
     ctx.fillStyle = VERDE_SCURO
-    ctx.fillRect(x + 9, y + a - (avanti ? 9 : 5), 6, avanti ? 9 : 5)
-    ctx.fillRect(x + l - 19, y + a - (avanti ? 5 : 9), 6, avanti ? 5 : 9)
+    ctx.fillRect(x + 10, y + a - (avanti ? 10 : 5), 7, avanti ? 10 : 5)
+    ctx.fillRect(x + l - 20, y + a - (avanti ? 5 : 10), 7, avanti ? 5 : 10)
 
-    // Ala dietro
+    // Ala
     ctx.fillStyle = CORNO
     ctx.beginPath()
-    ctx.moveTo(cx - 4, y + 12)
-    ctx.lineTo(cx - 14, y + 2)
-    ctx.lineTo(cx + 3, y + 8)
+    ctx.moveTo(cx - 3, y + 13)
+    ctx.lineTo(cx - 15, y + 1)
+    ctx.lineTo(cx - 12, y + 12)
+    ctx.lineTo(cx + 4, y + 9)
     ctx.closePath()
     ctx.fill()
 
     // Corpo
     ctx.fillStyle = VERDE
     ctx.beginPath()
-    ctx.ellipse(cx - 2, y + a - 15, 14, 11, 0, 0, Math.PI * 2)
+    ctx.ellipse(cx - 2, y + a - 16, 15, 12, 0, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.fillStyle = PANCIA
     ctx.beginPath()
-    ctx.ellipse(cx - 1, y + a - 11, 9, 6, 0, 0, Math.PI * 2)
+    ctx.ellipse(cx - 1, y + a - 11, 10, 7, 0, 0, Math.PI * 2)
     ctx.fill()
 
-    // Il giubbotto di pecora, sulla schiena
-    ctx.fillStyle = LANA
-    ctx.beginPath()
-    ctx.arc(cx - 10, y + a - 21, 6, 0, Math.PI * 2)
-    ctx.arc(cx - 2, y + a - 24, 7, 0, Math.PI * 2)
-    ctx.arc(cx + 6, y + a - 21, 6, 0, Math.PI * 2)
-    ctx.fill()
+    // Le punte sulla schiena, al posto del vello
+    ctx.fillStyle = CORNO
+    for (let i = 0; i < 3; i += 1) {
+      const px = cx - 9 + i * 8
+      const py = y + a - 26 + i * 1.5
+      ctx.beginPath()
+      ctx.moveTo(px - 3, py + 5)
+      ctx.lineTo(px, py)
+      ctx.lineTo(px + 3, py + 5)
+      ctx.closePath()
+      ctx.fill()
+    }
 
     // Testa
     ctx.fillStyle = VERDE
     ctx.beginPath()
-    ctx.ellipse(x + l - 10, y + 12, 10, 9, 0, 0, Math.PI * 2)
+    ctx.ellipse(x + l - 11, y + 13, 11, 10, 0, 0, Math.PI * 2)
     ctx.fill()
-    ctx.fillRect(x + l - 8, y + 12, 9, 7) // muso
+    ctx.beginPath()
+    ctx.ellipse(x + l - 3, y + 16, 6, 5, 0, 0, Math.PI * 2)
+    ctx.fill()
 
-    // Corna e cresta
+    // Corno
     ctx.fillStyle = CORNO
     ctx.beginPath()
-    ctx.moveTo(x + l - 14, y + 4)
-    ctx.lineTo(x + l - 11, y - 3)
-    ctx.lineTo(x + l - 8, y + 4)
+    ctx.moveTo(x + l - 16, y + 5)
+    ctx.lineTo(x + l - 12, y - 3)
+    ctx.lineTo(x + l - 9, y + 5)
     ctx.closePath()
     ctx.fill()
 
-    // L'occhio semichiuso: è svogliato, e si deve vedere anche a 30 px
+    // Narice e occhio semichiuso: è svogliato, e si deve vedere anche a
+    // trenta pixel
+    ctx.fillStyle = VERDE_SCURO
+    ctx.fillRect(x + l - 2, y + 15, 2, 2)
     ctx.fillStyle = SCURO
-    ctx.fillRect(x + l - 10, y + 9, 5, 2)
+    ctx.fillRect(x + l - 12, y + 10, 6, 2)
   },
 
   'fico-india': (ctx, x, y, l, a) => {
@@ -173,49 +184,85 @@ const DISEGNI = {
     ctx.fillRect(x + l * 0.64, cy - 3, 2, 2)
   },
 
-  // I raggi. Nucleo chiaro dentro, alone fuori: a schermo piccolo un
-  // rettangolo rosso e basta sembrerebbe un muretto colorato.
-  'raggio-basso': (ctx, x, y, l, a, fase) => raggio(ctx, x, y, l, a, fase),
-  'raggio-alto': (ctx, x, y, l, a, fase) => raggio(ctx, x, y, l, a, fase),
+  // Il raggio: un proiettile allungato in orizzontale, con la scia che
+  // punta indietro verso la navicella da cui è partito.
+  raggio: (ctx, x, y, l, a, fase) => {
+    const pulsa = 0.7 + Math.abs(Math.sin(fase * 4)) * 0.3
+    const cy = y + a / 2
 
-  navicella: (ctx, x, y, l, a, fase) => {
-    const su = Math.sin(fase * 0.5) * 3
+    // Scia verso destra, cioè verso la navicella
+    const scia = ctx.createLinearGradient(x + l, cy, x + l + 46, cy)
+    scia.addColorStop(0, `rgba(232, 96, 74, ${0.5 * pulsa})`)
+    scia.addColorStop(1, 'rgba(232, 96, 74, 0)')
+    ctx.fillStyle = scia
+    ctx.fillRect(x + l, cy - 4, 46, 8)
 
-    ctx.fillStyle = 'rgba(22, 35, 44, 0.18)'
+    ctx.fillStyle = `rgba(232, 96, 74, ${0.3 * pulsa})`
+    ctx.fillRect(x - 4, y - 4, l + 8, a + 8)
+
+    ctx.fillStyle = LASER
     ctx.beginPath()
-    ctx.ellipse(x + l / 2, y + a - 2 + su, l * 0.42, 4, 0, 0, Math.PI * 2)
+    ctx.ellipse(x + l / 2, cy, l / 2, a / 2, 0, 0, Math.PI * 2)
     ctx.fill()
 
+    ctx.fillStyle = `rgba(247, 244, 236, ${pulsa})`
+    ctx.beginPath()
+    ctx.ellipse(x + l / 2, cy, l / 2 - 5, a / 2 - 7, 0, 0, Math.PI * 2)
+    ctx.fill()
+  },
+
+  // Ferma sul bordo destro, come Alan lo è sul sinistro. Si disegna dopo
+  // gli ostacoli: così il raggio appena sparato le esce da sotto invece
+  // di comparirle accanto.
+  navicella: (ctx, x, y, l, a, fase, lampo) => {
+    const su = Math.sin(fase * 0.35) * 2.5
+    const cy = y + a / 2 + su
+
+    ctx.fillStyle = 'rgba(22, 35, 44, 0.16)'
+    ctx.beginPath()
+    ctx.ellipse(x + l / 2, y + a + 2 + su, l * 0.34, 3.5, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Scafo
     ctx.fillStyle = PIETRA
     ctx.beginPath()
-    ctx.ellipse(x + l / 2, y + a / 2 + su, l / 2, a * 0.3, 0, 0, Math.PI * 2)
+    ctx.ellipse(x + l / 2, cy, l / 2, a * 0.28, 0, 0, Math.PI * 2)
     ctx.fill()
-
-    ctx.fillStyle = 'rgba(247, 244, 236, 0.8)'
+    ctx.fillStyle = 'rgba(22, 35, 44, 0.18)'
     ctx.beginPath()
-    ctx.arc(x + l / 2, y + a / 2 - 3 + su, l * 0.22, Math.PI, 0)
+    ctx.ellipse(x + l / 2, cy + 3, l / 2 - 3, a * 0.14, 0, 0, Math.PI * 2)
     ctx.fill()
 
-    // Le lucine che lampeggiano a turno
-    for (let i = 0; i < 3; i += 1) {
-      const acceso = Math.floor(fase * 2) % 3 === i
-      ctx.fillStyle = acceso ? LASER : 'rgba(22, 35, 44, 0.35)'
+    // Cupola
+    ctx.fillStyle = 'rgba(247, 244, 236, 0.85)'
+    ctx.beginPath()
+    ctx.ellipse(x + l * 0.52, cy - 3, l * 0.2, a * 0.3, 0, Math.PI, 0)
+    ctx.fill()
+
+    // Bocca da fuoco, rivolta a sinistra: è da lì che escono i raggi
+    ctx.fillStyle = VERDE_SCURO
+    ctx.fillRect(x - 3, cy - 3, 12, 6)
+
+    if (lampo > 0) {
+      ctx.fillStyle = `rgba(232, 96, 74, ${Math.min(1, lampo * 4)})`
       ctx.beginPath()
-      ctx.arc(x + l * (0.28 + i * 0.22), y + a / 2 + 3 + su, 2.2, 0, Math.PI * 2)
+      ctx.arc(x - 2, cy, 9 * Math.min(1, lampo * 4), 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = `rgba(247, 244, 236, ${Math.min(1, lampo * 3)})`
+      ctx.beginPath()
+      ctx.arc(x - 2, cy, 4 * Math.min(1, lampo * 4), 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    // Le lucine, a turno
+    for (let i = 0; i < 3; i += 1) {
+      const acceso = Math.floor(fase * 1.5) % 3 === i
+      ctx.fillStyle = acceso ? LASER : 'rgba(22, 35, 44, 0.3)'
+      ctx.beginPath()
+      ctx.arc(x + l * (0.3 + i * 0.2), cy + 4, 2.2, 0, Math.PI * 2)
       ctx.fill()
     }
   },
-}
-
-function raggio(ctx, x, y, l, a, fase) {
-  const pulsa = 0.65 + Math.abs(Math.sin(fase * 3)) * 0.35
-  ctx.fillStyle = `rgba(232, 96, 74, ${0.35 * pulsa})`
-  ctx.fillRect(x - 3, y - 3, l + 6, a + 6)
-  ctx.fillStyle = LASER
-  ctx.fillRect(x, y, l, a)
-  ctx.fillStyle = `rgba(247, 244, 236, ${pulsa})`
-  if (l > a) ctx.fillRect(x, y + a / 2 - 2, l, 4)
-  else ctx.fillRect(x + l / 2 - 2, y, 4, a)
 }
 
 function leggiRecord() {
@@ -237,7 +284,7 @@ function salvaRecord(punti) {
 export default function Pecora({ compatta = false }) {
   const tela = useRef(null)
   const [record, setRecord] = useState(leggiRecord)
-  const mondo = useRef(nuovoMondo(Date.now(), record))
+  const mondo = useRef(nuovoMondo(Date.now()))
   const finitoIl = useRef(0)
   const [vista, setVista] = useState('pronto')
   const [ultimoPunteggio, setUltimoPunteggio] = useState(0)
@@ -286,17 +333,26 @@ export default function Pecora({ compatta = false }) {
 
     const fase = m.distanza / 9
 
-    // La navicella sta in alto e segue: non è un ostacolo, è la minaccia
-    // che li manda.
-    if (m.navicella) {
-      DISEGNI.navicella(ctx, L * 0.62, 16, 78, 30, fase)
-    }
-
     for (const o of m.ostacoli) {
       const disegno = DISEGNI[o.tipo]
       if (disegno) {
         disegno(ctx, o.x, lineaTerra - o.quota - o.altezza, o.larghezza, o.altezza, fase)
       }
+    }
+
+    // Dopo gli ostacoli, di proposito: il raggio appena sparato le esce
+    // da sotto invece di comparirle accanto. È tutta lì l'illusione.
+    if (m.navicella.arrivata) {
+      const s = SAGOME[TEMA.navicella]
+      DISEGNI.navicella(
+        ctx,
+        NAVICELLA.x,
+        lineaTerra - m.navicella.quota - s.altezza,
+        s.larghezza,
+        s.altezza,
+        fase,
+        m.navicella.lampo
+      )
     }
 
     const sagoma = SAGOME[TEMA.protagonista]
@@ -321,7 +377,7 @@ export default function Pecora({ compatta = false }) {
       // Un tocco partito per la rabbia non deve far ricominciare e morire
       // subito: mezzo secondo di sordità.
       if (Date.now() - finitoIl.current < 450) return
-      mondo.current = avvia(nuovoMondo(Date.now(), leggiRecord()))
+      mondo.current = avvia(nuovoMondo(Date.now()))
       setNuovoRecord(false)
       setVista('corsa')
       return
@@ -427,7 +483,7 @@ export default function Pecora({ compatta = false }) {
         </div>
         <div>
           <dt>La navicella arriva a</dt>
-          <dd>{mondo.current.daBattere}</dd>
+          <dd>{NAVICELLA.soglia}</dd>
         </div>
       </dl>
     </div>

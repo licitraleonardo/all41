@@ -8,14 +8,14 @@
 // lib/pecora.js, e nessuno dei due sa cosa sia un nuraghe.
 
 export const TEMA = {
-  // Alan è un dragone, e in Sardegna porta il giubbotto di pecora — da
-  // cui il nome del gioco. Cambiando meta si cambia questo nome e il
-  // disegno corrispondente: 'alan-islanda' avrebbe le orecchie da husky.
-  protagonista: 'alan-sardegna',
+  // Alan è il draghetto e basta: niente vestiti, niente accessori. A 30
+  // pixel ogni dettaglio in più diventa una macchia, e il personaggio si
+  // riconosce dalla sagoma. Se un giorno si vorrà cambiare ambientazione
+  // si cambierà lo sfondo — cielo, terra, ostacoli — non lui.
+  protagonista: 'alan',
   ostacoli: ['fico-india', 'nuraghe', 'muretto'],
   volante: 'gabbiano',
-  // Arrivano solo dopo che hai battuto il record.
-  raggi: ['raggio-basso', 'raggio-alto'],
+  raggio: 'raggio',
   navicella: 'navicella',
   cielo: '#79B4D4',
   terra: '#F2A93B',
@@ -29,11 +29,16 @@ export const TEMA = {
 // su un telefono da 375px un rettangolo 600×180 diventa alto 112px, cioè
 // una fessura. Il cielo in più non serve alla fisica, serve a far
 // sembrare il gioco un gioco.
+// Il riquadro è più stretto e più alto di quanto sembri necessario
+// apposta. Su un telefono da 375px la larghezza è quella e non si
+// discute: l'unico modo di far vedere Alan più grande è mettere meno
+// mondo dentro la stessa striscia. Da 600×180 a 500×320 il personaggio
+// passa da 25 a 30 pixel veri e il riquadro da 112 a 240 di altezza.
 export const MONDO = {
-  larghezza: 600,
-  altezza: 280,
-  suolo: 46, // quanto è alta la striscia di terra
-  giocatoreX: 56,
+  larghezza: 500,
+  altezza: 320,
+  suolo: 48, // quanto è alta la striscia di terra
+  giocatoreX: 52,
 }
 
 export const FISICA = {
@@ -47,18 +52,17 @@ export const FISICA = {
 }
 
 export const SAGOME = {
-  'alan-sardegna': { larghezza: 40, altezza: 36 },
+  alan: { larghezza: 40, altezza: 36 },
   'fico-india': { larghezza: 26, altezza: 38, quota: 0 },
   nuraghe: { larghezza: 36, altezza: 46, quota: 0 },
   muretto: { larghezza: 50, altezza: 24, quota: 0 },
   // Passa basso ma non a terra: non si salta, ci si passa sotto restando
   // giù. È il gabbiano al posto dello pterodattilo.
   gabbiano: { larghezza: 40, altezza: 18, quota: 52 },
-  // I raggi della navicella. Uno costringe a saltare, l'altro a NON
-  // saltare: un raggio verticale sarebbe inschivabile, perché il
-  // protagonista non si sposta mai in orizzontale.
-  'raggio-basso': { larghezza: 26, altezza: 30, quota: 0 },
-  'raggio-alto': { larghezza: 46, altezza: 24, quota: 54 },
+  // Il raggio prende la quota dalla navicella che lo spara, quindi qui
+  // non ne ha una sua.
+  raggio: { larghezza: 30, altezza: 26 },
+  navicella: { larghezza: 84, altezza: 34 },
 }
 
 export const RITMO = {
@@ -83,12 +87,34 @@ export const RITMO = {
 }
 
 export const NAVICELLA = {
-  // Arriva quando superi il record: da lì in poi ai nuraghi si
-  // aggiungono i suoi raggi.
-  probabilitaRaggio: 0.34,
-  // Chi non ha ancora un record deve poterla vedere lo stesso, o la
-  // sorpresa non arriva mai alla prima partita.
-  recordMinimo: 250,
+  // Sempre allo stesso punteggio, e scritto sotto il gioco. Legarlo al
+  // record lo rendeva un evento che non si sa quando arriva: ogni
+  // partita una soglia diversa, invisibile, e nessuno può prepararsi.
+  soglia: 300,
+
+  // Sta ferma sul bordo destro, come Alan sta fermo sul sinistro, e i
+  // raggi nascono da lì. Non li insegue e non si avvicina: è il mondo
+  // che scorre, e quella resta.
+  x: 454,
+
+  // Tre quote fra cui si sposta a caso. Raso terra obbliga a saltare, al
+  // centro obbliga a restare giù. Quella in alto passa sopra la testa
+  // anche saltando: è un respiro, non un terzo pericolo — coi due soli
+  // comandi che ci sono non potrebbe essere altro, ma fa vedere che la
+  // navicella si muove.
+  quote: [0, 44, 140],
+
+  // Quanto ci mette a cambiare quota, e a scendere dal cielo la prima
+  // volta.
+  velocitaVerticale: 190,
+  quotaDArrivo: 330,
+
+  // Ogni quanto, fra gli ostacoli che tocca generare, tocca a un raggio.
+  probabilitaRaggio: 0.38,
+
+  // Il lampo alla bocca quando spara: dura poco, ma è quello che lega il
+  // raggio alla navicella invece di farlo sembrare un ostacolo qualunque.
+  lampo: 0.22,
 }
 
 export const NUVOLE = {
