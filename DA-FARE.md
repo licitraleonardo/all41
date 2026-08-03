@@ -84,6 +84,25 @@ Ogni pezzo di logica sta in una funzione pura provata con `node
 --input-type=module`. Le schermate si controllano montando il singolo
 componente nel browser con dati finti, senza scrivere nel database.
 
+**I conti delle Spese si controllano da soli**: `npm run prova:conti`,
+dieci secondi. Sono due file in `prove/`:
+
+- `conti.mjs` — casi scritti a mano, che fissano il **verso** delle cose:
+  chi paga è in credito, chi consuma è in debito. Una prova casuale non
+  lo può controllare, perché resterebbe coerente anche coi segni girati
+- `conti-casuali.mjs` — centomila situazioni generate a caso (gruppi da 2
+  a 10, spese con più paganti, divisioni che non tornano, righe
+  eliminate, gente uscita dal gruppo) su cui verifica le quattro
+  proprietà che coi soldi devono valere sempre: la somma dei saldi fa
+  zero, eseguendo i passaggi tutti finiscono a zero, nessuno paga sé
+  stesso, e lo stesso elenco di passaggi esce su ogni telefono in
+  qualunque ordine arrivino i dati
+
+Il generatore ha un seme fisso: se un caso fallisce, si rilancia identico
+invece di sperare che ricapiti. Questo è il modo di rispondere a "non so
+come provare tutte le combinazioni": non si provano le combinazioni, si
+provano le proprietà.
+
 ⚠️ Nel pannello di anteprima **`requestAnimationFrame` non scatta**: la
 scheda non compone fotogrammi. Coriandoli, animazioni e `ResizeObserver`
 lì non funzionano, e non è un bug del codice. Dove serve una misura, farla

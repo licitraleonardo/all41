@@ -126,9 +126,9 @@ function ComeStannoTutti({ conti, ioId, onScegli }) {
   )
 }
 
-// Spese e rimborsi insieme, in ordine di tempo: sono due tipi dello
-// stesso fatto — soldi che si sono mossi — e tenerli in due elenchi
-// costringe a incrociarli a mente per capire cos'è successo.
+// Due elenchi e non uno: una spesa e un rimborso sono due cose diverse —
+// una è un costo del viaggio, l'altro è un debito che si chiude — e
+// mescolarle nella stessa colonna di importi fa leggere male entrambe.
 function Cronologia({ conti, ioId }) {
   const { spese, rimborsi, membriPerId, togliSpesa, togliRimborso } = conti
   const [inCorso, setInCorso] = useState(null)
@@ -137,13 +137,21 @@ function Cronologia({ conti, ioId }) {
   const totale = spese.reduce((s, x) => s + x.centesimi, 0)
   const nome = (id) => membriPerId[id]?.nome ?? 'Qualcuno'
 
-  const righe = useMemo(() => {
-    const tutte = [
-      ...spese.map((s) => ({ ...s, genere: 'spesa', quando: s.creataIl })),
-      ...rimborsi.map((r) => ({ ...r, genere: 'rimborso', quando: r.creatoIl })),
-    ]
-    return tutte.sort((a, b) => b.quando.localeCompare(a.quando))
-  }, [spese, rimborsi])
+  const leSpese = useMemo(
+    () =>
+      [...spese]
+        .map((s) => ({ ...s, genere: 'spesa', quando: s.creataIl }))
+        .sort((a, b) => b.quando.localeCompare(a.quando)),
+    [spese]
+  )
+
+  const iRimborsi = useMemo(
+    () =>
+      [...rimborsi]
+        .map((r) => ({ ...r, genere: 'rimborso', quando: r.creatoIl }))
+        .sort((a, b) => b.quando.localeCompare(a.quando)),
+    [rimborsi]
+  )
 
   async function togli(riga) {
     setInCorso(riga.id)
@@ -160,62 +168,77 @@ function Cronologia({ conti, ioId }) {
     }
   }
 
+  const eliminabile = (riga) =>
+    riga.genere === 'spesa' ? riga.paganti.includes(ioId) : riga.da === ioId
+
+  const bottoneElimina = (riga) =>
+    // Chi ha messo i soldi può togliere la riga: se avete pagato in due,
+    // basta che se ne accorga uno.
+    eliminabile(riga) && (
+      <button
+        type="button"
+        className="spesa-elimina"
+        onClick={() => togli(riga)}
+        disabled={inCorso === riga.id}
+      >
+        Elimina
+      </button>
+    )
+
   return (
     <>
       <h3 className="sezione">
-        Cronologia
+        Spese
         <span className="sezione-totale">{formattaEuro(totale)} in tutto</span>
       </h3>
 
       {errore && <p className="spese-guasto">{errore}</p>}
 
-      {righe.length === 0 ? (
-        <p className="spese-vuoto">Ancora niente.</p>
+      {leSpese.length === 0 ? (
+        <p className="spese-vuoto">Ancora nessuna spesa.</p>
       ) : (
         <ul className="spese-elenco">
-          {righe.map((riga) => (
-            <li key={riga.id} className={riga.genere === 'spesa' ? 'spesa' : 'spesa rimborso'}>
+          {leSpese.map((riga) => (
+            <li key={riga.id} className="spesa">
               <div className="spesa-testa">
-                <span className="spesa-descrizione">
-                  {riga.genere === 'spesa' ? (
-                    riga.descrizione
-                  ) : (
-                    <>
-                      {nome(riga.da)} <span aria-hidden="true">→</span> {nome(riga.a)}
-                    </>
-                  )}
-                </span>
+                <span className="spesa-descrizione">{riga.descrizione}</span>
                 <span className="spesa-importo">{formattaEuro(riga.centesimi)}</span>
               </div>
 
               <p className="spesa-sotto">
-                {riga.genere === 'spesa' ? (
-                  <>
-                    {nomiPaganti(riga.paganti, nome)} · divisa fra {riga.divisaFra.length}
-                    {riga.divisaFra.includes(ioId) ? '' : ' · non tocca a te'}
-                  </>
-                ) : (
-                  'rimborso'
-                )}
-                {' · '}
+                {nomiPaganti(riga.paganti, nome)} · divisa fra {riga.divisaFra.length} ·{' '}
                 {quando(riga.quando)}
+                {riga.divisaFra.includes(ioId) ? '' : ' · non tocca a te'}
               </p>
 
-              {/* Chi ha messo i soldi può togliere la riga: se avete
-                  pagato in due, basta che se ne accorga uno. */}
-              {(riga.genere === 'spesa' ? riga.paganti.includes(ioId) : riga.da === ioId) && (
-                <button
-                  type="button"
-                  className="spesa-elimina"
-                  onClick={() => togli(riga)}
-                  disabled={inCorso === riga.id}
-                >
-                  Elimina
-                </button>
-              )}
+              {bottoneElimina(riga)}
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Un rimborso non è un costo del viaggio: è un debito che si
+          chiude. Elenco suo, e fuori dal totale. */}
+      {iRimborsi.length > 0 && (
+        <>
+          <h3 className="sezione">Rimborsi</h3>
+          <ul className="spese-elenco">
+            {iRimborsi.map((riga) => (
+              <li key={riga.id} className="spesa rimborso">
+                <div className="spesa-testa">
+                  <span className="spesa-descrizione">
+                    {nome(riga.da)} <span aria-hidden="true">→</span> {nome(riga.a)}
+                  </span>
+                  <span className="spesa-importo">{formattaEuro(riga.centesimi)}</span>
+                </div>
+
+                <p className="spesa-sotto">{quando(riga.quando)}</p>
+
+                {bottoneElimina(riga)}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </>
   )
