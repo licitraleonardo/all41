@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import './Itinerario.css'
 import Giorno from './Giorno.jsx'
+import Meteo from './Meteo.jsx'
 import RigaAttesa from './RigaAttesa.jsx'
 import { GIORNI } from '../config/itinerario.js'
 import { giornoPerData } from '../lib/giorni.js'
@@ -43,6 +44,7 @@ export default function Itinerario({ membro, onProfilo }) {
 
       <div className="wrap">
         <RigaAttesa />
+        <Meteo dataOggi={data} />
 
         <div className="timeline">
           {GIORNI.map((g) => {

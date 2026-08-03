@@ -1,4 +1,8 @@
 // Itinerario del viaggio. Dato puro: i componenti non contengono testi.
+//
+// Le coordinate servono al meteo della tappa e vengono da
+// sardegna-itinerario.html: una per giornata, il posto dove si sta di
+// più. Il 14 punta al mare di Capo Carbonara, che è dove conta il vento.
 // Portato da sardegna-itinerario.html. Il giorno della settimana NON sta
 // qui: si calcola dalla data, perché scritto a mano si sfasa cambiando anno.
 //
@@ -8,6 +12,7 @@
 export const GIORNI = [
   {
     giorno: 12,
+    coordinate: { lat: 39.2257079, lng: 9.2049651, dove: 'Poetto' },
     data: '2026-08-12',
     titolo: 'Arrivo & spesa lampo',
     tono: 'gold',
@@ -74,6 +79,7 @@ export const GIORNI = [
 
   {
     giorno: 13,
+    coordinate: { lat: 39.1910114, lng: 9.5604255, dove: 'Cala Sinzias' },
     data: '2026-08-13',
     titolo: 'Van moderato: Costa Rei',
     tono: 'coral',
@@ -136,6 +142,7 @@ export const GIORNI = [
 
   {
     giorno: 14,
+    coordinate: { lat: 39.12, lng: 9.53, dove: 'Capo Carbonara' },
     data: '2026-08-14',
     titolo: 'Escursione in barca',
     tono: 'sea',
@@ -175,6 +182,7 @@ export const GIORNI = [
 
   {
     giorno: 15,
+    coordinate: { lat: 39.1286706, lng: 9.5063462, dove: 'Campulongu' },
     data: '2026-08-15',
     titolo: 'Villasimius via van',
     tono: 'juniper',
@@ -233,6 +241,7 @@ export const GIORNI = [
 
   {
     giorno: 16,
+    coordinate: { lat: 39.2257079, lng: 9.2049651, dove: 'Poetto' },
     data: '2026-08-16',
     titolo: 'Ultimo bagno & si parte',
     tono: 'gold',

@@ -143,6 +143,75 @@
   color: var(--ink-soft);
 }
 
+/* ---------------------------------------------------------------- meteo */
+
+.meteo {
+  margin: 0 0 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 4px 12px;
+}
+
+.meteo-riga {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 8px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #F0EDE4;
+}
+
+.meteo-riga:last-child {
+  border-bottom: 0;
+}
+
+.meteo-quando {
+  flex: none;
+  width: 46px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.meteo-dove {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+.meteo-cond {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.meteo-vento {
+  flex: none;
+  min-width: 62px;
+  text-align: right;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Il vento del 14 è l'unica informazione che può far cambiare i piani. */
+.meteo-vento.forte {
+  font-weight: 700;
+  color: var(--coral);
+}
+
+.meteo-avviso {
+  margin: 0;
+  padding: 0 0 9px;
+  font-size: 12px;
+  color: var(--coral);
+}
+
 .day {
   position: relative;
   padding: 0 0 34px 56px;
