@@ -75,23 +75,30 @@ function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
     )
   }
 
-  // Le azioni rapide sono annunci, non conversazione: riga centrata.
+  // Le azioni rapide sono annunci, non conversazione: stanno al centro e
+  // non da un lato. Ma devono vedersi: sono il motivo per cui uno tira
+  // fuori il telefono, non una nota a piè di pagina.
   if (azione.tipo !== 'free_text') {
+    const { icona, testo, tono } = descriviAzione(azione, autore)
     return (
       <li className="voce annuncio">
-        <span>
-          {autore?.nome ?? 'Qualcuno'} {descriviAzione(azione)}
-        </span>
-        {mio && ritirabile(azione.creatoIl) && (
-          <button
-            type="button"
-            className="annuncio-elimina"
-            onClick={() => onElimina(azione.id)}
-            aria-label="Elimina"
-          >
-            ×
-          </button>
-        )}
+        <div className={`cartello ${tono}`}>
+          <span className="cartello-icona" aria-hidden="true">
+            {icona}
+          </span>
+          <span className="cartello-testo">{testo}</span>
+          <span className="cartello-ora">{ora(azione.creatoIl)}</span>
+          {mio && ritirabile(azione.creatoIl) && (
+            <button
+              type="button"
+              className="annuncio-elimina"
+              onClick={() => onElimina(azione.id)}
+              aria-label="Elimina"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </li>
     )
   }
@@ -134,16 +141,25 @@ function Ora({ azione, mio, onElimina }) {
   )
 }
 
-function descriviAzione(a) {
+function descriviAzione(a, autore) {
+  const chi = autore?.nome ?? 'Qualcuno'
   switch (a.tipo) {
     case 'dove_siete':
-      return 'chiede dove siete. 📍'
+      return { icona: '📍', tono: 'posizione', testo: `${chi} chiede dove siete` }
     case 'si_riparte':
-      return `dice che si riparte tra ${a.payload.minuti} minuti. 🚗`
+      return {
+        icona: '🚗',
+        tono: 'partenza',
+        testo: `Si riparte tra ${a.payload.minuti} minuti — lo dice ${chi}`,
+      }
     case 'soundboard':
-      return `ha lanciato ${a.payload.etichetta ?? 'un suono'}. 🔊`
+      return {
+        icona: '🔊',
+        tono: 'suono',
+        testo: `${chi} ha lanciato ${a.payload.etichetta ?? 'un suono'}`,
+      }
     default:
-      return a.tipo
+      return { icona: '•', tono: '', testo: `${chi}: ${a.tipo}` }
   }
 }
 
