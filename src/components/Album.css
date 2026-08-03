@@ -124,6 +124,106 @@
   cursor: pointer;
 }
 
+/* --------------------------------------------------------------- sfide */
+
+.sfide {
+  margin-top: 18px;
+}
+
+.sfide-titolo {
+  margin: 0 0 8px;
+  font-family: var(--font-titoli);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sfide-elenco {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sfida {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 12px;
+  padding: 11px 13px;
+}
+
+.sfida.vinta {
+  border-left-color: var(--juniper);
+  background: #f2f8f4;
+}
+
+.sfida-testa {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sfida-titolo {
+  font-family: var(--font-titoli);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sfida-punti {
+  flex: none;
+  font-family: var(--font-titoli);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--juniper);
+}
+
+.sfida-testo {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.sfida-stato,
+.sfida-esito {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.sfida-esito {
+  font-style: italic;
+}
+
+.sfida-manda {
+  width: 100%;
+  margin-top: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sea);
+  background: var(--gold);
+  border: 0;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.sfida-manda:disabled {
+  color: var(--ink-soft);
+  background: #ece7db;
+  cursor: not-allowed;
+}
+
+.sfida-manda:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
 /* ------------------------------------------------------------- griglia */
 
 .griglia {

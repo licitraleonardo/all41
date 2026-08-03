@@ -4,6 +4,9 @@ import { useFoto } from '../hooks/useFoto.js'
 import { caricaFoto, eliminaFoto } from '../lib/foto.js'
 import { descriviErrore } from '../lib/errori.js'
 import { dopoFoto } from '../lib/regole.js'
+import { forseChiudiCollettiva } from '../lib/sfide.js'
+import { useSfide } from '../hooks/useSfide.js'
+import Sfide from './Sfide.jsx'
 import { urlAvatar } from '../config/avatar.js'
 import { TIPI_ACCETTATI } from '../config/foto.js'
 
@@ -17,12 +20,13 @@ export default function Album({ membro }) {
   const [inCoda, setInCoda] = useState([])
   const campoFile = useRef(null)
   const campoFoto = useRef(null)
+  const sfide = useSfide()
 
-  async function carica(file) {
+  async function carica(file, sfidaId = null) {
     setInCorso(true)
     setAvviso(null)
     try {
-      const esito = await caricaFoto(file, membro.id, { onStato: setAvviso })
+      const esito = await caricaFoto(file, membro.id, { onStato: setAvviso, sfidaId })
       if (!esito.ok) {
         setAvviso(`Aspetta ${esito.attesa}s.`)
         return
@@ -38,6 +42,25 @@ export default function Album({ membro }) {
           if (nuova) setAvviso(`📜 Nuova Legge scoperta. Guarda il Testamento.`)
         })
         .catch(() => {})
+
+      // Una sfida collettiva si chiude quando l'ha fatta tutto il
+      // gruppo: si controlla dopo ogni caricamento.
+      if (sfidaId) {
+        sfide
+          .ricarica()
+          .then(() =>
+            forseChiudiCollettiva(
+              sfidaId,
+              [...(sfide.partecipazioni[sfidaId] ?? []), { autoreId: membro.id }],
+              sfide.membriIds
+            )
+          )
+          .then((r) => {
+            if (r?.appena) setAvviso(`🏆 Ci siete tutti. +${r.punti} a testa.`)
+          })
+          .then(() => sfide.ricarica())
+          .catch(() => {})
+      }
     } catch (e) {
       setInCoda((precedenti) => [...precedenti, { file, nome: file.name }])
       setAvviso(`Non è partita. ${descriviErrore(e)}`)
@@ -114,6 +137,18 @@ export default function Album({ membro }) {
       </div>
 
       {avviso && <p className="album-avviso">{avviso}</p>}
+
+      <Sfide
+        diOggi={sfide.diOggi}
+        conquistate={sfide.conquistate}
+        vinte={sfide.vinte}
+        partecipazioni={sfide.partecipazioni}
+        membri={sfide.membri}
+        ioId={membro.id}
+        totaleMembri={sfide.membriIds.length}
+        onScegli={carica}
+        inCorso={inCorso}
+      />
 
       {inCoda.length > 0 && (
         <ul className="coda">

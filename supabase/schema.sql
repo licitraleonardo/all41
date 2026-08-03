@@ -131,6 +131,17 @@ create index if not exists point_events_classifica_idx
 create index if not exists point_events_membro_idx
   on point_events (member_id, created_at desc);
 
+-- Stato delle sfide della caccia al tesoro. Come per le Leggi, il testo
+-- vive nel codice: qui resta solo chi ha vinto e quando si è chiusa.
+create table if not exists challenges (
+  trip_id       text not null references trips (id) on delete cascade,
+  challenge_id  text not null,
+  won_by_photo  uuid references photos (id) on delete set null,
+  won_by_member uuid references members (id) on delete set null,
+  closed_at     timestamptz not null default now(),
+  primary key (trip_id, challenge_id)
+);
+
 -- Stato di scoperta delle Leggi. Il testo sta nel codice, qui c'è solo
 -- chi l'ha fatta scattare per primo e quando.
 create table if not exists leggi (
@@ -155,7 +166,22 @@ alter table point_events add column if not exists proposed_by uuid
 
 alter table members add column if not exists last_known_location jsonb;
 
-alter table photos add column if not exists challenge_id uuid;
+-- Gli id delle sfide sono etichette leggibili ('faro', 'seada'), non
+-- uuid: la colonna nasceva uuid e va convertita dove esiste già.
+alter table photos add column if not exists challenge_id text;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_name = 'photos' and column_name = 'challenge_id' and data_type = 'uuid'
+  ) then
+    alter table photos alter column challenge_id type text using challenge_id::text;
+  end if;
+end $$;
+
+create index if not exists photos_sfida_idx
+  on photos (trip_id, challenge_id) where challenge_id is not null;
 
 alter table votes add column if not exists ballots jsonb not null default '{}'::jsonb;
 
@@ -176,6 +202,7 @@ alter table votes         enable row level security;
 alter table photos        enable row level security;
 alter table point_events  enable row level security;
 alter table leggi         enable row level security;
+alter table challenges    enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -191,6 +218,7 @@ drop policy if exists "foto: creazione per autenticati"    on photos;
 drop policy if exists "foto: modifica per autenticati"     on photos;
 drop policy if exists "punti: lettura per autenticati"     on point_events;
 drop policy if exists "leggi: lettura per autenticati"     on leggi;
+drop policy if exists "sfide: lettura per autenticati"     on challenges;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -240,6 +268,41 @@ create policy "punti: lettura per autenticati"
 
 create policy "leggi: lettura per autenticati"
   on leggi for select to authenticated using (true);
+
+create policy "sfide: lettura per autenticati"
+  on challenges for select to authenticated using (true);
+
+-- Chiude una sfida assegnandola a chi ha vinto. Una sola volta: se due
+-- telefoni la risolvono insieme, il secondo trova la riga già lì e non
+-- fa niente. Restituisce true solo a chi ha vinto la corsa, così i punti
+-- li assegna uno solo.
+create or replace function chiudi_sfida(
+  p_sfida text,
+  p_membro uuid,
+  p_foto uuid default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  viaggio text;
+  righe int;
+begin
+  select trip_id into viaggio from members where id = p_membro;
+  if not found then raise exception 'Questa persona non esiste.'; end if;
+
+  insert into challenges (trip_id, challenge_id, won_by_photo, won_by_member)
+  values (viaggio, p_sfida, p_foto, p_membro)
+  on conflict (trip_id, challenge_id) do nothing;
+
+  get diagnostics righe = row_count;
+  return righe > 0;
+end $$;
+
+revoke execute on function chiudi_sfida(text, uuid, uuid) from public;
+grant execute on function chiudi_sfida(text, uuid, uuid) to authenticated;
 
 -- Il motore punti: scrive l'evento e aggiorna il punteggio nella stessa
 -- transazione, così storico e totale non possono divergere.
@@ -494,6 +557,13 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'leggi'
   ) then
     alter publication supabase_realtime add table leggi;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'challenges'
+  ) then
+    alter publication supabase_realtime add table challenges;
   end if;
 end $$;
 

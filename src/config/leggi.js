@@ -17,7 +17,7 @@ export const LEGGI = [
   // ——— PUBBLICHE (rivelate dall'inizio) ———
   { n: 1, id: 'poll-proposed', punti: '±10 (max ±15)', pubblica: true, attiva: true,
     testo: 'Punti proposti da qualcuno e approvati dal gruppo a maggioranza' },
-  { n: 2, id: 'challenge-won', punti: '10/15/20', pubblica: true, attiva: false,
+  { n: 2, id: 'challenge-won', punti: '10/15/20', pubblica: true, attiva: true,
     testo: 'Hai vinto una sfida della caccia al tesoro' },
   { n: 3, id: 'impostore-impunito', punti: 5, pubblica: true, attiva: false,
     testo: "Sei sfuggito al voto: l'impostore l'ha fatta franca" },

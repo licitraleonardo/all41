@@ -6,7 +6,8 @@ import { verificaLimite } from './limiti.js'
 import { uuid } from './id.js'
 
 const BUCKET = 'foto'
-const CAMPI = 'id, author_id, url, path, width, height, deleted_at, created_at'
+const CAMPI =
+  'id, author_id, url, path, width, height, challenge_id, deleted_at, created_at'
 
 function daRiga(riga) {
   return {
@@ -16,6 +17,7 @@ function daRiga(riga) {
     percorso: riga.path,
     larghezza: riga.width,
     altezza: riga.height,
+    sfidaId: riga.challenge_id,
     eliminata: Boolean(riga.deleted_at),
     creataIl: riga.created_at,
   }
@@ -39,7 +41,7 @@ export async function leggiFoto({ primaDi = null, limite = PER_PAGINA } = {}) {
   return data.map(daRiga)
 }
 
-export async function caricaFoto(file, memberId, { onStato } = {}) {
+export async function caricaFoto(file, memberId, { onStato, sfidaId = null } = {}) {
   const esito = await verificaLimite('photo', memberId)
   if (!esito.consentito) return { ok: false, ...esito }
 
@@ -63,6 +65,7 @@ export async function caricaFoto(file, memberId, { onStato } = {}) {
       url: pubblico.publicUrl,
       width,
       height,
+      challenge_id: sfidaId,
     })
     .select(CAMPI)
     .single()
