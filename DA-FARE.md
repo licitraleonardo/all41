@@ -9,8 +9,8 @@ Fatti i punti **1-8** dello spec: setup e deploy, onboarding col codice,
 itinerario, Chat Rapida col soundboard, Album Foto, motore punti,
 classifica con MVP e Maglia Nera e Il Testamento, caccia al tesoro con
 voto anonimo. Più le proposte di punti votate dal gruppo, il **meteo
-della tappa** (punto 12 senza la mappa) e la **PWA** (punto 14 senza il
-tutorial).
+della tappa** (punto 12 senza la mappa), la **PWA** (punto 14 senza il
+tutorial) e le **Spese** (punto 10).
 
 Delle 27 Leggi ne sono vive 13: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
 XIX, XXII, XXVI, XXVII. Le altre aspettano le sezioni che le alimentano.
@@ -119,6 +119,20 @@ Restano scritte perché la decisione conta più del codice.
 - **Allan nella chat**: battute locali ed effimere, rare e mai due volte
   di fila. Se commentasse un messaggio su tre si consumerebbe entro il
   primo pomeriggio del 12.
+- **Spese**: importi in **centesimi interi**, mai in virgola mobile — una
+  cena divisa per tre lascia un residuo a ogni riga e dopo cinque giorni
+  la somma dei saldi non fa più zero. I centesimi che avanzano vanno ai
+  primi in ordine di id, così il conto viene identico su tutti i
+  telefoni. Due fatti (`expenses` e `payments`) e nessun saldo salvato:
+  se hai restituito, registri il rimborso e il debito sparisce da solo.
+  L'elimina della propria spesa **non scade**, al contrario dei cinque
+  minuti di messaggi e foto: un importo storto lo scopri facendo i conti
+  la sera, e per allora sarebbe troppo tardi.
+- **Il tab si chiama "Spese", non "Altro"**: lo spec dice Altro perché lì
+  dentro ci andranno anche Documenti, Mappa e Info, ma un tab chiamato
+  "Altro" con una cosa sola dentro non dice niente. Si rinomina quando ne
+  conterrà davvero altre — stesso criterio per cui i tab sono cresciuti
+  da due a cinque invece di nascere tutti spenti.
 
 ## In sospeso
 
@@ -134,13 +148,10 @@ tipografia dei numeri romani — che texture e fondi scuri insieme.
 
 In ordine di quanto servono davvero, non di numero:
 
-1. **Spese** (10) — modello a due fatti, `expenses` meno `payments`, mai
-   un flag "pagato" da preservare. È l'unica sezione fuori dal sistema
-   punti e dalle battute di Allan
-2. **Pecora** (11) — nel tab Gioco, non più nella schermata senza rete
-3. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
+1. **Pecora** (11) — nel tab Gioco, non più nella schermata senza rete
+2. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
    programma il 12
-4. **Documenti** (13), **Mappa** (12), **Tutorial** (14),
+3. **Documenti** (13), **Mappa** (12), **Tutorial** (14),
    **L'Impostore** (15)
 
 Lo spec dice esplicitamente che dal punto 6 in poi tutto può arrivare

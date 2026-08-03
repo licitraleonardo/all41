@@ -152,6 +152,50 @@ create table if not exists leggi (
   primary key (trip_id, legge_id)
 );
 
+-- ------------------------------------------------------------ spese
+-- Due tipi di fatto, e nient'altro: quello che è stato speso e quello che
+-- è stato restituito. I saldi si calcolano da questi, non si salvano —
+-- così non esiste nessun flag "pagato" da tenere in vita quando i conti
+-- si rifanno. Se hai saldato, registri un pagamento e il debito sparisce
+-- da solo.
+--
+-- Gli importi sono centesimi interi. In virgola mobile una cena divisa
+-- per tre lascia mezzo centesimo in giro a ogni riga, e dopo cinque
+-- giorni i conti fra otto persone non tornano più.
+
+create table if not exists expenses (
+  id           uuid primary key default gen_random_uuid(),
+  trip_id      text not null references trips (id) on delete cascade,
+  description  text not null,
+  amount_cents int not null check (amount_cents > 0),
+  paid_by      uuid not null references members (id) on delete cascade,
+  -- coalesce perché array_length su un array vuoto dà null, e un check
+  -- che vale null passa: senza, "divisa fra nessuno" entrerebbe.
+  split_among  uuid[] not null
+               check (coalesce(array_length(split_among, 1), 0) > 0),
+  deleted_at   timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists expenses_viaggio_idx
+  on expenses (trip_id, created_at desc);
+
+-- Rimborsi realmente avvenuti: "ti ho dato 12€ in contanti ieri". È un
+-- fatto accaduto, non lo stato di una riga calcolata.
+create table if not exists payments (
+  id           uuid primary key default gen_random_uuid(),
+  trip_id      text not null references trips (id) on delete cascade,
+  from_member  uuid not null references members (id) on delete cascade,
+  to_member    uuid not null references members (id) on delete cascade,
+  amount_cents int not null check (amount_cents > 0),
+  deleted_at   timestamptz,
+  created_at   timestamptz not null default now(),
+  check (from_member <> to_member)
+);
+
+create index if not exists payments_viaggio_idx
+  on payments (trip_id, created_at desc);
+
 -- ------------------------------------------------------------ adeguamenti
 --
 -- "create table if not exists" crea la tabella la prima volta e poi non
@@ -209,6 +253,8 @@ alter table photos        enable row level security;
 alter table point_events  enable row level security;
 alter table leggi         enable row level security;
 alter table challenges    enable row level security;
+alter table expenses      enable row level security;
+alter table payments      enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -225,6 +271,12 @@ drop policy if exists "foto: modifica per autenticati"     on photos;
 drop policy if exists "punti: lettura per autenticati"     on point_events;
 drop policy if exists "leggi: lettura per autenticati"     on leggi;
 drop policy if exists "sfide: lettura per autenticati"     on challenges;
+drop policy if exists "spese: lettura per autenticati"     on expenses;
+drop policy if exists "spese: creazione per autenticati"   on expenses;
+drop policy if exists "spese: modifica per autenticati"    on expenses;
+drop policy if exists "rimborsi: lettura per autenticati"  on payments;
+drop policy if exists "rimborsi: creazione per autenticati" on payments;
+drop policy if exists "rimborsi: modifica per autenticati" on payments;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -277,6 +329,29 @@ create policy "leggi: lettura per autenticati"
 
 create policy "sfide: lettura per autenticati"
   on challenges for select to authenticated using (true);
+
+-- Le spese non passano da nessuna funzione: qui non c'è niente da
+-- proteggere dal furbo di turno, perché non danno punti e non entrano in
+-- classifica. È l'unica sezione dove il database è solo un quaderno.
+-- La modifica serve al "elimina" dell'autore, che resta morbido come
+-- altrove: un importo sbagliato si toglie, non si riscrive la storia.
+create policy "spese: lettura per autenticati"
+  on expenses for select to authenticated using (true);
+
+create policy "spese: creazione per autenticati"
+  on expenses for insert to authenticated with check (true);
+
+create policy "spese: modifica per autenticati"
+  on expenses for update to authenticated using (true) with check (true);
+
+create policy "rimborsi: lettura per autenticati"
+  on payments for select to authenticated using (true);
+
+create policy "rimborsi: creazione per autenticati"
+  on payments for insert to authenticated with check (true);
+
+create policy "rimborsi: modifica per autenticati"
+  on payments for update to authenticated using (true) with check (true);
 
 -- Chiude una sfida assegnandola a chi ha vinto. Una sola volta: se due
 -- telefoni la risolvono insieme, il secondo trova la riga già lì e non
@@ -635,6 +710,22 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'challenges'
   ) then
     alter publication supabase_realtime add table challenges;
+  end if;
+
+  -- Chi paga il ristorante la registra al tavolo: gli altri devono
+  -- vederla comparire senza ricaricare.
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'expenses'
+  ) then
+    alter publication supabase_realtime add table expenses;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'payments'
+  ) then
+    alter publication supabase_realtime add table payments;
   end if;
 end $$;
 

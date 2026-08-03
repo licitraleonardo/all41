@@ -129,7 +129,8 @@
 
 body.con-banner .gruppo-schermo,
 body.con-banner .album-schermo,
-body.con-banner .gioco-schermo {
+body.con-banner .gioco-schermo,
+body.con-banner .spese-schermo {
   padding-top: calc(16px + var(--altezza-banner));
 }
 

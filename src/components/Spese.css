@@ -1,0 +1,315 @@
+/* Schermata chiara come il Gioco, e come quella riusa il linguaggio già
+   in piedi: .segmenti, .segmento, .sezione, .scelta-persone e .persona
+   nascono in Gioco.css e valgono anche qui. Perché funzionino servono le
+   variabili d'inchiostro, che sono dichiarate lì su .gioco-schermo: si
+   ridichiarano qui con gli stessi valori. */
+
+.spese-schermo {
+  --ink: #16232C;
+  --ink-soft: #55636B;
+  --line: #E4DFD2;
+
+  min-height: 100dvh;
+  background-color: var(--sand);
+  color: var(--ink);
+  text-align: left;
+  padding: 16px 16px calc(20px + var(--altezza-tab));
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.spese-corpo {
+  margin-top: 16px;
+}
+
+.spese-vuoto {
+  margin: 22px 0 0;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+}
+
+.spese-guasto {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--coral);
+}
+
+/* Un importo con uno zero di troppo non è un errore da bloccare in
+   silenzio: si dice cosa si è capito, e chi scrive corregge. */
+.spese-avviso {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  color: var(--coral);
+}
+
+.spese-quota {
+  margin: 14px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------ elenco */
+
+.spese-totale {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.spese-totale strong {
+  font-size: 20px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.spese-elenco {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.spesa {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 13px;
+  margin-bottom: 8px;
+}
+
+.spesa-testa {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.spesa-descrizione {
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.spesa-importo {
+  flex: none;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.spesa-sotto {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.spesa-elimina {
+  margin-top: 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.spesa-elimina:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------- conti */
+
+.saldo-mio {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #e7f0e9;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.saldo-mio.devi {
+  background: #f8e6e1;
+}
+
+.saldo-etichetta {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.saldo-cifra {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.saldi,
+.passaggi {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.saldo-riga {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.saldo-riga.io .saldo-nome {
+  font-weight: 700;
+}
+
+.saldo-avatar {
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.saldo-nome {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+}
+
+.saldo-cifra-riga {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.saldo-cifra-riga.piu {
+  color: #2f6b47;
+}
+
+.saldo-cifra-riga.meno {
+  color: #a2402c;
+}
+
+.passaggio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 7px;
+  font-size: 14px;
+}
+
+.passaggio > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.passaggio-importo {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------- campi */
+
+/* NON è .campo: quella nasce per le schermate scure dell'ingresso e su
+   fondo chiaro scrive sabbia su crema, cioè niente. */
+.campo-chiaro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.campo-chiaro > span {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.campo-chiaro input {
+  width: 100%;
+  font: inherit;
+  /* 16px minimo: sotto questa soglia iOS zooma da solo al focus */
+  font-size: 16px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 13px;
+}
+
+.campo-chiaro input::placeholder {
+  color: #9aa4ab;
+}
+
+.campo-chiaro input:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 1px;
+}
+
+/* Il titoletto ospita l'interruttore "tutti / nessuno" */
+.spese-schermo .sezione {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sezione-azione {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--sea);
+  background: transparent;
+  border: 0;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.primario-spese {
+  width: 100%;
+  margin-top: 20px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sand);
+  background: var(--sea);
+  border: 1px solid transparent;
+  border-radius: 11px;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.primario-spese:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.primario-spese:focus-visible,
+.sezione-azione:focus-visible,
+.spesa-elimina:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}

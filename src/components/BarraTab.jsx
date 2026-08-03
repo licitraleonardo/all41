@@ -1,11 +1,15 @@
-// Lo spec prevede cinque tab. Per ora ce ne sono due, perché due sono le
-// sezioni che esistono: mettere "Foto" e "Gioco" spenti sarebbe interfaccia
-// morta. Crescono man mano che le feature nascono.
+// Lo spec prevede cinque tab, e il quinto si chiama "Altro": dentro ci
+// vanno Spese, Documenti, Mappa e Info. Per ora c'è solo Spese, e un tab
+// chiamato "Altro" con dentro una cosa sola non dice niente a nessuno.
+// Si chiama come quello che contiene, e diventerà "Altro" quando ne
+// conterrà davvero altre — stesso criterio per cui i tab sono cresciuti
+// da due a cinque invece di nascere tutti spenti.
 const TAB = [
   { id: 'oggi', etichetta: 'Oggi', icona: '📅' },
   { id: 'gruppo', etichetta: 'Gruppo', icona: '💬' },
   { id: 'foto', etichetta: 'Foto', icona: '📷' },
   { id: 'gioco', etichetta: 'Gioco', icona: '🏆' },
+  { id: 'spese', etichetta: 'Spese', icona: '💶' },
 ]
 
 export default function BarraTab({ attivo, onCambia, novita }) {
