@@ -1,8 +1,7 @@
 # Da fare
 
 Coda di lavoro decisa, in ordine. Diversa da `IDEE.md`, che è il parcheggio
-delle cose non decise. Aggiornata il 12 agosto 2026, primo giorno di
-viaggio.
+delle cose non decise. Aggiornata prima della partenza.
 
 ## Dove siamo
 
@@ -20,7 +19,12 @@ XIX, XXII, XXVI, XXVII. Le altre aspettano le sezioni che le alimentano.
 
 **Verifica bloccante ancora aperta**: la n.3 dello spec, i formati audio
 su iPhone. Non è mai stata fatta perché in casa c'è solo un Android.
-Serve prima del punto 9.
+Serve prima del punto 9. Il modo più semplice: mandare il link del deploy
+a qualcuno del gruppo che ha un iPhone.
+
+⚠️ Per provare le sfide e il giorno corrente si sposta l'orologio del PC.
+Se un file o un commit sembra datato in mezzo al viaggio, probabilmente
+viene da lì.
 
 ## Trappole già incontrate
 
@@ -69,110 +73,54 @@ in modo sincrono.
 
 ---
 
-## Subito — fastidi quotidiani, mezz'ora in tutto
+## Fatte, con le decisioni prese
 
-- **"Torna all'itinerario" → "Indietro"**. La frase lunga fa pensare invece
-  di far tornare indietro: crea attrito su un gesto che dev'essere
-  automatico.
-- **Via lo sfondo coi simboli** ereditato da `sardegna-itinerario.html`.
-  Tutte le sezioni sullo stesso fondo.
-- **Doppia conferma prima di creare un profilo nuovo.** Capita di incollare
-  il proprio codice nel campo nome andando veloce, e ritrovarsi un doppione.
-  Due controlli semplici, non un indovino:
-  - conferma sempre: *"Sicuro di voler creare un profilo nuovo chiamato
-    YEHAKD?"*
-  - se il nome è tutto maiuscolo, avvisa che i codici sono sempre maiuscoli:
-    *"Sicuro che non sia un codice?"*
+Restano scritte perché la decisione conta più del codice.
 
-## Poi — quello che tiene in piedi il gioco
+- **Proposte di punti**: slider senza campo libero (un +500 votato per
+  ridere azzera la classifica), evento "in attesa" che non muove niente
+  fino alla chiusura, quorum a metà gruppo. Sotto quorum si **annulla**,
+  non si boccia: chi ha proposto non merita la penalità per il
+  disinteresse degli altri.
+- **Dove si vota**: banner in cima a tutta l'app con **tre** scelte. La
+  terza — "voto dopo" — esiste perché obbligare a scegliere fra sì e no
+  per far sparire un banner produce voti a caso, e un voto a caso vale
+  meno di un voto in meno.
+- **Soundboard**: nessun freno per tutti, ma chi pesta lo stesso bottone
+  cinque volte in un minuto se lo vede togliere per un'ora (Legge XXVII).
+  Punizione mirata invece di rallentamento collettivo.
+- **Caccia al tesoro**: mai l'elenco completo, solo le sfide del giorno
+  in corso più le vinte come trofeo. Voto anonimo per davvero — nel
+  database non c'è chi ha votato cosa — e la propria foto non ha il
+  bottone, invece di averlo e rifiutare.
+- **Allan nella chat**: battute locali ed effimere, rare e mai due volte
+  di fila. Se commentasse un messaggio su tre si consumerebbe entro il
+  primo pomeriggio del 12.
 
-1. **Legge XIX, la scala delle penalità** (~45 min). −1 al terzo tentativo
-   rifiutato, poi ogni tre, fino a −5 per blocco; il contatore si azzera al
-   primo invio riuscito. È la Legge che il gruppo scoprirà per prima, ed è
-   già stata cercata senza trovarla.
+## In sospeso
 
-2. **Proposte di punti votate dal gruppo** (~2-3 ore). La Legge I, e il
-   pezzo che unisce la vacanza all'app. Slider da ±10 estendibile a ±15,
-   mai un campo libero. L'evento punti nasce "in attesa" e non muove la
-   classifica finché il voto non chiude. Accende anche le Leggi XI
-   (pareggio), XII (unanimità), XIII (bocciata) e XIV (punti proposti per
-   sé stessi).
+**Il Testamento con un'estetica vera.** Provato e scartato: pannello
+scuro tipo stele, venatura di legno, numeri romani incisi, solchi al
+posto dei blocchi neri. Non piaceva.
 
-3. **Scoperta di una Legge celebrata su tutti i telefoni** (~1 ora).
-   Sovrimpressione con coriandoli, non una riga grigia: è il momento di
-   paga di tutto il sistema, e chi scopre va celebrato.
+Se si riprova, **non ripartire da lì**: il problema non era la mancanza
+di dettagli, semmai il contrario. Meglio una cosa sola e forte — la
+tipografia dei numeri romani — che texture e fondi scuri insieme.
 
-4. **Chat in stile messaggistica** (~1,5-2 ore). I miei messaggi a destra,
-   quelli degli altri a sinistra. Casella fissa in basso con la freccia di
-   invio dentro, e i suoni in un menu che si apre dalla casella stessa.
-   ⚠️ **Allan interviene ogni tanto** con una sua bolla colorata, passivo
-   aggressivo o annoiato. Da tenere raro e locale: se commenta troppo
-   diventa rumore, e se lo si scrive nel database va deciso chi lo scrive.
+## Cosa resta dello spec
 
-5. **Il Testamento con un'estetica vera** — *in sospeso, non urgente*.
+In ordine di quanto servono davvero, non di numero:
 
-   ⚠️ Provato il 1 agosto e scartato: pannello scuro tipo stele di pietra,
-   venatura di legno, numeri romani incisi in oro, solchi vuoti al posto
-   dei blocchi neri. Non piaceva. Il minimale attuale va bene così.
+1. **Meteo della tappa** (punto 12, senza mappa) — mezz'ora, e il vento
+   del 14 è l'unica informazione che può far cambiare i piani per la
+   barca. Coordinate già pronte in `sardegna-itinerario.html`
+2. **PWA** (14) — icona sulla home e schermo intero, è quella che fa
+   sembrare l'app un'app
+3. **Spese** (10) — modello a due fatti, `expenses` meno `payments`, mai
+   un flag "pagato" da preservare
+4. **Chat Vocale** (9) — prima serve la verifica bloccante n.3
+5. **Pecora offline** (11), **Documenti** (13), **Mappa** (12),
+   **L'Impostore** (15)
 
-   Se si riprova, **non ripartire da lì**: il problema non era la mancanza
-   di dettagli, semmai il contrario. Meglio cercare l'epicità con una cosa
-   sola e forte — la tipografia dei numeri romani, per dire — che con
-   texture e fondi scuri.
-
-## Dove si vota una proposta — da rifare
-
-Adesso le proposte in attesa stanno **dentro la Classifica**, con i bottoni
-Sì/No sulla riga. Sbagliato: la classifica è il posto dove si guarda il
-risultato, non dove si prendono decisioni. Mettendoci dei bottoni diventa
-un modulo da compilare.
-
-Come va fatto:
-
-- **Un banner che resta aperto** finché non hai deciso, così la proposta
-  ti trova invece di doverla cercare
-- **Tre scelte, non due**: Sì, No, e **"Non mi va, voto dopo"**. La terza
-  è quella che manca ovunque: se ti obbligo a scegliere fra sì e no per
-  far sparire il banner, voti a caso — e un voto a caso vale meno di un
-  voto in meno
-- Chi rimanda **la ritrova nel tab Proponi**, che diventa il posto dove
-  stanno le proposte aperte oltre che dove se ne fanno di nuove
-- La Classifica torna a essere solo classifica: le proposte in attesa si
-  possono ancora **vedere** lì, ma senza bottoni
-
-⚠️ Da decidere quando si costruisce: se il banner compare **in tutta
-l'app** o solo nel tab Gruppo. Io lo farei globale — una proposta di punti
-riguarda tutti e scade in un'ora, quindi ha senso che ti raggiunga dove
-sei, come la celebrazione delle Leggi. Ma occupa spazio in cima a ogni
-schermata, quindi va tenuto basso e richiudibile.
-
-## Al suo turno (punto 8 dello spec)
-
-**Caccia al tesoro.** Vincoli dati dal gruppo, da rispettare quando si
-costruisce:
-
-- **tante** sfide, e **legate ai luoghi veri** dell'itinerario
-- la prima è il **selfie di tutti**: si sblocca quando l'hanno caricato
-  tutti, e in quel momento lo sa il gruppo intero
-- **non guidata**: le sfide si scoprono usando l'app, non si presentano in
-  fila con un cartello
-
-## Da valutare — la demo esplorativa
-
-Idea: rilasciare al gruppo prima del viaggio un assaggio volutamente
-incompleto, con aria di presagio. Creazione del personaggio, chat ridotta,
-selfie che sblocca il primo punto, classifica ferma, Testamento "rotto a
-metà", più un tutorial in stile videogioco.
-
-**Nota di fattibilità.** Metà è già vera senza costruire niente: il
-Testamento *è* già oscurato per 19 Leggi su 25, e quell'effetto di mistero
-non va simulato, c'è. Fingere che pezzi funzionanti siano rotti costa
-lavoro per peggiorare l'app, e rischia di far arrivare segnalazioni di bug
-veri sepolte fra quelli finti.
-
-Il tutorial invece lo spec lo mette per ultimo di proposito: descrive
-regole che cambiano a ogni feature nuova, quindi scriverlo adesso significa
-riscriverlo tre volte prima del 12.
-
-Versione consigliata: condividere il deploy com'è, con una card
-d'introduzione breve, e tenere il tutorial vero per il punto 14.
+Lo spec dice esplicitamente che dal punto 6 in poi tutto può arrivare
+**durante** il viaggio, con un deploy la sera. Vale ancora.
