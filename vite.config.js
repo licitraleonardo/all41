@@ -16,6 +16,18 @@ function commitCorrente() {
   }
 }
 
+// Il certificato autofirmato dell'HTTPS locale non lo accettano tutti:
+// certi browser lo rifiutano senza dare modo di dire "vai avanti", e il
+// pannello di anteprima non lo apre proprio. `npm run dev:http` rimette
+// il server in chiaro senza dover passare variabili d'ambiente a mano,
+// che su Windows cambiano forma a seconda della shell.
+//
+// In chiaro su localhost il contesto resta sicuro, quindi microfono,
+// posizione e service worker ci sono lo stesso. Dal telefono, su
+// 192.168.x.x, no: lì serve l'HTTPS.
+const senzaHttps =
+  Boolean(process.env.SENZA_HTTPS) || process.env.npm_lifecycle_event === 'dev:http'
+
 // https://vite.dev/config/
 export default defineConfig({
   // basicSsl mette il dev server in HTTPS con un certificato locale. Serve
@@ -30,7 +42,7 @@ export default defineConfig({
   // In quel caso però microfono, posizione e service worker non ci sono.
   plugins: [
     react(),
-    ...(process.env.SENZA_HTTPS ? [] : [basicSsl()]),
+    ...(senzaHttps ? [] : [basicSsl()]),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'sounds/*.mp3'],

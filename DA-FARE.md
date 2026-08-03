@@ -89,10 +89,22 @@ scheda non compone fotogrammi. Coriandoli, animazioni e `ResizeObserver`
 lì non funzionano, e non è un bug del codice. Dove serve una misura, farla
 in modo sincrono.
 
-⚠️ **Il pannello non apre il dev server**: rifiuta il certificato
-autofirmato dell'HTTPS locale, e i file aperti con `file://` li rende
-come istantanee statiche, senza JavaScript. Per guardare davvero una
-schermata servono il browser vero o il deploy.
+⚠️ **Il pannello non apre il dev server in HTTPS**: rifiuta il
+certificato autofirmato, e i file aperti con `file://` li rende come
+istantanee statiche, senza JavaScript. Per questo c'è **`npm run
+dev:http`**, che parte in chiaro sulla 5174 (voce `all41-guarda` in
+`.claude/launch.json`). Su localhost il contesto resta sicuro, quindi
+microfono, posizione e service worker ci sono lo stesso; dal telefono su
+192.168.x.x no, lì serve `npm run dev`.
+
+Il pannello però **non compone fotogrammi**, quindi gli screenshot non
+riescono: si guarda con l'albero della pagina e misurando gli elementi da
+JavaScript, che basta per accorgersi di quasi tutto.
+
+⚠️ **Per entrare senza creare profili**: scrivere in `localStorage` la
+chiave `all41.memberId` con l'id di un membro che esiste già (c'è un
+profilo `test` apposta) e ricaricare. Creare un profilo nuovo per provare
+aggiunge una persona ai conti delle Spese e alla classifica di tutti.
 
 ---
 

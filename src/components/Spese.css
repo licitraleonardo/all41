@@ -1,7 +1,7 @@
 /* Schermata chiara come il Gioco, e come quella riusa il linguaggio già
-   in piedi: .segmenti, .segmento, .sezione, .scelta-persone e .persona
-   nascono in Gioco.css e valgono anche qui. Perché funzionino servono le
-   variabili d'inchiostro, che sono dichiarate lì su .gioco-schermo: si
+   in piedi: .sezione, .scelta-persone e .persona nascono in Gioco.css,
+   .foglio e .campo in ChatRapida.css. Perché funzionino servono le
+   variabili d'inchiostro, dichiarate lì su .gioco-schermo: si
    ridichiarano qui con gli stessi valori. */
 
 .spese-schermo {
@@ -13,23 +13,21 @@
   background-color: var(--sand);
   color: var(--ink);
   text-align: left;
-  padding: 16px 16px calc(20px + var(--altezza-tab));
+  /* In fondo ci sta il tasto fisso, oltre alla barra dei tab: senza
+     questo spazio l'ultima riga della cronologia gli finisce sotto. */
+  padding: 16px 16px calc(28px + var(--altezza-tab) + 56px);
   max-width: 640px;
   margin: 0 auto;
 }
 
-.spese-corpo {
-  margin-top: 16px;
-}
-
 .spese-vuoto {
-  margin: 22px 0 0;
+  margin: 16px 0 0;
   font-size: 14.5px;
   color: var(--ink-soft);
 }
 
 .spese-guasto {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   font-size: 14px;
   line-height: 1.5;
   color: var(--coral);
@@ -38,98 +36,19 @@
 /* Un importo con uno zero di troppo non è un errore da bloccare in
    silenzio: si dice cosa si è capito, e chi scrive corregge. */
 .spese-avviso {
-  margin: 10px 0 0;
+  margin: 2px 0 0;
   font-size: 13.5px;
   color: var(--coral);
 }
 
 .spese-quota {
-  margin: 14px 0 0;
+  margin: 2px 0 0;
   font-size: 13.5px;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
-/* ------------------------------------------------------------ elenco */
-
-.spese-totale {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 0 0 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-  font-size: 13px;
-  color: var(--ink-soft);
-}
-
-.spese-totale strong {
-  font-size: 20px;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.spese-elenco {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.spesa {
-  position: relative;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 13px;
-  margin-bottom: 8px;
-}
-
-.spesa-testa {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.spesa-descrizione {
-  font-size: 15px;
-  font-weight: 600;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.spesa-importo {
-  flex: none;
-  font-size: 15px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.spesa-sotto {
-  margin: 3px 0 0;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-}
-
-.spesa-elimina {
-  margin-top: 8px;
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 5px 10px;
-  cursor: pointer;
-}
-
-.spesa-elimina:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ------------------------------------------------------------- conti */
+/* --------------------------------------------------------- saldo mio */
 
 .saldo-mio {
   display: flex;
@@ -157,19 +76,29 @@
   font-variant-numeric: tabular-nums;
 }
 
-.saldi,
-.passaggi {
+/* ------------------------------------------------------------- saldi */
+
+.saldi {
   list-style: none;
   margin: 10px 0 0;
   padding: 0;
 }
 
+/* Ogni riga si tocca e apre il foglio della persona: il saldo da solo
+   dice quanto, non cosa farci. */
 .saldo-riga {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 9px 2px;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
   border-bottom: 1px solid var(--line);
+  padding: 10px 2px;
+  cursor: pointer;
 }
 
 .saldo-riga.io .saldo-nome {
@@ -203,71 +132,188 @@
   color: #a2402c;
 }
 
-.passaggio {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+.saldo-freccia {
+  flex: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #b3bcc2;
+}
+
+/* -------------------------------------------------------- cronologia */
+
+.sezione-totale {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.spese-elenco {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.spesa {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  margin-bottom: 7px;
-  font-size: 14px;
+  border-radius: 12px;
+  padding: 12px 13px;
+  margin-bottom: 8px;
 }
 
-.passaggio > span:first-child {
-  flex: 1;
+/* Un rimborso non è una spesa: sta nella stessa cronologia perché è lo
+   stesso fatto — soldi che si muovono — ma non deve sembrare che il
+   viaggio sia costato di più. */
+.spesa.rimborso {
+  background: transparent;
+  border-style: dashed;
+}
+
+.spesa-testa {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.spesa-descrizione {
+  font-size: 15px;
+  font-weight: 600;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.passaggio-importo {
+.spesa-importo {
   flex: none;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-/* ------------------------------------------------------------- campi */
-
-/* NON è .campo: quella nasce per le schermate scure dell'ingresso e su
-   fondo chiaro scrive sabbia su crema, cioè niente. */
-.campo-chiaro {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  width: 100%;
-  margin-top: 16px;
+.spesa.rimborso .spesa-importo {
+  font-weight: 600;
+  color: var(--ink-soft);
 }
 
-.campo-chiaro > span {
+.spesa-sotto {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.spesa-elimina {
+  margin-top: 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.spesa-elimina:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------- tasto sempre lì */
+
+/* È l'azione principale della sezione: deve raggiungerti dove sei, non
+   solo se hai scorso fino al punto giusto. */
+.segna-fisso {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--altezza-tab) + 10px);
+  z-index: 15;
+  width: calc(100% - 32px);
+  max-width: 608px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sand);
+  background: var(--sea);
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 20px -8px rgba(11, 53, 80, 0.7);
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------ fogli */
+
+.foglio-alto {
+  max-height: 84vh;
+  overflow-y: auto;
+}
+
+.foglio-saldo {
+  margin: 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.salda {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--sand);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.salda-riga {
+  margin: 0;
+  font-size: 15px;
+}
+
+.riga-secondaria {
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  padding: 2px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Chiuso di default: quasi sempre hai pagato tu, e la fila di avatar
+   era la parte più lenta del modulo. */
+.pagante {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  font: inherit;
+  background: var(--sand);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 13px;
+  cursor: pointer;
+}
+
+.pagante-etichetta {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
 
-.campo-chiaro input {
-  width: 100%;
-  font: inherit;
-  /* 16px minimo: sotto questa soglia iOS zooma da solo al focus */
-  font-size: 16px;
+.pagante-valore {
+  font-size: 15px;
+  font-weight: 600;
   color: var(--ink);
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 12px 13px;
 }
 
-.campo-chiaro input::placeholder {
-  color: #9aa4ab;
-}
-
-.campo-chiaro input:focus-visible {
-  outline: 2px solid var(--sea);
-  outline-offset: 1px;
-}
-
-/* Il titoletto ospita l'interruttore "tutti / nessuno" */
+/* Il titoletto ospita l'interruttore "tutti / nessuno" e il totale */
 .spese-schermo .sezione {
   display: flex;
   align-items: baseline;
@@ -290,7 +336,6 @@
 
 .primario-spese {
   width: 100%;
-  margin-top: 20px;
   font: inherit;
   font-size: 16px;
   font-weight: 700;
@@ -298,7 +343,7 @@
   background: var(--sea);
   border: 1px solid transparent;
   border-radius: 11px;
-  padding: 14px 16px;
+  padding: 13px 16px;
   cursor: pointer;
 }
 
@@ -307,8 +352,26 @@
   cursor: not-allowed;
 }
 
+.secondario-foglio {
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.segna-fisso:focus-visible,
 .primario-spese:focus-visible,
+.secondario-foglio:focus-visible,
 .sezione-azione:focus-visible,
+.riga-secondaria:focus-visible,
+.pagante:focus-visible,
+.saldo-riga:focus-visible,
 .spesa-elimina:focus-visible {
   outline: 2px solid var(--sea);
   outline-offset: 2px;
