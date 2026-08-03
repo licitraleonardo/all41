@@ -141,6 +141,19 @@
 
 /* -------------------------------------------------------- cronologia */
 
+/* Le due schede della cronologia: stesso segmented control del Gioco,
+   staccato dall'elenco dei saldi che gli sta sopra. */
+.cronologia-schede {
+  margin-top: 22px;
+}
+
+.cronologia-totale {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 .sezione-totale {
   font-size: 12px;
   font-weight: 500;

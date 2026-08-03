@@ -131,6 +131,7 @@ function ComeStannoTutti({ conti, ioId, onScegli }) {
 // mescolarle nella stessa colonna di importi fa leggere male entrambe.
 function Cronologia({ conti, ioId }) {
   const { spese, rimborsi, membriPerId, togliSpesa, togliRimborso } = conti
+  const [quale, setQuale] = useState('spese')
   const [inCorso, setInCorso] = useState(null)
   const [errore, setErrore] = useState(null)
 
@@ -187,57 +188,85 @@ function Cronologia({ conti, ioId }) {
 
   return (
     <>
-      <h3 className="sezione">
-        Spese
-        <span className="sezione-totale">{formattaEuro(totale)} in tutto</span>
-      </h3>
+      {/* Due schede accanto invece di due elenchi uno sotto l'altro: una
+          spesa e un rimborso sono cose diverse, e in colonna il secondo
+          elenco finiva comunque fuori schermo. */}
+      <div className="segmenti cronologia-schede" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={quale === 'spese'}
+          className={quale === 'spese' ? 'segmento attivo' : 'segmento'}
+          onClick={() => setQuale('spese')}
+        >
+          Spese
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={quale === 'rimborsi'}
+          className={quale === 'rimborsi' ? 'segmento attivo' : 'segmento'}
+          onClick={() => setQuale('rimborsi')}
+        >
+          Rimborsi{iRimborsi.length > 0 && ` (${iRimborsi.length})`}
+        </button>
+      </div>
 
       {errore && <p className="spese-guasto">{errore}</p>}
 
-      {leSpese.length === 0 ? (
-        <p className="spese-vuoto">Ancora nessuna spesa.</p>
-      ) : (
-        <ul className="spese-elenco">
-          {leSpese.map((riga) => (
-            <li key={riga.id} className="spesa">
-              <div className="spesa-testa">
-                <span className="spesa-descrizione">{riga.descrizione}</span>
-                <span className="spesa-importo">{formattaEuro(riga.centesimi)}</span>
-              </div>
+      {quale === 'spese' && (
+        <>
+          <p className="cronologia-totale">{formattaEuro(totale)} in tutto</p>
 
-              <p className="spesa-sotto">
-                {nomiPaganti(riga.paganti, nome)} · divisa fra {riga.divisaFra.length} ·{' '}
-                {quando(riga.quando)}
-                {riga.divisaFra.includes(ioId) ? '' : ' · non tocca a te'}
-              </p>
+          {leSpese.length === 0 ? (
+            <p className="spese-vuoto">Ancora nessuna spesa.</p>
+          ) : (
+            <ul className="spese-elenco">
+              {leSpese.map((riga) => (
+                <li key={riga.id} className="spesa">
+                  <div className="spesa-testa">
+                    <span className="spesa-descrizione">{riga.descrizione}</span>
+                    <span className="spesa-importo">{formattaEuro(riga.centesimi)}</span>
+                  </div>
 
-              {bottoneElimina(riga)}
-            </li>
-          ))}
-        </ul>
+                  <p className="spesa-sotto">
+                    {nomiPaganti(riga.paganti, nome)} · divisa fra {riga.divisaFra.length} ·{' '}
+                    {quando(riga.quando)}
+                    {riga.divisaFra.includes(ioId) ? '' : ' · non tocca a te'}
+                  </p>
+
+                  {bottoneElimina(riga)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       {/* Un rimborso non è un costo del viaggio: è un debito che si
           chiude. Elenco suo, e fuori dal totale. */}
-      {iRimborsi.length > 0 && (
+      {quale === 'rimborsi' && (
         <>
-          <h3 className="sezione">Rimborsi</h3>
-          <ul className="spese-elenco">
-            {iRimborsi.map((riga) => (
-              <li key={riga.id} className="spesa rimborso">
-                <div className="spesa-testa">
-                  <span className="spesa-descrizione">
-                    {nome(riga.da)} <span aria-hidden="true">→</span> {nome(riga.a)}
-                  </span>
-                  <span className="spesa-importo">{formattaEuro(riga.centesimi)}</span>
-                </div>
+          {iRimborsi.length === 0 ? (
+            <p className="spese-vuoto">Nessuno ha ancora restituito niente.</p>
+          ) : (
+            <ul className="spese-elenco">
+              {iRimborsi.map((riga) => (
+                <li key={riga.id} className="spesa rimborso">
+                  <div className="spesa-testa">
+                    <span className="spesa-descrizione">
+                      {nome(riga.da)} <span aria-hidden="true">→</span> {nome(riga.a)}
+                    </span>
+                    <span className="spesa-importo">{formattaEuro(riga.centesimi)}</span>
+                  </div>
 
-                <p className="spesa-sotto">{quando(riga.quando)}</p>
+                  <p className="spesa-sotto">{quando(riga.quando)}</p>
 
-                {bottoneElimina(riga)}
-              </li>
-            ))}
-          </ul>
+                  {bottoneElimina(riga)}
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
     </>
