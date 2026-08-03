@@ -178,7 +178,8 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
             pollice, e non fanno scorrere via la conversazione. Col menu
             dei suoni aperto spariscono: due file di pillole diverse una
             sopra l'altra si confondono. */}
-        <div className="azioni-rapide" hidden={foglio === 'suoni'}>
+        {foglio !== 'suoni' && (
+        <div className="azioni-rapide">
           <button type="button" className="bottone-sos" onClick={() => setFoglio('sos')}>
             🆘 SOS
           </button>
@@ -207,6 +208,7 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
             📊 Sondaggio
           </button>
         </div>
+        )}
 
         {foglio === 'riparte' && (
           <div className="menu-su">
