@@ -163,14 +163,25 @@ create table if not exists leggi (
 -- per tre lascia mezzo centesimo in giro a ogni riga, e dopo cinque
 -- giorni i conti fra otto persone non tornano più.
 
+-- paid_by e split_among sono due elenchi di persone, non due riferimenti:
+-- una spesa può essere stata pagata in più di uno (il van, il pieno) e
+-- l'importo si divide fra chi ha messo i soldi esattamente come si divide
+-- fra chi l'ha consumata.
+--
+-- Sugli elenchi non c'è vincolo di chiave esterna — un uuid[] non può
+-- averlo — quindi chi sparisce dal gruppo resta scritto qui dentro. Se ne
+-- occupa il calcolo dei saldi, che ignora gli id che non conosce.
+--
+-- coalesce perché array_length su un array vuoto dà null, e un check che
+-- vale null passa: senza, "pagata da nessuno" entrerebbe.
 create table if not exists expenses (
   id           uuid primary key default gen_random_uuid(),
   trip_id      text not null references trips (id) on delete cascade,
   description  text not null,
   amount_cents int not null check (amount_cents > 0),
-  paid_by      uuid not null references members (id) on delete cascade,
-  -- coalesce perché array_length su un array vuoto dà null, e un check
-  -- che vale null passa: senza, "divisa fra nessuno" entrerebbe.
+  paid_by      uuid[] not null
+               constraint expenses_paganti_non_vuoto
+               check (coalesce(array_length(paid_by, 1), 0) > 0),
   split_among  uuid[] not null
                check (coalesce(array_length(split_among, 1), 0) > 0),
   deleted_at   timestamptz,
@@ -234,6 +245,31 @@ alter table votes add column if not exists challenge_id text;
 
 create index if not exists votes_sfida_idx
   on votes (trip_id, challenge_id) where challenge_id is not null;
+
+-- Una spesa può essere stata pagata in più di uno: paid_by nasceva come
+-- un riferimento singolo e diventa un elenco. Le spese già registrate si
+-- convertono da sole, ognuna col suo unico pagante dentro un elenco di
+-- uno — nessuna riga si perde e nessun saldo cambia.
+--
+-- Prima va tolta la chiave esterna: un uuid[] non può averla.
+alter table expenses drop constraint if exists expenses_paid_by_fkey;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_name = 'expenses' and column_name = 'paid_by' and data_type = 'uuid'
+  ) then
+    alter table expenses alter column paid_by type uuid[] using array[paid_by];
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'expenses_paganti_non_vuoto'
+  ) then
+    alter table expenses add constraint expenses_paganti_non_vuoto
+      check (coalesce(array_length(paid_by, 1), 0) > 0);
+  end if;
+end $$;
 
 -- ------------------------------------------------------------------ seed
 

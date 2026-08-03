@@ -11,7 +11,13 @@
 // aereo mode per spammare a piacere.
 
 const PREFISSO = 'all41.cache.'
-const VERSIONE = 1
+
+// Da alzare ogni volta che cambia la forma di quello che si legge, o le
+// copie vecchie tornano indietro come dati buoni. È già servito: le
+// spese sono passate da un pagante solo a un elenco di paganti, e una
+// copia della forma vecchia avrebbe fatto sbagliare i conti a chi
+// riapriva l'app senza rete.
+const VERSIONE = 2
 
 // ------------------------------------------------------ parte pura
 // Niente localStorage qui dentro, così si prova da riga di comando.

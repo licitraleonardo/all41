@@ -284,35 +284,6 @@
   cursor: pointer;
 }
 
-/* Chiuso di default: quasi sempre hai pagato tu, e la fila di avatar
-   era la parte più lenta del modulo. */
-.pagante {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  font: inherit;
-  background: var(--sand);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 11px 13px;
-  cursor: pointer;
-}
-
-.pagante-etichetta {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.pagante-valore {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
 /* Il titoletto ospita l'interruttore "tutti / nessuno" e il totale */
 .spese-schermo .sezione {
   display: flex;
@@ -370,7 +341,6 @@
 .secondario-foglio:focus-visible,
 .sezione-azione:focus-visible,
 .riga-secondaria:focus-visible,
-.pagante:focus-visible,
 .saldo-riga:focus-visible,
 .spesa-elimina:focus-visible {
   outline: 2px solid var(--sea);

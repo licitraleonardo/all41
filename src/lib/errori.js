@@ -38,6 +38,17 @@ export function descriviErrore(e) {
   if (/relation .* does not exist|schema cache|PGRST205/i.test(testo)) {
     return 'Manca una tabella. Va rieseguito supabase/schema.sql nell’SQL Editor.'
   }
+  // Una colonna che ha cambiato forma — è successo a paid_by delle spese,
+  // passata da una persona sola a un elenco. L'errore grezzo di Postgres
+  // parla di tipi e non dice la cosa utile, che è rilanciare lo schema.
+  if (
+    /is of type uuid but expression is of type|malformed array literal|42804/i.test(testo)
+  ) {
+    return (
+      'Il database ha una colonna nella forma vecchia. Va rieseguito ' +
+      'supabase/schema.sql, che la converte senza perdere niente.'
+    )
+  }
   if (/row-level security|violates row-level/i.test(testo)) {
     return 'Le regole di sicurezza rifiutano l’operazione. Rilancia supabase/schema.sql.'
   }

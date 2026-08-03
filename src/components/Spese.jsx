@@ -191,7 +191,7 @@ function Cronologia({ conti, ioId }) {
               <p className="spesa-sotto">
                 {riga.genere === 'spesa' ? (
                   <>
-                    {nome(riga.pagataDa)} · divisa fra {riga.divisaFra.length}
+                    {nomiPaganti(riga.paganti, nome)} · divisa fra {riga.divisaFra.length}
                     {riga.divisaFra.includes(ioId) ? '' : ' · non tocca a te'}
                   </>
                 ) : (
@@ -201,7 +201,9 @@ function Cronologia({ conti, ioId }) {
                 {quando(riga.quando)}
               </p>
 
-              {(riga.genere === 'spesa' ? riga.pagataDa : riga.da) === ioId && (
+              {/* Chi ha messo i soldi può togliere la riga: se avete
+                  pagato in due, basta che se ne accorga uno. */}
+              {(riga.genere === 'spesa' ? riga.paganti.includes(ioId) : riga.da === ioId) && (
                 <button
                   type="button"
                   className="spesa-elimina"
@@ -367,15 +369,13 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
   const { membri, registra } = conti
   const [descrizione, setDescrizione] = useState('')
   const [importo, setImporto] = useState('')
-  const [pagataDa, setPagataDa] = useState(ioId)
-  const [apriPagante, setApriPagante] = useState(false)
+  const [paganti, setPaganti] = useState([ioId])
   const [fra, setFra] = useState(() => membri.map((m) => m.id))
   const [inCorso, setInCorso] = useState(false)
   const [errore, setErrore] = useState(null)
 
   const centesimi = inCentesimi(importo)
   const tutti = useMemo(() => membri.map((m) => m.id), [membri])
-  const nomePagante = membri.find((m) => m.id === pagataDa)?.nome ?? 'Qualcuno'
 
   const fuoriScala = centesimi !== null && centesimi > MAX_CENTESIMI
   const valido =
@@ -383,13 +383,13 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
     centesimi !== null &&
     centesimi > 0 &&
     !fuoriScala &&
+    paganti.length > 0 &&
     fra.length > 0
 
-  function commuta(id) {
-    setFra((precedenti) =>
+  const commuta = (metti) => (id) =>
+    metti((precedenti) =>
       precedenti.includes(id) ? precedenti.filter((x) => x !== id) : [...precedenti, id]
     )
-  }
 
   async function segna() {
     setInCorso(true)
@@ -398,7 +398,7 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
       await registra({
         descrizione: descrizione.trim(),
         centesimi,
-        pagataDa,
+        paganti,
         divisaFra: fra,
       })
       onChiudi()
@@ -439,41 +439,43 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
           <p className="spese-avviso">{formattaEuro(centesimi)}? Controlla la virgola.</p>
         )}
 
-        {/* Di default hai pagato tu, che è quasi sempre vero. Ma se
-            sparisse del tutto, le spese pagate da chi non apre l'app
-            finirebbero attribuite a te e sbaglierebbero i conti di tutti
-            in silenzio. Quindi c'è, chiuso. */}
-        <button
-          type="button"
-          className="pagante"
-          onClick={() => setApriPagante((v) => !v)}
-          aria-expanded={apriPagante}
-        >
-          <span className="pagante-etichetta">Chi ha pagato</span>
-          <span className="pagante-valore">
-            {pagataDa === ioId ? 'Io' : nomePagante}
-            <span aria-hidden="true">{apriPagante ? ' ⌃' : ' ⌄'}</span>
-          </span>
-        </button>
+        {/* Stessa forma di "Divisa fra", perché è la stessa domanda: chi
+            sono le persone. Prima era una riga che si apriva, e nel
+            foglio che scorre non si capiva che l'elenco fosse comparso. */}
+        <h3 className="sezione">
+          Chi ha pagato
+          <button
+            type="button"
+            className="sezione-azione"
+            onClick={() => setPaganti(paganti.length === tutti.length ? [ioId] : tutti)}
+          >
+            {paganti.length === tutti.length ? 'Solo io' : 'Tutti'}
+          </button>
+        </h3>
 
-        {apriPagante && (
-          <div className="scelta-persone">
-            {membri.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className={m.id === pagataDa ? 'persona scelta' : 'persona'}
-                onClick={() => {
-                  setPagataDa(m.id)
-                  setApriPagante(false)
-                }}
-                aria-pressed={m.id === pagataDa}
-              >
-                <img src={urlAvatar(m.avatarStyle, m.avatarSeed)} alt="" width="40" height="40" />
-                <span>{m.id === ioId ? `${m.nome} (tu)` : m.nome}</span>
-              </button>
-            ))}
-          </div>
+        <div className="scelta-persone">
+          {membri.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={paganti.includes(m.id) ? 'persona scelta' : 'persona'}
+              onClick={() => commuta(setPaganti)(m.id)}
+              aria-pressed={paganti.includes(m.id)}
+            >
+              <img src={urlAvatar(m.avatarStyle, m.avatarSeed)} alt="" width="40" height="40" />
+              <span>{m.id === ioId ? `${m.nome} (tu)` : m.nome}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* In più di uno, l'importo si divide fra chi ha messo i soldi
+            come si divide fra chi ha consumato: due divisioni dello
+            stesso totale, quindi i conti restano in pari. */}
+        {paganti.length > 1 && centesimi !== null && centesimi > 0 && !fuoriScala && (
+          <p className="spese-quota">
+            {centesimi % paganti.length === 0 ? '' : 'Circa '}
+            {formattaEuro(Math.floor(centesimi / paganti.length))} messi a testa
+          </p>
         )}
 
         <h3 className="sezione">
@@ -493,7 +495,7 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
               key={m.id}
               type="button"
               className={fra.includes(m.id) ? 'persona scelta' : 'persona'}
-              onClick={() => commuta(m.id)}
+              onClick={() => commuta(setFra)(m.id)}
               aria-pressed={fra.includes(m.id)}
             >
               <img src={urlAvatar(m.avatarStyle, m.avatarSeed)} alt="" width="40" height="40" />
@@ -530,4 +532,13 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
 
 function quando(iso) {
   return new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+}
+
+// In due si scrivono tutti e due; da tre in su il nome più lungo
+// mangerebbe la riga, e chi sono di preciso si vede aprendo la spesa.
+function nomiPaganti(ids, nome) {
+  if (ids.length === 0) return 'Nessuno'
+  if (ids.length === 1) return nome(ids[0])
+  if (ids.length === 2) return `${nome(ids[0])} e ${nome(ids[1])}`
+  return `${nome(ids[0])} e altri ${ids.length - 1}`
 }

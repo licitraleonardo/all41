@@ -140,6 +140,17 @@ Restano scritte perché la decisione conta più del codice.
   L'elimina della propria spesa **non scade**, al contrario dei cinque
   minuti di messaggi e foto: un importo storto lo scopri facendo i conti
   la sera, e per allora sarebbe troppo tardi.
+- **Una spesa può avere più paganti**, e l'importo si divide fra loro in
+  parti uguali come si divide fra chi l'ha consumata: due divisioni dello
+  stesso totale, quindi la somma dei saldi resta zero per costruzione. Se
+  due hanno messo cifre **diverse** (30 e 20) restano due spese separate:
+  i campi per l'importo di ciascuno raddoppiano il modulo per un caso
+  raro. `paid_by` è quindi un `uuid[]` e non ha chiave esterna — un array
+  non può averla — quindi chi esce dal gruppo resta scritto lì dentro e
+  lo ignora il calcolo dei saldi.
+- **Chi ha pagato ha la stessa forma di "Divisa fra"**: è la stessa
+  domanda, chi sono le persone. Prima era una riga che si apriva, e in un
+  foglio che scorre non si capiva che l'elenco fosse comparso.
 - **Il tab si chiama "Spese", non "Altro"**: lo spec dice Altro perché lì
   dentro ci andranno anche Documenti, Mappa e Info, ma un tab chiamato
   "Altro" con una cosa sola dentro non dice niente. Si rinomina quando ne

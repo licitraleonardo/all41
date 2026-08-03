@@ -46,13 +46,19 @@ export function calcolaSaldi(spese, pagamenti, membriIds) {
   for (const spesa of spese) {
     if (spesa.eliminata) continue
 
-    // Chi era nella divisione ma non c'è più fra i membri verrebbe
-    // ignorato, e la spesa non tornerebbe: si tiene solo se resta
-    // qualcuno con cui dividerla.
+    // Chi non c'è più fra i membri verrebbe ignorato e la spesa non
+    // tornerebbe: si tiene solo se resta qualcuno da entrambe le parti.
+    const paganti = [...spesa.paganti].filter(conosciuto).sort()
     const fra = [...spesa.divisaFra].filter(conosciuto).sort()
-    if (fra.length === 0 || !conosciuto(spesa.pagataDa)) continue
+    if (paganti.length === 0 || fra.length === 0) continue
 
-    saldi[spesa.pagataDa] += spesa.centesimi
+    // Chi ha pagato si divide il credito come chi ha consumato si divide
+    // il debito: due divisioni dello stesso importo, quindi la somma
+    // resta zero per costruzione, non per fortuna.
+    const messo = dividi(spesa.centesimi, paganti.length)
+    paganti.forEach((id, i) => {
+      saldi[id] += messo[i]
+    })
 
     const quote = dividi(spesa.centesimi, fra.length)
     fra.forEach((id, i) => {

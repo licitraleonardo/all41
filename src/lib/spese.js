@@ -13,7 +13,10 @@ function daRigaSpesa(riga) {
     id: riga.id,
     descrizione: riga.description,
     centesimi: riga.amount_cents,
-    pagataDa: riga.paid_by,
+    // Prima dell'adeguamento dello schema paid_by era un uuid solo: se
+    // l'app si apre su un database non ancora aggiornato, la spesa si
+    // legge lo stesso invece di rompere la schermata.
+    paganti: Array.isArray(riga.paid_by) ? riga.paid_by : [riga.paid_by].filter(Boolean),
     divisaFra: riga.split_among ?? [],
     eliminata: Boolean(riga.deleted_at),
     creataIl: riga.created_at,
@@ -55,14 +58,14 @@ export const leggiRimborsi = conCache('rimborsi', async function leggiRimborsi()
   return data.map(daRigaRimborso)
 })
 
-export async function aggiungiSpesa({ descrizione, centesimi, pagataDa, divisaFra }) {
+export async function aggiungiSpesa({ descrizione, centesimi, paganti, divisaFra }) {
   const { data, error } = await supabase
     .from('expenses')
     .insert({
       trip_id: VIAGGIO.id,
       description: descrizione,
       amount_cents: centesimi,
-      paid_by: pagataDa,
+      paid_by: paganti,
       split_among: divisaFra,
     })
     .select(CAMPI_SPESA)
