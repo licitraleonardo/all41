@@ -8,6 +8,7 @@ import { forseChiudiCollettiva } from '../lib/sfide.js'
 import { useSfide } from '../hooks/useSfide.js'
 import Sfide from './Sfide.jsx'
 import FotoGrande from './FotoGrande.jsx'
+import BottoneElimina from './BottoneElimina.jsx'
 import { urlAvatar } from '../config/avatar.js'
 import { TIPI_ACCETTATI } from '../config/foto.js'
 
@@ -242,22 +243,28 @@ export default function Album({ membro }) {
               return (
                 <figure className="cella" key={f.id}>
                   {/* In una griglia da tre colonne una foto è larga cento
-                      pixel: si tocca e si apre grande, dove si può anche
-                      esportarla o toglierla. */}
-                  <button
-                    type="button"
-                    className="cella-foto"
-                    onClick={() => setGrande(f)}
-                    aria-label={`Apri la foto di ${autore?.nome ?? 'qualcuno'}`}
-                  >
-                    <img
-                      src={f.url}
-                      alt=""
-                      width={f.larghezza ?? 800}
-                      height={f.altezza ?? 800}
-                      loading="lazy"
-                    />
-                  </button>
+                      pixel: si tocca e si apre grande, per guardarla e
+                      scaricarla. Togliere resta qui, sulla × piccola. */}
+                  <div className="cella-foto">
+                    <button
+                      type="button"
+                      className="cella-apri"
+                      onClick={() => setGrande(f)}
+                      aria-label={`Apri la foto di ${autore?.nome ?? 'qualcuno'}`}
+                    >
+                      <img
+                        src={f.url}
+                        alt=""
+                        width={f.larghezza ?? 800}
+                        height={f.altezza ?? 800}
+                        loading="lazy"
+                      />
+                    </button>
+
+                    {f.autoreId === membro.id && (
+                      <BottoneElimina onElimina={() => elimina(f)} />
+                    )}
+                  </div>
 
                   <figcaption>
                     <img
@@ -288,9 +295,7 @@ export default function Album({ membro }) {
         <FotoGrande
           foto={grande}
           autore={membri[grande.autoreId]}
-          mia={grande.autoreId === membro.id}
           onChiudi={() => setGrande(null)}
-          onElimina={elimina}
         />
       )}
     </div>

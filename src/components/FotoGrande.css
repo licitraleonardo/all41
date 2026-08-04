@@ -82,12 +82,6 @@
   cursor: pointer;
 }
 
-.foto-tasto.pericolo {
-  color: #4d1408;
-  background: #f6bfb4;
-  border-color: transparent;
-}
-
 .foto-tasto:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -97,15 +91,6 @@
 .foto-sfondo:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
-}
-
-/* La domanda sta sotto i tasti e non sopra: chi ha già premuto "Elimina"
-   guarda lì, e la risposta dev'essere sotto il pollice. */
-.foto-domanda {
-  margin: 10px 0 0;
-  text-align: center;
-  font-size: 13.5px;
-  color: rgba(247, 244, 236, 0.8);
 }
 
 .foto-avviso {

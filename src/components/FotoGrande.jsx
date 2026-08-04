@@ -3,11 +3,13 @@ import './FotoGrande.css'
 import { urlAvatar } from '../config/avatar.js'
 
 // La foto a schermo pieno. In una griglia da tre colonne su un telefono
-// una foto è larga cento pixel: si capisce che c'è qualcuno in spiaggia
-// e basta, e le facce non si distinguono.
-export default function FotoGrande({ foto, autore, mia, onChiudi, onElimina }) {
-  const [conferma, setConferma] = useState(false)
-  const [inCorso, setInCorso] = useState(false)
+// una foto è larga cento pixel: si capisce che c'è qualcuno in spiaggia e
+// basta, e le facce non si distinguono.
+//
+// Serve a guardarla meglio e a scaricarla, niente altro: eliminare resta
+// sulla × della miniatura, dov'è più sobrio e dove non ci si finisce per
+// sbaglio mentre si sfoglia.
+export default function FotoGrande({ foto, autore, onChiudi }) {
   const [avviso, setAvviso] = useState(null)
 
   // Esc chiude, come ci si aspetta da qualunque cosa a schermo pieno.
@@ -42,24 +44,9 @@ export default function FotoGrande({ foto, autore, mia, onChiudi, onElimina }) {
     }
   }
 
-  async function elimina() {
-    setInCorso(true)
-    try {
-      await onElimina(foto)
-      onChiudi()
-    } finally {
-      setInCorso(false)
-    }
-  }
-
   return (
     <div className="foto-grande" role="dialog" aria-modal="true" aria-label="Foto">
-      <button
-        type="button"
-        className="foto-sfondo"
-        onClick={onChiudi}
-        aria-label="Chiudi"
-      />
+      <button type="button" className="foto-sfondo" onClick={onChiudi} aria-label="Chiudi" />
 
       <img className="foto-piena" src={foto.url} alt="" />
 
@@ -83,43 +70,10 @@ export default function FotoGrande({ foto, autore, mia, onChiudi, onElimina }) {
           <button type="button" className="foto-tasto" onClick={esporta}>
             ⬇ Esporta
           </button>
-
-          {mia &&
-            (conferma ? (
-              <>
-                <button
-                  type="button"
-                  className="foto-tasto pericolo"
-                  onClick={elimina}
-                  disabled={inCorso}
-                >
-                  {inCorso ? 'Tolgo…' : 'Sì, elimina'}
-                </button>
-                <button
-                  type="button"
-                  className="foto-tasto"
-                  onClick={() => setConferma(false)}
-                  disabled={inCorso}
-                >
-                  No
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="foto-tasto"
-                onClick={() => setConferma(true)}
-              >
-                Elimina
-              </button>
-            ))}
-
           <button type="button" className="foto-tasto" onClick={onChiudi}>
             Chiudi
           </button>
         </div>
-
-        {conferma && <p className="foto-domanda">Sicuro di volerla eliminare?</p>}
       </div>
     </div>
   )

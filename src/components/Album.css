@@ -379,28 +379,34 @@
 
 /* Il riquadro quadrato è questo, non la figure: così la didascalia sta
    sotto la foto e non ci finisce sopra. */
-/* La cella è un bottone: si tocca e la foto si apre grande. */
 .cella-foto {
   position: relative;
-  display: block;
-  width: 100%;
   aspect-ratio: 1;
-  border: 0;
   border-radius: 12px;
   overflow: hidden;
-  padding: 0;
   background: #e8e3d6;
+}
+
+/* La foto si tocca e si apre grande; la × sta sopra, ed è un bottone a
+   parte perché un bottone dentro un altro non si può. */
+.cella-apri {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
   cursor: pointer;
 }
 
-.cella-foto:focus-visible {
+.cella-apri:focus-visible {
   outline: 2px solid var(--sea);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 /* Solo l'immagine dentro il riquadro: senza questa precisazione la regola
    vinceva anche sull'avatar della didascalia e lo stirava a tutta cella. */
-.cella-foto > img {
+.cella-apri > img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -430,6 +436,44 @@
   flex: none;
   border-radius: 50%;
   background: #e8e3d6;
+}
+
+/* La × piccolina nell'angolo: è la cosa più sobria che ci sia, e un
+   tocco solo su una cosa irreversibile è troppo poco. Al primo tocco
+   diventa "Sicuro?" e si allarga quel tanto che basta a non premerla per
+   sbaglio; dopo tre secondi torna com'era. */
+.cella-elimina {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 26px;
+  height: 26px;
+  font: inherit;
+  font-size: 17px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(11, 53, 80, 0.55);
+  border: 0;
+  border-radius: 8px;
+  padding: 0 5px;
+  cursor: pointer;
+}
+
+.cella-elimina.armato {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 0 9px;
+  background: var(--coral);
+}
+
+.cella-elimina:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cella-elimina:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: 1px;
 }
 
 .altre {
