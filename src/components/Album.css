@@ -7,7 +7,8 @@
   background-color: var(--sand);
   color: var(--ink);
   text-align: left;
-  padding: 16px 16px calc(20px + var(--altezza-tab));
+  /* In fondo ci stanno i due tasti fissi, oltre alla barra dei tab */
+  padding: 16px 16px calc(28px + var(--altezza-tab) + 56px);
   max-width: 640px;
   margin: 0 auto;
 }
@@ -26,9 +27,24 @@
   margin: 0;
 }
 
+/* Scatta e Scegli in fondo, dov'è il pollice: caricare una foto è
+   l'azione principale della sezione e stava nell'angolo più lontano da
+   raggiungere con una mano sola. Stessa idea del tasto delle Spese. */
 .album-bottoni {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--altezza-tab) + 10px);
+  z-index: 15;
   display: flex;
   gap: 8px;
+  width: calc(100% - 32px);
+  max-width: 608px;
+}
+
+.album-bottoni .carica {
+  flex: 1;
+  box-shadow: 0 8px 20px -8px rgba(11, 53, 80, 0.55);
 }
 
 .carica {

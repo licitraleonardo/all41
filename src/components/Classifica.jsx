@@ -1,8 +1,20 @@
+import { useState } from 'react'
 import { urlAvatar } from '../config/avatar.js'
 import { dataDiOggi, statoDelViaggio } from '../lib/giorni.js'
 import { magliaNeraDelGiorno, mvpDelGiorno, saldiDelGiorno } from '../lib/classifica.js'
+import Proposta from './Proposta.jsx'
+import PropostaInAttesa from './PropostaInAttesa.jsx'
 
-export default function Classifica({ classifica, eventi, ioId }) {
+export default function Classifica({
+  classifica,
+  eventi,
+  ioId,
+  proposteAperte = [],
+  onVotaProposta,
+  onCrea,
+  inCorso,
+  errore,
+}) {
   const oggi = dataDiOggi()
   const saldi = saldiDelGiorno(eventi, oggi)
   const mvp = mvpDelGiorno(saldi)
@@ -12,7 +24,15 @@ export default function Classifica({ classifica, eventi, ioId }) {
   const perId = Object.fromEntries(classifica.map((m) => [m.id, m]))
   const nome = (id) => perId[id]?.nome ?? 'Qualcuno'
 
-  const inAttesa = eventi.filter((e) => e.stato === 'pending')
+  // I punti si propongono da qui: la classifica è dove guardi chi merita
+  // qualcosa, quindi è lì che deve stare il gesto. Non è un foglio in
+  // sovrimpressione — si apre sotto la riga, dove hai toccato.
+  const [scelto, setScelto] = useState(null)
+
+  async function crea(dati) {
+    await onCrea(dati)
+    setScelto(null)
+  }
 
   return (
     <div className="gioco-corpo">
@@ -36,54 +56,69 @@ export default function Classifica({ classifica, eventi, ioId }) {
 
       <ol className="classifica">
         {classifica.map((m, i) => (
-          <li key={m.id} className={m.id === ioId ? 'riga io' : 'riga'}>
-            <span className="posto">{i + 1}</span>
-            <img
-              className="riga-avatar"
-              src={urlAvatar(m.avatarStyle, m.avatarSeed)}
-              alt=""
-              width="34"
-              height="34"
-            />
-            <span className="riga-nome">
-              {m.nome}
-              {finito && i === 0 && <span className="corona"> 👑</span>}
-              {finito && i === classifica.length - 1 && classifica.length > 1 && (
-                <span className="corona"> 🏴</span>
-              )}
-            </span>
-            <span className={m.punteggio < 0 ? 'riga-punti sotto' : 'riga-punti'}>
-              {m.punteggio}
-            </span>
+          <li key={m.id}>
+            <button
+              type="button"
+              className={m.id === ioId ? 'riga io' : 'riga'}
+              onClick={() => setScelto(scelto === m.id ? null : m.id)}
+              aria-expanded={scelto === m.id}
+            >
+              <span className="posto">{i + 1}</span>
+              <img
+                className="riga-avatar"
+                src={urlAvatar(m.avatarStyle, m.avatarSeed)}
+                alt=""
+                width="34"
+                height="34"
+              />
+              <span className="riga-nome">
+                {m.nome}
+                {finito && i === 0 && <span className="corona"> 👑</span>}
+                {finito && i === classifica.length - 1 && classifica.length > 1 && (
+                  <span className="corona"> 🏴</span>
+                )}
+              </span>
+              <span className={m.punteggio < 0 ? 'riga-punti sotto' : 'riga-punti'}>
+                {m.punteggio}
+              </span>
+            </button>
+
+            {scelto === m.id && (
+              <Proposta
+                destinatario={m}
+                ioId={ioId}
+                onCrea={crea}
+                onAnnulla={() => setScelto(null)}
+                inCorso={inCorso}
+                errore={errore}
+              />
+            )}
           </li>
         ))}
       </ol>
 
-      {/* Solo in lettura: la classifica è dove si guarda il risultato, non
-          dove si decide. Si vota dal banner in cima o dal tab Proponi. */}
-      {inAttesa.length > 0 && (
+      {/* Le proposte aperte stanno qui sotto, col tempo che scorre. Il
+          banner in sovrimpressione in cima all'app resta com'è: quello
+          ti raggiunge ovunque, questo è il posto dove le ritrovi. */}
+      {proposteAperte.length > 0 && (
         <>
-          <h3 className="sezione">In attesa di voto</h3>
-          <ul className="storico">
-            {inAttesa.map((e) => (
-              <li key={e.id}>
-                <span className="storico-punti attesa">{segno(e.punti)}</span>
-                <span className="storico-motivo">
-                  <strong>{nome(e.membroId)}</strong> — {e.motivo}
-                  {e.propostoDa && (
-                    <span className="storico-quando">
-                      proposta da {nome(e.propostoDa)}
-                    </span>
-                  )}
-                </span>
-              </li>
+          <h3 className="sezione">Da votare</h3>
+          <ul className="attese">
+            {proposteAperte.map((p) => (
+              <PropostaInAttesa
+                key={p.votoId}
+                proposta={p}
+                membri={perId}
+                ioId={ioId}
+                onVota={onVotaProposta}
+              />
             ))}
           </ul>
         </>
       )}
 
       <h3 className="sezione">Cosa è successo</h3>
-      {eventi.length === 0 ? (
+      {eventi.filter((e) => e.stato === 'approved').length === 0 ? (
         <p className="gioco-vuoto">
           Nessuno ha ancora fatto niente di notevole. Né di riprovevole.
         </p>

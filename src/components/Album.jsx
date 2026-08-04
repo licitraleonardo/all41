@@ -159,6 +159,9 @@ export default function Album({ membro }) {
       <div className="album-testata">
         <h1 className="album-titolo">Album</h1>
 
+        {/* I due tasti sono scesi in fondo, dov'è il pollice: caricare
+            una foto è l'azione principale della sezione e stava
+            nell'angolo più lontano da raggiungere con una mano sola. */}
         <div className="album-bottoni">
           {/* Due ingressi separati invece di uno solo: "capture" e
               "multiple" si escludono, quindi con un bottone unico o si

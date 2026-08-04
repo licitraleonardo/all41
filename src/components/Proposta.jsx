@@ -2,84 +2,96 @@ import { useState } from 'react'
 import { urlAvatar } from '../config/avatar.js'
 import { PROPOSTA } from '../config/proposte.js'
 
-export default function Proposta({ membri, ioId, onCrea, onAnnulla, inCorso, errore }) {
-  const [destinatario, setDestinatario] = useState(null)
+// Si apre toccando qualcuno nella classifica, quindi il destinatario è
+// già deciso e non c'è niente da scegliere: restano quanti punti e
+// perché. Due tasti e un campo.
+//
+// Niente slider: su un numero che va da -5 a +5 una barra da trascinare è
+// più difficile da centrare di due tasti, e occupa il triplo dello
+// spazio.
+export default function Proposta({ destinatario, ioId, onCrea, onAnnulla, inCorso, errore }) {
   const [punti, setPunti] = useState(3)
   const [motivo, setMotivo] = useState('')
 
-  const puoInviare = destinatario && motivo.trim().length > 2 && punti !== 0 && !inCorso
+  const puoInviare = motivo.trim().length > 2 && punti !== 0 && !inCorso
+
+  const cambia = (passo) => () => {
+    setPunti((p) => {
+      const nuovo = Math.max(-PROPOSTA.limite, Math.min(PROPOSTA.limite, p + passo))
+      // Lo zero non vuol dire niente: si salta.
+      return nuovo === 0 ? nuovo + passo : nuovo
+    })
+  }
 
   return (
-    <div className="gioco-corpo">
-      <h2 className="testamento-titolo">Proponi punti</h2>
-
-      <h3 className="sezione">A chi li assegni?</h3>
-      <div className="scelta-persone">
-        {membri.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            className={m.id === destinatario ? 'persona scelta' : 'persona'}
-            onClick={() => setDestinatario(m.id)}
-            aria-pressed={m.id === destinatario}
-          >
-            <img src={urlAvatar(m.avatarStyle, m.avatarSeed)} alt="" width="40" height="40" />
-            <span>{m.id === ioId ? `${m.nome} (tu)` : m.nome}</span>
-          </button>
-        ))}
+    <div className="proposta-riquadro">
+      <div className="proposta-testa">
+        <img
+          src={urlAvatar(destinatario.avatarStyle, destinatario.avatarSeed)}
+          alt=""
+          width="34"
+          height="34"
+        />
+        <span>
+          Punti per <strong>{destinatario.id === ioId ? 'te' : destinatario.nome}</strong>
+        </span>
       </div>
 
-      <h3 className="sezione">Quanti</h3>
-      <div className="slider-riga">
-        <output className={punti < 0 ? 'slider-valore meno' : 'slider-valore piu'}>
+      <div className="conta-punti">
+        <button
+          type="button"
+          className="conta-tasto"
+          onClick={cambia(-1)}
+          disabled={punti <= -PROPOSTA.limite}
+          aria-label="Un punto in meno"
+        >
+          −
+        </button>
+        <output className={punti < 0 ? 'conta-valore meno' : 'conta-valore piu'}>
           {punti > 0 ? `+${punti}` : punti}
         </output>
-        <input
-          type="range"
-          min={-PROPOSTA.limite}
-          max={PROPOSTA.limite}
-          step="1"
-          value={punti}
-          onChange={(e) => setPunti(Number(e.target.value))}
-          aria-label="Quanti punti"
-        />
+        <button
+          type="button"
+          className="conta-tasto"
+          onClick={cambia(1)}
+          disabled={punti >= PROPOSTA.limite}
+          aria-label="Un punto in più"
+        >
+          +
+        </button>
       </div>
 
-      <h3 className="sezione">Perché</h3>
       <label className="campo">
         <input
           type="text"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
           maxLength={PROPOSTA.lunghezzaMaxMotivo}
-          placeholder="Ha portato il ghiaccio"
+          placeholder="Perché"
         />
       </label>
 
       {/* Velato di proposito: non dice quale Legge né quanto costa.
           Scoprirlo è metà del gioco. */}
-      {destinatario === ioId && (
-        <p className="proposta-avviso">Il Testamento ha notato.</p>
-      )}
+      {destinatario.id === ioId && <p className="proposta-avviso">Il Testamento ha notato.</p>}
 
       {errore && <p className="sondaggio-errore">{errore}</p>}
 
-      <button
-        type="button"
-        className="primario-chiaro"
-        onClick={() => onCrea({ destinatarioId: destinatario, punti, motivo: motivo.trim() })}
-        disabled={!puoInviare}
-      >
-        {inCorso ? 'Un attimo…' : 'Metti ai voti'}
-      </button>
-
-      <p className="proposta-nota">
-        Un&rsquo;ora di voto, o meno se votano tutti.
-      </p>
-
-      <button type="button" className="secondario-chiaro" onClick={onAnnulla}>
-        Lascia stare
-      </button>
+      <div className="proposta-azioni">
+        <button type="button" className="secondario-chiaro" onClick={onAnnulla}>
+          Lascia stare
+        </button>
+        <button
+          type="button"
+          className="primario-chiaro"
+          onClick={() =>
+            onCrea({ destinatarioId: destinatario.id, punti, motivo: motivo.trim() })
+          }
+          disabled={!puoInviare}
+        >
+          {inCorso ? 'Un attimo…' : 'Metti ai voti'}
+        </button>
+      </div>
     </div>
   )
 }

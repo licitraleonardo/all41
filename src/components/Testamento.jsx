@@ -10,7 +10,7 @@ export default function Testamento({ scoperte, membri }) {
   return (
     <div className="gioco-corpo">
       <header className="testamento-testata">
-        <h2 className="testamento-titolo">Il Testamento</h2>
+        <h2 className="testamento-titolo">Testamento</h2>
         <p className="testamento-custode">Custodito da Allan</p>
 
         <p className="testamento-conto">

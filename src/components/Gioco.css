@@ -116,14 +116,27 @@
   gap: 6px;
 }
 
+/* Ogni riga si tocca e apre la proposta di punti per quella persona:
+   la classifica è dove guardi chi merita qualcosa, quindi è lì che deve
+   stare il gesto. */
 .riga {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 9px 12px;
+  cursor: pointer;
+}
+
+.riga:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
 }
 
 .riga.io {
@@ -304,38 +317,99 @@
   white-space: nowrap;
 }
 
-.slider-riga {
+/* La proposta si apre sotto la riga che hai toccato, non in
+   sovrimpressione: il contesto — chi è, quanti punti ha — deve restare
+   sotto gli occhi mentre decidi. */
+.proposta-riquadro {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  margin: -6px 10px 0;
+  padding: 12px 12px 14px;
+}
+
+.proposta-testa {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
+  font-size: 14px;
 }
 
-.slider-riga input[type='range'] {
-  flex: 1;
-  min-width: 0;
-  accent-color: var(--gold);
-}
-
-.slider-valore {
+.proposta-testa img {
   flex: none;
-  min-width: 54px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--sand);
+}
+
+/* Due tasti al posto della barra: su un numero da -5 a +5 una barra da
+   trascinare è più difficile da centrare, e occupa il triplo dello
+   spazio. */
+.conta-punti {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.conta-tasto {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  font: inherit;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--sea);
+  background: var(--sand);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.conta-tasto:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.conta-valore {
+  min-width: 62px;
   text-align: center;
   font-family: var(--font-titoli);
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   border-radius: 10px;
-  padding: 6px 4px;
+  padding: 4px 6px;
 }
 
-.slider-valore.piu {
+.conta-valore.piu {
   color: var(--juniper);
   background: #E9F3EC;
 }
 
-.slider-valore.meno {
+.conta-valore.meno {
   color: var(--coral);
   background: #fdeeeb;
+}
+
+.proposta-azioni {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.proposta-azioni > button {
+  flex: 1;
+  margin-top: 0;
+}
+
+.conta-tasto:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
 }
 
 /* ---------------------------------------------------- proposte da votare */

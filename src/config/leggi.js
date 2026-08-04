@@ -1,3 +1,5 @@
+import { PROPOSTA } from './proposte.js'
+
 // Le Leggi di All For One.
 //
 // Tabella unica da cui si generano la logica, il tutorial e il codice
@@ -15,7 +17,11 @@
 
 export const LEGGI = [
   // ——— PUBBLICHE (rivelate dall'inizio) ———
-  { n: 1, id: 'poll-proposed', punti: '±10 (max ±15)', pubblica: true, attiva: true,
+  // I punti si prendono dalla configurazione e non si riscrivono a mano:
+  // qui c'era ancora "±10 (max ±15)" della prima stesura, mentre il
+  // limite vero era sceso a ±5 da un pezzo. Il Testamento è il posto
+  // dove una bugia del genere resta scritta per tutto il viaggio.
+  { n: 1, id: 'poll-proposed', punti: `±${PROPOSTA.limite}`, pubblica: true, attiva: true,
     testo: 'Punti proposti da qualcuno e approvati dal gruppo a maggioranza' },
   { n: 2, id: 'challenge-won', punti: '10/15/20', pubblica: true, attiva: true,
     testo: 'Hai vinto una sfida della caccia al tesoro' },
