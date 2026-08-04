@@ -31,9 +31,11 @@ import { useScoperte } from './hooks/useScoperte.js'
 import { useDerisione } from './hooks/useDerisione.js'
 import { useProposteAperte } from './hooks/useProposteAperte.js'
 import { useConnessione } from './hooks/useConnessione.js'
+import { useRinfrescaPosizione } from './hooks/useRinfrescaPosizione.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import Derisione from './components/Derisione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
+import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
 import Pecora from './components/Pecora.jsx'
 
@@ -83,6 +85,10 @@ export default function App() {
   // Le proposte aperte vivono qui e non dentro una scheda: il banner deve
   // raggiungerti su qualunque tab, come la celebrazione delle Leggi.
   const proposte = useProposteAperte(vista === 'dentro' ? membro?.id : null)
+
+  // "La tua posizione è ferma lì da tre ore, la aggiorno?" — solo a chi
+  // l'ha già condivisa almeno una volta, e solo quando è vecchia davvero.
+  const posizione = useRinfrescaPosizione(membro?.id, vista === 'dentro')
   const [membriPerId, setMembriPerId] = useState({})
 
   useEffect(() => {
@@ -251,6 +257,19 @@ export default function App() {
         {tab === 'altro' && <Altro membro={membro} />}
         <BarraTab attivo={tab} onCambia={setTab} />
         <StrisciaOffline attiva={!inLinea} />
+
+        {/* Uno solo alla volta in cima, e la precedenza è delle
+            proposte: quelle scadono in un'ora, la posizione può
+            aspettare la prossima apertura. Due banner fissi nello stesso
+            posto si coprirebbero a vicenda. */}
+        {inLinea && posizione.daChiedere && proposte.daDecidere.length === 0 && (
+          <BannerPosizione
+            mia={posizione.mia}
+            onAggiorna={posizione.aggiorna}
+            onNo={posizione.no}
+            onNonOra={posizione.nonOra}
+          />
+        )}
         {/* Senza rete il voto non partirebbe: il banner si toglie invece
             di restare lì con due bottoni che falliscono. Torna da solo
             col segnale, e intanto quel posto lo occupa la striscia. */}

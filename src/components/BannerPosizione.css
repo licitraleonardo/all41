@@ -1,0 +1,29 @@
+/* Stesso posto e stessa forma del banner delle proposte: occupa spazio
+   vero e spinge giù le schermate invece di coprirle. Non compaiono mai
+   insieme — se c'è una proposta da votare quella ha la precedenza, e
+   questa aspetta la prossima apertura. */
+
+.banner-posizione {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--juniper);
+  color: var(--sand);
+  box-shadow: 0 6px 18px -10px rgba(11, 53, 80, 0.8);
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+}
+
+/* Verde e non blu: si distingue a colpo d'occhio da quello delle
+   proposte, che è la cosa importante quando ne compare uno in cima e non
+   si è ancora letto niente. */
+.banner-posizione .banner-testo {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.banner-posizione .banner-motivo {
+  color: rgba(247, 244, 236, 0.78);
+}
