@@ -52,6 +52,7 @@ export function useVocali() {
             percorso: riga.path,
             tipo: riga.mime_type,
             durata: riga.durata_sec,
+            importante: Boolean(riga.importante),
             eliminato: false,
             creatoIl: riga.created_at,
           })

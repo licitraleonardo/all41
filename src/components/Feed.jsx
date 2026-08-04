@@ -103,8 +103,12 @@ function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
     )
   }
 
+  const classi = ['voce']
+  if (mio) classi.push('mia')
+  if (azione.importante) classi.push('importante')
+
   return (
-    <li className={mio ? 'voce mia' : 'voce'}>
+    <li className={classi.join(' ')}>
       {!mio && (
         <img
           className="voce-avatar"
@@ -116,7 +120,10 @@ function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
       )}
       <div className="bolla-blocco">
         {!mio && <span className="bolla-nome">{autore?.nome ?? 'Qualcuno'}</span>}
-        <div className="bolla">{azione.payload.testo}</div>
+        <div className="bolla">
+          {azione.importante && <span className="bolla-importante">❗ importante</span>}
+          {azione.payload.testo}
+        </div>
         <Ora azione={azione} mio={mio} onElimina={onElimina} />
       </div>
     </li>

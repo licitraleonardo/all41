@@ -239,6 +239,9 @@ create table if not exists voice_messages (
   url          text not null,
   mime_type    text not null,
   durata_sec   int not null check (durata_sec > 0),
+  -- Segnato come importante prima di mandarlo: "il traghetto parte alle
+  -- 7" non deve avere lo stesso peso di "aho".
+  importante   boolean not null default false,
   deleted_at   timestamptz,
   created_at   timestamptz not null default now()
 );
@@ -311,6 +314,12 @@ alter table votes add column if not exists ballots jsonb not null default '{}'::
 
 -- A quale sfida appartiene un voto foto-del-giorno.
 alter table votes add column if not exists challenge_id text;
+
+-- Messaggi segnati come importanti prima di mandarli. Su tutte e due le
+-- tabelle: un vocale e un messaggio scritto hanno lo stesso bisogno —
+-- "il traghetto parte alle 7" non deve avere lo stesso peso di "aho".
+alter table voice_messages add column if not exists importante boolean not null default false;
+alter table quick_actions add column if not exists importante boolean not null default false;
 
 create index if not exists votes_sfida_idx
   on votes (trip_id, challenge_id) where challenge_id is not null;

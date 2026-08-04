@@ -1,9 +1,10 @@
-/* Il sostituto del walkie-talkie. Sta nel tab Gruppo, sulla schermata
-   chiara, e il tasto per parlare e' fisso in fondo dov'e' il pollice. */
+/* Il sostituto del walkie-talkie, impaginato come una chat perché è una
+   chat: i tuoi a destra, quelli degli altri a sinistra con avatar e
+   nome. Il tasto per parlare è fisso in fondo, dov'è il pollice. */
 
 .vocali {
   min-height: 100dvh;
-  padding-bottom: calc(28px + var(--altezza-tab) + 60px);
+  padding-bottom: calc(28px + var(--altezza-tab) + 104px);
 }
 
 .voc-vuoto {
@@ -24,7 +25,7 @@
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--altezza-tab) + 74px);
+  bottom: calc(var(--altezza-tab) + 118px);
   z-index: 16;
   width: calc(100% - 32px);
   max-width: 608px;
@@ -38,7 +39,7 @@
   padding: 9px 12px;
 }
 
-/* ------------------------------------------------------------- elenco */
+/* ---------------------------------------------------------- le bolle */
 
 .voc-elenco {
   list-style: none;
@@ -46,34 +47,20 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.voc {
-  display: flex;
-  align-items: center;
   gap: 10px;
-  background: #fff;
-  border: 1px solid var(--line, #e4dfd2);
-  border-radius: 12px;
-  padding: 9px 11px;
 }
 
-.voc.mio {
-  border-color: var(--gold);
+.voc-riga {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 86%;
 }
 
-.voc-play {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  font-size: 15px;
-  line-height: 1;
-  color: var(--sand);
-  background: var(--sea);
-  border: 0;
-  border-radius: 50%;
-  cursor: pointer;
+/* I miei a destra: è la cosa che rende una lista una conversazione. */
+.voc-riga.mio {
+  align-self: flex-end;
+  flex-direction: row-reverse;
 }
 
 .voc-avatar {
@@ -82,32 +69,104 @@
   background: var(--sand);
 }
 
-.voc-chi {
-  flex: 1;
-  min-width: 0;
-  font-size: 14.5px;
-  font-weight: 600;
+.voc-bolla {
+  background: #fff;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 14px 14px 14px 4px;
+  padding: 8px 11px 6px;
 }
 
-.voc-quando {
+.voc-riga.mio .voc-bolla {
+  background: #fdf3e0;
+  border-color: #f0dcb4;
+  border-radius: 14px 14px 4px 14px;
+}
+
+/* Un messaggio importante si vede prima di ascoltarlo: è tutto il senso
+   di poterlo segnare. */
+.voc-riga.importante .voc-bolla {
+  border-color: var(--coral);
+  border-width: 2px;
+  background: #fdf1ee;
+}
+
+.voc-autore {
   display: block;
+  margin-bottom: 3px;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 700;
+  color: var(--juniper);
+}
+
+.voc-dentro {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.voc-play {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--sand);
+  background: var(--sea);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Un'onda finta: disegnare quella vera vorrebbe dire decodificare ogni
+   messaggio all'apertura, per un dettaglio che nessuno guarda. Serve a
+   dire "questo è un audio", e per quello basta. */
+.voc-onda {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+}
+
+.voc-onda span {
+  width: 2.5px;
+  border-radius: 2px;
+  background: rgba(11, 53, 80, 0.3);
+}
+
+.voc-durata {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft, #55636b);
+}
+
+.voc-piede {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 3px;
+  font-size: 11px;
   color: var(--ink-soft, #55636b);
   font-variant-numeric: tabular-nums;
 }
 
+.voc-bollino {
+  font-weight: 700;
+  color: var(--coral);
+}
+
 .voc-elimina {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  font-size: 17px;
-  line-height: 1;
+  font: inherit;
+  font-size: 11px;
   color: var(--ink-soft, #55636b);
   background: transparent;
-  border: 1px solid var(--line, #e4dfd2);
-  border-radius: 8px;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
   cursor: pointer;
+}
+
+.voc-fine {
+  height: 1px;
 }
 
 /* -------------------------------------------------------- premi e parla */
@@ -120,6 +179,31 @@
   z-index: 15;
   width: calc(100% - 32px);
   max-width: 608px;
+}
+
+/* Un interruttore che si vede, non un doppio tocco: il tasto qui sotto
+   si tiene premuto per registrare, e due gesti sullo stesso tasto si
+   pestano i piedi. */
+.voc-importante {
+  display: block;
+  width: 100%;
+  margin-bottom: 7px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-soft, #55636b);
+  background: rgba(247, 244, 236, 0.94);
+  border: 1px dashed var(--line, #e4dfd2);
+  border-radius: 100px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.voc-importante.acceso {
+  color: #fff;
+  background: var(--coral);
+  border-style: solid;
+  border-color: var(--coral);
 }
 
 .voc-premi {
@@ -152,8 +236,8 @@
   cursor: not-allowed;
 }
 
-/* La barra che scorre: il limite di durata si vede arrivare invece di
-   fermare la registrazione di sorpresa. */
+/* Il limite di durata si vede arrivare invece di fermare la
+   registrazione di sorpresa. */
 .voc-avanzamento {
   height: 4px;
   margin-top: 6px;
@@ -170,6 +254,7 @@
 
 .voc-premi:focus-visible,
 .voc-play:focus-visible,
+.voc-importante:focus-visible,
 .voc-elimina:focus-visible {
   outline: 2px solid var(--sea);
   outline-offset: 2px;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './Vocali.css'
 import { useVocali } from '../hooks/useVocali.js'
 import { mandaVocale } from '../lib/vocali.js'
@@ -10,21 +10,33 @@ import { descriviErrore } from '../lib/errori.js'
 
 // Il sostituto del walkie-talkie. Si tiene premuto, si parla, si lascia.
 //
+// Impaginato come una chat, perché è una chat: i tuoi a destra, quelli
+// degli altri a sinistra con avatar e nome, l'ultimo in fondo e si
+// scorre da sola quando arriva roba nuova.
+//
 // Il formato non è scritto nel codice: lo sceglie il browser e si salva
-// quello vero insieme al file. È la verifica bloccante n.3 dello spec, e
-// il motivo per cui esiste — chi scrive "webm" si ritrova metà gruppo
-// muto su iPhone.
+// quello vero insieme al file. È la verifica bloccante n.3 dello spec.
 export default function Vocali({ membro }) {
   const { vocali, membri, stato, errore, inserisci, togli } = useVocali()
 
   const sessione = useRef(null)
+  const fondo = useRef(null)
   const [registrando, setRegistrando] = useState(false)
   const [secondi, setSecondi] = useState(0)
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [suona, setSuona] = useState(null)
+  const [importante, setImportante] = useState(false)
 
   const puoRegistrare = registrazioneDisponibile()
+
+  // Dal database arrivano dal più recente: qui si legge dall'alto in
+  // basso come una conversazione.
+  const inOrdine = useMemo(() => [...vocali].reverse(), [vocali])
+
+  useEffect(() => {
+    fondo.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [inOrdine.length])
 
   async function premi() {
     if (registrando || inCorso) return
@@ -60,7 +72,7 @@ export default function Vocali({ membro }) {
 
     setInCorso(true)
     try {
-      const esito = await mandaVocale(registrato, membro.id)
+      const esito = await mandaVocale({ ...registrato, importante }, membro.id)
       if (!esito.ok) {
         setAvviso(
           esito.motivo === 'giorno'
@@ -70,6 +82,7 @@ export default function Vocali({ membro }) {
         return
       }
       inserisci(esito.vocale)
+      setImportante(false)
       setAvviso(null)
     } catch (e) {
       setAvviso(`Non è partito. ${descriviErrore(e)}`)
@@ -91,7 +104,7 @@ export default function Vocali({ membro }) {
       )}
 
       <ul className="voc-elenco">
-        {vocali.map((v) => (
+        {inOrdine.map((v) => (
           <Vocale
             key={v.id}
             vocale={v}
@@ -102,6 +115,7 @@ export default function Vocali({ membro }) {
             onElimina={() => togli(v.id)}
           />
         ))}
+        <li ref={fondo} className="voc-fine" />
       </ul>
 
       {avviso && <p className="voc-avviso">{avviso}</p>}
@@ -112,6 +126,19 @@ export default function Vocali({ membro }) {
         </p>
       ) : (
         <div className="voc-barra">
+          {/* Un interruttore che si vede, non un doppio tocco: il tasto
+              qui accanto si tiene premuto per registrare, e due gesti
+              sullo stesso tasto si pestano i piedi. Resta acceso finché
+              non mandi, poi si spegne da solo. */}
+          <button
+            type="button"
+            className={importante ? 'voc-importante acceso' : 'voc-importante'}
+            onClick={() => setImportante((v) => !v)}
+            aria-pressed={importante}
+          >
+            {importante ? '❗ Importante' : 'Segna come importante'}
+          </button>
+
           <button
             type="button"
             className={registrando ? 'voc-premi attivo' : 'voc-premi'}
@@ -163,40 +190,62 @@ function Vocale({ vocale, autore, mio, inAscolto, onAscolta, onElimina }) {
     onAscolta(vocale.id)
   }
 
+  const classi = ['voc-riga']
+  if (mio) classi.push('mio')
+  if (vocale.importante) classi.push('importante')
+
   return (
-    <li className={mio ? 'voc mio' : 'voc'}>
-      <button
-        type="button"
-        className="voc-play"
-        onClick={ascolta}
-        aria-label={inAscolto ? 'Ferma' : 'Ascolta'}
-      >
-        {inAscolto ? '⏸' : '▶'}
-      </button>
-
-      <img
-        className="voc-avatar"
-        src={urlAvatar(autore?.avatarStyle, autore?.avatarSeed || '?')}
-        alt=""
-        width="28"
-        height="28"
-      />
-
-      <span className="voc-chi">
-        {autore?.nome ?? 'Qualcuno'}
-        <span className="voc-quando">
-          {vocale.durata}s · {quando(vocale.creatoIl)}
-        </span>
-      </span>
-
-      {mio && (
-        <button type="button" className="voc-elimina" onClick={onElimina} aria-label="Elimina">
-          ×
-        </button>
+    <li className={classi.join(' ')}>
+      {!mio && (
+        <img
+          className="voc-avatar"
+          src={urlAvatar(autore?.avatarStyle, autore?.avatarSeed || '?')}
+          alt=""
+          width="30"
+          height="30"
+        />
       )}
+
+      <div className="voc-bolla">
+        {!mio && <span className="voc-autore">{autore?.nome ?? 'Qualcuno'}</span>}
+
+        <div className="voc-dentro">
+          <button
+            type="button"
+            className="voc-play"
+            onClick={ascolta}
+            aria-label={inAscolto ? 'Ferma' : 'Ascolta'}
+          >
+            {inAscolto ? '⏸' : '▶'}
+          </button>
+
+          <span className="voc-onda" aria-hidden="true">
+            {ONDA.map((h, i) => (
+              <span key={i} style={{ height: `${h}px` }} />
+            ))}
+          </span>
+
+          <span className="voc-durata">{vocale.durata}s</span>
+        </div>
+
+        <span className="voc-piede">
+          {vocale.importante && <span className="voc-bollino">❗ importante</span>}
+          {quando(vocale.creatoIl)}
+          {mio && (
+            <button type="button" className="voc-elimina" onClick={onElimina}>
+              elimina
+            </button>
+          )}
+        </span>
+      </div>
     </li>
   )
 }
+
+// Un'onda finta: disegnare quella vera vorrebbe dire decodificare
+// l'audio di ogni messaggio all'apertura della scheda, per un dettaglio
+// che nessuno guarda davvero. Serve solo a dire "questo è un audio".
+const ONDA = [6, 11, 17, 9, 20, 14, 8, 16, 11, 19, 7, 13, 10, 15, 6]
 
 function quando(iso) {
   return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })

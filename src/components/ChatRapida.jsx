@@ -26,6 +26,10 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   const { voti, vota, aggiorna: aggiornaVoto } = useVoti(azioni)
   const [foglio, setFoglio] = useState(null)
   const [testo, setTesto] = useState('')
+  // Si accende prima di mandare e si spegne da solo dopo: un
+  // interruttore che resta acceso finirebbe per marcare tutto, e a quel
+  // punto non marcherebbe più niente.
+  const [importante, setImportante] = useState(false)
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [battuteAllan, setBattuteAllan] = useState([])
@@ -46,11 +50,11 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
     fondo.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
   }, [azioni.length, battuteAllan.length])
 
-  async function manda(tipo, payload = {}) {
+  async function manda(tipo, payload = {}, importante = false) {
     setInCorso(true)
     setAvviso(null)
     try {
-      const esito = await inviaAzione({ tipo, payload, memberId: membro.id })
+      const esito = await inviaAzione({ tipo, payload, memberId: membro.id, importante })
       if (!esito.ok) {
         // Legge XIX: insistere su un bottone bloccato costa, con la scala
         // che perdona i primi due tentativi.
@@ -77,9 +81,10 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
     e.preventDefault()
     const pulito = testo.trim()
     if (!pulito || inCorso) return
-    const azione = await manda('free_text', { testo: pulito })
+    const azione = await manda('free_text', { testo: pulito }, importante)
     if (!azione) return
     setTesto('')
+    setImportante(false)
 
     const battuta = forseAllanCommenta()
     if (battuta) setBattuteAllan((p) => [...p, battuta])
@@ -289,6 +294,19 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
                 placeholder="Scrivi qualcosa di breve"
                 aria-label="Messaggio"
               />
+
+              {/* Lo stesso interruttore dei vocali: si accende prima di
+                  mandare e si spegne da solo dopo. */}
+              <button
+                type="button"
+                className={importante ? 'tasto-importante acceso' : 'tasto-importante'}
+                onClick={() => setImportante((v) => !v)}
+                aria-pressed={importante}
+                aria-label="Segna come importante"
+                title="Segna come importante"
+              >
+                ❗
+              </button>
 
               <button
                 type="submit"

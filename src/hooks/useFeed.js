@@ -91,6 +91,7 @@ function normalizza(riga) {
     autoreId: riga.author_id,
     tipo: riga.kind,
     payload: riga.payload ?? {},
+    importante: Boolean(riga.importante),
     eliminato: Boolean(riga.deleted_at),
     creatoIl: riga.created_at,
   }

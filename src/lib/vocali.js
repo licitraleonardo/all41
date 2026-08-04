@@ -6,7 +6,8 @@ import { estensioneDi } from './formatoAudio.js'
 import { verificaLimite } from './limiti.js'
 
 const BUCKET = 'vocali'
-const CAMPI = 'id, author_id, url, path, mime_type, durata_sec, deleted_at, created_at'
+const CAMPI =
+  'id, author_id, url, path, mime_type, durata_sec, importante, deleted_at, created_at'
 
 // Verifica bloccante n.4: ogni lettura ha un tetto.
 export const TETTO_VOCALI = 30
@@ -19,6 +20,7 @@ function daRiga(riga) {
     percorso: riga.path,
     tipo: riga.mime_type,
     durata: riga.durata_sec,
+    importante: Boolean(riga.importante),
     eliminato: Boolean(riga.deleted_at),
     creatoIl: riga.created_at,
   }
@@ -39,7 +41,7 @@ export const leggiVocali = conCache('vocali', async function leggiVocali() {
 
 // Restituisce { ok: false, attesa } senza sollevare: un limite raggiunto
 // non è un errore, è una risposta.
-export async function mandaVocale({ blob, mimeType, durata }, membroId) {
+export async function mandaVocale({ blob, mimeType, durata, importante = false }, membroId) {
   const esito = await verificaLimite('voice', membroId)
   if (!esito.consentito) return { ok: false, ...esito }
 
@@ -63,6 +65,7 @@ export async function mandaVocale({ blob, mimeType, durata }, membroId) {
       // indovinare cosa gli è arrivato.
       mime_type: mimeType,
       durata_sec: durata,
+      importante,
     })
     .select(CAMPI)
     .single()
