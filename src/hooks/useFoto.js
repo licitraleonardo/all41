@@ -53,6 +53,10 @@ export function useFoto() {
             percorso: riga.path,
             larghezza: riga.width,
             altezza: riga.height,
+            // Senza questo una foto di una sfida arrivata dal realtime
+            // sembrerebbe una foto d'album, e consumerebbe il tetto
+            // giornaliero di chi l'ha mandata.
+            sfidaId: riga.challenge_id,
             eliminata: false,
             creataIl: riga.created_at,
           })

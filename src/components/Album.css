@@ -490,3 +490,32 @@
   padding: 13px;
   cursor: pointer;
 }
+
+/* A quota finita i due tasti sembrano spenti ma restano cliccabili: se
+   fossero spenti davvero il messaggio non potrebbe materialmente
+   comparire, ed è la stessa regola dei tasti della Chat Rapida. */
+.carica.esaurito {
+  color: var(--ink-soft);
+  background: #e6e1d5;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.album-bloccato {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--altezza-tab) + 68px);
+  z-index: 16;
+  width: calc(100% - 32px);
+  max-width: 608px;
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sand);
+  background: var(--sea);
+  border-radius: 10px;
+  padding: 9px 12px;
+  box-shadow: 0 8px 20px -8px rgba(11, 53, 80, 0.7);
+}

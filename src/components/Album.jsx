@@ -11,6 +11,13 @@ import FotoGrande from './FotoGrande.jsx'
 import BottoneElimina from './BottoneElimina.jsx'
 import { urlAvatar } from '../config/avatar.js'
 import { TIPI_ACCETTATI } from '../config/foto.js'
+import { LIMITI } from '../config/limiti.js'
+
+// Il numero viene dalla configurazione e non è scritto a mano: la Legge I
+// del Testamento ha detto "±10" per settimane mentre il limite vero era
+// ±5, e nessuno se n'era accorto.
+const TETTO_AL_GIORNO =
+  `${LIMITI.photo.giorno} foto al giorno. Le hai finite: domani se ne riparla.`
 
 export default function Album({ membro }) {
   const { foto, membri, stato, errore, altre, inArrivo, caricaAltre, inserisci, rimuovi } =
@@ -25,6 +32,39 @@ export default function Album({ membro }) {
   const sfide = useSfide(membro.id)
   const [vista, setVista] = useState('album')
   const [grande, setGrande] = useState(null)
+  const [bloccato, setBloccato] = useState(false)
+
+  // Quante ne hai già caricate oggi nell'album. Si contano da quelle che
+  // sono già a schermo invece di chiederlo al database: la griglia è
+  // ordinata per data e le tue di oggi ci sono tutte, e così il numero si
+  // aggiorna nell'istante in cui ne carichi o ne togli una.
+  //
+  // Le foto mandate a una sfida non contano, come dice la regola.
+  const rimaste = useMemo(() => {
+    const mezzanotte = new Date()
+    mezzanotte.setHours(0, 0, 0, 0)
+
+    const fatte = foto.filter(
+      (f) =>
+        f.autoreId === membro.id &&
+        !f.sfidaId &&
+        Date.parse(f.creataIl) >= mezzanotte.getTime()
+    ).length
+
+    return Math.max(0, LIMITI.photo.giorno - fatte)
+  }, [foto, membro.id])
+
+  // Il bottone a limite raggiunto resta cliccabile e rifiuta: se fosse
+  // spento davvero il messaggio non potrebbe materialmente comparire, ed
+  // è la stessa regola che vale per i tasti della Chat Rapida.
+  function apriIngresso(campo) {
+    if (rimaste === 0) {
+      setBloccato(true)
+      setTimeout(() => setBloccato(false), 4000)
+      return
+    }
+    campo.current?.click()
+  }
 
   // Quante sfide aspettano ancora qualcosa da te: serve solo a mettere
   // il pallino sulla scheda, così non bisogna aprirla per sapere se c'è
@@ -49,11 +89,7 @@ export default function Album({ membro }) {
       if (!esito.ok) {
         // Il tetto della giornata non si scavalca aspettando qualche
         // secondo: dirlo con un cronometro sarebbe una presa in giro.
-        setAvviso(
-          esito.motivo === 'giorno'
-            ? `Cinque foto al giorno. Le hai finite: domani se ne riparla.`
-            : `Aspetta ${esito.attesa}s.`
-        )
+        setAvviso(esito.motivo === 'giorno' ? TETTO_AL_GIORNO : `Aspetta ${esito.attesa}s.`)
         return
       }
       inserisci(esito.foto)
@@ -179,21 +215,29 @@ export default function Album({ membro }) {
               scatta o si sceglie dalla galleria, mai tutti e due. */}
           <button
             type="button"
-            className="carica"
-            onClick={() => campoFoto.current?.click()}
+            className={rimaste === 0 ? 'carica esaurito' : 'carica'}
+            onClick={() => apriIngresso(campoFoto)}
             disabled={inCorso}
           >
             📷 Scatta
           </button>
           <button
             type="button"
-            className="carica secondario-chiaro"
-            onClick={() => campoFile.current?.click()}
+            className={
+              rimaste === 0 ? 'carica secondario-chiaro esaurito' : 'carica secondario-chiaro'
+            }
+            onClick={() => apriIngresso(campoFile)}
             disabled={inCorso}
           >
             🖼 Scegli
           </button>
         </div>
+
+        {bloccato && (
+          <p className="album-bloccato" role="status">
+            {TETTO_AL_GIORNO}
+          </p>
+        )}
 
         <input
           ref={campoFoto}
