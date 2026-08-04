@@ -269,23 +269,35 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
             🔊
           </button>
 
-          <input
-            type="text"
-            value={testo}
-            onChange={(e) => setTesto(e.target.value)}
-            maxLength={LUNGHEZZA_MAX_TESTO}
-            placeholder="Scrivi qualcosa di breve"
-            aria-label="Messaggio"
-          />
+          {/* Col menu aperto la casella sparisce: con "Si riparte" o il
+              sondaggio davanti agli occhi, un campo di testo lì sotto fa
+              solo chiedere quale delle due cose si sta facendo. Stessa
+              ragione per cui i tasti rapidi spariscono coi suoni. */}
+          {foglio && foglio !== 'sos' && (
+            <span className="riga-in-menu">Scegli qui sopra, o tocca di nuovo per chiudere.</span>
+          )}
 
-          <button
-            type="submit"
-            className="tasto-invio"
-            disabled={!testo.trim() || inCorso}
-            aria-label="Manda"
-          >
-            ➤
-          </button>
+          {!foglio && (
+            <>
+              <input
+                type="text"
+                value={testo}
+                onChange={(e) => setTesto(e.target.value)}
+                maxLength={LUNGHEZZA_MAX_TESTO}
+                placeholder="Scrivi qualcosa di breve"
+                aria-label="Messaggio"
+              />
+
+              <button
+                type="submit"
+                className="tasto-invio"
+                disabled={!testo.trim() || inCorso}
+                aria-label="Manda"
+              >
+                ➤
+              </button>
+            </>
+          )}
         </form>
       </div>
 

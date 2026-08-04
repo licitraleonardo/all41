@@ -2,7 +2,7 @@ import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { OPZIONI_PROPOSTA, PROPOSTA, quorumRaggiunto } from '../config/proposte.js'
 import { assegnaPunti, faiScattareLegge } from './punti.js'
-import { PER_ID, numeroRomano } from '../config/leggi.js'
+import { PER_ID, etichetta } from '../config/leggi.js'
 
 // Quante proposte ha già fatto oggi. Si contano dal database e non da
 // localStorage: un contatore locale si azzera cambiando telefono, e
@@ -58,24 +58,26 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
     propostoDa: proponenteId,
   })
 
-  // Legge XIV: proporre punti per sé stessi. Scatta subito, non aspetta
-  // il voto — l'ha già fatto. Ed è una trappola vera: niente avvisi prima
-  // di premere, altrimenti non ci cascherebbe nessuno.
+  // La proposta su sé stessi va ai voti lo stesso, ma smascherata: il
+  // gruppo la vede per quello che è e se la gode. Il conto invece lo
+  // paghi subito, e vale quanto ti sei dato — chiedere cinque punti
+  // costa cinque. Se ti eri proposto una penalità, l'ironia vale uno.
   //
-  // La derisione è pubblica per costruzione: il motivo dell'evento punti
-  // finisce nello storico della classifica, che leggono tutti, e resta
-  // lì per tutto il viaggio. Meglio di un lampo che sparisce.
+  // È una trappola vera: niente avvisi prima di premere, altrimenti non
+  // ci cascherebbe nessuno.
   let autoElogio = null
   if (proponenteId === destinatarioId) {
     const legge = PER_ID['self-praise']
-    autoElogio = {
-      punti: legge.punti,
-      testo: legge.testo,
-      romano: numeroRomano(legge.n),
-    }
-    await faiScattareLegge('self-praise', proponenteId, `self-praise_${voto.id}`).catch(
-      () => {}
-    )
+    const costo = punti > 0 ? -punti : -1
+
+    autoElogio = { punti: costo, testo: legge.testo, legge: etichetta(legge) }
+
+    await faiScattareLegge(
+      'self-praise',
+      proponenteId,
+      `self-praise_${voto.id}`,
+      costo
+    ).catch(() => {})
   }
 
   return { ok: true, votoId: voto.id, evento, autoElogio, restano: PROPOSTA.alGiorno - fatte - 1 }

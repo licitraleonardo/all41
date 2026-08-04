@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import './Celebrazione.css'
-import { numeroRomano } from '../config/leggi.js'
+import { etichetta } from '../config/leggi.js'
 
 const COLORI = ['#F2A93B', '#E8604A', '#3F6E5C', '#F7F4EC']
 const DURATA = 3200
@@ -30,7 +30,7 @@ export default function Celebrazione({ celebrazione, onChiudi }) {
 
       <div className="pergamena">
         <p className="celebrazione-occhiello">📜 Nuova Legge scoperta</p>
-        <p className="celebrazione-numero">Legge {numeroRomano(legge.n)}</p>
+        <p className="celebrazione-numero">{etichetta(legge)}</p>
         <p className="celebrazione-testo">{legge.testo}</p>
         <p className="celebrazione-chi">
           svelata da <strong>{chi}</strong>

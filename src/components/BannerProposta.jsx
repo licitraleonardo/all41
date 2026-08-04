@@ -47,8 +47,19 @@ export default function BannerProposta({ proposte, membri, onVota, onRimanda }) 
             {segno}
           </span>
           <p className="banner-testo">
-            <strong>{nome(proposta.proponenteId)}</strong> propone {segno} per{' '}
-            <strong>{nome(proposta.destinatarioId)}</strong>
+            {/* Se se li è proposti da solo il gruppo lo deve sapere
+                mentre vota, non dopo: è metà del divertimento. */}
+            {proposta.proponenteId === proposta.destinatarioId ? (
+              <>
+                <strong>{nome(proposta.proponenteId)}</strong> si propone {segno}{' '}
+                <strong>da solo</strong>
+              </>
+            ) : (
+              <>
+                <strong>{nome(proposta.proponenteId)}</strong> propone {segno} per{' '}
+                <strong>{nome(proposta.destinatarioId)}</strong>
+              </>
+            )}
             <span className="banner-motivo">{proposta.motivo}</span>
           </p>
         </div>

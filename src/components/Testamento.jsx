@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LEGGI, PUNIZIONI, TROFEI, numeroRomano } from '../config/leggi.js'
+import { LEGGI, PUNIZIONI, TROFEI, etichetta } from '../config/leggi.js'
 
 // Il codice delle Leggi scoperte. Continua di proposito il tono
 // legislativo: qui Allan non parla, custodisce e basta.
@@ -36,7 +36,7 @@ export default function Testamento({ scoperte, membri }) {
         {[
           ['trofei', 'Trofei', TROFEI],
           ['leggi', 'Leggi', PUNIZIONI],
-        ].map(([id, etichetta, gruppo]) => (
+        ].map(([id, nome, gruppo]) => (
           <button
             key={id}
             type="button"
@@ -45,7 +45,7 @@ export default function Testamento({ scoperte, membri }) {
             className={meta === id ? 'segmento attivo' : 'segmento'}
             onClick={() => setMeta(id)}
           >
-            {etichetta}
+            {nome}
             <span className="segmento-conto">
               {gruppo.filter(rivelata).length}/{gruppo.length}
             </span>
@@ -63,7 +63,7 @@ export default function Testamento({ scoperte, membri }) {
           if (!rivelata(l)) {
             return (
               <li key={l.id} className="legge oscurata">
-                <span className="legge-numero">Legge {numeroRomano(l.n)}</span>
+                <span className="legge-numero">{etichetta(l)}</span>
                 <span className="legge-buio" aria-label="non ancora scoperta">
                   ███████████
                 </span>
@@ -73,7 +73,7 @@ export default function Testamento({ scoperte, membri }) {
 
           return (
             <li key={l.id} className="legge">
-              <span className="legge-numero">Legge {numeroRomano(l.n)}</span>
+              <span className="legge-numero">{etichetta(l)}</span>
               <p className="legge-testo">{l.testo}</p>
               <span className="legge-punti">{punti(l.punti)}</span>
               <span className="legge-scoperta">

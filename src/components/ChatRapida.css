@@ -668,3 +668,14 @@
   outline: 2px solid var(--gold);
   outline-offset: -2px;
 }
+
+/* Col menu aperto la casella sparisce e al suo posto resta una riga che
+   dice cosa fare: un campo di testo sotto "Si riparte" faceva solo
+   chiedere quale delle due cose si stesse facendo. */
+.riga-in-menu {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--ink-soft, rgba(22, 35, 44, 0.6));
+  padding: 0 4px;
+}

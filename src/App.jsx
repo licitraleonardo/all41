@@ -28,9 +28,11 @@ import Spese from './components/Spese.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
+import { useDerisione } from './hooks/useDerisione.js'
 import { useProposteAperte } from './hooks/useProposteAperte.js'
 import { useConnessione } from './hooks/useConnessione.js'
 import Celebrazione from './components/Celebrazione.jsx'
+import Derisione from './components/Derisione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
 import Pecora from './components/Pecora.jsx'
@@ -54,6 +56,13 @@ export default function App() {
   // Una Legge scoperta si celebra su tutti i telefoni, qualunque tab sia
   // aperta: è il momento di paga di tutto il sistema di punti.
   const { celebrazione, chiudi: chiudiCelebrazione } = useScoperte(vista === 'dentro')
+
+  // Chi si propone punti da solo lo scopre tutto il gruppo, subito e
+  // dovunque sia: il momento va visto mentre succede.
+  const { derisione, chiudi: chiudiDerisione } = useDerisione(
+    vista === 'dentro',
+    membro?.id
+  )
 
   // Quando torna il segnale si riprova da soli: chi era offline non deve
   // accorgersi del momento giusto per premere un bottone.
@@ -252,6 +261,7 @@ export default function App() {
           onRimanda={proposte.rimanda}
         />
         <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
+        <Derisione derisione={derisione} onChiudi={chiudiDerisione} />
       </>
     )
   }

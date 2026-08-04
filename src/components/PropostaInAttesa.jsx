@@ -32,7 +32,11 @@ export default function PropostaInAttesa({ proposta, membri, ioId, onVota }) {
         </span>
         <span className="attesa-testo">
           <strong>{nome(proposta.destinatarioId)}</strong> — {proposta.motivo}
-          <span className="attesa-chi">proposta da {nome(proposta.proponenteId)}</span>
+          <span className="attesa-chi">
+            {proposta.proponenteId === proposta.destinatarioId
+              ? 'se li è proposti da solo'
+              : `proposta da ${nome(proposta.proponenteId)}`}
+          </span>
         </span>
       </div>
 

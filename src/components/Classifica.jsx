@@ -129,7 +129,7 @@ export default function Classifica({
           <div className="foglio punizione">
             <p className="punizione-punti">{punizione.punti}</p>
             <p className="punizione-testo">{punizione.testo}</p>
-            <p className="punizione-nota">Legge {punizione.romano}. Adesso lo sanno tutti.</p>
+            <p className="punizione-nota">{punizione.legge}. Adesso lo sanno tutti.</p>
             <button
               type="button"
               className="secondario-foglio"

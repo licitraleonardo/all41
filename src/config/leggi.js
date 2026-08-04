@@ -63,7 +63,7 @@ export const LEGGI = [
   // casca nessuno. E la derisione è pubblica per costruzione — questo
   // testo finisce nello storico della classifica, che leggono tutti, e
   // ci resta per tutto il viaggio.
-  { n: 14, id: 'self-praise', punti: -3, attiva: true,
+  { n: 14, id: 'self-praise', punti: 'quanti te ne sei dati', attiva: true, verso: 'legge',
     testo: 'Hai proposto punti per te stesso. Lo sanno tutti.' },
   { n: 15, id: 'wrong-side', punti: -1, attiva: false,
     testo: 'Hai votato l’opzione perdente tre volte di fila' },
@@ -122,6 +122,18 @@ export function verso(legge) {
 
 export const TROFEI = LEGGI.filter((l) => verso(l) === 'trofeo')
 export const PUNIZIONI = LEGGI.filter((l) => verso(l) === 'legge')
+
+// Ogni metà si conta per conto suo: Trofeo I, II, III e Legge I, II,
+// III. Il numero globale resta nel dato — serve all'identità — ma a
+// schermo "Legge XXVIII" dentro la scheda dei Trofei non voleva dire
+// niente a nessuno.
+const ETICHETTE = new Map()
+TROFEI.forEach((l, i) => ETICHETTE.set(l.id, `Trofeo ${numeroRomano(i + 1)}`))
+PUNIZIONI.forEach((l, i) => ETICHETTE.set(l.id, `Legge ${numeroRomano(i + 1)}`))
+
+export function etichetta(legge) {
+  return ETICHETTE.get(legge.id) ?? `Legge ${numeroRomano(legge.n)}`
+}
 
 export const PER_ID = Object.fromEntries(LEGGI.map((l) => [l.id, l]))
 
