@@ -9,7 +9,7 @@ Fatti i punti **1-8** dello spec: setup e deploy, onboarding col codice,
 itinerario, Chat Rapida col soundboard, Album Foto, motore punti,
 classifica con MVP e Maglia Nera e Il Testamento, caccia al tesoro con
 voto anonimo. Più le proposte di punti votate dal gruppo, il **meteo
-della tappa** (punto 12 senza la mappa), la **PWA** (punto 14 senza il
+della tappa** e la **mappa** (punto 12), la **PWA** (punto 14 senza il
 tutorial), le **Spese** (punto 10), la **Pecora** (11) e i **Documenti**
 (13).
 
@@ -196,11 +196,20 @@ Restano scritte perché la decisione conta più del codice.
 - **Alan è solo il draghetto**, senza vestiti: a trenta pixel ogni
   dettaglio in più è una macchia. Se un giorno si cambia ambientazione si
   cambia lo **sfondo**, non lui.
-- **Il tab si chiama "Spese", non "Altro"**: lo spec dice Altro perché lì
-  dentro ci andranno anche Documenti, Mappa e Info, ma un tab chiamato
-  "Altro" con una cosa sola dentro non dice niente. Si rinomina quando ne
-  conterrà davvero altre — stesso criterio per cui i tab sono cresciuti
-  da due a cinque invece di nascere tutti spenti.
+- **Il tab si chiama "Altro"** da quando contiene Spese, Documenti e
+  Mappa. Finché c'erano solo le Spese si chiamava così: un tab chiamato
+  "Altro" con una cosa sola dentro non dice niente. Stesso criterio per
+  cui i tab sono cresciuti da due a cinque invece di nascere tutti spenti.
+- **Leaflet si carica solo aprendo la Mappa** (`lazy` + `Suspense`): pesa
+  150 kB e la mappa è la sezione che lo spec stesso dice che si guarda
+  meno di quanto sembri. Resta però nella cache offline: se non ci fosse,
+  aprendo quella scheda senza rete il componente non si caricherebbe e la
+  scheda si romperebbe invece di mostrare un rettangolo grigio.
+- **La posizione non si aggiorna mai da sola.** Quello che si vede è
+  "l'ultima volta che ha detto dov'era", e l'interfaccia lo scrive: la
+  differenza fra una comodità e una cosa che nessuno vuole addosso è
+  tutta lì. Cinque decimali, cioè circa un metro: più preciso non serve e
+  dice più di quanto si voglia dire.
 
 ## In sospeso
 
@@ -218,7 +227,7 @@ In ordine di quanto servono davvero, non di numero:
 
 1. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
    programma il 12
-2. **Mappa** (12), **Tutorial** (14), **L'Impostore** (15)
+2. **Tutorial** (14) e **L'Impostore** (15)
 
 Il **tutorial va tenuto per ultimo davvero**: lo spec lo dice, e queste
 sessioni l'hanno dimostrato — le regole sono cambiate una decina di volte

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './Altro.css'
 import Spese from './Spese.jsx'
 import Documenti from './Documenti.jsx'
+import Posizioni from './Posizioni.jsx'
 
 // Il quinto tab dello spec. Ci vive il materiale di consultazione: roba
 // che serve in un momento preciso e poi non si guarda più, e che in
@@ -14,6 +15,7 @@ import Documenti from './Documenti.jsx'
 const SCHEDE = [
   ['spese', 'Spese'],
   ['documenti', 'Documenti'],
+  ['mappa', 'Mappa'],
 ]
 
 export default function Altro({ membro }) {
@@ -38,6 +40,7 @@ export default function Altro({ membro }) {
 
       {vista === 'spese' && <Spese membro={membro} senzaCornice />}
       {vista === 'documenti' && <Documenti membro={membro} />}
+      {vista === 'mappa' && <Posizioni membro={membro} />}
     </div>
   )
 }

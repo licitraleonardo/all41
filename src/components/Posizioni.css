@@ -1,0 +1,109 @@
+.posizioni {
+  margin-top: 16px;
+}
+
+/* Mentre Leaflet si scarica: lo stesso rettangolo grigio che si vedrebbe
+   senza rete, così non balla niente quando arriva. */
+.mappa-attesa {
+  height: 340px;
+  width: 100%;
+  border-radius: 12px;
+  background: #dfe6e4;
+}
+
+.pos-condividi {
+  width: 100%;
+  margin-top: 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sand);
+  background: var(--sea);
+  border: 0;
+  border-radius: 11px;
+  padding: 13px 16px;
+  cursor: pointer;
+}
+
+.pos-condividi:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pos-avviso {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.pos-vuoto {
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.pos-elenco {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.pos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14.5px;
+}
+
+.pos.io .pos-nome {
+  font-weight: 700;
+}
+
+.pos img {
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.pos-nome {
+  flex: 1;
+  min-width: 0;
+}
+
+.pos-quando {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.pos-smetti {
+  display: block;
+  margin: 14px auto 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  padding: 2px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Questa riga dice cos'è e cosa non è: resta. */
+.pos-nota {
+  margin: 18px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.pos-condividi:focus-visible,
+.pos-smetti:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
