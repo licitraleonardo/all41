@@ -180,6 +180,21 @@
   color: var(--juniper);
 }
 
+.riga-freccia {
+  flex: none;
+  margin-left: 2px;
+  font-size: 18px;
+  line-height: 1;
+  color: #b3bcc2;
+}
+
+.classifica-invito {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
 .riga-punti.sotto {
   color: var(--coral);
 }
@@ -320,49 +335,33 @@
 /* La proposta si apre sotto la riga che hai toccato, non in
    sovrimpressione: il contesto — chi è, quanti punti ha — deve restare
    sotto gli occhi mentre decidi. */
-.proposta-riquadro {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--sand);
-  border: 1px solid var(--line);
-  border-top: 0;
-  border-radius: 0 0 14px 14px;
-  margin: -8px 8px 0;
-  padding: 14px 13px 13px;
-}
-
+/* La proposta è un foglio in sovrimpressione, come "Salda" nelle Spese:
+   il fondo scuro stacca la decisione dal resto e si capisce che si sta
+   facendo una cosa sola. Struttura e fondo arrivano da .foglio; qui c'è
+   solo quello che è suo. */
 .proposta-testa {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 14.5px;
+  gap: 10px;
+  font-size: 15px;
   color: var(--ink-soft);
+}
+
+.proposta-testa img {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--sand);
 }
 
 .proposta-testa strong {
   color: var(--ink);
 }
 
-.proposta-riquadro .campo {
+.foglio .primario-chiaro,
+.foglio .campo {
   margin-top: 0;
-}
-
-.proposta-riquadro .primario-chiaro,
-.proposta-riquadro .riga-secondaria {
-  margin-top: 0;
-}
-
-.proposta-riquadro .riga-secondaria {
-  align-self: center;
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  background: transparent;
-  border: 0;
-  padding: 2px;
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 .proposta-testa img {

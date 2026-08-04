@@ -25,9 +25,9 @@ export default function Classifica({
   const nome = (id) => perId[id]?.nome ?? 'Qualcuno'
 
   // I punti si propongono da qui: la classifica è dove guardi chi merita
-  // qualcosa, quindi è lì che deve stare il gesto. Non è un foglio in
-  // sovrimpressione — si apre sotto la riga, dove hai toccato.
+  // qualcosa, quindi è lì che deve stare il gesto.
   const [scelto, setScelto] = useState(null)
+  const destinatario = classifica.find((m) => m.id === scelto) ?? null
 
   async function crea(dati) {
     await onCrea(dati)
@@ -60,8 +60,7 @@ export default function Classifica({
             <button
               type="button"
               className={m.id === ioId ? 'riga io' : 'riga'}
-              onClick={() => setScelto(scelto === m.id ? null : m.id)}
-              aria-expanded={scelto === m.id}
+              onClick={() => setScelto(m.id)}
             >
               <span className="posto">{i + 1}</span>
               <img
@@ -81,21 +80,28 @@ export default function Classifica({
               <span className={m.punteggio < 0 ? 'riga-punti sotto' : 'riga-punti'}>
                 {m.punteggio}
               </span>
+              {/* Senza questa freccia niente dice che la riga si tocca:
+                  è la stessa che segna le righe apribili nelle Spese. */}
+              <span className="riga-freccia" aria-hidden="true">
+                ›
+              </span>
             </button>
-
-            {scelto === m.id && (
-              <Proposta
-                destinatario={m}
-                ioId={ioId}
-                onCrea={crea}
-                onAnnulla={() => setScelto(null)}
-                inCorso={inCorso}
-                errore={errore}
-              />
-            )}
           </li>
         ))}
       </ol>
+
+      <p className="classifica-invito">Tocca qualcuno per proporgli dei punti.</p>
+
+      {destinatario && (
+        <Proposta
+          destinatario={destinatario}
+          ioId={ioId}
+          onCrea={crea}
+          onAnnulla={() => setScelto(null)}
+          inCorso={inCorso}
+          errore={errore}
+        />
+      )}
 
       {/* Le proposte aperte stanno qui sotto, col tempo che scorre. Il
           banner in sovrimpressione in cima all'app resta com'è: quello
