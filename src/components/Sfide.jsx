@@ -3,11 +3,13 @@ import { TIPI_ACCETTATI } from '../config/foto.js'
 import { SFIDE_PER_ID } from '../config/sfide.js'
 import VotoSfida from './VotoSfida.jsx'
 
-// Le sfide del giorno, e sotto quelle già vinte come trofeo. Mai
-// l'elenco completo: quelle degli altri giorni non esistono finché non
-// ci si arriva.
+// Le sfide del giorno, sotto quelle dei giorni scorsi che nessuno ha
+// ancora vinto, e in fondo le vinte come trofeo. Mai l'elenco completo:
+// quelle dei giorni che non sono arrivati non esistono ancora — ma una
+// volta comparse non scadono più.
 export default function Sfide({
   diOggi,
+  aperte = [],
   conquistate,
   vinte,
   partecipazioni,
@@ -19,30 +21,37 @@ export default function Sfide({
   onVota,
   inCorso,
 }) {
-  if (diOggi.length === 0 && conquistate.length === 0) return null
+  if (diOggi.length === 0 && aperte.length === 0 && conquistate.length === 0) return null
+
+  const disegna = (s) => (
+    <Sfida
+      key={s.id}
+      sfida={s}
+      vinta={vinte[s.id]}
+      foto={partecipazioni[s.id] ?? []}
+      voto={voti[s.id]}
+      membri={membri}
+      onVota={onVota}
+      ioId={ioId}
+      totaleMembri={totaleMembri}
+      onScegli={onScegli}
+      inCorso={inCorso}
+    />
+  )
 
   return (
     <section className="sfide">
       {diOggi.length > 0 && (
         <>
           <h2 className="sfide-titolo">Sfide di oggi</h2>
-          <ul className="sfide-elenco">
-            {diOggi.map((s) => (
-              <Sfida
-                key={s.id}
-                sfida={s}
-                vinta={vinte[s.id]}
-                foto={partecipazioni[s.id] ?? []}
-                voto={voti[s.id]}
-                membri={membri}
-                onVota={onVota}
-                ioId={ioId}
-                totaleMembri={totaleMembri}
-                onScegli={onScegli}
-                inCorso={inCorso}
-              />
-            ))}
-          </ul>
+          <ul className="sfide-elenco">{diOggi.map(disegna)}</ul>
+        </>
+      )}
+
+      {aperte.length > 0 && (
+        <>
+          <h2 className="sfide-titolo">Ancora aperte</h2>
+          <ul className="sfide-elenco">{aperte.map(disegna)}</ul>
         </>
       )}
 

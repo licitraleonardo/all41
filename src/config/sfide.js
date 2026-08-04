@@ -1,13 +1,15 @@
-import { giornoCorrente } from '../lib/giorni.js'
+import { dataDiOggi, giornoCorrente } from '../lib/giorni.js'
+import { VIAGGIO } from './viaggio.js'
 
 // Caccia al tesoro fotografica.
 //
 // Tre scelte che vengono da come deve sentirsi, non dal codice:
 //
-// 1. Ogni sfida è legata a un giorno vero dell'itinerario, e si vede solo
-//    quel giorno. Non c'è mai un elenco di tutto: si scoprono strada
-//    facendo, come le Leggi. Quelle dei giorni passati restano visibili
-//    solo se le hai vinte.
+// 1. Ogni sfida è legata a un giorno vero dell'itinerario e compare quel
+//    giorno. Non c'è mai un elenco di tutto: si scoprono strada facendo,
+//    come le Leggi. Ma una volta comparse NON scadono più: in viaggio il
+//    telefono si guarda tre volte al giorno, e una sfida che muore a
+//    mezzanotte muore quasi sempre senza che nessuno l'abbia vista.
 // 2. Le sfide parlano di posti che vedrete davvero — i fenicotteri di
 //    Molentargius, le torri spagnole fra Punta Molentis e Porto Giunco,
 //    il faro di Capo Carbonara. Sono nell'itinerario, non inventate.
@@ -16,8 +18,11 @@ import { giornoCorrente } from '../lib/giorni.js'
 //
 // tipo:
 //   'collettiva'  la vincono tutti insieme quando ognuno ha caricato
-//   'competitiva' una foto sola nella giornata vince; se sono due o più
-//                 si apre un voto anonimo a fine giornata
+//   'competitiva' con una foto sola non succede niente e la sfida resta
+//                 aperta; alla seconda si apre la gara, con voto anonimo.
+//                 Chi resta solo fino alla fine del viaggio vince allora:
+//                 non si vince perche' e' passata mezzanotte, si vince
+//                 perche' nessuno si e' fatto avanti
 
 export const SFIDE = [
   // ——— 12 agosto: arrivo, Poetto, Molentargius ———
@@ -158,9 +163,28 @@ export function sfideDelGiorno(giorno) {
 //
 // Pura di proposito, e in questo file e non in lib/sfide.js: quella
 // importa Supabase, e qui non serve un database per sapere che giorno è.
+// Le sfide comparse restano: quelle di oggi in cima, sotto quelle dei
+// giorni scorsi che nessuno ha ancora vinto, e in fondo le vinte come
+// trofeo. Fuori dal viaggio si vede tutto quello che era gia' comparso.
 export function sfideDaMostrare(vinte, adesso = new Date()) {
   const oggi = giornoCorrente(adesso)
   const diOggi = oggi ? sfideDelGiorno(oggi.giorno) : []
-  const conquistate = SFIDE.filter((s) => vinte[s.id] && !diOggi.includes(s))
-  return { diOggi, conquistate }
+
+  // Una sfida e' "comparsa" se il suo giorno e' arrivato. Prima del
+  // viaggio non ce n'e' nessuna; dopo, ci sono tutte.
+  const comparse = SFIDE.filter((s) => sfidaComparsa(s, adesso))
+
+  const aperte = comparse.filter((s) => !vinte[s.id] && !diOggi.includes(s))
+  const conquistate = comparse.filter((s) => vinte[s.id] && !diOggi.includes(s))
+
+  return { diOggi, aperte, conquistate }
+}
+
+export function sfidaComparsa(sfida, adesso = new Date()) {
+  const data = dataDiOggi(adesso)
+  if (data < VIAGGIO.dataInizio) return false
+  if (data > VIAGGIO.dataFine) return true
+
+  const giornoDiOggi = Number(data.slice(8, 10))
+  return sfida.giorno <= giornoDiOggi
 }

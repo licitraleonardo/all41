@@ -321,19 +321,48 @@
    sovrimpressione: il contesto — chi è, quanti punti ha — deve restare
    sotto gli occhi mentre decidi. */
 .proposta-riquadro {
-  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--sand);
   border: 1px solid var(--line);
   border-top: 0;
-  border-radius: 0 0 12px 12px;
-  margin: -6px 10px 0;
-  padding: 12px 12px 14px;
+  border-radius: 0 0 14px 14px;
+  margin: -8px 8px 0;
+  padding: 14px 13px 13px;
 }
 
 .proposta-testa {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 14px;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+}
+
+.proposta-testa strong {
+  color: var(--ink);
+}
+
+.proposta-riquadro .campo {
+  margin-top: 0;
+}
+
+.proposta-riquadro .primario-chiaro,
+.proposta-riquadro .riga-secondaria {
+  margin-top: 0;
+}
+
+.proposta-riquadro .riga-secondaria {
+  align-self: center;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  padding: 2px;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .proposta-testa img {
@@ -352,7 +381,6 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
-  margin-top: 12px;
 }
 
 .conta-tasto {
@@ -396,18 +424,8 @@
   background: #fdeeeb;
 }
 
-.proposta-azioni {
-  display: flex;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.proposta-azioni > button {
-  flex: 1;
-  margin-top: 0;
-}
-
-.conta-tasto:focus-visible {
+.conta-tasto:focus-visible,
+.proposta-riquadro .riga-secondaria:focus-visible {
   outline: 2px solid var(--sea);
   outline-offset: 2px;
 }

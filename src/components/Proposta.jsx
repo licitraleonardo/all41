@@ -77,21 +77,22 @@ export default function Proposta({ destinatario, ioId, onCrea, onAnnulla, inCors
 
       {errore && <p className="sondaggio-errore">{errore}</p>}
 
-      <div className="proposta-azioni">
-        <button type="button" className="secondario-chiaro" onClick={onAnnulla}>
-          Lascia stare
-        </button>
-        <button
-          type="button"
-          className="primario-chiaro"
-          onClick={() =>
-            onCrea({ destinatarioId: destinatario.id, punti, motivo: motivo.trim() })
-          }
-          disabled={!puoInviare}
-        >
-          {inCorso ? 'Un attimo…' : 'Metti ai voti'}
-        </button>
-      </div>
+      {/* Il tasto dice cosa sta per succedere, non "conferma": è la
+          stessa idea di "Salda 139,23 €" nelle Spese. */}
+      <button
+        type="button"
+        className="primario-chiaro"
+        onClick={() =>
+          onCrea({ destinatarioId: destinatario.id, punti, motivo: motivo.trim() })
+        }
+        disabled={!puoInviare}
+      >
+        {inCorso ? 'Un attimo…' : `Metti ai voti ${punti > 0 ? `+${punti}` : punti}`}
+      </button>
+
+      <button type="button" className="riga-secondaria" onClick={onAnnulla}>
+        Lascia stare
+      </button>
     </div>
   )
 }

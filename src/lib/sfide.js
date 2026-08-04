@@ -52,13 +52,14 @@ export const leggiPartecipazioni = conCache(
   }
 )
 
-// Fine della giornata in ora locale: il voto di una sfida dura fino a
-// mezzanotte, come dice lo spec.
-function fineGiornata() {
-  const f = new Date()
-  f.setHours(23, 59, 59, 999)
-  return f.toISOString()
+// La gara dura un giorno intero da quando si apre, non fino a mezzanotte:
+// una seconda foto caricata alle 23:50 lasciava dieci minuti per votare,
+// cioè nessuno.
+function scadenzaDellaGara() {
+  return new Date(Date.now() + ORE_DI_GARA * 3600 * 1000).toISOString()
 }
+
+const ORE_DI_GARA = 24
 
 // I voti aperti delle sfide, per mostrarli e per votarci.
 export const leggiVotiSfide = conCache('votiSfide', async function leggiVotiSfide() {
@@ -92,7 +93,7 @@ export async function assicuraVotoSfida(sfidaId, fotoIds, memberId) {
   const { data, error } = await supabase.rpc('assicura_voto_sfida', {
     p_sfida: sfidaId,
     p_foto: fotoIds,
-    p_scadenza: fineGiornata(),
+    p_scadenza: scadenzaDellaGara(),
     p_membro: memberId,
   })
   if (error) throw error
@@ -131,16 +132,24 @@ export async function risolviVotiSfide(partecipazioni) {
   return risolte
 }
 
-// Una sola foto in gara a fine giornata vince senza voto: non ha senso
-// votare quando non c'è alternativa. Chi non ha ricevuto nemmeno una foto
-// resta senza vincitore.
+// Chi è rimasto solo su una sfida la vince alla fine del viaggio, non a
+// mezzanotte del suo giorno.
+//
+// È la regola che cambia tutto: con una foto sola non succede niente e la
+// sfida resta aperta, perché in viaggio il telefono si guarda tre volte
+// al giorno e chiudere una gara dopo poche ore vuol dire assegnarla a chi
+// era sveglio, non a chi ha fatto la foto migliore. Alla seconda foto si
+// apre la gara vera, quella con il voto.
+//
+// Chi non ha ricevuto nemmeno una foto resta senza vincitore.
 export async function risolviSfideSenzaVoto(partecipazioni, vinte, adesso = new Date()) {
   const oggi = dataDiOggi(adesso)
+  if (oggi <= VIAGGIO.dataFine) return []
+
   const risolte = []
 
   for (const sfida of SFIDE) {
     if (sfida.tipo !== 'competitiva' || vinte[sfida.id]) continue
-    if (dataDellaSfida(sfida) >= oggi) continue // giornata non ancora finita
 
     const foto = partecipazioni[sfida.id] ?? []
     if (foto.length !== 1) continue
@@ -150,10 +159,6 @@ export async function risolviSfideSenzaVoto(partecipazioni, vinte, adesso = new 
   }
 
   return risolte
-}
-
-function dataDellaSfida(sfida) {
-  return `${VIAGGIO.dataInizio.slice(0, 8)}${String(sfida.giorno).padStart(2, '0')}`
 }
 
 // Chiude la sfida e assegna i punti a chi ha vinto, una volta sola.

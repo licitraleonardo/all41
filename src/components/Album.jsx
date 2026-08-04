@@ -23,18 +23,19 @@ export default function Album({ membro }) {
   const sfide = useSfide(membro.id)
   const [vista, setVista] = useState('album')
 
-  // Quante sfide di oggi aspettano ancora qualcosa da te: serve solo a
-  // mettere il pallino sulla scheda, così non bisogna aprirla per sapere
-  // se c'è qualcosa da fare.
+  // Quante sfide aspettano ancora qualcosa da te: serve solo a mettere
+  // il pallino sulla scheda, così non bisogna aprirla per sapere se c'è
+  // qualcosa da fare. Contano anche quelle dei giorni scorsi rimaste
+  // aperte — è tutto il punto di non farle più scadere.
   const daFare = useMemo(
     () =>
-      sfide.diOggi.filter((s) => {
+      [...sfide.diOggi, ...sfide.aperte].filter((s) => {
         if (sfide.vinte[s.id]) return false
         const voto = sfide.voti[s.id]
         if (voto && !voto.hannoVotato.includes(membro.id)) return true
         return !(sfide.partecipazioni[s.id] ?? []).some((f) => f.autoreId === membro.id)
       }).length,
-    [sfide.diOggi, sfide.vinte, sfide.voti, sfide.partecipazioni, membro.id]
+    [sfide.diOggi, sfide.aperte, sfide.vinte, sfide.voti, sfide.partecipazioni, membro.id]
   )
 
   async function carica(file, sfidaId = null) {
@@ -135,6 +136,7 @@ export default function Album({ membro }) {
       {vista === 'sfide' && (
         <Sfide
           diOggi={sfide.diOggi}
+          aperte={sfide.aperte}
           conquistate={sfide.conquistate}
           vinte={sfide.vinte}
           partecipazioni={sfide.partecipazioni}
@@ -148,7 +150,7 @@ export default function Album({ membro }) {
         />
       )}
 
-      {vista === 'sfide' && sfide.diOggi.length === 0 && sfide.conquistate.length === 0 && (
+      {vista === 'sfide' && sfide.diOggi.length === 0 && sfide.aperte.length === 0 && sfide.conquistate.length === 0 && (
         <p className="album-vuoto">
           Nessuna sfida oggi. Compaiono nei giorni del viaggio, una tappa per volta.
         </p>

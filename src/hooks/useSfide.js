@@ -92,7 +92,7 @@ export function useSfide(memberId) {
     [memberId, ricarica]
   )
 
-  const { diOggi, conquistate } = useMemo(() => sfideDaMostrare(vinte), [vinte])
+  const { diOggi, aperte, conquistate } = useMemo(() => sfideDaMostrare(vinte), [vinte])
   const membriIds = useMemo(() => Object.keys(membri), [membri])
 
   return {
@@ -102,6 +102,7 @@ export function useSfide(memberId) {
     membri,
     membriIds,
     diOggi,
+    aperte,
     conquistate,
     ricarica,
     aggiornaGara,
