@@ -11,6 +11,7 @@
     "lint": "oxlint",
     "prova:conti": "node prove/conti.mjs && node prove/conti-casuali.mjs",
     "prova:caccia": "node prove/caccia.mjs",
+    "prova:documenti": "node prove/nome-documento.mjs",
     "prova:pecora": "node prove/pecora.mjs && node prove/pecora-record.mjs",
     "preview": "vite preview"
   },

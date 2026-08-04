@@ -2,10 +2,11 @@ import { useRef, useState } from 'react'
 import './Documenti.css'
 import { useDocumenti } from '../hooks/useDocumenti.js'
 import { caricaDocumento, eUnPdf } from '../lib/documenti.js'
-import { MAX_BYTE, MAX_TITOLO, TIPI_ACCETTATI } from '../config/documenti.js'
+import { MAX_BYTE, TIPI_ACCETTATI } from '../config/documenti.js'
 import { descriviErrore } from '../lib/errori.js'
 import FotoGrande from './FotoGrande.jsx'
 import BottoneElimina from './BottoneElimina.jsx'
+import FoglioDocumento from './FoglioDocumento.jsx'
 
 // I documenti del viaggio: QR dell'escursione, biglietti, prenotazioni.
 //
@@ -19,8 +20,6 @@ export default function Documenti({ membro }) {
 
   const campo = useRef(null)
   const [scelto, setScelto] = useState(null)
-  const [titolo, setTitolo] = useState('')
-  const [soloPerMe, setSoloPerMe] = useState(false)
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [grande, setGrande] = useState(null)
@@ -29,20 +28,16 @@ export default function Documenti({ membro }) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-
     setAvviso(null)
     setScelto(file)
-    // Il nome del file è quasi sempre inutile (IMG_2931.jpg), ma quando è
-    // buono risparmia di scriverlo.
-    setTitolo(file.name.replace(/\.[^.]+$/, '').slice(0, MAX_TITOLO))
   }
 
-  async function carica() {
+  async function carica({ titolo, soloPerMe }) {
     setInCorso(true)
     setAvviso(null)
     try {
       const esito = await caricaDocumento(scelto, membro.id, {
-        titolo: titolo.trim(),
+        titolo,
         soloPerMe,
         onStato: setAvviso,
       })
@@ -54,8 +49,6 @@ export default function Documenti({ membro }) {
 
       inserisci(esito.documento)
       setScelto(null)
-      setTitolo('')
-      setSoloPerMe(false)
       setAvviso(null)
     } catch (e) {
       setAvviso(`Non è partito. ${descriviErrore(e)}`)
@@ -81,59 +74,19 @@ export default function Documenti({ membro }) {
         hidden
       />
 
-      {avviso && <p className="doc-avviso">{avviso}</p>}
+      {avviso && !scelto && <p className="doc-avviso">{avviso}</p>}
 
       {scelto && (
-        <div className="doc-nuovo">
-          <p className="doc-nuovo-file">
-            {eUnPdf({ tipo: scelto.type }) ? '📄' : '🖼'} {scelto.name}
-          </p>
-
-          <label className="campo-chiaro">
-            <span>Cos&rsquo;è</span>
-            <input
-              type="text"
-              value={titolo}
-              onChange={(e) => setTitolo(e.target.value)}
-              maxLength={MAX_TITOLO}
-              placeholder="Biglietto della barca"
-            />
-          </label>
-
-          <label className="doc-interruttore">
-            <input
-              type="checkbox"
-              checked={soloPerMe}
-              onChange={(e) => setSoloPerMe(e.target.checked)}
-            />
-            <span>
-              Solo per me
-              <span className="doc-interruttore-nota">
-                Sparisce dall&rsquo;elenco degli altri. Non è una cassaforte.
-              </span>
-            </span>
-          </label>
-
-          <button
-            type="button"
-            className="primario-doc"
-            onClick={carica}
-            disabled={titolo.trim().length === 0 || inCorso}
-          >
-            {inCorso ? 'Un attimo…' : 'Metti nel viaggio'}
-          </button>
-
-          <button
-            type="button"
-            className="riga-secondaria"
-            onClick={() => {
-              setScelto(null)
-              setAvviso(null)
-            }}
-          >
-            Lascia stare
-          </button>
-        </div>
+        <FoglioDocumento
+          file={scelto}
+          inCorso={inCorso}
+          avviso={avviso}
+          onCarica={carica}
+          onAnnulla={() => {
+            setScelto(null)
+            setAvviso(null)
+          }}
+        />
       )}
 
       {stato === 'caricamento' && <p className="doc-vuoto">Un attimo.</p>}
@@ -186,16 +139,20 @@ export default function Documenti({ membro }) {
         </ul>
       )}
 
-      {!scelto && (
-        <button type="button" className="doc-aggiungi" onClick={() => campo.current?.click()}>
-          Aggiungi un documento
-        </button>
-      )}
-
       <p className="doc-nota">
         Foto e PDF di biglietti, QR e prenotazioni. Chi ha il link li vede: non
         metteteci carte d&rsquo;identità o dati bancari.
       </p>
+
+      {/* Fisso in fondo come "Segna una spesa": è l'azione principale
+          della sezione e deve raggiungerti dove sei. */}
+      <button
+        type="button"
+        className="doc-aggiungi"
+        onClick={() => campo.current?.click()}
+      >
+        Aggiungi un documento
+      </button>
 
       {/* Il visore è lo stesso dell'album: cambia solo il nome del campo
           della data, che qui è al maschile. */}
