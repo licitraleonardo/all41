@@ -18,7 +18,12 @@ export const LIMITI = {
   soundboard: { cooldown: 0, raffica: null, finestra: null, giorno: null },
   free_text: { cooldown: 3, raffica: 10, finestra: 300, giorno: null },
   voice: { cooldown: 30, raffica: 3, finestra: 600, giorno: 15, durataMax: 60 },
-  photo: { cooldown: 0, raffica: 20, finestra: 600, giorno: null },
+  // Cinque al giorno a testa nell'album. La raffica resta larga perché
+  // caricarne otto di fila dopo una giornata in spiaggia è uso normale,
+  // non spam: è il totale della giornata che tiene l'album leggibile.
+  // Il tetto vale solo per l'album — le foto mandate a una sfida non lo
+  // consumano — e una foto eliminata libera il posto.
+  photo: { cooldown: 0, raffica: 20, finestra: 600, giorno: 5 },
   dove_siete: { cooldown: 60, raffica: null, finestra: null, giorno: null },
   si_riparte: { cooldown: 60, raffica: null, finestra: null, giorno: null },
   poll: { cooldown: 60, raffica: null, finestra: null, giorno: null },

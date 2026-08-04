@@ -7,6 +7,7 @@ import { dopoFoto } from '../lib/regole.js'
 import { forseChiudiCollettiva } from '../lib/sfide.js'
 import { useSfide } from '../hooks/useSfide.js'
 import Sfide from './Sfide.jsx'
+import FotoGrande from './FotoGrande.jsx'
 import { urlAvatar } from '../config/avatar.js'
 import { TIPI_ACCETTATI } from '../config/foto.js'
 
@@ -22,6 +23,7 @@ export default function Album({ membro }) {
   const campoFoto = useRef(null)
   const sfide = useSfide(membro.id)
   const [vista, setVista] = useState('album')
+  const [grande, setGrande] = useState(null)
 
   // Quante sfide aspettano ancora qualcosa da te: serve solo a mettere
   // il pallino sulla scheda, così non bisogna aprirla per sapere se c'è
@@ -44,7 +46,13 @@ export default function Album({ membro }) {
     try {
       const esito = await caricaFoto(file, membro.id, { onStato: setAvviso, sfidaId })
       if (!esito.ok) {
-        setAvviso(`Aspetta ${esito.attesa}s.`)
+        // Il tetto della giornata non si scavalca aspettando qualche
+        // secondo: dirlo con un cronometro sarebbe una presa in giro.
+        setAvviso(
+          esito.motivo === 'giorno'
+            ? `Cinque foto al giorno. Le hai finite: domani se ne riparla.`
+            : `Aspetta ${esito.attesa}s.`
+        )
         return
       }
       inserisci(esito.foto)
@@ -233,7 +241,15 @@ export default function Album({ membro }) {
               const autore = membri[f.autoreId]
               return (
                 <figure className="cella" key={f.id}>
-                  <div className="cella-foto">
+                  {/* In una griglia da tre colonne una foto è larga cento
+                      pixel: si tocca e si apre grande, dove si può anche
+                      esportarla o toglierla. */}
+                  <button
+                    type="button"
+                    className="cella-foto"
+                    onClick={() => setGrande(f)}
+                    aria-label={`Apri la foto di ${autore?.nome ?? 'qualcuno'}`}
+                  >
                     <img
                       src={f.url}
                       alt=""
@@ -241,17 +257,7 @@ export default function Album({ membro }) {
                       height={f.altezza ?? 800}
                       loading="lazy"
                     />
-                    {f.autoreId === membro.id && (
-                      <button
-                        type="button"
-                        className="cella-elimina"
-                        onClick={() => elimina(f)}
-                        aria-label="Elimina"
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
+                  </button>
 
                   <figcaption>
                     <img
@@ -276,6 +282,16 @@ export default function Album({ membro }) {
         </>
       )}
       </>
+      )}
+
+      {grande && (
+        <FotoGrande
+          foto={grande}
+          autore={membri[grande.autoreId]}
+          mia={grande.autoreId === membro.id}
+          onChiudi={() => setGrande(null)}
+          onElimina={elimina}
+        />
       )}
     </div>
   )

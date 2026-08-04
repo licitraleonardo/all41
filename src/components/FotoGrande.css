@@ -1,0 +1,115 @@
+/* A schermo pieno, fondo scuro: la foto è la cosa, tutto il resto si
+   toglie di mezzo. */
+
+.foto-grande {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 53, 80, 0.94);
+  padding: calc(12px + env(safe-area-inset-top)) 12px
+    calc(12px + env(safe-area-inset-bottom));
+}
+
+/* Il fondo è un bottone vero: toccare fuori dalla foto chiude, ed è il
+   gesto che tutti provano per primo. */
+.foto-sfondo {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.foto-piena {
+  position: relative;
+  max-width: 100%;
+  max-height: calc(100dvh - 190px);
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.foto-barra {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin-top: 14px;
+  color: var(--sand);
+}
+
+.foto-chi {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.foto-chi img {
+  flex: none;
+  border-radius: 50%;
+  background: rgba(247, 244, 236, 0.12);
+}
+
+.foto-quando {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(247, 244, 236, 0.65);
+}
+
+.foto-azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.foto-tasto {
+  flex: 1;
+  min-width: 84px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sand);
+  background: rgba(247, 244, 236, 0.1);
+  border: 1px solid rgba(247, 244, 236, 0.28);
+  border-radius: 10px;
+  padding: 11px 12px;
+  cursor: pointer;
+}
+
+.foto-tasto.pericolo {
+  color: #4d1408;
+  background: #f6bfb4;
+  border-color: transparent;
+}
+
+.foto-tasto:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.foto-tasto:focus-visible,
+.foto-sfondo:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* La domanda sta sotto i tasti e non sopra: chi ha già premuto "Elimina"
+   guarda lì, e la risposta dev'essere sotto il pollice. */
+.foto-domanda {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: rgba(247, 244, 236, 0.8);
+}
+
+.foto-avviso {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--coral);
+}

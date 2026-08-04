@@ -73,8 +73,7 @@
 }
 
 .carica:focus-visible,
-.altre:focus-visible,
-.cella-elimina:focus-visible {
+.altre:focus-visible {
   outline: 2px solid var(--sea);
   outline-offset: 2px;
 }
@@ -380,12 +379,23 @@
 
 /* Il riquadro quadrato è questo, non la figure: così la didascalia sta
    sotto la foto e non ci finisce sopra. */
+/* La cella è un bottone: si tocca e la foto si apre grande. */
 .cella-foto {
   position: relative;
+  display: block;
+  width: 100%;
   aspect-ratio: 1;
+  border: 0;
   border-radius: 12px;
   overflow: hidden;
+  padding: 0;
   background: #e8e3d6;
+  cursor: pointer;
+}
+
+.cella-foto:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
 }
 
 /* Solo l'immagine dentro il riquadro: senza questa precisazione la regola
@@ -420,21 +430,6 @@
   flex: none;
   border-radius: 50%;
   background: #e8e3d6;
-}
-
-.cella-elimina {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 26px;
-  height: 26px;
-  font-size: 17px;
-  line-height: 1;
-  color: #fff;
-  background: rgba(11, 53, 80, 0.55);
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
 }
 
 .altre {
