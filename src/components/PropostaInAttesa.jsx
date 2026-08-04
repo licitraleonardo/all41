@@ -24,8 +24,13 @@ export default function PropostaInAttesa({ proposta, membri, ioId, onVota }) {
     }
   }
 
+  // Chi se li è proposti da solo si vede da lontano: la scheda diventa
+  // rossa. Non è un errore, è una segnalazione — e il rosso è il colore
+  // che nel resto dell'app significa "guarda qui".
+  const daSolo = proposta.proponenteId === proposta.destinatarioId
+
   return (
-    <li className="attesa-card">
+    <li className={daSolo ? 'attesa-card da-solo' : 'attesa-card'}>
       <div className="attesa-testa">
         <span className={proposta.punti < 0 ? 'storico-punti meno' : 'storico-punti piu'}>
           {segno}
@@ -33,9 +38,7 @@ export default function PropostaInAttesa({ proposta, membri, ioId, onVota }) {
         <span className="attesa-testo">
           <strong>{nome(proposta.destinatarioId)}</strong> — {proposta.motivo}
           <span className="attesa-chi">
-            {proposta.proponenteId === proposta.destinatarioId
-              ? 'se li è proposti da solo'
-              : `proposta da ${nome(proposta.proponenteId)}`}
+            {daSolo ? 'se li è proposti da solo' : `proposta da ${nome(proposta.proponenteId)}`}
           </span>
         </span>
       </div>

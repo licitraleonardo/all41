@@ -34,9 +34,13 @@ export default function BannerProposta({ proposte, membri, onVota, onRimanda }) 
     }
   }
 
+  // Chi se li è proposti da solo si vede prima di leggere: il banner
+  // diventa rosso.
+  const daSolo = proposta.proponenteId === proposta.destinatarioId
+
   return (
     <div
-      className="banner-proposta"
+      className={daSolo ? 'banner-proposta da-solo' : 'banner-proposta'}
       role="region"
       aria-label="Proposta da votare"
       ref={setRiquadro}
@@ -49,7 +53,7 @@ export default function BannerProposta({ proposte, membri, onVota, onRimanda }) 
           <p className="banner-testo">
             {/* Se se li è proposti da solo il gruppo lo deve sapere
                 mentre vota, non dopo: è metà del divertimento. */}
-            {proposta.proponenteId === proposta.destinatarioId ? (
+            {daSolo ? (
               <>
                 <strong>{nome(proposta.proponenteId)}</strong> si propone {segno}{' '}
                 <strong>da solo</strong>
