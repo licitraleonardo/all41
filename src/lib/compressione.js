@@ -6,9 +6,12 @@ import { LATO_LUNGO_MAX, QUALITA } from '../config/foto.js'
 //
 // onStato riceve un avviso quando serve un passaggio lento, così l'utente
 // non guarda un bottone fermo per cinque secondi.
-export async function comprimi(file, { onStato } = {}) {
+// I documenti passano lato lungo e qualità propri: un QR ridotto a 1600px
+// e riesportato a 0,8 può diventare illeggibile, ed è esattamente la cosa
+// che deve funzionare al primo colpo davanti a chi controlla i biglietti.
+export async function comprimi(file, { onStato, latoLungo = LATO_LUNGO_MAX, qualita = QUALITA } = {}) {
   const immagine = await apri(file, onStato)
-  const { width, height } = misura(immagine.width, immagine.height)
+  const { width, height } = misura(immagine.width, immagine.height, latoLungo)
 
   const tela = document.createElement('canvas')
   tela.width = width
@@ -16,9 +19,7 @@ export async function comprimi(file, { onStato } = {}) {
   tela.getContext('2d').drawImage(immagine, 0, 0, width, height)
   immagine.close?.()
 
-  const blob = await new Promise((risolvi) =>
-    tela.toBlob(risolvi, 'image/jpeg', QUALITA)
-  )
+  const blob = await new Promise((risolvi) => tela.toBlob(risolvi, 'image/jpeg', qualita))
   if (!blob) throw new Error(`Compressione fallita (${descriviFile(file)}).`)
 
   return { blob, width, height, primaByte: file.size, dopoByte: blob.size }
@@ -128,11 +129,11 @@ async function apri(file, onStato) {
   }
 }
 
-function misura(larghezza, altezza) {
+function misura(larghezza, altezza, latoLungo = LATO_LUNGO_MAX) {
   const lato = Math.max(larghezza, altezza)
-  if (lato <= LATO_LUNGO_MAX) return { width: larghezza, height: altezza }
+  if (lato <= latoLungo) return { width: larghezza, height: altezza }
 
-  const fattore = LATO_LUNGO_MAX / lato
+  const fattore = latoLungo / lato
   return {
     width: Math.round(larghezza * fattore),
     height: Math.round(altezza * fattore),

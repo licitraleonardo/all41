@@ -1,0 +1,26 @@
+/* La cornice del quinto tab. Le sezioni dentro (Spese, Documenti) non
+   hanno più una schermata loro: gliela dà questa, così le variabili
+   d'inchiostro e lo spazio in fondo si dichiarano in un posto solo. */
+
+.altro-schermo {
+  --ink: #16232C;
+  --ink-soft: #55636B;
+  --line: #E4DFD2;
+
+  min-height: 100dvh;
+  background-color: var(--sand);
+  color: var(--ink);
+  text-align: left;
+  /* In fondo ci sta il tasto fisso delle Spese, oltre alla barra dei tab */
+  padding: 16px 16px calc(28px + var(--altezza-tab) + 56px);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Gli stessi titoletti a due colonne delle Spese */
+.altro-schermo .sezione {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}

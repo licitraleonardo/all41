@@ -15,14 +15,17 @@ import { descriviErrore } from '../lib/errori.js'
 // raggiungibile in fondo, e il foglio di una persona toccando la sua
 // riga. Le sotto-schede erano struttura in più su una sezione che ha una
 // cosa sola da dire.
-export default function Spese({ membro }) {
+// `senzaCornice` quando vive dentro il tab Altro, che la schermata la
+// mette già lui: due padding annidati raddoppierebbero i margini e
+// spingerebbero il contenuto a metà pagina.
+export default function Spese({ membro, senzaCornice = false }) {
   const conti = useSpese()
   const [foglio, setFoglio] = useState(null)
 
   const { stato, errore } = conti
 
   return (
-    <div className="spese-schermo">
+    <div className={senzaCornice ? 'spese-dentro' : 'spese-schermo'}>
       {stato === 'caricamento' && <p className="spese-vuoto">Un attimo.</p>}
       {stato === 'guasto' && <p className="spese-guasto">{errore}</p>}
 

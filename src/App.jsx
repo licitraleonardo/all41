@@ -24,7 +24,7 @@ import Itinerario from './components/Itinerario.jsx'
 import ChatRapida from './components/ChatRapida.jsx'
 import Album from './components/Album.jsx'
 import Gioco from './components/Gioco.jsx'
-import Spese from './components/Spese.jsx'
+import Altro from './components/Altro.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
@@ -248,7 +248,7 @@ export default function App() {
             onVotaProposta={proposte.vota}
           />
         )}
-        {tab === 'spese' && <Spese membro={membro} />}
+        {tab === 'altro' && <Altro membro={membro} />}
         <BarraTab attivo={tab} onCambia={setTab} />
         <StrisciaOffline attiva={!inLinea} />
         {/* Senza rete il voto non partirebbe: il banner si toglie invece

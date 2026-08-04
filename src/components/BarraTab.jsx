@@ -1,15 +1,13 @@
-// Lo spec prevede cinque tab, e il quinto si chiama "Altro": dentro ci
-// vanno Spese, Documenti, Mappa e Info. Per ora c'è solo Spese, e un tab
-// chiamato "Altro" con dentro una cosa sola non dice niente a nessuno.
-// Si chiama come quello che contiene, e diventerà "Altro" quando ne
-// conterrà davvero altre — stesso criterio per cui i tab sono cresciuti
-// da due a cinque invece di nascere tutti spenti.
+// I cinque tab dello spec. Sono cresciuti man mano invece di nascere
+// tutti spenti: il quinto si è chiamato "Spese" finché conteneva solo
+// quelle, e ha preso il nome dello spec quando ci sono entrati anche i
+// Documenti. Mappa e Info arriveranno lì.
 const TAB = [
   { id: 'oggi', etichetta: 'Oggi', icona: '📅' },
   { id: 'gruppo', etichetta: 'Gruppo', icona: '💬' },
   { id: 'foto', etichetta: 'Foto', icona: '📷' },
   { id: 'gioco', etichetta: 'Gioco', icona: '🏆' },
-  { id: 'spese', etichetta: 'Spese', icona: '💶' },
+  { id: 'altro', etichetta: 'Altro', icona: '📎' },
 ]
 
 export default function BarraTab({ attivo, onCambia, novita }) {

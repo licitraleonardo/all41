@@ -227,6 +227,32 @@ create table if not exists sheep_records (
 create index if not exists sheep_records_giorno_idx
   on sheep_records (trip_id, giorno, punteggio desc);
 
+-- ------------------------------------------------------------ documenti
+-- QR dell'escursione, biglietti del traghetto, PDF delle prenotazioni:
+-- oggi vivono sepolti nella chat di uno solo, e servono sempre nel
+-- momento peggiore.
+--
+-- Condivisi di default. `solo_per_me` esiste per le poche cose personali,
+-- ma NON e' una cassaforte: chi apre il database li vede tutti. Il nome
+-- della sezione e i testi lo dicono chiaramente — promettere una privacy
+-- che l'app non puo' mantenere e' peggio che non offrirla.
+create table if not exists documents (
+  id          uuid primary key default gen_random_uuid(),
+  trip_id     text not null references trips (id) on delete cascade,
+  owner_id    uuid not null references members (id) on delete cascade,
+  titolo      text not null,
+  path        text not null,   -- percorso dentro il bucket
+  url         text not null,
+  mime_type   text not null,
+  byte        int,
+  solo_per_me boolean not null default false,
+  deleted_at  timestamptz,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists documents_viaggio_idx
+  on documents (trip_id, created_at desc);
+
 -- ------------------------------------------------------------ adeguamenti
 --
 -- "create table if not exists" crea la tabella la prima volta e poi non
@@ -312,6 +338,7 @@ alter table challenges    enable row level security;
 alter table expenses      enable row level security;
 alter table payments      enable row level security;
 alter table sheep_records enable row level security;
+alter table documents     enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -335,6 +362,9 @@ drop policy if exists "rimborsi: lettura per autenticati"  on payments;
 drop policy if exists "rimborsi: creazione per autenticati" on payments;
 drop policy if exists "rimborsi: modifica per autenticati" on payments;
 drop policy if exists "pecora: lettura per autenticati"    on sheep_records;
+drop policy if exists "documenti: lettura per autenticati"   on documents;
+drop policy if exists "documenti: creazione per autenticati" on documents;
+drop policy if exists "documenti: modifica per autenticati"  on documents;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -416,6 +446,19 @@ create policy "rimborsi: modifica per autenticati"
 -- dipendono due Leggi, quindi vale la stessa regola dei punti.
 create policy "pecora: lettura per autenticati"
   on sheep_records for select to authenticated using (true);
+
+-- I documenti si leggono tutti: il "solo per me" e' un filtro nella
+-- schermata, non una serratura, e i testi dell'app lo dicono. Nascondere
+-- qui sarebbe promettere una privacy che questo modello di sicurezza non
+-- puo' mantenere comunque — chi apre il database li vedrebbe lo stesso.
+create policy "documenti: lettura per autenticati"
+  on documents for select to authenticated using (true);
+
+create policy "documenti: creazione per autenticati"
+  on documents for insert to authenticated with check (true);
+
+create policy "documenti: modifica per autenticati"
+  on documents for update to authenticated using (true) with check (true);
 
 -- Tiene solo il meglio della giornata: due partite di fila non si
 -- sovrascrivono l'una con l'altra, e un punteggio più basso non abbassa
@@ -861,6 +904,31 @@ begin
     on storage.objects for insert to authenticated with check (bucket_id = 'foto');
 exception when others then
   raise notice 'Permessi sul bucket non impostati (%). Se le foto si caricano, va bene cosi.', sqlerrm;
+end $$;
+
+-- Bucket dei documenti, separato dalle foto: qui dentro ci sono anche
+-- PDF, e i due posti hanno regole diverse su cosa si accetta.
+do $$
+begin
+  insert into storage.buckets (id, name, public)
+  values ('documenti', 'documenti', true)
+  on conflict (id) do nothing;
+exception when others then
+  raise notice 'Bucket documenti non creato (%). Crealo a mano: Storage -> New bucket, nome documenti, Public.', sqlerrm;
+end $$;
+
+do $$
+begin
+  drop policy if exists "storage documenti: lettura"     on storage.objects;
+  drop policy if exists "storage documenti: caricamento" on storage.objects;
+
+  create policy "storage documenti: lettura"
+    on storage.objects for select using (bucket_id = 'documenti');
+
+  create policy "storage documenti: caricamento"
+    on storage.objects for insert to authenticated with check (bucket_id = 'documenti');
+exception when others then
+  raise notice 'Permessi sul bucket documenti non impostati (%). Se si caricano, va bene cosi.', sqlerrm;
 end $$;
 
 -- PostgREST tiene in memoria le firme delle funzioni: dopo averle

@@ -1,0 +1,221 @@
+/* Sta dentro il tab Altro, che è chiaro come le Spese: le variabili
+   d'inchiostro arrivano da .altro-schermo. */
+
+.documenti {
+  margin-top: 16px;
+}
+
+.doc-vuoto {
+  margin: 20px 0 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.doc-guasto {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--coral);
+}
+
+.doc-avviso {
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------------------- elenco */
+
+.doc-elenco {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doc {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 4px 4px 4px 0;
+}
+
+/* Tutta la riga si tocca e apre il documento: un QR va aperto in fretta,
+   non centrato con precisione. */
+.doc-apri {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.doc-icona {
+  flex: none;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.doc-testo {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.doc-sotto {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.doc-azioni {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 8px 6px;
+}
+
+.doc-tasto {
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+/* La × dell'elenco non sta sopra a un'immagine: qui serve un contorno */
+.doc-azioni .cella-elimina {
+  position: static;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.doc-azioni .cella-elimina.armato {
+  color: #fff;
+  background: var(--coral);
+  border-color: transparent;
+}
+
+/* --------------------------------------------------------- il nuovo */
+
+.doc-nuovo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--sand);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 13px;
+  margin-bottom: 14px;
+}
+
+.doc-nuovo-file {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.doc-nuovo .campo-chiaro {
+  margin-top: 0;
+}
+
+.doc-interruttore {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.doc-interruttore input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  accent-color: var(--sea);
+}
+
+.doc-interruttore-nota {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.primario-doc,
+.doc-aggiungi {
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 11px;
+  padding: 13px 16px;
+  cursor: pointer;
+}
+
+.primario-doc {
+  color: var(--sand);
+  background: var(--sea);
+  border: 1px solid transparent;
+}
+
+.primario-doc:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.doc-aggiungi {
+  margin-top: 14px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px dashed var(--line);
+}
+
+.doc-nuovo .riga-secondaria {
+  align-self: center;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  padding: 2px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* La riga che dice come stanno le cose. Non è un dettaglio di stile:
+   promettere una privacy che l'app non può mantenere sarebbe peggio che
+   non offrirla, quindi questa frase resta. */
+.doc-nota {
+  margin: 18px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.doc-apri:focus-visible,
+.doc-tasto:focus-visible,
+.doc-aggiungi:focus-visible,
+.primario-doc:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}

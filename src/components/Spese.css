@@ -304,7 +304,12 @@ button.saldo-riga {
 }
 
 /* Il titoletto ospita l'interruttore "tutti / nessuno" e il totale */
-.spese-schermo .sezione {
+.spese-dentro {
+  margin-top: 16px;
+}
+
+.spese-schermo .sezione,
+.spese-dentro .sezione {
   display: flex;
   align-items: baseline;
   justify-content: space-between;

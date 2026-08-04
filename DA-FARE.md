@@ -10,7 +10,8 @@ itinerario, Chat Rapida col soundboard, Album Foto, motore punti,
 classifica con MVP e Maglia Nera e Il Testamento, caccia al tesoro con
 voto anonimo. Più le proposte di punti votate dal gruppo, il **meteo
 della tappa** (punto 12 senza la mappa), la **PWA** (punto 14 senza il
-tutorial) e le **Spese** (punto 10).
+tutorial), le **Spese** (punto 10), la **Pecora** (11) e i **Documenti**
+(13).
 
 Delle 27 Leggi ne sono vive 15: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
 XIX, XX, XXII, XXV, XXVI, XXVII. Le altre aspettano le sezioni che le
@@ -217,8 +218,11 @@ In ordine di quanto servono davvero, non di numero:
 
 1. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
    programma il 12
-2. **Documenti** (13), **Mappa** (12), **Tutorial** (14),
-   **L'Impostore** (15)
+2. **Mappa** (12), **Tutorial** (14), **L'Impostore** (15)
+
+Il **tutorial va tenuto per ultimo davvero**: lo spec lo dice, e queste
+sessioni l'hanno dimostrato — le regole sono cambiate una decina di volte
+in una sera. Scritto adesso sarebbe già falso.
 
 Lo spec dice esplicitamente che dal punto 6 in poi tutto può arrivare
 **durante** il viaggio, con un deploy la sera. Vale ancora: mancano nove
