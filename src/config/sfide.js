@@ -18,11 +18,32 @@ import { VIAGGIO } from './viaggio.js'
 //
 // tipo:
 //   'collettiva'  la vincono tutti insieme quando ognuno ha caricato
-//   'competitiva' con una foto sola non succede niente e la sfida resta
-//                 aperta; alla seconda si apre la gara, con voto anonimo.
-//                 Chi resta solo fino alla fine del viaggio vince allora:
-//                 non si vince perche' e' passata mezzanotte, si vince
-//                 perche' nessuno si e' fatto avanti
+//   'competitiva' durante il viaggio si raccolgono foto e basta: niente
+//                 vincitori, niente punti. Si decide tutto dopo, con le
+//                 date qui sotto
+
+// La caccia al tesoro si chiude DOPO il viaggio, e questo risolve un
+// problema di equilibrio che i numeri rendevano evidente: tredici sfide
+// competitive da 10-20 punti mettevano in palio 190 punti, mentre tutte
+// le dodici Leggi attive messe insieme ne valgono 31 in valore assoluto.
+// Una sfida vinta contava quanto due o quattro Leggi, e la classifica
+// diventava la classifica della caccia al tesoro.
+//
+// Adesso ne entra uno solo: il premio a chi ne ha vinte di più. Le
+// singole vittorie contano per arrivarci, ma non pagano da sole.
+export const CACCIA = {
+  // Il giorno dopo il rientro si aprono le votazioni su tutto quello che
+  // ha almeno due foto in gara.
+  apreIlVoto: '2026-08-17',
+  // Tre giorni per votare, e per caricare l'ultima foto di chi ci ha
+  // messo di più a scaricare il telefono.
+  chiude: '2026-08-20',
+  // A chi ne ha vinte di più. In pareggio nessuno, come per il resto.
+  premioPrimo: 10,
+  // A chi è rimasto l'unico ad aver mandato una foto per una sfida:
+  // vince quella sfida, e scopre una Legge.
+  puntiUnico: 2,
+}
 
 export const SFIDE = [
   // ——— 12 agosto: arrivo, Poetto, Molentargius ———

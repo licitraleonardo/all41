@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import {
+  assegnaPremioCaccia,
   assicuraVotoSfida,
   leggiPartecipazioni,
   leggiSfideVinte,
   leggiVotiSfide,
-  risolviSfideSenzaVoto,
-  risolviVotiSfide,
+  risolviCaccia,
 } from '../lib/sfide.js'
 import { leggiMembri } from '../lib/membri.js'
 import { vota as votaSulDatabase } from '../lib/voti.js'
 import { SFIDE, sfideDaMostrare } from '../config/sfide.js'
+import { votiAperti } from '../lib/cacciaFinale.js'
+import { dataDiOggi } from '../lib/giorni.js'
 
 export function useSfide(memberId) {
   const [vinte, setVinte] = useState({})
@@ -29,20 +31,23 @@ export function useSfide(memberId) {
     setMembri(Object.fromEntries(elenco.map((m) => [m.id, m])))
     setPartecipazioni(p)
     setVoti(vt)
-    return { vinte: v, partecipazioni: p }
+    return { vinte: v, partecipazioni: p, voti: vt }
   }, [])
 
-  // Risoluzione all'apertura, come per i sondaggi: le giornate passate si
-  // chiudono da sole al primo che apre l'app, altrimenti una sfida del 13
-  // resterebbe appesa per sempre.
+  // Risoluzione all'apertura, come per i sondaggi: non c'è nessun server
+  // a cui dire di fare qualcosa il 17 e il 20.
   useEffect(() => {
     if (!memberId) return
     let vivo = true
 
+    // Il 17 si aprono i voti, il 20 si chiude e si assegna il premio:
+    // niente succede durante il viaggio, e quello che succede dopo lo
+    // muove il primo che apre l'app.
     ricarica()
-      .then(async ({ vinte: v, partecipazioni: p }) => {
-        await risolviVotiSfide(p).catch(() => {})
-        await risolviSfideSenzaVoto(p, v).catch(() => {})
+      .then(async ({ vinte: v, partecipazioni: p, voti: vt }) => {
+        await risolviCaccia(p, v, vt, memberId).catch(() => {})
+        const dopo = vivo ? await ricarica() : null
+        if (dopo) await assegnaPremioCaccia(dopo.vinte).catch(() => {})
         if (vivo) await ricarica()
       })
       .catch(() => {})
@@ -66,18 +71,21 @@ export function useSfide(memberId) {
     }
   }, [memberId, ricarica])
 
-  // Dopo un caricamento in gara: con due o più foto il voto si apre da
-  // solo, e quelle che arrivano dopo si accodano a quello già aperto.
+  // Dopo un caricamento: durante il viaggio non succede niente, si
+  // raccoglie e basta. Dal 17, se il voto è già aperto, la foto appena
+  // arrivata si accoda a quello invece di restare fuori dalla gara.
   const aggiornaGara = useCallback(
     async (sfidaId) => {
-      const p = await leggiPartecipazioni([sfidaId])
-      const foto = p[sfidaId] ?? []
-      if (foto.length >= 2) {
-        await assicuraVotoSfida(
-          sfidaId,
-          foto.map((f) => f.id),
-          memberId
-        ).catch(() => {})
+      if (votiAperti(dataDiOggi())) {
+        const p = await leggiPartecipazioni([sfidaId])
+        const foto = p[sfidaId] ?? []
+        if (foto.length >= 2) {
+          await assicuraVotoSfida(
+            sfidaId,
+            foto.map((f) => f.id),
+            memberId
+          ).catch(() => {})
+        }
       }
       await ricarica()
     },

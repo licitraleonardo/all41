@@ -63,9 +63,9 @@ export default function Sfide({
               <li className="sfida vinta" key={s.id}>
                 <span className="sfida-titolo">🏆 {s.titolo}</span>
                 <span className="sfida-esito">
-                  {vinte[s.id]?.membroId
-                    ? `${membri[vinte[s.id].membroId]?.nome ?? 'qualcuno'} · +${s.punti}`
-                    : `tutto il gruppo · +${s.punti}`}
+                  {s.tipo === 'collettiva'
+                    ? `tutto il gruppo · +${s.punti}`
+                    : (membri[vinte[s.id]?.membroId]?.nome ?? 'qualcuno')}
                 </span>
               </li>
             ))}
@@ -100,7 +100,10 @@ function Sfida({
           {vinta ? '🏆 ' : ''}
           {sfida.titolo}
         </span>
-        <span className="sfida-punti">+{sfida.punti}</span>
+        {/* Solo la collettiva paga di suo. Le altre non promettono punti
+            perché non ne danno: contano per il premio finale a chi ne ha
+            vinte di più, e prometterne dieci a testa sarebbe una bugia. */}
+        {collettiva && <span className="sfida-punti">+{sfida.punti}</span>}
       </div>
 
       <p className="sfida-testo">{sfida.testo}</p>
@@ -125,8 +128,8 @@ function Sfida({
                 {foto.length === 0
                   ? 'Nessuno ci ha ancora provato.'
                   : foto.length === 1
-                    ? 'Una in gara. Se resta sola, vince.'
-                    : `${foto.length} in gara.`}
+                    ? 'Una foto. Si decide dopo il viaggio.'
+                    : `${foto.length} in gara. Si vota dal 17.`}
               </span>
             )}
           </div>

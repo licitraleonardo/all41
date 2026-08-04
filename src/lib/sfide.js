@@ -1,7 +1,13 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { conCache } from './cache.js'
-import { SFIDE, SFIDE_PER_ID } from '../config/sfide.js'
+import { CACCIA, SFIDE, SFIDE_PER_ID } from '../config/sfide.js'
+import {
+  cacciaChiusa,
+  chiusureDaFare,
+  sfideDaMettereAiVoti,
+  vincitoreDellaCaccia,
+} from './cacciaFinale.js'
 import { dataDiOggi } from './giorni.js'
 import { faiScattareLegge } from './punti.js'
 import { chiudiVoto } from './voti.js'
@@ -100,71 +106,85 @@ export async function assicuraVotoSfida(sfidaId, fotoIds, memberId) {
   return data
 }
 
-// A voto scaduto vince la foto più votata, e chi l'ha scattata prende i
-// punti della sfida. In pareggio non vince nessuno: la sfida resta
-// aperta invece di assegnare a caso.
-export async function risolviVotiSfide(partecipazioni) {
-  const { data, error } = await supabase
+// Tutta la caccia al tesoro si decide dopo il viaggio, in tre momenti
+// scanditi dalle date in config/sfide.js: il 17 si aprono i voti, si
+// vota per tre giorni, il 20 si chiude e si assegna il premio.
+//
+// Come per i sondaggi scaduti, la muove il primo che apre l'app: non
+// c'è nessun server a cui dire di fare qualcosa a una certa data.
+export async function risolviCaccia(partecipazioni, vinte, voti, membroId, adesso = new Date()) {
+  const oggi = dataDiOggi(adesso)
+  const fatto = []
+
+  // 1. Le gare vere vanno ai voti.
+  for (const sfidaId of sfideDaMettereAiVoti(partecipazioni, vinte, voti, oggi)) {
+    const foto = partecipazioni[sfidaId] ?? []
+    await assicuraVotoSfida(
+      sfidaId,
+      foto.map((f) => f.id),
+      membroId
+    ).catch(() => {})
+    fatto.push({ cosa: 'voto-aperto', sfidaId })
+  }
+
+  if (!cacciaChiusa(oggi)) return fatto
+
+  // 2. Chiusa la caccia si chiudono i voti ancora aperti, così i
+  //    conteggi non si muovono più mentre si assegnano le vittorie.
+  const { data: apertivi } = await supabase
     .from('votes')
-    .select('id, challenge_id, options, tally')
+    .select('id')
     .eq('trip_id', VIAGGIO.id)
     .eq('category', 'photo-of-day')
     .is('closed_at', null)
-    .lt('expires_at', new Date().toISOString())
-    .limit(20)
-  if (error) throw error
+    .limit(40)
 
-  const risolte = []
-  for (const v of data) {
-    await chiudiVoto(v.id).catch(() => {})
+  for (const v of apertivi ?? []) await chiudiVoto(v.id).catch(() => {})
 
-    const massimo = Math.max(...v.tally)
-    const primi = v.tally.filter((n) => n === massimo).length
-    if (massimo === 0 || primi > 1) continue // nessuno o pareggio
+  // 3. Si assegnano le sfide. Chi vince una gara non prende punti di
+  //    suo: conta solo per il premio finale. Chi è rimasto l'unico ad
+  //    aver mandato una foto prende i suoi, e scopre una Legge.
+  for (const c of chiusureDaFare(partecipazioni, vinte, voti, oggi)) {
+    const chiusa = await assegnaVittoria(c.sfidaId, c.membroId, c.fotoId).catch(() => false)
+    if (!chiusa) continue
 
-    const fotoId = v.options[v.tally.indexOf(massimo)]
-    const autore = (partecipazioni[v.challenge_id] ?? []).find((f) => f.id === fotoId)
-    if (!autore) continue
-
-    const esito = await assegnaVittoria(v.challenge_id, autore.autoreId, fotoId)
-    if (esito) risolte.push({ sfidaId: v.challenge_id, membroId: autore.autoreId })
-  }
-  return risolte
-}
-
-// Chi è rimasto solo su una sfida la vince alla fine del viaggio, non a
-// mezzanotte del suo giorno.
-//
-// È la regola che cambia tutto: con una foto sola non succede niente e la
-// sfida resta aperta, perché in viaggio il telefono si guarda tre volte
-// al giorno e chiudere una gara dopo poche ore vuol dire assegnarla a chi
-// era sveglio, non a chi ha fatto la foto migliore. Alla seconda foto si
-// apre la gara vera, quella con il voto.
-//
-// Chi non ha ricevuto nemmeno una foto resta senza vincitore.
-export async function risolviSfideSenzaVoto(partecipazioni, vinte, adesso = new Date()) {
-  const oggi = dataDiOggi(adesso)
-  if (oggi <= VIAGGIO.dataFine) return []
-
-  const risolte = []
-
-  for (const sfida of SFIDE) {
-    if (sfida.tipo !== 'competitiva' || vinte[sfida.id]) continue
-
-    const foto = partecipazioni[sfida.id] ?? []
-    if (foto.length !== 1) continue
-
-    const esito = await assegnaVittoria(sfida.id, foto[0].autoreId, foto[0].id)
-    if (esito) risolte.push({ sfidaId: sfida.id, membroId: foto[0].autoreId })
+    if (c.motivo === 'solitario') {
+      await faiScattareLegge(
+        'sfida-solitario',
+        c.membroId,
+        `solitario_${c.sfidaId}`,
+        CACCIA.puntiUnico
+      ).catch(() => {})
+    }
+    fatto.push({ cosa: 'sfida-chiusa', ...c })
   }
 
-  return risolte
+  return fatto
 }
 
-// Chiude la sfida e assegna i punti a chi ha vinto, una volta sola.
+// Il premio finale, uno solo. Va chiamato con le vittorie già assegnate,
+// quindi dopo risolviCaccia e una rilettura.
+export async function assegnaPremioCaccia(vinte, adesso = new Date()) {
+  if (!cacciaChiusa(dataDiOggi(adesso))) return null
+
+  const primo = vincitoreDellaCaccia(vinte)
+  if (!primo) return null
+
+  await faiScattareLegge(
+    'challenge-won',
+    primo.membroId,
+    'caccia-finale',
+    CACCIA.premioPrimo
+  ).catch(() => {})
+
+  return primo
+}
+
+// Chiude la sfida e segna chi ha vinto, una volta sola. Non assegna
+// punti: durante il viaggio non ne assegna nessuno, e alla fine paga
+// solo il premio a chi ne ha vinte di più.
 export async function assegnaVittoria(sfidaId, membroId, fotoId = null) {
-  const sfida = SFIDE_PER_ID[sfidaId]
-  if (!sfida) return false
+  if (!SFIDE_PER_ID[sfidaId]) return false
 
   const { data: hoChiuso, error } = await supabase.rpc('chiudi_sfida', {
     p_sfida: sfidaId,
@@ -172,16 +192,7 @@ export async function assegnaVittoria(sfidaId, membroId, fotoId = null) {
     p_foto: fotoId,
   })
   if (error) throw error
-  if (!hoChiuso) return false
-
-  await faiScattareLegge(
-    'challenge-won',
-    membroId,
-    `challenge_${sfidaId}`,
-    sfida.punti
-  ).catch(() => {})
-
-  return true
+  return Boolean(hoChiuso)
 }
 
 // Una sfida collettiva si chiude quando l'ha fatta tutto il gruppo. In
@@ -204,11 +215,13 @@ export async function forseChiudiCollettiva(sfidaId, partecipanti, membriIds) {
   if (error) throw error
   if (!hoChiuso) return { chiusa: true, giaFatto: true }
 
+  // Ha una Legge sua: la II adesso premia chi ha vinto più sfide, e
+  // questa non è una gara.
   for (const id of membriIds) {
     await faiScattareLegge(
-      'challenge-won',
+      'gruppo-al-completo',
       id,
-      `challenge_${sfidaId}_${id}`,
+      `collettiva_${sfidaId}_${id}`,
       sfida.punti
     ).catch(() => {})
   }

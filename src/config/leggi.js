@@ -1,4 +1,5 @@
 import { PROPOSTA } from './proposte.js'
+import { CACCIA, SFIDE_PER_ID } from './sfide.js'
 
 // Le Leggi di All For One.
 //
@@ -23,8 +24,11 @@ export const LEGGI = [
   // dove una bugia del genere resta scritta per tutto il viaggio.
   { n: 1, id: 'poll-proposed', punti: `±${PROPOSTA.limite}`, pubblica: true, attiva: true,
     testo: 'Punti proposti da qualcuno e approvati dal gruppo a maggioranza' },
-  { n: 2, id: 'challenge-won', punti: '10/15/20', pubblica: true, attiva: true,
-    testo: 'Hai vinto una sfida della caccia al tesoro' },
+  // Non più una sfida qualsiasi: il premio è uno solo, a fine caccia. Con
+  // dieci-venti punti a sfida la classifica diventava la classifica
+  // della caccia al tesoro, e tutto il resto rumore di fondo.
+  { n: 2, id: 'challenge-won', punti: CACCIA.premioPrimo, pubblica: true, attiva: true,
+    testo: 'Hai vinto più sfide della caccia al tesoro di chiunque altro' },
   { n: 3, id: 'impostore-impunito', punti: 5, pubblica: true, attiva: false,
     testo: "Sei sfuggito al voto: l'impostore l'ha fatta franca" },
 
@@ -87,6 +91,12 @@ export const LEGGI = [
     testo: 'Hai scritto una parola che il Testamento non tollera' },
   { n: 27, id: 'sound-abuse', punti: -3, attiva: true,
     testo: 'Hai pestato lo stesso suono finché non si è stancato di te' },
+  { n: 28, id: 'sfida-solitario', punti: CACCIA.puntiUnico, attiva: true,
+    testo: 'Sei stato l’unico a mandare una foto per una sfida' },
+  // La collettiva non è una gara e non può passare dalla Legge II, che
+  // adesso premia chi ne ha vinte di più: ha la sua.
+  { n: 29, id: 'gruppo-al-completo', punti: SFIDE_PER_ID['ci-siamo-tutti'].punti, attiva: true,
+    testo: 'Il gruppo al completo, uno per uno' },
 ]
 
 export const PER_ID = Object.fromEntries(LEGGI.map((l) => [l.id, l]))
