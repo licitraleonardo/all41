@@ -28,7 +28,14 @@ export default function Classifica({
   // qualcosa, quindi è lì che deve stare il gesto.
   const [scelto, setScelto] = useState(null)
   const [punizione, setPunizione] = useState(null)
+  const [sotto, setSotto] = useState('storico')
   const destinatario = classifica.find((m) => m.id === scelto) ?? null
+
+  const approvati = eventi.filter((e) => e.stato === 'approved')
+
+  // Quante aspettano ancora il tuo voto: quelle su cui hai già detto la
+  // tua restano nell'elenco ma non chiamano più.
+  const daVotare = proposteAperte.filter((p) => !p.hannoVotato.includes(ioId)).length
 
   // La trappola scatta una volta sola: chi c'è già cascato non può più
   // toccare la propria riga. Con il tasto spento dall'inizio non ci
@@ -141,12 +148,38 @@ export default function Classifica({
         </div>
       )}
 
-      {/* Le proposte aperte stanno qui sotto, col tempo che scorre. Il
-          banner in sovrimpressione in cima all'app resta com'è: quello
-          ti raggiunge ovunque, questo è il posto dove le ritrovi. */}
-      {proposteAperte.length > 0 && (
-        <>
-          <h3 className="sezione">Da votare</h3>
+      {/* Due schede: quello che è già successo e quello che aspetta te.
+          Il banner in sovrimpressione in cima all'app resta com'è —
+          quello ti raggiunge ovunque, questo è il posto dove le ritrovi.
+
+          Il pallino sulla scheda resta finché non hai votato: è l'unico
+          modo di sapere che c'è qualcosa da fare senza aprirla. */}
+      <div className="segmenti minori" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={sotto === 'storico'}
+          className={sotto === 'storico' ? 'segmento attivo' : 'segmento'}
+          onClick={() => setSotto('storico')}
+        >
+          Cosa è successo
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={sotto === 'votare'}
+          className={sotto === 'votare' ? 'segmento attivo' : 'segmento'}
+          onClick={() => setSotto('votare')}
+        >
+          Da votare
+          {daVotare > 0 && <span className="segmento-pallino">{daVotare}</span>}
+        </button>
+      </div>
+
+      {sotto === 'votare' &&
+        (proposteAperte.length === 0 ? (
+          <p className="gioco-vuoto">Niente da votare. Per ora.</p>
+        ) : (
           <ul className="attese">
             {proposteAperte.map((p) => (
               <PropostaInAttesa
@@ -158,19 +191,16 @@ export default function Classifica({
               />
             ))}
           </ul>
-        </>
-      )}
+        ))}
 
-      <h3 className="sezione">Cosa è successo</h3>
-      {eventi.filter((e) => e.stato === 'approved').length === 0 ? (
-        <p className="gioco-vuoto">
-          Nessuno ha ancora fatto niente di notevole. Né di riprovevole.
-        </p>
-      ) : (
-        <ul className="storico">
-          {eventi
-            .filter((e) => e.stato === 'approved')
-            .map((e) => (
+      {sotto === 'storico' &&
+        (approvati.length === 0 ? (
+          <p className="gioco-vuoto">
+            Nessuno ha ancora fatto niente di notevole. Né di riprovevole.
+          </p>
+        ) : (
+          <ul className="storico">
+            {approvati.map((e) => (
               <li key={e.id}>
                 <span className={e.punti < 0 ? 'storico-punti meno' : 'storico-punti piu'}>
                   {segno(e.punti)}
@@ -181,8 +211,8 @@ export default function Classifica({
                 </span>
               </li>
             ))}
-        </ul>
-      )}
+          </ul>
+        ))}
     </div>
   )
 }
