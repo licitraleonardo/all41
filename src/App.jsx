@@ -13,6 +13,7 @@ import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/session
 import { descriviErrore } from './lib/errori.js'
 import { chiudiScaduti } from './lib/voti.js'
 import { risolviProposte } from './lib/proposte.js'
+import { leggiRecordPecora, risolviRecordPecora } from './lib/recordPecora.js'
 import Onboarding from './components/Onboarding.jsx'
 import Recupero from './components/Recupero.jsx'
 import CodiceNuovo from './components/CodiceNuovo.jsx'
@@ -128,6 +129,13 @@ export default function App() {
         // punti in attesa entrano in classifica o vengono respinti.
         leggiMembri()
           .then((elenco) => risolviProposte(elenco.map((m) => m.id)))
+          .catch(() => {})
+
+        // Il record della pecora di ieri vale +3 (Legge XX), e quello di
+        // fine viaggio +5 (XXV). Nessuno è sveglio a mezzanotte a
+        // chiudere la giornata: la chiude il primo che apre l'app.
+        leggiRecordPecora()
+          .then((righe) => risolviRecordPecora(righe))
           .catch(() => {})
       } catch (e) {
         if (annullato) return

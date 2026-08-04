@@ -61,7 +61,7 @@ export const LEGGI = [
     testo: 'Hai insistito su un bottone già bloccato dal limite' },
 
   // ——— NASCOSTE: pecora e classifica ———
-  { n: 20, id: 'sheep-daily', punti: 3, attiva: false,
+  { n: 20, id: 'sheep-daily', punti: 3, attiva: true,
     testo: 'Detieni il record della pecora a fine giornata' },
   { n: 21, id: 'double-mvp', punti: 5, attiva: false,
     testo: 'Sei stato MVP di giornata due volte' },
@@ -71,7 +71,7 @@ export const LEGGI = [
     testo: 'Eri Maglia Nera e non lo sei più' },
   { n: 24, id: 'smascheratore', punti: 2, attiva: false,
     testo: 'Hai votato l’impostore giusto' },
-  { n: 25, id: 'sheep-trip', punti: 5, attiva: false,
+  { n: 25, id: 'sheep-trip', punti: 5, attiva: true,
     testo: 'Record della Pecora al termine del viaggio' },
 
   // ——— AGGIUNTE DAL GRUPPO ———

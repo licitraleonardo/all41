@@ -207,6 +207,26 @@ create table if not exists payments (
 create index if not exists payments_viaggio_idx
   on payments (trip_id, created_at desc);
 
+-- ------------------------------------------------------------ pecora
+-- Il record del gioco di Al. Una riga per persona e per giornata, col
+-- meglio che ha fatto quel giorno: da qui escono sia il record del
+-- giorno (che si azzera da solo, perché domani è un'altra riga) sia
+-- quello del viaggio (il massimo di tutte), senza salvare nessuno dei
+-- due come dato a parte.
+--
+-- Otto persone per cinque giorni fanno quaranta righe in tutto.
+create table if not exists sheep_records (
+  trip_id    text not null references trips (id) on delete cascade,
+  member_id  uuid not null references members (id) on delete cascade,
+  giorno     date not null,
+  punteggio  int not null check (punteggio >= 0),
+  updated_at timestamptz not null default now(),
+  primary key (trip_id, member_id, giorno)
+);
+
+create index if not exists sheep_records_giorno_idx
+  on sheep_records (trip_id, giorno, punteggio desc);
+
 -- ------------------------------------------------------------ adeguamenti
 --
 -- "create table if not exists" crea la tabella la prima volta e poi non
@@ -291,6 +311,7 @@ alter table leggi         enable row level security;
 alter table challenges    enable row level security;
 alter table expenses      enable row level security;
 alter table payments      enable row level security;
+alter table sheep_records enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -313,6 +334,7 @@ drop policy if exists "spese: modifica per autenticati"    on expenses;
 drop policy if exists "rimborsi: lettura per autenticati"  on payments;
 drop policy if exists "rimborsi: creazione per autenticati" on payments;
 drop policy if exists "rimborsi: modifica per autenticati" on payments;
+drop policy if exists "pecora: lettura per autenticati"    on sheep_records;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -388,6 +410,38 @@ create policy "rimborsi: creazione per autenticati"
 
 create policy "rimborsi: modifica per autenticati"
   on payments for update to authenticated using (true) with check (true);
+
+-- Il record della pecora si legge, non si scrive da fuori: passa dalla
+-- funzione qui sotto, che non lo lascia mai scendere. Da questo record
+-- dipendono due Leggi, quindi vale la stessa regola dei punti.
+create policy "pecora: lettura per autenticati"
+  on sheep_records for select to authenticated using (true);
+
+-- Tiene solo il meglio della giornata: due partite di fila non si
+-- sovrascrivono l'una con l'altra, e un punteggio più basso non abbassa
+-- quello già segnato.
+create or replace function segna_pecora(
+  p_membro uuid,
+  p_punti int,
+  p_giorno date
+)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_finale int;
+begin
+  insert into sheep_records (trip_id, member_id, giorno, punteggio)
+  values ('sardegna-2026', p_membro, p_giorno, greatest(p_punti, 0))
+  on conflict (trip_id, member_id, giorno) do update
+    set punteggio = greatest(sheep_records.punteggio, excluded.punteggio),
+        updated_at = now()
+  returning punteggio into v_finale;
+
+  return v_finale;
+end $$;
 
 -- Chiude una sfida assegnandola a chi ha vinto. Una sola volta: se due
 -- telefoni la risolvono insieme, il secondo trova la riga già lì e non
@@ -762,6 +816,15 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'payments'
   ) then
     alter publication supabase_realtime add table payments;
+  end if;
+
+  -- Chi batte il record lo vede comparire sugli altri telefoni mentre
+  -- sono ancora in spiaggia.
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'sheep_records'
+  ) then
+    alter publication supabase_realtime add table sheep_records;
   end if;
 end $$;
 

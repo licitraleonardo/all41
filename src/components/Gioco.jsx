@@ -77,7 +77,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta }) {
 
       {/* Fuori dal blocco che aspetta i dati: il gioco è tutto locale e
           si apre anche se il database non risponde. */}
-      {vista === 'pecora' && <Pecora />}
+      {vista === 'pecora' && <Pecora membroId={membro.id} />}
 
       {vista !== 'pecora' && stato === 'caricamento' && (
         <p className="gioco-vuoto">Un attimo.</p>

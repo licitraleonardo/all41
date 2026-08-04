@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import './Pecora.css'
 import { CHIAVE_RECORD, MONDO, NAVICELLA, NUVOLE, SAGOME, TEMA } from '../config/pecora.js'
 import { avvia, nuovoMondo, passo, punteggio, salta } from '../lib/pecora.js'
+import { useRecordPecora } from '../hooks/useRecordPecora.js'
 
 // Allan quando non c'è rete: si annoia, e tocca farlo saltare.
 //
@@ -281,14 +282,19 @@ function salvaRecord(punti) {
   }
 }
 
-export default function Pecora({ compatta = false }) {
+export default function Pecora({ membroId = null, compatta = false }) {
   const tela = useRef(null)
   const [record, setRecord] = useState(leggiRecord)
+  const gruppo = useRecordPecora(membroId)
+  // Il ciclo dei fotogrammi parte una volta sola e non deve ripartire a
+  // ogni aggiornamento dei record: legge da qui, che è sempre l'ultimo.
+  const gruppoOra = useRef(gruppo)
+  gruppoOra.current = gruppo
   const mondo = useRef(nuovoMondo(Date.now()))
   const finitoIl = useRef(0)
   const [vista, setVista] = useState('pronto')
   const [ultimoPunteggio, setUltimoPunteggio] = useState(0)
-  const [nuovoRecord, setNuovoRecord] = useState(false)
+  const [nuovoRecord, setNuovoRecord] = useState(null)
 
   const disegna = useCallback(() => {
     const canvas = tela.current
@@ -423,11 +429,20 @@ export default function Pecora({ compatta = false }) {
         finitoIl.current = Date.now()
         setUltimoPunteggio(punti)
         setVista('finita')
+
+        // Il primato di giornata batte quello personale: se li hai
+        // superati entrambi si annuncia il più grosso.
+        const daBattere = gruppoOra.current.delGiorno?.punteggio ?? 0
+        if (punti > daBattere && daBattere > 0) setNuovoRecord('giorno')
+        else if (punti > leggiRecord()) setNuovoRecord('tuo')
+        else setNuovoRecord(null)
+
         if (punti > leggiRecord()) {
           salvaRecord(punti)
           setRecord(punti)
-          setNuovoRecord(true)
         }
+
+        gruppoOra.current.segna(punti)
       }
 
       disegna()
@@ -466,7 +481,8 @@ export default function Pecora({ compatta = false }) {
         {vista === 'finita' && (
           <div className="pecora-fine">
             <p className="pecora-punti">{ultimoPunteggio}</p>
-            {nuovoRecord && <p className="pecora-nuovo">Record tuo.</p>}
+            {nuovoRecord === 'giorno' && <p className="pecora-nuovo">Record del giorno.</p>}
+            {nuovoRecord === 'tuo' && <p className="pecora-nuovo">Record tuo.</p>}
             <button type="button" className="pecora-ancora" onClick={tocca}>
               Ancora
             </button>
@@ -474,18 +490,50 @@ export default function Pecora({ compatta = false }) {
         )}
       </div>
 
-      {/* Sotto il gioco, come chiesto. Per ora è il record di questo
-          dispositivo: quello di gruppo arriva con la seconda passata. */}
       <dl className="pecora-record">
         <div>
-          <dt>Record</dt>
-          <dd>{record || '—'}</dd>
+          <dt>Record del viaggio</dt>
+          <dd>
+            {gruppo.delViaggio ? gruppo.delViaggio.punteggio : record || '—'}
+            {gruppo.delViaggio && (
+              <span className="pecora-chi">
+                {gruppo.membri[gruppo.delViaggio.membroId]?.nome ?? ''}
+              </span>
+            )}
+          </dd>
         </div>
         <div>
           <dt>La navicella arriva a</dt>
           <dd>{NAVICELLA.soglia}</dd>
         </div>
       </dl>
+
+      {/* La classifica di tutti, come chiesto. È quella di oggi: domani
+          riparte da zero, ed è il record di giornata che vale i punti
+          della Legge XX. */}
+      {membroId && gruppo.pronto && (
+        <>
+          <h4 className="pecora-titolo">Oggi</h4>
+          {gruppo.classifica.length === 0 ? (
+            <p className="pecora-vuoto">Nessuno ha ancora giocato.</p>
+          ) : (
+            <ol className="pecora-classifica">
+              {gruppo.classifica.map((riga, posto) => (
+                <li
+                  key={riga.membroId}
+                  className={riga.membroId === membroId ? 'io' : undefined}
+                >
+                  <span className="pecora-posto">{posto + 1}</span>
+                  <span className="pecora-nome">
+                    {gruppo.membri[riga.membroId]?.nome ?? 'Qualcuno'}
+                  </span>
+                  <span className="pecora-punteggio">{riga.punteggio}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </>
+      )}
     </div>
   )
 }

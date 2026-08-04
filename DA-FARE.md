@@ -12,8 +12,9 @@ voto anonimo. Più le proposte di punti votate dal gruppo, il **meteo
 della tappa** (punto 12 senza la mappa), la **PWA** (punto 14 senza il
 tutorial) e le **Spese** (punto 10).
 
-Delle 27 Leggi ne sono vive 13: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
-XIX, XXII, XXVI, XXVII. Le altre aspettano le sezioni che le alimentano.
+Delle 27 Leggi ne sono vive 15: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
+XIX, XX, XXII, XXV, XXVI, XXVII. Le altre aspettano le sezioni che le
+alimentano.
 
 ### Offline: c'è tutto
 
@@ -182,6 +183,18 @@ Restano scritte perché la decisione conta più del codice.
 - **Chi ha pagato ha la stessa forma di "Divisa fra"**: è la stessa
   domanda, chi sono le persone. Prima era una riga che si apriva, e in un
   foglio che scorre non si capiva che l'elenco fosse comparso.
+- **Record della Pecora**: una riga per persona e per giornata col meglio
+  di quel giorno, e nient'altro. Il record del giorno e quello del
+  viaggio **non si salvano**: si ricavano da lì, come i saldi delle
+  Spese. Quello di giornata si azzera da solo perché domani è un'altra
+  riga, e non serve nessun lavoro a mezzanotte. In pareggio non vince
+  nessuno, come per le sfide.
+- **La navicella arriva a un punteggio fisso e scritto**. Legarla al
+  record la rendeva un evento che non si sa quando arriva: soglia diversa
+  a ogni partita, invisibile, impossibile da prevedere.
+- **Alan è solo il draghetto**, senza vestiti: a trenta pixel ogni
+  dettaglio in più è una macchia. Se un giorno si cambia ambientazione si
+  cambia lo **sfondo**, non lui.
 - **Il tab si chiama "Spese", non "Altro"**: lo spec dice Altro perché lì
   dentro ci andranno anche Documenti, Mappa e Info, ma un tab chiamato
   "Altro" con una cosa sola dentro non dice niente. Si rinomina quando ne
@@ -202,15 +215,9 @@ tipografia dei numeri romani — che texture e fondi scuri insieme.
 
 In ordine di quanto servono davvero, non di numero:
 
-1. **Pecora, seconda passata** — record condiviso (`sheep/record`:
-   punteggio, detentore, quando) e le due Leggi che ne dipendono: la XX
-   (+3 a chi ha il record a fine giornata, con `dedupeKey` sulla data) e
-   la XXV (+5 a chi ce l'ha alla fine del viaggio). **Nessun punto per il
-   singolo record battuto**: un runner è ripetibile e chi ci è bravo
-   diventerebbe MVP a colpi di partite in spiaggia
-2. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
+1. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
    programma il 12
-3. **Documenti** (13), **Mappa** (12), **Tutorial** (14),
+2. **Documenti** (13), **Mappa** (12), **Tutorial** (14),
    **L'Impostore** (15)
 
 Lo spec dice esplicitamente che dal punto 6 in poi tutto può arrivare
