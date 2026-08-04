@@ -4,6 +4,7 @@ import { useDocumenti } from '../hooks/useDocumenti.js'
 import { caricaDocumento, eUnPdf } from '../lib/documenti.js'
 import { MAX_BYTE, TIPI_ACCETTATI } from '../config/documenti.js'
 import { descriviErrore } from '../lib/errori.js'
+import { urlAvatar } from '../config/avatar.js'
 import FotoGrande from './FotoGrande.jsx'
 import BottoneElimina from './BottoneElimina.jsx'
 import FoglioDocumento from './FoglioDocumento.jsx'
@@ -114,22 +115,38 @@ export default function Documenti({ membro }) {
                 </span>
                 <span className="doc-testo">
                   {d.titolo}
+                  {/* Di chi è si vede prima di leggere: se il biglietto
+                      della barca l'ha messo Turi, va saputo senza dover
+                      chiedere in giro. */}
                   <span className="doc-sotto">
+                    <img
+                      className="doc-avatar"
+                      src={urlAvatar(
+                        membri[d.proprietarioId]?.avatarStyle,
+                        membri[d.proprietarioId]?.avatarSeed || '?'
+                      )}
+                      alt=""
+                      width="18"
+                      height="18"
+                    />
                     {membri[d.proprietarioId]?.nome ?? 'Qualcuno'}
-                    {d.soloPerMe && ' · solo per te'}
                     {d.byte ? ` · ${peso(d.byte)}` : ''}
+                    {d.soloPerMe && <span className="doc-privato">🔒 solo per te</span>}
                   </span>
                 </span>
               </button>
 
               {d.proprietarioId === membro.id && (
                 <div className="doc-azioni">
+                  {/* Il tasto dice cosa succede se lo premi, non com'è
+                      adesso: "Condividi" / "Solo per me" lasciava a
+                      chiedersi se fosse lo stato o l'azione. */}
                   <button
                     type="button"
                     className="doc-tasto"
                     onClick={() => commutaVisibilita(d).catch(() => {})}
                   >
-                    {d.soloPerMe ? 'Condividi' : 'Solo per me'}
+                    {d.soloPerMe ? 'Mostra a tutti' : 'Nascondi agli altri'}
                   </button>
                   <BottoneElimina onElimina={() => togli(d.id).catch(() => {})} />
                 </div>

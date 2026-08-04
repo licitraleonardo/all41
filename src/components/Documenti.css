@@ -75,11 +75,29 @@
 }
 
 .doc-sotto {
-  display: block;
-  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
   font-size: 12px;
   font-weight: 400;
   color: var(--ink-soft);
+}
+
+.doc-avatar {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sand);
+}
+
+/* Lo stato si legge, l'azione si preme: due cose diverse e vanno
+   distinte, o non si capisce se "Solo per me" dica com'è o cosa farà. */
+.doc-privato {
+  font-weight: 700;
+  color: var(--coral);
 }
 
 .doc-azioni {
