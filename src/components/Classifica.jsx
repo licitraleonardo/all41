@@ -29,9 +29,11 @@ export default function Classifica({
   const [scelto, setScelto] = useState(null)
   const destinatario = classifica.find((m) => m.id === scelto) ?? null
 
+  // Se il limite giornaliero l'ha rifiutata, il foglio resta aperto col
+  // motivo: chiuderlo lascerebbe senza sapere cos'è successo.
   async function crea(dati) {
-    await onCrea(dati)
-    setScelto(null)
+    const esito = await onCrea(dati)
+    if (esito?.ok) setScelto(null)
   }
 
   return (

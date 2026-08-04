@@ -1,7 +1,11 @@
-import { LEGGI, numeroRomano } from '../config/leggi.js'
+import { LEGGI, PUNIZIONI, TROFEI, numeroRomano } from '../config/leggi.js'
 
 // Il codice delle Leggi scoperte. Continua di proposito il tono
 // legislativo: qui Allan non parla, custodisce e basta.
+//
+// Diviso in due metà, perché sono due cose diverse: i Trofei sono quello
+// che si va a cercare, le Leggi quello in cui si inciampa. In un elenco
+// solo si leggevano tutte come una lista di divieti.
 export default function Testamento({ scoperte, membri }) {
   const rivelata = (l) => l.pubblica || Boolean(scoperte[l.id])
   const quante = LEGGI.filter(rivelata).length
@@ -21,8 +25,42 @@ export default function Testamento({ scoperte, membri }) {
         </div>
       </header>
 
+      <Meta
+        titolo="Trofei"
+        sottotitolo="Quello che si va a cercare"
+        elenco={TROFEI}
+        scoperte={scoperte}
+        membri={membri}
+        rivelata={rivelata}
+      />
+
+      <Meta
+        titolo="Leggi"
+        sottotitolo="Quello in cui si inciampa"
+        elenco={PUNIZIONI}
+        scoperte={scoperte}
+        membri={membri}
+        rivelata={rivelata}
+      />
+    </div>
+  )
+}
+
+function Meta({ titolo, sottotitolo, elenco, scoperte, membri, rivelata }) {
+  const quante = elenco.filter(rivelata).length
+
+  return (
+    <section className="testamento-meta">
+      <h3 className="sezione">
+        {titolo}
+        <span className="sezione-conto">
+          {quante} / {elenco.length}
+        </span>
+      </h3>
+      <p className="testamento-sottotitolo">{sottotitolo}</p>
+
       <ol className="leggi">
-        {LEGGI.map((l) => {
+        {elenco.map((l) => {
           const scoperta = scoperte[l.id]
           if (!rivelata(l)) {
             return (
@@ -51,7 +89,7 @@ export default function Testamento({ scoperte, membri }) {
           )
         })}
       </ol>
-    </div>
+    </section>
   )
 }
 

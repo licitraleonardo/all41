@@ -8,6 +8,12 @@ export const PROPOSTA = {
   limite: 5,
   minutiDiVoto: 60,
   lunghezzaMaxMotivo: 80,
+
+  // Tre proposte al giorno a testa. Non è un freno contro lo spam — per
+  // quello ci sono i limiti della Chat Rapida — è quello che rende una
+  // proposta una cosa che pesa: se puoi darne quindici, nessuna vale
+  // niente, e la classifica diventa un contatore di clic.
+  alGiorno: 3,
 }
 
 export const OPZIONI_PROPOSTA = ['Sì', 'No']

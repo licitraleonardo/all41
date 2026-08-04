@@ -13,6 +13,7 @@ import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/session
 import { descriviErrore } from './lib/errori.js'
 import { chiudiScaduti } from './lib/voti.js'
 import { risolviProposte } from './lib/proposte.js'
+import { forseSottoZero } from './lib/regole.js'
 import { leggiRecordPecora, risolviRecordPecora } from './lib/recordPecora.js'
 import Onboarding from './components/Onboarding.jsx'
 import Recupero from './components/Recupero.jsx'
@@ -128,7 +129,12 @@ export default function App() {
         // Le proposte scadute vanno anche applicate, non solo chiuse: i
         // punti in attesa entrano in classifica o vengono respinti.
         leggiMembri()
-          .then((elenco) => risolviProposte(elenco.map((m) => m.id)))
+          .then(async (elenco) => {
+            await risolviProposte(elenco.map((m) => m.id))
+            // I punteggi si muovono risolvendo le proposte: chi è finito
+            // sotto zero si guarda dopo, non prima.
+            await forseSottoZero(await leggiMembri())
+          })
           .catch(() => {})
 
         // Il record della pecora di ieri vale +3 (Legge XX), e quello di

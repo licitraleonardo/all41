@@ -3,9 +3,33 @@ import { VIAGGIO } from '../config/viaggio.js'
 import { OPZIONI_PROPOSTA, PROPOSTA, quorumRaggiunto } from '../config/proposte.js'
 import { assegnaPunti, faiScattareLegge } from './punti.js'
 
-// Crea la proposta: un voto di tre ore più un evento punti "in attesa",
+// Quante proposte ha già fatto oggi. Si contano dal database e non da
+// localStorage: un contatore locale si azzera cambiando telefono, e
+// diventa inutile proprio quando serve.
+export async function proposteDiOggi(proponenteId, adesso = new Date()) {
+  const inizio = new Date(adesso)
+  inizio.setHours(0, 0, 0, 0)
+
+  const { count, error } = await supabase
+    .from('point_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('trip_id', VIAGGIO.id)
+    .eq('proposed_by', proponenteId)
+    .gte('created_at', inizio.toISOString())
+
+  if (error) throw error
+  return count ?? 0
+}
+
+// Crea la proposta: un voto di un'ora più un evento punti "in attesa",
 // che non muove la classifica finché il gruppo non ha deciso.
+//
+// Restituisce { ok: false, restano } se hai finito quelle di oggi: un
+// limite raggiunto non è un errore, è una risposta.
 export async function creaProposta({ proponenteId, destinatarioId, punti, motivo }) {
+  const fatte = await proposteDiOggi(proponenteId)
+  if (fatte >= PROPOSTA.alGiorno) return { ok: false, restano: 0 }
+
   const scade = new Date(Date.now() + PROPOSTA.minutiDiVoto * 60000).toISOString()
 
   const { data: voto, error: erroreVoto } = await supabase
@@ -34,14 +58,21 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
   })
 
   // Legge XIV: proporre punti per sé stessi. Scatta subito, non aspetta
-  // il voto — l'ha già fatto.
+  // il voto — l'ha già fatto. Ed è una trappola vera: niente avvisi prima
+  // di premere, altrimenti non ci cascherebbe nessuno.
+  //
+  // La derisione è pubblica per costruzione: il motivo dell'evento punti
+  // finisce nello storico della classifica, che leggono tutti, e resta
+  // lì per tutto il viaggio. Meglio di un lampo che sparisce.
+  let autoElogio = false
   if (proponenteId === destinatarioId) {
+    autoElogio = true
     await faiScattareLegge('self-praise', proponenteId, `self-praise_${voto.id}`).catch(
       () => {}
     )
   }
 
-  return { votoId: voto.id, evento }
+  return { ok: true, votoId: voto.id, evento, autoElogio, restano: PROPOSTA.alGiorno - fatte - 1 }
 }
 
 // Le proposte ancora aperte, con dentro tutto quello che serve a

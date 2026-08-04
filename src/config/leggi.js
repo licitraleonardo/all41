@@ -22,7 +22,7 @@ export const LEGGI = [
   // qui c'era ancora "±10 (max ±15)" della prima stesura, mentre il
   // limite vero era sceso a ±5 da un pezzo. Il Testamento è il posto
   // dove una bugia del genere resta scritta per tutto il viaggio.
-  { n: 1, id: 'poll-proposed', punti: `±${PROPOSTA.limite}`, pubblica: true, attiva: true,
+  { n: 1, id: 'poll-proposed', punti: `±${PROPOSTA.limite}`, pubblica: true, attiva: true, verso: 'trofeo',
     testo: 'Punti proposti da qualcuno e approvati dal gruppo a maggioranza' },
   // Non più una sfida qualsiasi: il premio è uno solo, a fine caccia. Con
   // dieci-venti punti a sfida la classifica diventava la classifica
@@ -55,8 +55,12 @@ export const LEGGI = [
     testo: 'Una tua proposta è passata con voto unanime' },
   { n: 13, id: 'proposal-rejected', punti: -2, attiva: true,
     testo: 'Una tua proposta è stata bocciata dal gruppo' },
+  // Una trappola vera: nessun avviso prima di premere, altrimenti non ci
+  // casca nessuno. E la derisione è pubblica per costruzione — questo
+  // testo finisce nello storico della classifica, che leggono tutti, e
+  // ci resta per tutto il viaggio.
   { n: 14, id: 'self-praise', punti: -3, attiva: true,
-    testo: 'Hai proposto punti per te stesso' },
+    testo: 'Hai proposto punti per te stesso. Lo sanno tutti.' },
   { n: 15, id: 'wrong-side', punti: -1, attiva: false,
     testo: 'Hai votato l’opzione perdente tre volte di fila' },
 
@@ -67,7 +71,7 @@ export const LEGGI = [
     testo: 'Hai vinto tre sfide della caccia al tesoro' },
   { n: 18, id: 'the-mute', punti: -2, attiva: false,
     testo: 'Nessun vocale registrato in tutto il viaggio' },
-  { n: 19, id: 'spam-insistente', punti: '-1 progressivo (max -5)', attiva: true,
+  { n: 19, id: 'spam-insistente', punti: '-1 progressivo (max -5)', attiva: true, verso: 'legge',
     testo: 'Hai insistito su un bottone già bloccato dal limite' },
 
   // ——— NASCOSTE: pecora e classifica ———
@@ -97,7 +101,23 @@ export const LEGGI = [
   // adesso premia chi ne ha vinte di più: ha la sua.
   { n: 29, id: 'gruppo-al-completo', punti: SFIDE_PER_ID['ci-siamo-tutti'].punti, attiva: true,
     testo: 'Il gruppo al completo, uno per uno' },
+  // Si parte tutti sopra lo zero grazie al selfie di gruppo, quindi
+  // andare sotto è una cosa che ti sei guadagnato.
+  { n: 30, id: 'sotto-zero', punti: -1, attiva: true,
+    testo: 'Sei sceso sotto lo zero' },
 ]
+
+// Il Testamento si legge in due metà: quello che ti fa guadagnare
+// qualcosa e quello che te lo toglie. La distinzione si dichiara qui e
+// non si deduce dal segno, perché la Legge I può andare in tutte e due
+// le direzioni e la XIX ha un punteggio che è una frase.
+export function verso(legge) {
+  if (legge.verso) return legge.verso
+  return typeof legge.punti === 'number' && legge.punti > 0 ? 'trofeo' : 'legge'
+}
+
+export const TROFEI = LEGGI.filter((l) => verso(l) === 'trofeo')
+export const PUNIZIONI = LEGGI.filter((l) => verso(l) === 'legge')
 
 export const PER_ID = Object.fromEntries(LEGGI.map((l) => [l.id, l]))
 

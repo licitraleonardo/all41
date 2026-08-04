@@ -27,10 +27,18 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta }) {
     setInCorso(true)
     setErroreProposta(null)
     try {
-      await creaProposta({ proponenteId: membro.id, ...dati })
+      const esito = await creaProposta({ proponenteId: membro.id, ...dati })
+      // Il limite giornaliero non è un errore, è una risposta: si dice e
+      // il foglio resta aperto.
+      if (!esito.ok) {
+        setErroreProposta(`Tre proposte al giorno. Le hai finite: riprova domani.`)
+        return { ok: false }
+      }
       await ricarica()
+      return esito
     } catch (e) {
       setErroreProposta(descriviErrore(e))
+      return { ok: false }
     } finally {
       setInCorso(false)
     }

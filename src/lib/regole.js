@@ -16,6 +16,25 @@ import { ABUSO_SUONO } from '../config/limiti.js'
 
 const SOGLIA_FOTO_AL_GIORNO = 30
 
+// Legge XXX. Si parte tutti sopra lo zero grazie al selfie di gruppo,
+// quindi finirci sotto è una cosa che ti sei guadagnato.
+//
+// Scatta una volta per persona e per viaggio: la chiave non ha la data,
+// altrimenti chi resta in negativo pagherebbe un punto ogni giorno e non
+// ne uscirebbe più — che è la spirale che la Maglia Nera evita apposta.
+//
+// Si valuta all'apertura, come le altre cose senza server: chi apre
+// l'app guarda i punteggi di tutti e chiude i conti in sospeso.
+export async function forseSottoZero(membri) {
+  const caduti = membri.filter((m) => m.punteggio < 0)
+
+  for (const m of caduti) {
+    await faiScattareLegge('sotto-zero', m.id, `sotto-zero_${m.id}`).catch(() => {})
+  }
+
+  return caduti.map((m) => m.id)
+}
+
 function inizioGiornata() {
   const m = new Date()
   m.setHours(0, 0, 0, 0)

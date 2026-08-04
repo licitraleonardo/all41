@@ -82,9 +82,11 @@ export default function Proposta({ destinatario, ioId, onCrea, onAnnulla, inCors
           />
         </label>
 
-        {/* Velato di proposito: non dice quale Legge né quanto costa.
-            Scoprirlo è metà del gioco. */}
-        {perMe && <p className="proposta-avviso">Il Testamento ha notato.</p>}
+        {/* Qui prima c'era "Il Testamento ha notato." quando ti proponevi
+            punti da solo. Tolto: era un avviso che spoilerava la
+            trappola, e con l'avviso non ci sarebbe cascato nessuno. La
+            Legge XIV scatta a cose fatte, e il motivo finisce nello
+            storico che leggono tutti. */}
 
         {errore && <p className="sondaggio-errore">{errore}</p>}
 
