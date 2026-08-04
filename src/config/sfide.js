@@ -53,7 +53,10 @@ export const SFIDE = [
     giorno: 12,
     titolo: 'Ci siamo tutti',
     testo: 'Un selfie a testa. Si chiude quando l’ha caricato ognuno.',
-    punti: 10,
+    // Tre e non dieci: paga a testa e non a un vincitore solo, quindi in
+    // otto vale ventiquattro punti. A dieci ne valeva ottanta, cioè più
+    // di tutte le Leggi messe insieme — per un selfie.
+    punti: 3,
   },
   {
     id: 'fenicottero',
