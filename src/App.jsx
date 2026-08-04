@@ -21,7 +21,7 @@ import CodiceNuovo from './components/CodiceNuovo.jsx'
 import Profilo from './components/Profilo.jsx'
 import ModificaProfilo from './components/ModificaProfilo.jsx'
 import Itinerario from './components/Itinerario.jsx'
-import ChatRapida from './components/ChatRapida.jsx'
+import Gruppo from './components/Gruppo.jsx'
 import Album from './components/Album.jsx'
 import Gioco from './components/Gioco.jsx'
 import Altro from './components/Altro.jsx'
@@ -244,7 +244,7 @@ export default function App() {
           <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
         )}
         {tab === 'gruppo' && (
-          <ChatRapida membro={membro} suoniDisponibili={suoniDisponibili} />
+          <Gruppo membro={membro} suoniDisponibili={suoniDisponibili} />
         )}
         {tab === 'foto' && <Album membro={membro} />}
         {tab === 'gioco' && (

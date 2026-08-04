@@ -16,6 +16,9 @@ function daContare(kind, memberId) {
   if (kind === 'photo') {
     return supabase.from('photos').select('created_at').eq('author_id', memberId)
   }
+  if (kind === 'voice') {
+    return supabase.from('voice_messages').select('created_at').eq('author_id', memberId)
+  }
   return supabase
     .from('quick_actions')
     .select('created_at')
@@ -58,6 +61,18 @@ async function contaOggi(kind, memberId) {
       .select('id', { count: 'exact', head: true })
       .eq('author_id', memberId)
       .is('challenge_id', null)
+      .is('deleted_at', null)
+      .gte('created_at', mezzanotte.toISOString())
+
+    if (error) throw error
+    return count ?? 0
+  }
+
+  if (kind === 'voice') {
+    const { count, error } = await supabase
+      .from('voice_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('author_id', memberId)
       .is('deleted_at', null)
       .gte('created_at', mezzanotte.toISOString())
 

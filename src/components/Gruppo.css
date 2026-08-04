@@ -1,0 +1,31 @@
+/* Le due schede stanno in cima e restano lì: la conversazione sotto
+   scorre da sola, e se scorressero insieme per cambiare scheda
+   bisognerebbe risalire tutta la chat. */
+
+.gruppo-schede {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  max-width: 616px;
+  margin: 0 auto;
+  /* Il fondo è pieno perché sotto ci scorre la conversazione */
+  background: #ece7db;
+  border-radius: 0 0 11px 11px;
+}
+
+/* Col banner in cima le schede scendono sotto di lui, come la barra
+   dell'itinerario. */
+body.con-banner .gruppo-schede {
+  top: var(--altezza-banner);
+}
+
+.gruppo-corpo {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 14px;
+}
+
+/* La chat dentro il tab non rifà la schermata: quella la mette Gruppo */
+.chat-dentro {
+  display: contents;
+}

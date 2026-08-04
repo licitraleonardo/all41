@@ -13,6 +13,7 @@
     "prova:caccia": "node prove/caccia.mjs",
     "prova:documenti": "node prove/nome-documento.mjs",
     "prova:posizione": "node prove/rinfresca-posizione.mjs",
+    "prova:audio": "node prove/formato-audio.mjs",
     "prova:pecora": "node prove/pecora.mjs && node prove/pecora-record.mjs",
     "preview": "vite preview"
   },

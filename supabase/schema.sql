@@ -227,6 +227,29 @@ create table if not exists sheep_records (
 create index if not exists sheep_records_giorno_idx
   on sheep_records (trip_id, giorno, punteggio desc);
 
+-- ------------------------------------------------------------ vocali
+-- Il sostituto del walkie-talkie. Il mimeType si salva insieme al file e
+-- non si assume: Safari registra audio/mp4 con AAC, Chrome e Firefox
+-- audio/webm con Opus, e chi indovina si ritrova meta' gruppo muto.
+create table if not exists voice_messages (
+  id           uuid primary key default gen_random_uuid(),
+  trip_id      text not null references trips (id) on delete cascade,
+  author_id    uuid not null references members (id) on delete cascade,
+  path         text not null,
+  url          text not null,
+  mime_type    text not null,
+  durata_sec   int not null check (durata_sec > 0),
+  deleted_at   timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists voice_messages_feed_idx
+  on voice_messages (trip_id, created_at desc);
+
+-- I limiti contano i vocali recenti di una persona.
+create index if not exists voice_messages_limiti_idx
+  on voice_messages (author_id, created_at desc);
+
 -- ------------------------------------------------------------ documenti
 -- QR dell'escursione, biglietti del traghetto, PDF delle prenotazioni:
 -- oggi vivono sepolti nella chat di uno solo, e servono sempre nel
@@ -339,6 +362,7 @@ alter table expenses      enable row level security;
 alter table payments      enable row level security;
 alter table sheep_records enable row level security;
 alter table documents     enable row level security;
+alter table voice_messages enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -365,6 +389,9 @@ drop policy if exists "pecora: lettura per autenticati"    on sheep_records;
 drop policy if exists "documenti: lettura per autenticati"   on documents;
 drop policy if exists "documenti: creazione per autenticati" on documents;
 drop policy if exists "documenti: modifica per autenticati"  on documents;
+drop policy if exists "vocali: lettura per autenticati"     on voice_messages;
+drop policy if exists "vocali: creazione per autenticati"   on voice_messages;
+drop policy if exists "vocali: modifica per autenticati"    on voice_messages;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -459,6 +486,16 @@ create policy "documenti: creazione per autenticati"
 
 create policy "documenti: modifica per autenticati"
   on documents for update to authenticated using (true) with check (true);
+
+create policy "vocali: lettura per autenticati"
+  on voice_messages for select to authenticated using (true);
+
+create policy "vocali: creazione per autenticati"
+  on voice_messages for insert to authenticated with check (true);
+
+-- Serve per il "elimina" dell'autore, morbido come altrove.
+create policy "vocali: modifica per autenticati"
+  on voice_messages for update to authenticated using (true) with check (true);
 
 -- Tiene solo il meglio della giornata: due partite di fila non si
 -- sovrascrivono l'una con l'altra, e un punteggio più basso non abbassa
@@ -869,6 +906,23 @@ begin
   ) then
     alter publication supabase_realtime add table sheep_records;
   end if;
+
+  -- Un vocale che arriva deve comparire subito: e' il sostituto del
+  -- walkie-talkie, e un walkie-talkie che consegna fra due minuti non
+  -- serve a niente.
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'voice_messages'
+  ) then
+    alter publication supabase_realtime add table voice_messages;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'documents'
+  ) then
+    alter publication supabase_realtime add table documents;
+  end if;
 end $$;
 
 -- ---------------------------------------------------------------- storage
@@ -929,6 +983,30 @@ begin
     on storage.objects for insert to authenticated with check (bucket_id = 'documenti');
 exception when others then
   raise notice 'Permessi sul bucket documenti non impostati (%). Se si caricano, va bene cosi.', sqlerrm;
+end $$;
+
+-- Bucket dei vocali.
+do $$
+begin
+  insert into storage.buckets (id, name, public)
+  values ('vocali', 'vocali', true)
+  on conflict (id) do nothing;
+exception when others then
+  raise notice 'Bucket vocali non creato (%). Crealo a mano: Storage -> New bucket, nome vocali, Public.', sqlerrm;
+end $$;
+
+do $$
+begin
+  drop policy if exists "storage vocali: lettura"     on storage.objects;
+  drop policy if exists "storage vocali: caricamento" on storage.objects;
+
+  create policy "storage vocali: lettura"
+    on storage.objects for select using (bucket_id = 'vocali');
+
+  create policy "storage vocali: caricamento"
+    on storage.objects for insert to authenticated with check (bucket_id = 'vocali');
+exception when others then
+  raise notice 'Permessi sul bucket vocali non impostati (%). Se si caricano, va bene cosi.', sqlerrm;
 end $$;
 
 -- PostgREST tiene in memoria le firme delle funzioni: dopo averle

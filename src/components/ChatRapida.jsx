@@ -21,7 +21,7 @@ import { SUONI } from '../config/suoni.js'
 import { suona } from '../lib/audio.js'
 import { creaSondaggio } from '../lib/voti.js'
 
-export default function ChatRapida({ membro, suoniDisponibili = {} }) {
+export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice = false }) {
   const { azioni, membri, stato, errore, inserisci, sostituisci } = useFeed()
   const { voti, vota, aggiorna: aggiornaVoto } = useVoti(azioni)
   const [foglio, setFoglio] = useState(null)
@@ -151,7 +151,9 @@ export default function ChatRapida({ membro, suoniDisponibili = {} }) {
   }
 
   return (
-    <div className="gruppo-schermo">
+    // `senzaCornice` quando vive dentro il tab Gruppo, che la schermata
+    // la mette già lui insieme alle due schede.
+    <div className={senzaCornice ? 'chat-dentro' : 'gruppo-schermo'}>
       <div className="conversazione">
         {stato === 'caricamento' && <p className="feed-vuoto">Un attimo.</p>}
         {stato === 'guasto' && <p className="feed-guasto">{errore}</p>}

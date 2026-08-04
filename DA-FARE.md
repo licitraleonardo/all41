@@ -28,11 +28,21 @@ schermata senza rete — dove però non ci si arriva quasi più, perché con
 una copia dei dati si entra nell'app vera. Resta per chi apre senza rete
 e senza aver mai scaricato niente.
 
-**Verifica bloccante ancora aperta**: la n.3 dello spec, i formati audio
-su iPhone. Mai fatta perché in casa c'è solo un Android, e prima della
-partenza non si è trovato nessuno del gruppo disponibile. **Si fa il
-12**, quando siamo tutti nella stessa stanza: serve prima del punto 9, e
-lo spec dice che dal punto 6 in poi si può deployare la sera.
+**Verifica bloccante n.3 — da chiudere sul campo.** I formati audio su
+iPhone: mai provata perché in casa c'è solo un Android.
+
+I Vocali però sono stati scritti come se la verifica fosse già stata
+fatta, cioè **senza scrivere nessun formato nel codice**: si chiede al
+browser cosa sa fare (`MediaRecorder.isTypeSupported`), si preferisce
+`audio/mp4` perché si sente ovunque, e si salva il mimeType **vero**
+accanto al file invece di assumerlo. Era esattamente quello che la
+verifica avrebbe detto di fare. `npm run prova:audio` controlla la scelta
+su finti Safari, Chrome e Firefox.
+
+Quello che resta da provare su un iPhone vero: che registri davvero, e
+che un vocale registrato su Android si senta su iPhone e viceversa. Se
+qualcosa non va, il posto da guardare è `src/lib/formatoAudio.js` — è lì
+che si decide, ed è una lista.
 
 ⚠️ Per provare le sfide e il giorno corrente si sposta l'orologio del PC.
 Se un file o un commit sembra datato in mezzo al viaggio, viene da lì.
@@ -225,9 +235,7 @@ tipografia dei numeri romani — che texture e fondi scuri insieme.
 
 In ordine di quanto servono davvero, non di numero:
 
-1. **Chat Vocale** (9) — prima serve la verifica bloccante n.3, in
-   programma il 12
-2. **Tutorial** (14) e **L'Impostore** (15)
+1. **Tutorial** (14) e **L'Impostore** (15)
 
 Il **tutorial va tenuto per ultimo davvero**: lo spec lo dice, e queste
 sessioni l'hanno dimostrato — le regole sono cambiate una decina di volte

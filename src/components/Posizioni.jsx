@@ -17,6 +17,7 @@ import {
 import { urlAvatar } from '../config/avatar.js'
 import { descriviErrore } from '../lib/errori.js'
 import { useConnessione } from '../hooks/useConnessione.js'
+import FoglioPosizione from './FoglioPosizione.jsx'
 
 // La mappa del gruppo. Due cose che lo spec chiede e che vanno tenute:
 //
@@ -30,6 +31,7 @@ export default function Posizioni({ membro }) {
   const [punti, setPunti] = useState([])
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
+  const [scelto, setScelto] = useState(null)
   const inLinea = useConnessione()
 
   const ricarica = useCallback(async () => {
@@ -114,17 +116,29 @@ export default function Posizioni({ membro }) {
       ) : (
         <ul className="pos-elenco">
           {punti.map((p) => (
-            <li key={p.id} className={p.id === membro.id ? 'pos io' : 'pos'}>
-              <img
-                src={urlAvatar(p.avatarStyle, p.avatarSeed)}
-                alt=""
-                width="30"
-                height="30"
-              />
-              <span className="pos-nome">
-                {p.nome}
-                <span className="pos-quando">{quando(p.quando)}</span>
-              </span>
+            <li key={p.id}>
+              {/* Si tocca e si apre il link a Maps con le coordinate:
+                  quando devi raggiungere qualcuno ti serve chi ti dice
+                  dove girare, non un puntino da guardare. */}
+              <button
+                type="button"
+                className={p.id === membro.id ? 'pos io' : 'pos'}
+                onClick={() => setScelto({ ...p, detto: quando(p.quando) })}
+              >
+                <img
+                  src={urlAvatar(p.avatarStyle, p.avatarSeed)}
+                  alt=""
+                  width="30"
+                  height="30"
+                />
+                <span className="pos-nome">
+                  {p.nome}
+                  <span className="pos-quando">{quando(p.quando)}</span>
+                </span>
+                <span className="pos-freccia" aria-hidden="true">
+                  ›
+                </span>
+              </button>
             </li>
           ))}
         </ul>
@@ -141,6 +155,8 @@ export default function Posizioni({ membro }) {
         adesso. Non si aggiorna da sola, e su iPhone nemmeno con l&rsquo;app
         chiusa.
       </p>
+
+      {scelto && <FoglioPosizione persona={scelto} onChiudi={() => setScelto(null)} />}
     </div>
   )
 }

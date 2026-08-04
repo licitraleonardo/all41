@@ -1,0 +1,176 @@
+/* Il sostituto del walkie-talkie. Sta nel tab Gruppo, sulla schermata
+   chiara, e il tasto per parlare e' fisso in fondo dov'e' il pollice. */
+
+.vocali {
+  min-height: 100dvh;
+  padding-bottom: calc(28px + var(--altezza-tab) + 60px);
+}
+
+.voc-vuoto {
+  margin: 24px 0 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-soft, #55636b);
+}
+
+.voc-guasto {
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--coral);
+}
+
+.voc-avviso {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--altezza-tab) + 74px);
+  z-index: 16;
+  width: calc(100% - 32px);
+  max-width: 608px;
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sand);
+  background: var(--sea);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+
+/* ------------------------------------------------------------- elenco */
+
+.voc-elenco {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 12px;
+  padding: 9px 11px;
+}
+
+.voc.mio {
+  border-color: var(--gold);
+}
+
+.voc-play {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--sand);
+  background: var(--sea);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.voc-avatar {
+  flex: none;
+  border-radius: 50%;
+  background: var(--sand);
+}
+
+.voc-chi {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.voc-quando {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-soft, #55636b);
+  font-variant-numeric: tabular-nums;
+}
+
+.voc-elimina {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--ink-soft, #55636b);
+  background: transparent;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------- premi e parla */
+
+.voc-barra {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--altezza-tab) + 10px);
+  z-index: 15;
+  width: calc(100% - 32px);
+  max-width: 608px;
+}
+
+.voc-premi {
+  width: 100%;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sand);
+  background: var(--sea);
+  border: 0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 20px -8px rgba(11, 53, 80, 0.7);
+  cursor: pointer;
+  /* Tenere premuto non deve selezionare il testo né aprire il menu
+     contestuale del telefono: succede al primo tentativo, sempre. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
+.voc-premi.attivo {
+  background: var(--coral);
+  font-variant-numeric: tabular-nums;
+}
+
+.voc-premi:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* La barra che scorre: il limite di durata si vede arrivare invece di
+   fermare la registrazione di sorpresa. */
+.voc-avanzamento {
+  height: 4px;
+  margin-top: 6px;
+  background: rgba(11, 53, 80, 0.15);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.voc-avanzamento span {
+  display: block;
+  height: 100%;
+  background: var(--coral);
+}
+
+.voc-premi:focus-visible,
+.voc-play:focus-visible,
+.voc-elimina:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
