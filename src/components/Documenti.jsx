@@ -103,7 +103,7 @@ export default function Documenti({ membro }) {
       {documenti.length > 0 && (
         <ul className="doc-elenco">
           {documenti.map((d) => (
-            <li key={d.id} className="doc">
+            <li key={d.id} className={d.soloPerMe ? 'doc privato' : 'doc'}>
               <button
                 type="button"
                 className="doc-apri"
@@ -131,7 +131,17 @@ export default function Documenti({ membro }) {
                     />
                     {membri[d.proprietarioId]?.nome ?? 'Qualcuno'}
                     {d.byte ? ` · ${peso(d.byte)}` : ''}
-                    {d.soloPerMe && <span className="doc-privato">🔒 solo per te</span>}
+
+                    {/* Lo stato si dice solo sui propri documenti, ed è
+                        l'unico posto dove può cambiare: quelli degli
+                        altri che vedi sono condivisi per forza, e una
+                        targhetta "nel viaggio" su ogni riga sarebbe
+                        rumore che si smette di leggere. */}
+                    {d.proprietarioId === membro.id && (
+                      <span className={d.soloPerMe ? 'doc-stato privato' : 'doc-stato'}>
+                        {d.soloPerMe ? '🔒 Solo per te' : '👥 Nel viaggio'}
+                      </span>
+                    )}
                   </span>
                 </span>
               </button>

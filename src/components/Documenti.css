@@ -39,8 +39,17 @@
 .doc {
   background: #fff;
   border: 1px solid var(--line);
+  border-left: 4px solid transparent;
   border-radius: 12px;
   padding: 4px 4px 4px 0;
+}
+
+/* Il tratteggio si vede prima di leggere: un documento che gli altri non
+   hanno non deve sembrare uguale a uno che hanno tutti. */
+.doc.privato {
+  border-style: dashed;
+  border-left-color: var(--coral);
+  background: #fffdfc;
 }
 
 /* Tutta la riga si tocca e apre il documento: un QR va aperto in fretta,
@@ -94,10 +103,22 @@
 }
 
 /* Lo stato si legge, l'azione si preme: due cose diverse e vanno
-   distinte, o non si capisce se "Solo per me" dica com'è o cosa farà. */
-.doc-privato {
+   distinte, o non si capisce se "Solo per me" dica com'è o cosa farà.
+   E si dice in tutti e due i versi — prima il condiviso non diceva
+   niente, e si capiva solo dall'assenza del lucchetto. */
+.doc-stato {
+  font-size: 11px;
   font-weight: 700;
-  color: var(--coral);
+  letter-spacing: 0.02em;
+  color: #2f6b47;
+  background: #e7f0e9;
+  border-radius: 100px;
+  padding: 2px 8px;
+}
+
+.doc-stato.privato {
+  color: #a2402c;
+  background: #fdeeeb;
 }
 
 .doc-azioni {
