@@ -27,13 +27,22 @@ export default function Classifica({
   // I punti si propongono da qui: la classifica è dove guardi chi merita
   // qualcosa, quindi è lì che deve stare il gesto.
   const [scelto, setScelto] = useState(null)
+  const [punizione, setPunizione] = useState(null)
   const destinatario = classifica.find((m) => m.id === scelto) ?? null
+
+  // La trappola scatta una volta sola: chi c'è già cascato non può più
+  // toccare la propria riga. Con il tasto spento dall'inizio non ci
+  // sarebbe cascato nessuno, con il tasto sempre acceso diventa una
+  // penalità che si ripete e smette di essere una sorpresa.
+  const giaCascato = eventi.some((e) => e.leggeId === 'self-praise' && e.membroId === ioId)
 
   // Se il limite giornaliero l'ha rifiutata, il foglio resta aperto col
   // motivo: chiuderlo lascerebbe senza sapere cos'è successo.
   async function crea(dati) {
     const esito = await onCrea(dati)
-    if (esito?.ok) setScelto(null)
+    if (!esito?.ok) return
+    setScelto(null)
+    if (esito.autoElogio) setPunizione(esito.autoElogio)
   }
 
   return (
@@ -63,6 +72,7 @@ export default function Classifica({
               type="button"
               className={m.id === ioId ? 'riga io' : 'riga'}
               onClick={() => setScelto(m.id)}
+              disabled={m.id === ioId && giaCascato}
             >
               <span className="posto">{i + 1}</span>
               <img
@@ -84,9 +94,11 @@ export default function Classifica({
               </span>
               {/* Senza questa freccia niente dice che la riga si tocca:
                   è la stessa che segna le righe apribili nelle Spese. */}
-              <span className="riga-freccia" aria-hidden="true">
-                ›
-              </span>
+              {!(m.id === ioId && giaCascato) && (
+                <span className="riga-freccia" aria-hidden="true">
+                  ›
+                </span>
+              )}
             </button>
           </li>
         ))}
@@ -103,6 +115,30 @@ export default function Classifica({
           inCorso={inCorso}
           errore={errore}
         />
+      )}
+
+      {/* La trappola è scattata: lo si dice in faccia a chi c'è cascato,
+          col conto. Il gruppo lo legge comunque nello storico. */}
+      {punizione && (
+        <div
+          className="foglio-sfondo"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Il Testamento ha qualcosa da dirti"
+        >
+          <div className="foglio punizione">
+            <p className="punizione-punti">{punizione.punti}</p>
+            <p className="punizione-testo">{punizione.testo}</p>
+            <p className="punizione-nota">Legge {punizione.romano}. Adesso lo sanno tutti.</p>
+            <button
+              type="button"
+              className="secondario-foglio"
+              onClick={() => setPunizione(null)}
+            >
+              Me la sono cercata
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Le proposte aperte stanno qui sotto, col tempo che scorre. Il

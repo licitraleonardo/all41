@@ -4,8 +4,12 @@ import { CACCIA, SFIDE_PER_ID } from './sfide.js'
 // Le Leggi di All For One.
 //
 // Tabella unica da cui si generano la logica, il tutorial e il codice
-// delle Leggi scoperte. Tre sono pubbliche e partono già rivelate; il
-// resto è nascosto e si scopre quando scatta.
+// delle Leggi scoperte.
+//
+// Non ce n'è nessuna nota dall'inizio: lo spec ne prevedeva tre
+// pubbliche, spiegate nel tutorial, ma sapere in partenza cosa fa
+// guadagnare punti trasforma il gioco in un elenco di compiti. Si
+// scoprono tutte usando l'app, e il Testamento parte tutto oscurato.
 //
 // La scoperta è collettiva: quando una Legge scatta per la prima volta su
 // chiunque, si sblocca per tutto il gruppo. Rende la cosa cooperativa e
@@ -22,14 +26,14 @@ export const LEGGI = [
   // qui c'era ancora "±10 (max ±15)" della prima stesura, mentre il
   // limite vero era sceso a ±5 da un pezzo. Il Testamento è il posto
   // dove una bugia del genere resta scritta per tutto il viaggio.
-  { n: 1, id: 'poll-proposed', punti: `±${PROPOSTA.limite}`, pubblica: true, attiva: true, verso: 'trofeo',
+  { n: 1, id: 'poll-proposed', punti: `±${PROPOSTA.limite}`, attiva: true, verso: 'trofeo',
     testo: 'Punti proposti da qualcuno e approvati dal gruppo a maggioranza' },
   // Non più una sfida qualsiasi: il premio è uno solo, a fine caccia. Con
   // dieci-venti punti a sfida la classifica diventava la classifica
   // della caccia al tesoro, e tutto il resto rumore di fondo.
-  { n: 2, id: 'challenge-won', punti: CACCIA.premioPrimo, pubblica: true, attiva: true,
+  { n: 2, id: 'challenge-won', punti: CACCIA.premioPrimo, attiva: true,
     testo: 'Hai vinto più sfide della caccia al tesoro di chiunque altro' },
-  { n: 3, id: 'impostore-impunito', punti: 5, pubblica: true, attiva: false,
+  { n: 3, id: 'impostore-impunito', punti: 5, attiva: false,
     testo: "Sei sfuggito al voto: l'impostore l'ha fatta franca" },
 
   // ——— NASCOSTE: ritmo quotidiano ———

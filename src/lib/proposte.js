@@ -2,6 +2,7 @@ import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { OPZIONI_PROPOSTA, PROPOSTA, quorumRaggiunto } from '../config/proposte.js'
 import { assegnaPunti, faiScattareLegge } from './punti.js'
+import { PER_ID, numeroRomano } from '../config/leggi.js'
 
 // Quante proposte ha già fatto oggi. Si contano dal database e non da
 // localStorage: un contatore locale si azzera cambiando telefono, e
@@ -64,9 +65,14 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
   // La derisione è pubblica per costruzione: il motivo dell'evento punti
   // finisce nello storico della classifica, che leggono tutti, e resta
   // lì per tutto il viaggio. Meglio di un lampo che sparisce.
-  let autoElogio = false
+  let autoElogio = null
   if (proponenteId === destinatarioId) {
-    autoElogio = true
+    const legge = PER_ID['self-praise']
+    autoElogio = {
+      punti: legge.punti,
+      testo: legge.testo,
+      romano: numeroRomano(legge.n),
+    }
     await faiScattareLegge('self-praise', proponenteId, `self-praise_${voto.id}`).catch(
       () => {}
     )

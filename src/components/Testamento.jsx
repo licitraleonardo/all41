@@ -1,15 +1,22 @@
+import { useState } from 'react'
 import { LEGGI, PUNIZIONI, TROFEI, numeroRomano } from '../config/leggi.js'
 
 // Il codice delle Leggi scoperte. Continua di proposito il tono
 // legislativo: qui Allan non parla, custodisce e basta.
 //
-// Diviso in due metà, perché sono due cose diverse: i Trofei sono quello
-// che si va a cercare, le Leggi quello in cui si inciampa. In un elenco
-// solo si leggevano tutte come una lista di divieti.
+// Due schede, perché sono due cose diverse: i Trofei sono quello che si
+// va a cercare, le Leggi quello in cui si inciampa. In un elenco solo si
+// leggevano tutte come una lista di divieti.
+//
+// Niente parte rivelato: sapere in partenza cosa fa guadagnare punti
+// trasformerebbe il gioco in un elenco di compiti.
 export default function Testamento({ scoperte, membri }) {
-  const rivelata = (l) => l.pubblica || Boolean(scoperte[l.id])
+  const [meta, setMeta] = useState('trofei')
+  const rivelata = (l) => Boolean(scoperte[l.id])
   const quante = LEGGI.filter(rivelata).length
   const quota = Math.round((quante / LEGGI.length) * 100)
+
+  const elenco = meta === 'trofei' ? TROFEI : PUNIZIONI
 
   return (
     <div className="gioco-corpo">
@@ -25,39 +32,30 @@ export default function Testamento({ scoperte, membri }) {
         </div>
       </header>
 
-      <Meta
-        titolo="Trofei"
-        sottotitolo="Quello che si va a cercare"
-        elenco={TROFEI}
-        scoperte={scoperte}
-        membri={membri}
-        rivelata={rivelata}
-      />
+      <div className="segmenti minori" role="tablist">
+        {[
+          ['trofei', 'Trofei', TROFEI],
+          ['leggi', 'Leggi', PUNIZIONI],
+        ].map(([id, etichetta, gruppo]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={meta === id}
+            className={meta === id ? 'segmento attivo' : 'segmento'}
+            onClick={() => setMeta(id)}
+          >
+            {etichetta}
+            <span className="segmento-conto">
+              {gruppo.filter(rivelata).length}/{gruppo.length}
+            </span>
+          </button>
+        ))}
+      </div>
 
-      <Meta
-        titolo="Leggi"
-        sottotitolo="Quello in cui si inciampa"
-        elenco={PUNIZIONI}
-        scoperte={scoperte}
-        membri={membri}
-        rivelata={rivelata}
-      />
-    </div>
-  )
-}
-
-function Meta({ titolo, sottotitolo, elenco, scoperte, membri, rivelata }) {
-  const quante = elenco.filter(rivelata).length
-
-  return (
-    <section className="testamento-meta">
-      <h3 className="sezione">
-        {titolo}
-        <span className="sezione-conto">
-          {quante} / {elenco.length}
-        </span>
-      </h3>
-      <p className="testamento-sottotitolo">{sottotitolo}</p>
+      <p className="testamento-sottotitolo">
+        {meta === 'trofei' ? 'Quello che si va a cercare.' : 'Quello in cui si inciampa.'}
+      </p>
 
       <ol className="leggi">
         {elenco.map((l) => {
@@ -78,18 +76,15 @@ function Meta({ titolo, sottotitolo, elenco, scoperte, membri, rivelata }) {
               <span className="legge-numero">Legge {numeroRomano(l.n)}</span>
               <p className="legge-testo">{l.testo}</p>
               <span className="legge-punti">{punti(l.punti)}</span>
-              {scoperta && (
-                <span className="legge-scoperta">
-                  scoperta da {membri[scoperta.chi]?.nome ?? 'qualcuno'},{' '}
-                  {giorno(scoperta.quando)}
-                </span>
-              )}
-              {l.pubblica && !scoperta && <span className="legge-scoperta">nota a tutti</span>}
+              <span className="legge-scoperta">
+                scoperta da {membri[scoperta.chi]?.nome ?? 'qualcuno'},{' '}
+                {giorno(scoperta.quando)}
+              </span>
             </li>
           )
         })}
       </ol>
-    </section>
+    </div>
   )
 }
 
