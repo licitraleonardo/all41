@@ -5,9 +5,12 @@ import { mandaVocale } from '../lib/vocali.js'
 import { avviaRegistrazione, spiegaErroreMicrofono } from '../lib/registratore.js'
 import { registrazioneDisponibile } from '../lib/formatoAudio.js'
 import { LIMITI } from '../config/limiti.js'
-import { urlAvatar } from '../config/avatar.js'
+import { coloreNome, urlAvatar } from '../config/avatar.js'
 import { descriviErrore } from '../lib/errori.js'
 import Rotella from './Rotella.jsx'
+
+// Quanto bisogna salire col dito perche' il vocale parta segnato.
+const TRASCINAMENTO = 60
 
 // Il sostituto del walkie-talkie. Si tiene premuto, si parla, si lascia.
 //
@@ -50,10 +53,22 @@ export default function Vocali({ membro }) {
     }
   }, [])
 
-  async function premi() {
+  // Si tiene premuto e si parla; trascinando in su il tasto diventa
+  // rosso e il vocale parte segnato. Un gesto solo invece di un
+  // interruttore da ricordarsi di spegnere: il dito e' gia' li'.
+  const partenzaY = useRef(0)
+
+  function muovi(e) {
+    if (!registrando) return
+    setImportante(partenzaY.current - e.clientY >= TRASCINAMENTO)
+  }
+
+  async function premi(e) {
     if (registrando || inCorso) return
     setAvviso(null)
     setSecondi(0)
+    partenzaY.current = e.clientY
+    setImportante(false)
 
     try {
       sessione.current = await avviaRegistrazione({
@@ -86,11 +101,7 @@ export default function Vocali({ membro }) {
     try {
       const esito = await mandaVocale({ ...registrato, importante }, membro.id)
       if (!esito.ok) {
-        setAvviso(
-          esito.motivo === 'giorno'
-            ? `${LIMITI.voice.giorno} vocali al giorno. Li hai finiti.`
-            : `Aspetta ${esito.attesa}s.`
-        )
+        setAvviso(`Aspetta ${esito.attesa}s.`)
         return
       }
       inserisci(esito.vocale)
@@ -141,19 +152,21 @@ export default function Vocali({ membro }) {
           <div className="voc-tasti">
             <button
               type="button"
-              className={registrando ? 'voc-premi attivo' : 'voc-premi'}
+              className={
+                registrando
+                  ? importante
+                    ? 'voc-premi attivo segnato'
+                    : 'voc-premi attivo'
+                  : 'voc-premi'
+              }
               onPointerDown={premi}
+              onPointerMove={muovi}
               onPointerUp={lascia}
               onPointerCancel={lascia}
               onPointerLeave={registrando ? lascia : undefined}
               disabled={inCorso}
-              aria-label="Tieni premuto e parla"
+              aria-label="Tieni premuto e parla, trascina in su per segnarlo"
             >
-              {/* Da fermo solo il microfono: "Tieni premuto e parla" era
-                  un'istruzione ripetuta all'infinito a gente che l'ha
-                  imparata al primo tocco, e chi arriva la trova comunque
-                  scritta nella chat vuota. Mentre registra invece il
-                  numero serve: dice quanto ti resta. */}
               <Microfono grande={!registrando && !inCorso} />
               {inCorso
                 ? 'Mando…'
@@ -161,22 +174,13 @@ export default function Vocali({ membro }) {
                   ? `${LIMITI.voice.durataMax - secondi}s`
                   : ''}
             </button>
-
-            {/* Un interruttore che si vede, non un doppio tocco: il tasto
-                qui accanto si tiene premuto per registrare, e due gesti
-                sullo stesso tasto si pestano i piedi. Resta acceso finché
-                non mandi, poi si spegne da solo. */}
-            <button
-              type="button"
-              className={importante ? 'voc-importante acceso' : 'voc-importante'}
-              onClick={() => setImportante((v) => !v)}
-              aria-pressed={importante}
-              aria-label="Segna come importante"
-              title="Segna come importante"
-            >
-              ❗
-            </button>
           </div>
+
+          {registrando && (
+            <p className={importante ? 'voc-gesto segnato' : 'voc-gesto'}>
+              {importante ? '❗ Parte come importante' : 'Trascina in su per segnarlo'}
+            </p>
+          )}
 
           {registrando && (
             <div className="voc-avanzamento" role="presentation">
@@ -239,7 +243,11 @@ function Vocale({ vocale, autore, mio, inAscolto, onAscolta, onElimina }) {
       )}
 
       <div className="voc-bolla">
-        {!mio && <span className="voc-autore">{autore?.nome ?? 'Qualcuno'}</span>}
+        {!mio && (
+          <span className="voc-autore" style={{ color: coloreNome(vocale.autoreId) }}>
+            {autore?.nome ?? 'Qualcuno'}
+          </span>
+        )}
 
         <div className="voc-dentro">
           <button

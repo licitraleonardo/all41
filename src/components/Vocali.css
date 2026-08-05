@@ -90,12 +90,14 @@
   background: #fdf1ee;
 }
 
+/* Il colore lo mette il componente: dipende da chi ha parlato, non
+   dalla classe. Lo stesso di chi scrive in chat, cosi' una persona ha
+   una faccia sola in tutta l'app. */
 .voc-autore {
   display: block;
   margin-bottom: 3px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--juniper);
 }
 
 .voc-dentro {
@@ -189,29 +191,6 @@
   gap: 8px;
 }
 
-/* Un interruttore che si vede, non un doppio tocco: il tasto qui accanto
-   si tiene premuto per registrare, e due gesti sullo stesso tasto si
-   pestano i piedi. */
-.voc-importante {
-  flex: none;
-  width: 56px;
-  font: inherit;
-  font-size: 20px;
-  line-height: 1;
-  background: rgba(247, 244, 236, 0.94);
-  border: 1px dashed var(--line, #e4dfd2);
-  border-radius: 12px;
-  cursor: pointer;
-  opacity: 0.5;
-}
-
-.voc-importante.acceso {
-  background: var(--coral);
-  border-style: solid;
-  border-color: var(--coral);
-  opacity: 1;
-}
-
 .voc-premi {
   flex: 1;
   display: flex;
@@ -237,8 +216,26 @@
 }
 
 .voc-premi.attivo {
-  background: var(--coral);
+  background: var(--juniper);
   font-variant-numeric: tabular-nums;
+}
+
+/* Trascinato in su: il tasto diventa rosso e lo vedi mentre parli,
+   senza staccare il dito per controllare un interruttore. */
+.voc-premi.segnato {
+  background: var(--coral);
+}
+
+.voc-gesto {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink-soft, #55636b);
+}
+
+.voc-gesto.segnato {
+  color: var(--coral);
 }
 
 /* Mentre registra il microfono pulsa: dice che sta prendendo, senza
@@ -286,7 +283,6 @@
 
 .voc-premi:focus-visible,
 .voc-play:focus-visible,
-.voc-importante:focus-visible,
 .voc-elimina:focus-visible {
   outline: 2px solid var(--sea);
   outline-offset: 2px;

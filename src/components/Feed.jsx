@@ -1,5 +1,5 @@
 import { MINUTI_PER_ELIMINARE } from '../config/azioni.js'
-import { urlAvatar } from '../config/avatar.js'
+import { coloreNome, urlAvatar } from '../config/avatar.js'
 import Sondaggio from './Sondaggio.jsx'
 
 export default function Feed({
@@ -137,8 +137,16 @@ function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
         />
       )}
       <div className="bolla-blocco">
-        {!mio && <span className="bolla-nome">{autore?.nome ?? 'Qualcuno'}</span>}
         <div className="bolla">
+          {/* Il nome sta DENTRO la bolla, come su WhatsApp: fuori era una
+              riga staccata che allontanava ogni messaggio dal successivo.
+              E ognuno ha il suo colore, che con otto persone si riconosce
+              prima ancora di leggere il nome. */}
+          {!mio && (
+            <span className="bolla-nome" style={{ color: coloreNome(azione.autoreId) }}>
+              {autore?.nome ?? 'Qualcuno'}
+            </span>
+          )}
           {azione.importante && <span className="bolla-importante">❗ importante</span>}
           {azione.payload.testo}
         </div>

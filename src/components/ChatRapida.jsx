@@ -26,10 +26,6 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   const { voti, vota, aggiorna: aggiornaVoto } = useVoti(azioni)
   const [foglio, setFoglio] = useState(null)
   const [testo, setTesto] = useState('')
-  // Si accende prima di mandare e si spegne da solo dopo: un
-  // interruttore che resta acceso finirebbe per marcare tutto, e a quel
-  // punto non marcherebbe più niente.
-  const [importante, setImportante] = useState(false)
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [bloccati, setBloccati] = useState(new Set())
@@ -37,6 +33,15 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   const barra = useRef(null)
   const schermo = useRef(null)
   const giaSceso = useRef(false)
+
+  // Gli avvisi se ne vanno da soli. Restavano appesi sopra la barra
+  // finché non ne arrivava un altro, e dopo dieci secondi non dicono più
+  // niente: dicono solo che qualcosa era andato storto, chissà quando.
+  useEffect(() => {
+    if (!avviso) return
+    const via = setTimeout(() => setAvviso(null), 5000)
+    return () => clearTimeout(via)
+  }, [avviso])
 
   // Un suono spento resta spento anche ricaricando: si deduce dalle
   // penalità nel database, non da uno stato in memoria.
@@ -117,10 +122,9 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
     e.preventDefault()
     const pulito = testo.trim()
     if (!pulito || inCorso) return
-    const azione = await manda('free_text', { testo: pulito }, importante)
+    const azione = await manda('free_text', { testo: pulito })
     if (!azione) return
     setTesto('')
-    setImportante(false)
 
     dopoTesto(membro.id, pulito, azione.id)
       .then((r) => r.scattata && setAvviso('Quella parola ti costa -2.'))
@@ -297,23 +301,26 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
           </div>
         )}
 
+        {/* Megafono e invio stanno DENTRO la casella, non ai suoi lati:
+            fuori erano tre oggetti staccati che si contendevano la riga,
+            dentro sono una cosa sola con due estremi. */}
         <form className="riga-scrittura" onSubmit={mandaTesto}>
-          <button
-            type="button"
-            className={foglio === 'suoni' ? 'tasto-suoni aperto' : 'tasto-suoni'}
-            onClick={() => alterna('suoni')}
-            aria-label="Suoni"
-            aria-expanded={foglio === 'suoni'}
-          >
-            🔊
-          </button>
-
-          {/* Col menu aperto la casella sparisce: con "Si riparte" o il
-              sondaggio davanti agli occhi, un campo di testo lì sotto fa
-              solo chiedere quale delle due cose si sta facendo. Stessa
-              ragione per cui i tasti rapidi spariscono coi suoni. */}
-          {foglio && foglio !== 'sos' && (
-            <span className="riga-in-menu">Scegli qui sopra, o tocca di nuovo per chiudere.</span>
+          {/* Il megafono sparisce quando è aperto un altro menu: sopra hai
+              già "Si riparte" o il sondaggio, e un terzo bottone che apre
+              una terza cosa è solo un invito a sbagliare. */}
+          {(!foglio || foglio === 'suoni') && (
+            <button
+              type="button"
+              className={foglio === 'suoni' ? 'tasto-suoni aperto' : 'tasto-suoni'}
+              onClick={() => alterna('suoni')}
+              aria-label={foglio === 'suoni' ? 'Chiudi i suoni' : 'Suoni'}
+              aria-expanded={foglio === 'suoni'}
+            >
+              {/* Aperto diventa la × che lo chiude: il suggerimento
+                  scritto "tocca di nuovo per chiudere" era una didascalia
+                  al posto di un bottone che si spiega da solo. */}
+              {foglio === 'suoni' ? '×' : '🔊'}
+            </button>
           )}
 
           {!foglio && (
@@ -326,19 +333,6 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
                 placeholder="Scrivi qualcosa di breve"
                 aria-label="Messaggio"
               />
-
-              {/* Lo stesso interruttore dei vocali: si accende prima di
-                  mandare e si spegne da solo dopo. */}
-              <button
-                type="button"
-                className={importante ? 'tasto-importante acceso' : 'tasto-importante'}
-                onClick={() => setImportante((v) => !v)}
-                aria-pressed={importante}
-                aria-label="Segna come importante"
-                title="Segna come importante"
-              >
-                ❗
-              </button>
 
               <button
                 type="submit"
