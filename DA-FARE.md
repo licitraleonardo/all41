@@ -269,3 +269,29 @@ sera la classifica si ribalta, il posto giusto è `IMPOSTORE` in
 Lo spec dice esplicitamente che dal punto 6 in poi tutto può arrivare
 **durante** il viaggio, con un deploy la sera. Vale ancora: mancano nove
 giorni e il minimo spedibile è chiuso da un pezzo.
+
+## Idee parcheggiate
+
+Cose decise a voce e messe da parte apposta, non dimenticate. Se qualcuno
+le ritrova fra sei mesi, qui c'è il perché.
+
+### Numeri utili e indirizzi (rimandata il 5 agosto)
+
+In Altro, accanto ai Numeri: l'indirizzo del villaggio, i numeri che
+servono davvero sul posto — 112, guardia medica, il ristorante da
+richiamare se si fa tardi — e in generale i contatti utili della zona.
+
+Rimandata da Leonardo con parole precise: *"togliamola per ora, lasciamola
+come un'idea volante, la riprenderemo forse come qualcosa di più
+avanzato"*. Quindi **non è una cosa da aggiungere in fretta la sera
+prima**: se torna, torna come sezione pensata.
+
+Due cose da sapere quando si riprenderà:
+
+- **I numeri di emergenza vanno verificati, non inventati.** In Italia il
+  112 è unico e vale ovunque, ma guardia medica, farmacia di turno e
+  capitaneria cambiano per comune, e un numero sbagliato in una sezione
+  che si chiama "emergenze" è peggio che non averla.
+- Deve funzionare **offline e senza account**: è l'unico posto dell'app
+  che potrebbe servire quando il telefono non prende e uno ha fretta.
+  Quindi dati nel codice, non sul database.
