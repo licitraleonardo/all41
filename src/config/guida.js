@@ -54,3 +54,22 @@ export const FINALE = {
 }
 
 export const APERTURA = 'Cinque tab, qualche gesto che non si vede, e un mucchio di regole che non ti diciamo.'
+
+// Le nuvolette di Allan: una per tab, la prima volta che ci entri e mai
+// piu'. Servono a dire "qui si puo' fare questo" nel momento in cui uno
+// ci e' appena arrivato, che e' l'unico in cui gli interessa saperlo.
+//
+// Sono nella voce di Allan e non in quella di un tutorial: asciutta, un
+// po' svogliata, mai entusiasta. Allan non fa il cicerone contento —
+// custodisce il Testamento e lo sa. Se diventasse una mascotte allegra
+// il personaggio si consumerebbe alla prima schermata.
+export const NUVOLETTE = {
+  oggi: 'Il programma dei cinque giorni. Non l’ho scritto io. Ogni tappa ha il suo indirizzo: si tocca e vi porta.',
+  gruppo:
+    'Qui si scrive. Se avete le mani occupate si parla: il tasto grande si tiene premuto e registra. Io ascolto tutto, per dovere.',
+  foto: 'Caricate pure. Cinque al giorno a testa, poi basta. C’è chi ci prova a farne una più bella delle altre: si nota.',
+  gioco:
+    'La classifica. Toccate qualcuno per proporgli dei punti, in su o in giù, e poi decide il gruppo. Il Testamento sta lì sotto: dategli un’occhiata, ma non troppo lunga.',
+  altro:
+    'Spese, documenti, la mappa e la guida. Roba noiosa finché non serve, e poi serve tutta insieme.',
+}

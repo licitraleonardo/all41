@@ -4,7 +4,6 @@ import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
 import Pecora from './Pecora.jsx'
 import Impostore from './Impostore.jsx'
-import Guida, { guidaGiaChiusa } from './Guida.jsx'
 import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
@@ -24,7 +23,6 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
   const [vista, setVista] = useState('classifica')
   const [inCorso, setInCorso] = useState(false)
   const [erroreProposta, setErroreProposta] = useState(null)
-  const [guidaVia, setGuidaVia] = useState(guidaGiaChiusa)
 
   // Il Testamento si segna letto mentre lo guardi, come le schede del
   // Gruppo: se una Legge si sblocca mentre sei lì, l'hai vista.
@@ -57,11 +55,9 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
 
   return (
     <div className="gioco-schermo">
-      {/* In cima e richiudibile, come dice lo spec: un tutorial che
-          sbarra l'ingresso viene saltato senza leggerlo. Una volta tolta
-          resta in Altro, che è dove si va a cercarla. */}
-      {!guidaVia && <Guida compatta onChiudi={() => setGuidaVia(true)} />}
-
+      {/* La guida non sta più qui. Una card in cima alla schermata più
+          usata del tab era troppo invadente: adesso Allan dice due righe
+          la prima volta che entri, e la guida intera vive in Altro. */}
       {/* Sotto-schede in alto: pattern standard, non aggiunge profondità */}
       <div className="segmenti" role="tablist">
         {SCHEDE.map(([id, etichetta]) => (

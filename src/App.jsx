@@ -26,6 +26,7 @@ import Album from './components/Album.jsx'
 import Gioco from './components/Gioco.jsx'
 import Altro from './components/Altro.jsx'
 import BarraTab from './components/BarraTab.jsx'
+import NuvolettaAllan from './components/NuvolettaAllan.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
 import { useDerisione } from './hooks/useDerisione.js'
@@ -285,6 +286,11 @@ export default function App() {
         )}
         {tab === 'altro' && <Altro membro={membro} />}
         <BarraTab attivo={tab} onCambia={setTab} novita={nonLetto.novita} />
+
+        {/* Allan dice la sua la prima volta che entri in un tab, e mai
+            più. Sta qui e non dentro le schermate perché è la stessa cosa
+            per tutte e cinque, e perché deve stare sopra a tutto. */}
+        <NuvolettaAllan membroId={membro?.id} tab={tab} />
         <StrisciaOffline attiva={!inLinea} />
 
         {/* Uno solo alla volta in cima, e la precedenza è delle
