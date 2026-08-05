@@ -34,15 +34,29 @@ export default function Profilo({ membro, onModifica, onEsci, onIndietro }) {
 
   return (
     <div className="pannello">
-      <img
-        className="avatar-grande"
-        src={urlAvatar(membro.avatarStyle, membro.avatarSeed)}
-        alt=""
-        width="96"
-        height="96"
-      />
+      {/* Si cambia faccia toccando la faccia. Prima era un bottone in
+          fondo, in mezzo agli altri due: la cosa che uno viene a fare qui
+          stava sotto quella che non vuole fare mai. */}
+      <button
+        type="button"
+        className="avatar-modifica"
+        onClick={onModifica}
+        aria-label="Cambia nome e avatar"
+      >
+        <img
+          className="avatar-grande"
+          src={urlAvatar(membro.avatarStyle, membro.avatarSeed)}
+          alt=""
+          width="96"
+          height="96"
+        />
+        <span className="avatar-matita" aria-hidden="true">
+          ✏️
+        </span>
+      </button>
+
       <h1 className="titolo">{membro.nome}</h1>
-      <p className="sottotitolo">{VIAGGIO.etichetta}</p>
+      <p className="sottotitolo">Tocca la faccia per cambiare nome e avatar</p>
 
       <dl className="targa">
         <div>
@@ -56,15 +70,14 @@ export default function Profilo({ membro, onModifica, onEsci, onIndietro }) {
       </dl>
 
       <button type="button" className="primario" onClick={onIndietro}>
-        Indietro
+        Torna al viaggio
       </button>
 
-      <button type="button" className="secondario" onClick={onModifica}>
-        Cambia nome e avatar
-      </button>
+      {/* In rosso perché è l'unica cosa in questa schermata che si può
+          rimpiangere: senza il codice non si rientra. */}
       <button
         type="button"
-        className="secondario"
+        className="pericolo"
         onClick={() => setConfermaUscita(true)}
       >
         Esci da questo dispositivo

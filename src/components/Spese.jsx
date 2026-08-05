@@ -5,6 +5,7 @@ import { useSpese } from '../hooks/useSpese.js'
 import { formattaEuro, inCentesimi } from '../lib/saldi.js'
 import { MAX_CENTESIMI, MAX_DESCRIZIONE } from '../config/spese.js'
 import { descriviErrore } from '../lib/errori.js'
+import Rotella from './Rotella.jsx'
 
 // L'unica sezione fuori dal sistema punti e senza la voce di Allan: qui
 // ci sono soldi veri di persone vere, e una battuta sul conto di
@@ -26,7 +27,7 @@ export default function Spese({ membro, senzaCornice = false }) {
 
   return (
     <div className={senzaCornice ? 'spese-dentro' : 'spese-schermo'}>
-      {stato === 'caricamento' && <p className="spese-vuoto">Un attimo.</p>}
+      {stato === 'caricamento' && <Rotella />}
       {stato === 'guasto' && <p className="spese-guasto">{errore}</p>}
 
       {stato === 'pronto' && (

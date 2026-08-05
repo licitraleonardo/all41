@@ -7,6 +7,7 @@ import { registrazioneDisponibile } from '../lib/formatoAudio.js'
 import { LIMITI } from '../config/limiti.js'
 import { urlAvatar } from '../config/avatar.js'
 import { descriviErrore } from '../lib/errori.js'
+import Rotella from './Rotella.jsx'
 
 // Il sostituto del walkie-talkie. Si tiene premuto, si parla, si lascia.
 //
@@ -105,7 +106,7 @@ export default function Vocali({ membro }) {
 
   return (
     <div className="vocali">
-      {stato === 'caricamento' && <p className="voc-vuoto">Un attimo.</p>}
+      {stato === 'caricamento' && <Rotella />}
       {stato === 'guasto' && <p className="voc-guasto">{errore}</p>}
 
       {stato === 'pronto' && vocali.length === 0 && (

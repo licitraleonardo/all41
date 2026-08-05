@@ -12,6 +12,7 @@ import BottoneElimina from './BottoneElimina.jsx'
 import { urlAvatar } from '../config/avatar.js'
 import { TIPI_ACCETTATI } from '../config/foto.js'
 import { LIMITI } from '../config/limiti.js'
+import Rotella from './Rotella.jsx'
 
 // Il numero viene dalla configurazione e non è scritto a mano: la Legge I
 // del Testamento ha detto "±10" per settimane mentre il limite vero era
@@ -272,7 +273,7 @@ export default function Album({ membro }) {
         </ul>
       )}
 
-      {stato === 'caricamento' && <p className="album-vuoto">Un attimo.</p>}
+      {stato === 'caricamento' && <Rotella />}
       {stato === 'guasto' && <p className="album-guasto">{errore}</p>}
 
       {stato === 'pronto' && foto.length === 0 && (

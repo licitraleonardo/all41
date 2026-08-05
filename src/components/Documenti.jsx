@@ -8,6 +8,7 @@ import { urlAvatar } from '../config/avatar.js'
 import FotoGrande from './FotoGrande.jsx'
 import BottoneElimina from './BottoneElimina.jsx'
 import FoglioDocumento from './FoglioDocumento.jsx'
+import Rotella from './Rotella.jsx'
 
 // I documenti del viaggio: QR dell'escursione, biglietti, prenotazioni.
 //
@@ -90,7 +91,7 @@ export default function Documenti({ membro }) {
         />
       )}
 
-      {stato === 'caricamento' && <p className="doc-vuoto">Un attimo.</p>}
+      {stato === 'caricamento' && <Rotella />}
       {stato === 'guasto' && <p className="doc-guasto">{errore}</p>}
 
       {stato === 'pronto' && documenti.length === 0 && !scelto && (

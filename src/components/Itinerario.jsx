@@ -24,9 +24,12 @@ export default function Itinerario({ membro, onProfilo }) {
 
   return (
     <div className="oggi-schermo">
+      {/* Senza "Sardegna · 12–16 agosto": in una barra fissa alta 44px
+          quella riga rubava spazio al marchio e all'avatar per dire una
+          cosa che non cambia mai. Adesso sta accanto al conto alla
+          rovescia, dove ha un senso leggerla. */}
       <header className="barra-alta">
         <div className="barra-marchio">ALL41</div>
-        <div className="barra-titolo">{VIAGGIO.etichetta}</div>
         <button
           type="button"
           className="barra-avatar"
@@ -43,6 +46,7 @@ export default function Itinerario({ membro, onProfilo }) {
       </header>
 
       <div className="wrap">
+        <p className="oggi-viaggio">{VIAGGIO.etichetta}</p>
         <RigaAttesa />
         <Meteo dataOggi={data} />
 

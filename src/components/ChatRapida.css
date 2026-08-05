@@ -634,7 +634,7 @@
   color: rgba(247, 244, 236, 0.6);
   background: transparent;
   border: 0;
-  padding: 9px 4px 10px;
+  padding: 13px 4px 14px;
   cursor: pointer;
 }
 
@@ -642,9 +642,12 @@
   color: var(--gold);
 }
 
+/* La scritta sotto non c'e' piu': l'icona basta da sola, e quella riga
+   costava altezza a ogni schermata. Cresce un po' per restare un
+   bersaglio comodo per il pollice. */
 .tab-icona {
   position: relative;
-  font-size: 19px;
+  font-size: 23px;
   line-height: 1;
 }
 
@@ -656,12 +659,6 @@
   height: 8px;
   border-radius: 50%;
   background: var(--coral);
-}
-
-.tab-etichetta {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
 }
 
 .tab:focus-visible {

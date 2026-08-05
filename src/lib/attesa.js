@@ -35,12 +35,19 @@ export function frasiAttesa(adesso = new Date()) {
   }
 }
 
-// Le ore non si azzerano a 24: a dodici giorni dalla partenza il numero è
-// 287, ed è quello il punto. padStart non taglia, quindi le tre cifre
-// passano intatte.
-function orologio(secondi) {
+// I giorni si contano a parte. Prima le ore correvano fino a 287 di fila,
+// con l'idea che il numero grosso facesse effetto: ma a quattro cifre non
+// si legge più quanto manca, si legge solo che è tanto. "6g 20:31:14" lo
+// capisci in un colpo d'occhio.
+//
+// Niente mesi né anni: per un viaggio a una settimana sarebbero due zeri
+// fissi, e uno zero che non cambia mai è rumore.
+export function orologio(secondi) {
   const due = (n) => String(n).padStart(2, '0')
-  const ore = Math.floor(secondi / 3600)
+  const giorni = Math.floor(secondi / 86400)
+  const ore = Math.floor((secondi % 86400) / 3600)
   const minuti = Math.floor((secondi % 3600) / 60)
-  return `${due(ore)}:${due(minuti)}:${due(secondi % 60)}`
+  const conto = `${due(ore)}:${due(minuti)}:${due(secondi % 60)}`
+
+  return giorni > 0 ? `${giorni}g ${conto}` : conto
 }

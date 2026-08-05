@@ -7,6 +7,7 @@ import { PER_ID } from '../config/leggi.js'
 import { urlAvatar } from '../config/avatar.js'
 import { vota } from '../lib/voti.js'
 import { descriviErrore } from '../lib/errori.js'
+import Rotella from './Rotella.jsx'
 
 // L'app fa il mazziere e basta. Il gioco vero — dire la propria parola,
 // accusarsi, difendersi — succede a voce nella stanza, quindi ogni
@@ -18,7 +19,7 @@ export default function Impostore({ membro, membri }) {
     useImpostore()
   const nome = (id) => membri[id]?.nome ?? 'Qualcuno'
 
-  if (stato === 'caricamento') return <p className="imp-vuoto">Un attimo.</p>
+  if (stato === 'caricamento') return <Rotella />
   if (stato === 'guasto') return <p className="imp-guasto">{errore}</p>
 
   const inGioco = partita && partita.stato !== 'finita' && partita.giocatori.includes(membro.id)

@@ -46,7 +46,16 @@ const buildTime = __BUILD_TIME__
 
 export default function App() {
   const [vista, setVista] = useState('avvio')
-  const [tab, setTab] = useState('oggi')
+  // Ricaricare non deve riportare a "Oggi": chi tira giu' per aggiornare
+  // sta guardando un tab preciso e vuole quello, aggiornato. Il tab vive
+  // in sessionStorage e non in localStorage: dura il tempo della scheda,
+  // cosi' riaprire l'app domani riparte comunque dal programma del giorno.
+  const [tab, setTab] = useState(() => sessionStorage.getItem('tab') || 'oggi')
+
+  useEffect(() => {
+    sessionStorage.setItem('tab', tab)
+  }, [tab])
+
   const [membro, setMembro] = useState(null)
   const [errore, setErrore] = useState(null)
   const [inCorso, setInCorso] = useState(false)

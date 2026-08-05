@@ -8,6 +8,7 @@ import Guida, { guidaGiaChiusa } from './Guida.jsx'
 import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
+import Rotella from './Rotella.jsx'
 
 // Tre schede, non quattro: "Proponi" non era una sezione, era un gesto —
 // e adesso vive dove ha senso, toccando qualcuno nella classifica.
@@ -76,7 +77,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta }) {
       {vista === 'pecora' && <Pecora membroId={membro.id} />}
 
       {vista !== 'pecora' && stato === 'caricamento' && (
-        <p className="gioco-vuoto">Un attimo.</p>
+        <Rotella />
       )}
       {vista !== 'pecora' && stato === 'guasto' && (
         <p className="gioco-guasto">{errore}</p>
