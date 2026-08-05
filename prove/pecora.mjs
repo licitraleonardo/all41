@@ -178,11 +178,11 @@ prova('prima della soglia non si vede', n.navicella.arrivata === false, {
 
 console.log('\ni raggi si schivano')
 const raggio = SAGOME[TEMA.raggio]
-const alan = SAGOME[TEMA.protagonista]
+const allan = SAGOME[TEMA.protagonista]
 const [rasoTerra, centro, alto] = NAVICELLA.quote
 
 // Raso terra: prende chi resta giù, si scavalca saltando.
-prova('raso terra prende chi non salta', alan.altezza > rasoTerra)
+prova('raso terra prende chi non salta', allan.altezza > rasoTerra)
 prova('e si scavalca saltando', ALTEZZA_SALTO > rasoTerra + raggio.altezza)
 
 // Al centro: passa sopra la testa di chi sta a terra, ma la traiettoria
@@ -190,11 +190,11 @@ prova('e si scavalca saltando', ALTEZZA_SALTO > rasoTerra + raggio.altezza)
 // caso lo prende; chi salta al momento giusto ci passa sopra — ed è
 // giusto così, è l'unico punto del gioco dove conta il tempismo e non
 // solo il riflesso.
-prova('al centro non tocca chi resta a terra', alan.altezza <= centro)
+prova('al centro non tocca chi resta a terra', allan.altezza <= centro)
 prova('ma il salto lo attraversa', ALTEZZA_SALTO > centro + raggio.altezza)
 
 // In alto: l'apice del salto resta sotto. È un respiro.
-prova('in alto passa sopra anche saltando', ALTEZZA_SALTO + alan.altezza < alto)
+prova('in alto passa sopra anche saltando', ALTEZZA_SALTO + allan.altezza < alto)
 
 console.log('\nfermi si muore')
 m = avvia(nuovoMondo(3))

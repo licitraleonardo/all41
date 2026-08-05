@@ -1,6 +1,6 @@
 // Il tema del gioco è un dato, non codice. Lo spec lo chiede
 // esplicitamente: il motore di un endless runner è identico ovunque,
-// cambiano solo i disegni. In Islanda sarebbe Alan con le orecchie da
+// cambiano solo i disegni. In Islanda sarebbe Allan con le orecchie da
 // husky fra blocchi di ghiaccio, e non si toccherebbe una riga di logica.
 //
 // Quindi qui dentro non c'è niente che il motore debba capire: sono
@@ -8,11 +8,11 @@
 // lib/pecora.js, e nessuno dei due sa cosa sia un nuraghe.
 
 export const TEMA = {
-  // Alan è il draghetto e basta: niente vestiti, niente accessori. A 30
+  // Allan è il draghetto e basta: niente vestiti, niente accessori. A 30
   // pixel ogni dettaglio in più diventa una macchia, e il personaggio si
   // riconosce dalla sagoma. Se un giorno si vorrà cambiare ambientazione
   // si cambierà lo sfondo — cielo, terra, ostacoli — non lui.
-  protagonista: 'alan',
+  protagonista: 'allan',
   ostacoli: ['fico-india', 'nuraghe', 'muretto'],
   volante: 'gabbiano',
   raggio: 'raggio',
@@ -31,7 +31,7 @@ export const TEMA = {
 // sembrare il gioco un gioco.
 // Il riquadro è più stretto e più alto di quanto sembri necessario
 // apposta. Su un telefono da 375px la larghezza è quella e non si
-// discute: l'unico modo di far vedere Alan più grande è mettere meno
+// discute: l'unico modo di far vedere Allan più grande è mettere meno
 // mondo dentro la stessa striscia. Da 600×180 a 500×320 il personaggio
 // passa da 25 a 30 pixel veri e il riquadro da 112 a 240 di altezza.
 export const MONDO = {
@@ -52,7 +52,7 @@ export const FISICA = {
 }
 
 export const SAGOME = {
-  alan: { larghezza: 40, altezza: 36 },
+  allan: { larghezza: 40, altezza: 36 },
   'fico-india': { larghezza: 26, altezza: 38, quota: 0 },
   nuraghe: { larghezza: 36, altezza: 46, quota: 0 },
   muretto: { larghezza: 50, altezza: 24, quota: 0 },
@@ -92,7 +92,7 @@ export const NAVICELLA = {
   // partita una soglia diversa, invisibile, e nessuno può prepararsi.
   soglia: 300,
 
-  // Sta ferma sul bordo destro, come Alan sta fermo sul sinistro, e i
+  // Sta ferma sul bordo destro, come Allan sta fermo sul sinistro, e i
   // raggi nascono da lì. Non li insegue e non si avvicina: è il mondo
   // che scorre, e quella resta.
   x: 454,

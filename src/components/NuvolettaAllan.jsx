@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import './NuvolettaAllan.css'
 import { NUVOLETTE } from '../config/guida.js'
 import FacciaAllan from './FacciaAllan.jsx'
-import { FACCIA_PER_TAB } from '../config/alan.js'
+import { FACCIA_PER_TAB } from '../config/allan.js'
 
 // Allan dice una cosa sola, la prima volta che entri in un tab, e poi non
 // la ripete mai piu'.

@@ -21,10 +21,10 @@ const FICO = '#3F6E5C'
 const LASER = '#E8604A'
 
 const DISEGNI = {
-  // Alan e basta: draghetto verde, niente vestiti. A questa dimensione
+  // Allan e basta: draghetto verde, niente vestiti. A questa dimensione
   // ogni dettaglio in più diventa una macchia, e quello che si deve
   // riconoscere è la sagoma.
-  alan(ctx, x, y, l, a, fase) {
+  allan(ctx, x, y, l, a, fase) {
     const avanti = Math.sin(fase) > 0
     const cx = x + l / 2
 
@@ -212,7 +212,7 @@ const DISEGNI = {
     ctx.fill()
   },
 
-  // Ferma sul bordo destro, come Alan lo è sul sinistro. Si disegna dopo
+  // Ferma sul bordo destro, come Allan lo è sul sinistro. Si disegna dopo
   // gli ostacoli: così il raggio appena sparato le esce da sotto invece
   // di comparirle accanto.
   navicella: (ctx, x, y, l, a, fase, lampo) => {

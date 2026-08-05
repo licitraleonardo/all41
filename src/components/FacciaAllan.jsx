@@ -1,8 +1,8 @@
-import { ESPRESSIONE_PREDEFINITA, urlAlan } from '../config/alan.js'
+import { ESPRESSIONE_PREDEFINITA, urlAllan } from '../config/allan.js'
 
-// La faccia di Alan, ritagliata dallo character sheet.
+// La faccia di Allan, ritagliata dallo character sheet.
 //
-// Prima era un avatar generato: sbagliato, perche' Alan non e' uno del
+// Prima era un avatar generato: sbagliato, perche' Allan non e' uno del
 // gruppo sorteggiato da un nome — e' un personaggio disegnato, con otto
 // espressioni sue. Quale usare lo decide chi lo mette in pagina, cosi'
 // puo' sbuffare dove serve sbuffare e giudicare dove serve giudicare.
@@ -14,8 +14,8 @@ export default function FacciaAllan({
   return (
     <img
       className={`faccia-allan ${className}`.trim()}
-      src={urlAlan(espressione)}
-      alt="Alan"
+      src={urlAllan(espressione)}
+      alt="Allan"
       width={lato}
       height={lato}
       // Niente caricamento pigro: sono immagini piccole e sempre visibili
