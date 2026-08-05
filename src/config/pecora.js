@@ -15,6 +15,10 @@ export const TEMA = {
   protagonista: 'allan',
   ostacoli: ['fico-india', 'nuraghe', 'muretto'],
   volante: 'gabbiano',
+  // Tre raggi invece di uno: cambia la sagoma, quindi cambia il momento
+  // in cui devi saltare. Con un comando solo la varieta' puo' stare
+  // soltanto qui.
+  raggi: ['raggio', 'raggio-lungo', 'raggio-alto'],
   raggio: 'raggio',
   navicella: 'navicella',
   cielo: '#79B4D4',
@@ -62,6 +66,10 @@ export const SAGOME = {
   // Il raggio prende la quota dalla navicella che lo spara, quindi qui
   // non ne ha una sua.
   raggio: { larghezza: 30, altezza: 26 },
+  // Largo: si salta prima, perche' sotto ci resti piu' a lungo.
+  'raggio-lungo': { larghezza: 64, altezza: 22 },
+  // Alto: raso terra va scavalcato pulito, e il salto ha meno margine.
+  'raggio-alto': { larghezza: 26, altezza: 52 },
   navicella: { larghezza: 84, altezza: 34 },
 }
 
@@ -80,6 +88,24 @@ export const RITMO = {
   staccoExtraFinale: 0.35,
   distanzaDiRodaggio: 4500,
 
+  // Oltre il muro il respiro si chiude quasi del tutto: resta lo stacco
+  // minimo e un soffio. Difficile fin dove la fisica lo consente, mai
+  // oltre — un gioco che uccide senza scampo non e' difficile, e' rotto.
+  staccoExtraOltreIlMuro: 0.1,
+
+  // Le doppiette: due ostacoli attaccati che si scavalcano con un salto
+  // solo. Sono la cosa che rende il ritmo cattivo senza renderlo sleale,
+  // perche' la coppia resta larga meno di quanto copre un salto.
+  doppiettaDopo: 2000,
+  doppiettaProbabilita: 0.22,
+  doppiettaStacco: 8,
+  // Quanta parte del margine fisico puo' occupare una coppia. Non e' una
+  // frazione del salto: e' una frazione di quello che ci sta davvero nel
+  // tempo passato sopra l'ostacolo piu' alto, tolto il corpo di Allan.
+  // A 0.6 resta abbastanza aria da poter sbagliare il tempo di un
+  // capello e cavarsela lo stesso.
+  doppiettaLarghezzaMax: 0.6,
+
   // Anche il gabbiano si fa vedere più spesso andando avanti.
   volanteDopo: 400,
   volanteDaProbabilita: 0.18,
@@ -87,9 +113,10 @@ export const RITMO = {
 }
 
 export const NAVICELLA = {
-  // Sempre allo stesso punteggio, e scritto sotto il gioco. Legarlo al
-  // record lo rendeva un evento che non si sa quando arriva: ogni
-  // partita una soglia diversa, invisibile, e nessuno può prepararsi.
+  // Sempre allo stesso punteggio, ma non scritto da nessuna parte: era
+  // stampato sotto il gioco e toglieva la sorpresa. Resta fisso e non
+  // casuale perche' cosi' si impara giocando, che e' diverso
+  // dall'indovinare.
   soglia: 300,
 
   // Sta ferma sul bordo destro, come Allan sta fermo sul sinistro, e i
@@ -103,6 +130,11 @@ export const NAVICELLA = {
   // comandi che ci sono non potrebbe essere altro, ma fa vedere che la
   // navicella si muove.
   quote: [0, 44, 140],
+
+  // Quanto spesso sceglie ciascuna quota. Quella in alto e' un respiro,
+  // non un pericolo, e prima usciva quanto le altre: la navicella se ne
+  // stava lassu' a far niente per mezza partita.
+  pesiQuote: [0.42, 0.42, 0.16],
 
   // Quanto ci mette a cambiare quota, e a scendere dal cielo la prima
   // volta.
@@ -127,5 +159,20 @@ export const NUVOLE = {
 // Un punto ogni dieci unità percorse: numeri che crescono a una velocità
 // leggibile, non un contachilometri impazzito.
 export const UNITA_PER_PUNTO = 10
+
+// Il muro: da qui in poi il gioco smette di essere gentile.
+//
+// Il record finto serve a chi non ne ha ancora uno. Senza, il primo che
+// gioca non incontrerebbe mai la parte dura, e il gioco sembrerebbe
+// facile proprio a chi lo prova per la prima volta.
+export const MURO = {
+  recordFinto: 600,
+}
+
+// Dove si stringe: oltre il muro la velocita' sale piu' in fretta e il
+// respiro fra gli ostacoli si chiude.
+export function muroDi(record) {
+  return Math.max(MURO.recordFinto, record || 0)
+}
 
 export const CHIAVE_RECORD = 'all41.pecora.record'

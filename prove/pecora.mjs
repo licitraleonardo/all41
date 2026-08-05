@@ -8,6 +8,8 @@
 // automatico per ore simulate.
 
 import {
+  finestraSopra,
+  probabilitaDoppietta,
   nuovoMondo,
   avvia,
   salta,
@@ -19,7 +21,7 @@ import {
   ALTEZZA_SALTO,
   TEMPO_DI_VOLO,
 } from '../src/lib/pecora.js'
-import { FISICA, NAVICELLA, RITMO, SAGOME, TEMA } from '../src/config/pecora.js'
+import { FISICA, MURO, NAVICELLA, RITMO, SAGOME, TEMA, muroDi } from '../src/config/pecora.js'
 
 let falliti = 0
 function prova(nome, condizione, dettaglio) {
@@ -69,7 +71,9 @@ console.log('\nritmo degli ostacoli')
 // sicurezza che sta in configurazione: se qualcuno abbassasse `stacco`
 // sotto 1, questa prova se ne accorgerebbe.
 m = avvia(nuovoMondo(99))
-let peggiorRapporto = Infinity
+let peggiorRapportoFraBlocchi = Infinity
+let peggiorBlocco = 0
+let blocchiVisti = 0
 let quantiGenerati = 0
 const visti = new Map()
 
@@ -79,26 +83,59 @@ for (let i = 0; i < 60 * 60 * 3; i += 1) {
 
   for (const o of m.ostacoli) {
     if (visti.has(o.id)) continue
-    // Nascono tutti nello stesso punto, fuori dallo schermo a destra:
-    // quello che li separa non è la x ma quanta strada è passata fra una
-    // nascita e l'altra.
-    visti.set(o.id, { distanza: m.distanza, larghezza: o.larghezza })
+    // I gemelli di una doppietta nascono nello stesso istante, quindi
+    // condividono la distanza: è così che si riconosce un blocco.
+    visti.set(o.id, { distanza: m.distanza, larghezza: o.larghezza, x: o.x, velocita: m.velocita })
     quantiGenerati += 1
-
-    const precedente = visti.get(o.id - 1)
-    if (!precedente) continue
-
-    const stacco = m.distanza - precedente.distanza - precedente.larghezza
-    const serve = m.velocita * TEMPO_DI_VOLO
-    peggiorRapporto = Math.min(peggiorRapporto, stacco / serve)
   }
 }
 
+const perNascita = new Map()
+for (const [, v] of visti) {
+  const chiave = Math.round(v.distanza * 100)
+  if (!perNascita.has(chiave)) perNascita.set(chiave, [])
+  perNascita.get(chiave).push(v)
+}
+
+const blocchi = [...perNascita.entries()]
+  .sort((a, b) => a[0] - b[0])
+  .map(([, pezzi]) => ({
+    distanza: pezzi[0].distanza,
+    velocita: pezzi[0].velocita,
+    inizio: Math.min(...pezzi.map((q) => q.x)),
+    fine: Math.max(...pezzi.map((q) => q.x + q.larghezza)),
+  }))
+
+blocchiVisti = blocchi.length
+for (let i = 0; i < blocchi.length; i += 1) {
+  const b = blocchi[i]
+  // Quanto è largo rispetto al massimo scavalcabile a quella velocità:
+  // sopra 1 sarebbe una condanna, non una difficoltà.
+  const tetto = finestraSopra(46) * b.velocita - SAGOME[TEMA.protagonista].larghezza
+  if (tetto > 0) peggiorBlocco = Math.max(peggiorBlocco, (b.fine - b.inizio) / tetto)
+
+  const prima = blocchi[i - 1]
+  if (!prima) continue
+  const stacco = b.distanza - prima.distanza - (prima.fine - prima.inizio)
+  peggiorRapportoFraBlocchi = Math.min(peggiorRapportoFraBlocchi, stacco / (b.velocita * TEMPO_DI_VOLO))
+}
+
 prova('di ostacoli ne nascono parecchi', quantiGenerati > 100, { quantiGenerati })
+
+// Il contratto non è più "due ostacoli non si toccano mai": adesso ci
+// sono le doppiette, due attaccati da scavalcare con un salto solo.
+// La regola giusta è che o fra un blocco e il successivo c'è un salto
+// intero, oppure i due stanno nello stesso blocco — e quel blocco resta
+// più stretto di quanto la fisica consenta di scavalcare.
 prova(
-  'mai due più vicini di un salto intero',
-  peggiorRapporto >= 1,
-  { peggiorRapporto: Math.round(peggiorRapporto * 100) / 100 }
+  'fra un blocco e l’altro c’è sempre un salto intero',
+  peggiorRapportoFraBlocchi >= 1,
+  { peggiore: Math.round(peggiorRapportoFraBlocchi * 100) / 100 }
+)
+prova(
+  'e nessun blocco è più largo di quanto si riesca a scavalcare',
+  peggiorBlocco <= 1,
+  { peggiore: Math.round(peggiorBlocco * 100) / 100, blocchiVisti }
 )
 
 console.log('\nil gabbiano')
@@ -243,13 +280,30 @@ function pilota(mondo) {
   const io = riquadroGiocatore(mondo)
   const davanti = mondo.ostacoli
     .filter((o) => o.x + o.larghezza > io.x)
-    .sort((x, y) => x.x - y.x)[0]
-  if (!davanti) return mondo
-  if (davanti.quota > 0) return mondo // il gabbiano si passa restando giù
+    .sort((x, y) => x.x - y.x)
+  if (!davanti.length) return mondo
+  if (davanti[0].quota > 0) return mondo // il gabbiano si passa restando giù
 
-  const distanza = davanti.x - (io.x + io.larghezza)
-  const finestra = mondo.velocita * TEMPO_DI_VOLO * 0.42
-  if (distanza <= finestra && mondo.giocatore.y === 0) return salta(mondo)
+  // Il blocco da scavalcare non è il primo ostacolo: è tutta la fila di
+  // ostacoli attaccati. Prima questo pilota guardava solo il primo e
+  // saltava troppo presto, ricadendo in mezzo alla coppia — moriva dove
+  // un giocatore vero avrebbe semplicemente saltato più tardi.
+  let fine = davanti[0].x + davanti[0].larghezza
+  for (const o of davanti.slice(1)) {
+    if (o.quota > 0) break
+    if (o.x - fine > 20) break
+    fine = Math.max(fine, o.x + o.larghezza)
+  }
+
+  const larghezzaBlocco = fine - davanti[0].x
+  const distanza = davanti[0].x - (io.x + io.larghezza)
+
+  // Si stacca da terra in modo che il passaggio sopra il blocco cada
+  // attorno al culmine del salto, dove c'è più aria sotto i piedi.
+  const meta = TEMPO_DI_VOLO / 2
+  const quando = mondo.velocita * meta - (io.larghezza + larghezzaBlocco) / 2
+
+  if (distanza <= quando && mondo.giocatore.y === 0) return salta(mondo)
   return mondo
 }
 
@@ -311,9 +365,78 @@ prova(
   { velocita: aUnMinuto.g.velocita }
 )
 prova(
-  'a quel punto lo stacco in più è quello finale',
-  Math.abs(staccoExtra(aUnMinuto.g.distanza) - RITMO.staccoExtraFinale) < 0.001
+  'a quel punto il respiro è già sotto quello di rodaggio',
+  staccoExtra(aUnMinuto.g.distanza) <= RITMO.staccoExtraFinale + 0.001,
+  { stacco: Math.round(staccoExtra(aUnMinuto.g.distanza) * 1000) / 1000 }
 )
+
+console.log('\nil muro: oltre il record il gioco stringe')
+{
+  const muro = muroDi(0)
+  prova('senza record si eredita quello finto', muro === MURO.recordFinto, { muro })
+  prova('con un record vero il muro è quello', muroDi(1200) === 1200)
+  prova('un record più basso del finto non abbassa il muro', muroDi(120) === MURO.recordFinto)
+
+  const prima = staccoExtra((muro - 50) * 10, muro)
+  const dopo = staccoExtra((muro + 200) * 10, muro)
+  prova('appena prima del muro si respira ancora', prima > dopo, { prima, dopo })
+  prova(
+    'oltre il muro il respiro si chiude quasi del tutto',
+    dopo <= RITMO.staccoExtraOltreIlMuro + 0.001,
+    { dopo }
+  )
+  prova('ma non va mai sotto zero: il minimo resta intatto', staccoExtra(9e9, muro) >= 0)
+
+  prova(
+    'oltre il muro le doppiette escono più spesso',
+    probabilitaDoppietta((muro + 200) * 10, muro) > probabilitaDoppietta((muro - 50) * 10, muro)
+  )
+  prova('e nei primi metri non escono affatto', probabilitaDoppietta(100, muro) === 0)
+
+  // Chi ha un record alto incontra la parte dura più tardi: e' il senso
+  // del muro, non un premio.
+  prova(
+    'chi ha il record alto arriva più lontano prima di soffrire',
+    staccoExtra(7000, 600) < staccoExtra(7000, 2000)
+  )
+}
+
+console.log('\nle quote della navicella')
+{
+  const somma = NAVICELLA.pesiQuote.reduce((a, b) => a + b, 0)
+  prova('i pesi stanno in piedi', Math.abs(somma - 1) < 0.001, { somma })
+  prova(
+    'la quota alta esce meno delle altre due',
+    NAVICELLA.pesiQuote[2] < NAVICELLA.pesiQuote[0] &&
+      NAVICELLA.pesiQuote[2] < NAVICELLA.pesiQuote[1],
+    { pesi: NAVICELLA.pesiQuote }
+  )
+}
+
+console.log('\ni tre raggi')
+{
+  prova('sono tre sagome diverse', new Set(TEMA.raggi).size === 3)
+  for (const r of TEMA.raggi) {
+    const s = SAGOME[r]
+    prova(
+      `${r}: raso terra si scavalca`,
+      ALTEZZA_SALTO > s.altezza,
+      { altezza: s.altezza, salto: Math.round(ALTEZZA_SALTO) }
+    )
+    prova(
+      `${r}: e ci si passa sotto quando è al centro`,
+      SAGOME[TEMA.protagonista].altezza <= NAVICELLA.quote[1]
+    )
+  }
+  const lungo = SAGOME['raggio-lungo']
+  prova(
+    'il più largo resta scavalcabile anche alla velocità minima',
+    lungo.larghezza <
+      finestraSopra(lungo.altezza) * FISICA.velocitaIniziale -
+        SAGOME[TEMA.protagonista].larghezza,
+    { largo: lungo.larghezza }
+  )
+}
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
 process.exit(falliti === 0 ? 0 : 1)

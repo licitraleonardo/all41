@@ -212,6 +212,34 @@ const DISEGNI = {
     ctx.fill()
   },
 
+  // Gli altri due raggi riusano lo stesso disegno, che si adatta già alle
+  // misure: uno viene lungo e schiacciato, l'altro una colonna. Cambia il
+  // momento in cui devi saltare, ed è quello che conta.
+  'raggio-lungo': (ctx, x, y, l, a, fase) => {
+    DISEGNI.raggio(ctx, x, y, l, a, fase)
+    // Una seconda scia più lunga: si vede arrivare da più lontano, che è
+    // giusto perché sotto ci resti di più.
+    const cy = y + a / 2
+    const scia = ctx.createLinearGradient(x + l, cy, x + l + 90, cy)
+    scia.addColorStop(0, 'rgba(232, 96, 74, 0.35)')
+    scia.addColorStop(1, 'rgba(232, 96, 74, 0)')
+    ctx.fillStyle = scia
+    ctx.fillRect(x + l, cy - 2, 90, 4)
+  },
+
+  'raggio-alto': (ctx, x, y, l, a, fase) => {
+    DISEGNI.raggio(ctx, x, y, l, a, fase)
+    // Due anelli che lo fanno leggere come una colonna invece che come un
+    // proiettile grosso: si capisce subito che va scavalcato pulito.
+    ctx.strokeStyle = `rgba(247, 244, 236, ${0.5 + Math.abs(Math.sin(fase * 4)) * 0.3})`
+    ctx.lineWidth = 2
+    for (const q of [0.32, 0.68]) {
+      ctx.beginPath()
+      ctx.ellipse(x + l / 2, y + a * q, l / 2 - 3, 3, 0, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+  },
+
   // Ferma sul bordo destro, come Allan lo è sul sinistro. Si disegna dopo
   // gli ostacoli: così il raggio appena sparato le esce da sotto invece
   // di comparirle accanto.
@@ -290,7 +318,11 @@ export default function Pecora({ membroId = null, compatta = false }) {
   // ogni aggiornamento dei record: legge da qui, che è sempre l'ultimo.
   const gruppoOra = useRef(gruppo)
   gruppoOra.current = gruppo
-  const mondo = useRef(nuovoMondo(Date.now()))
+  // Il muro si prende dal record piu' alto che si conosce: il proprio o
+  // quello del viaggio. Batterlo vuol dire entrare nella parte cattiva.
+  const recordDaBattere = useRef(record)
+  recordDaBattere.current = Math.max(record || 0, gruppo.delViaggio?.punteggio ?? 0)
+  const mondo = useRef(nuovoMondo(Date.now(), record))
   const finitoIl = useRef(0)
   const [vista, setVista] = useState('pronto')
   const [ultimoPunteggio, setUltimoPunteggio] = useState(0)
@@ -383,7 +415,7 @@ export default function Pecora({ membroId = null, compatta = false }) {
       // Un tocco partito per la rabbia non deve far ricominciare e morire
       // subito: mezzo secondo di sordità.
       if (Date.now() - finitoIl.current < 450) return
-      mondo.current = avvia(nuovoMondo(Date.now()))
+      mondo.current = avvia(nuovoMondo(Date.now(), recordDaBattere.current))
       setNuovoRecord(false)
       setVista('corsa')
       return
@@ -501,10 +533,6 @@ export default function Pecora({ membroId = null, compatta = false }) {
               </span>
             )}
           </dd>
-        </div>
-        <div>
-          <dt>La navicella arriva a</dt>
-          <dd>{NAVICELLA.soglia}</dd>
         </div>
       </dl>
 

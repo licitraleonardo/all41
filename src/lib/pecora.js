@@ -9,11 +9,13 @@
 import {
   FISICA,
   MONDO,
+  MURO,
   NAVICELLA,
   RITMO,
   SAGOME,
   TEMA,
   UNITA_PER_PUNTO,
+  muroDi,
 } from '../config/pecora.js'
 
 // Generatore con seme: la stessa partita si può rigiocare identica, che
@@ -33,15 +35,57 @@ export function distanzaMinima(velocita) {
   return velocita * TEMPO_DI_VOLO * RITMO.stacco
 }
 
+// Quanto tempo si resta sopra una certa altezza durante un salto. Da qui
+// esce quanto puo' essere largo un blocco da scavalcare: non e' un
+// numero scelto a occhio, e' il punto in cui la fisica dice basta.
+export function finestraSopra(altezza) {
+  const dentro = FISICA.spintaSalto ** 2 - 2 * FISICA.gravita * altezza
+  if (dentro <= 0) return 0
+  return (2 * Math.sqrt(dentro)) / FISICA.gravita
+}
+
+// L'ostacolo di terra piu' alto: e' quello che detta il margine, perche'
+// una coppia va scavalcata sopra il piu' cattivo dei due.
+const ALTEZZA_PEGGIORE = Math.max(...TEMA.ostacoli.map((o) => SAGOME[o].altezza))
+
+// Quanto puo' essere larga una coppia attaccata perche' resti
+// scavalcabile con un salto solo, a quella velocita'. Il conto: nel
+// tempo passato sopra l'ostacolo si percorre finestra x velocita, e li'
+// dentro deve starci sia la coppia sia il corpo di Allan. La frazione in
+// configurazione lascia il margine, perche' arrivare al limite esatto
+// vuol dire morire nel punto in cui la fisica dice "per un pelo".
+export function larghezzaMassimaCoppia(velocita) {
+  const utile = finestraSopra(ALTEZZA_PEGGIORE) * velocita - SAGOME[TEMA.protagonista].larghezza
+  return Math.max(0, utile * RITMO.doppiettaLarghezzaMax)
+}
+
 // Quanto respiro in più, oltre al minimo, viene lasciato fra un ostacolo
 // e l'altro. Cala andando avanti: è così che il gioco si fa difficile
 // senza mai diventare ingiusto — lo stacco minimo non si tocca.
-export function staccoExtra(distanza) {
+export function staccoExtra(distanza, muro = MURO.recordFinto) {
   const avanzamento = Math.min(1, distanza / RITMO.distanzaDiRodaggio)
-  return (
+  const base =
     RITMO.staccoExtraIniziale +
     (RITMO.staccoExtraFinale - RITMO.staccoExtraIniziale) * avanzamento
-  )
+
+  // Oltre il muro il gioco smette di essere gentile: il respiro si
+  // chiude quasi del tutto nell'arco di un centinaio di punti. Lo stacco
+  // minimo resta intoccabile, quindi resta sempre superabile — ma di
+  // margine non ne rimane.
+  const punti = distanza / UNITA_PER_PUNTO
+  if (punti <= muro) return base
+
+  const oltre = Math.min(1, (punti - muro) / 150)
+  return base + (RITMO.staccoExtraOltreIlMuro - base) * oltre
+}
+
+// Quante volte una coppia di ostacoli attaccati puo' uscire. Prima del
+// rodaggio mai: le doppiette sono la parte cattiva, non il benvenuto.
+export function probabilitaDoppietta(distanza, muro = MURO.recordFinto) {
+  if (distanza <= RITMO.doppiettaDopo) return 0
+  const punti = distanza / UNITA_PER_PUNTO
+  const oltre = punti > muro ? Math.min(1, (punti - muro) / 150) : 0
+  return RITMO.doppiettaProbabilita * (1 + oltre)
 }
 
 export function probabilitaVolante(distanza) {
@@ -53,9 +97,13 @@ export function probabilitaVolante(distanza) {
   )
 }
 
-export function nuovoMondo(seme = 1) {
+// `record` e' il punteggio da battere: da li' in poi il gioco stringe.
+// Chi non ne ha ancora uno eredita quello finto, se no la parte dura non
+// la vedrebbe mai proprio chi sta provando per la prima volta.
+export function nuovoMondo(seme = 1, record = 0) {
   return {
     stato: 'pronto',
+    muro: muroDi(record),
     tempo: 0,
     distanza: 0,
     velocita: FISICA.velocitaIniziale,
@@ -125,6 +173,18 @@ function riquadroOstacolo(o) {
   return { x: o.x, y: o.quota, larghezza: o.larghezza, altezza: o.altezza }
 }
 
+// Sceglie una quota fra le tre della navicella, ma non a caso piatto:
+// quella in alto e' un respiro, non un pericolo, e uscendo quanto le
+// altre lasciava la navicella parcheggiata lassu' per mezza partita.
+function quotaPesata(caso) {
+  let somma = 0
+  for (let i = 0; i < NAVICELLA.quote.length; i++) {
+    somma += NAVICELLA.pesiQuote[i] ?? 0
+    if (caso < somma) return NAVICELLA.quote[i]
+  }
+  return NAVICELLA.quote[NAVICELLA.quote.length - 1]
+}
+
 function generaOstacolo(mondo) {
   let seme = mondo.seme
   let caso
@@ -132,6 +192,7 @@ function generaOstacolo(mondo) {
   let quota = 0
   let sparato = false
   let nuovoObiettivo = mondo.navicella.obiettivo
+  const muro = mondo.muro ?? MURO.recordFinto
 
   // La navicella spara solo da ferma, e il raggio prende la quota da
   // dove sta lei: è quello che lo lega alla navicella invece di farlo
@@ -139,13 +200,14 @@ function generaOstacolo(mondo) {
   if (inPosizione(mondo.navicella)) {
     ;[seme, caso] = prossimoCaso(seme)
     if (caso < NAVICELLA.probabilitaRaggio) {
-      tipo = TEMA.raggio
+      // Tre sagome diverse: cambia quando devi saltare, che con un
+      // comando solo e' l'unica varieta' possibile.
+      ;[seme, caso] = prossimoCaso(seme)
+      tipo = TEMA.raggi[Math.floor(caso * TEMA.raggi.length)]
       quota = mondo.navicella.quota
       sparato = true
-      // Sparato il colpo si sposta: la prossima volta arriva da un'altra
-      // altezza, e intanto la si vede muoversi.
       ;[seme, caso] = prossimoCaso(seme)
-      nuovoObiettivo = NAVICELLA.quote[Math.floor(caso * NAVICELLA.quote.length)]
+      nuovoObiettivo = quotaPesata(caso)
     }
   }
 
@@ -171,14 +233,51 @@ function generaOstacolo(mondo) {
     quota,
   }
 
+  // Doppietta: un secondo ostacolo di terra attaccato al primo, da
+  // scavalcare con un salto solo. Si aggiunge solo se la coppia resta
+  // piu' stretta di quanto copre un salto, quindi resta superabile —
+  // altrimenti sarebbe una condanna, non una difficolta'.
+  const gemelli = []
+  if (quota === 0 && tipo !== TEMA.volante) {
+    ;[seme, caso] = prossimoCaso(seme)
+    if (caso < probabilitaDoppietta(mondo.distanza, muro)) {
+      ;[seme, caso] = prossimoCaso(seme)
+      const secondo = TEMA.ostacoli[Math.floor(caso * TEMA.ostacoli.length)]
+      const s2 = SAGOME[secondo]
+      const larghezzaCoppia = sagoma.larghezza + RITMO.doppiettaStacco + s2.larghezza
+
+      // Il tetto non è una frazione del salto ma del margine vero: il
+      // tempo passato sopra l'ostacolo più alto, tolto il corpo di Allan.
+      // Misurato sul salto era troppo generoso, e usciva la doppietta di
+      // due muretti che nessuno scavalca.
+      if (larghezzaCoppia <= larghezzaMassimaCoppia(mondo.velocita)) {
+        gemelli.push({
+          id: mondo.prossimoId + 1,
+          tipo: secondo,
+          x: ostacolo.x + sagoma.larghezza + RITMO.doppiettaStacco,
+          larghezza: s2.larghezza,
+          altezza: s2.altezza,
+          quota: 0,
+        })
+      }
+    }
+  }
+
   // Lo stacco non scende mai sotto il minimo, e quanto si allunga oltre
   // è l'unica cosa lasciata al caso — e si stringe andando avanti. Così
   // il ritmo si fa serrato senza mai produrre una coppia impossibile.
+  //
+  // La coppia conta come un blocco solo: il respiro si misura da dove
+  // finisce il secondo, non il primo.
   ;[seme, caso] = prossimoCaso(seme)
+  const coda = gemelli.length ? gemelli[gemelli.length - 1] : ostacolo
+  const ingombro = coda.x + coda.larghezza - ostacolo.x
   const stacco =
-    distanzaMinima(mondo.velocita) * (1 + caso * staccoExtra(mondo.distanza))
+    ingombro -
+    sagoma.larghezza +
+    distanzaMinima(mondo.velocita) * (1 + caso * staccoExtra(mondo.distanza, muro))
 
-  return { ostacolo, seme, stacco, sparato, nuovoObiettivo }
+  return { ostacolo, gemelli, seme, stacco, sparato, nuovoObiettivo }
 }
 
 export function passo(mondo, dt) {
@@ -238,10 +337,10 @@ export function passo(mondo, dt) {
 
   if (prossimoStacco <= 0) {
     const generato = generaOstacolo({ ...mondo, distanza, velocita, navicella, prossimoId })
-    ostacoli = [...ostacoli, generato.ostacolo]
+    ostacoli = [...ostacoli, generato.ostacolo, ...generato.gemelli]
     seme = generato.seme
     prossimoStacco = generato.stacco
-    prossimoId += 1
+    prossimoId += 1 + generato.gemelli.length
 
     if (generato.sparato) {
       navicella = {
