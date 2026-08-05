@@ -89,3 +89,45 @@ export function titoli(righe) {
 
   return esito
 }
+
+// ------------------------------------------------------- per i grafici
+
+// Una voce sola, ordinata dal piu' alto, con quanto e' lunga la barra
+// rispetto al primo. Zero resta zero: una barra minima per chi non ha
+// fatto niente direbbe una bugia piccola ma direbbe una bugia.
+export function classificaPerVoce(righe, voce) {
+  const elenco = (righe ?? [])
+    .map((r) => ({ id: r.id, nome: r.nome, valore: r[voce] ?? 0 }))
+    // A pari merito l'id piu' basso, come ovunque: due telefoni non
+    // devono mostrare due ordini diversi per gli stessi numeri.
+    .sort((a, b) => b.valore - a.valore || (a.id < b.id ? -1 : 1))
+
+  // I punti possono essere negativi — e' il gioco — e una barra larga
+  // meno di zero non esiste: il browser la ignora e resta quella di
+  // prima, cioe' mostra il numero di un altro. Si taglia a zero, e il
+  // valore negativo resta scritto accanto, che e' la verita'.
+  const massimo = elenco[0]?.valore ?? 0
+  return elenco.map((r) => ({
+    ...r,
+    quota: massimo > 0 ? Math.min(1, Math.max(0, r.valore / massimo)) : 0,
+  }))
+}
+
+// A che posto sta una persona in una voce. Serve alla scheda personale:
+// "quarto su undici" dice molto piu' di un numero da solo.
+export function posizioneDi(righe, voce, id) {
+  const elenco = classificaPerVoce(righe, voce)
+  const dove = elenco.findIndex((r) => r.id === id)
+  if (dove < 0) return null
+  return { posto: dove + 1, su: elenco.length, valore: elenco[dove].valore }
+}
+
+// Le voci in cui uno se la cava meglio: quelle dove sta piu' in alto.
+// E' il pezzo che rende la scheda personale invece che una copia della
+// tabella di tutti.
+export function dovePrimeggia(righe, id, quante = 3) {
+  return VOCI.map((v) => ({ voce: v, ...posizioneDi(righe, v.id, id) }))
+    .filter((r) => r.posto && r.valore > 0)
+    .sort((a, b) => a.posto - b.posto || b.valore - a.valore)
+    .slice(0, quante)
+}

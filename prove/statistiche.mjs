@@ -4,6 +4,9 @@
 import {
   TITOLI,
   VOCI,
+  classificaPerVoce,
+  dovePrimeggia,
+  posizioneDi,
   contaPerMembro,
   massimoPerMembro,
   tabella,
@@ -128,6 +131,84 @@ console.log('\ni titoli')
 {
   prova('senza dati non esplode', titoli(tabella({ membri: [], conteggi: {} })).length === 0)
   prova('ogni titolo punta a una voce vera', TITOLI.every((t) => VOCI.some((v) => v.id === t.voce)))
+}
+
+console.log('\nle barre dei grafici')
+{
+  const righe = tabella({
+    membri: MEMBRI,
+    conteggi: { messaggi: { a: 40, b: 10, c: 0 } },
+  })
+  const c = classificaPerVoce(righe, 'messaggi')
+
+  prova('dal piu alto al piu basso', c.map((r) => r.id).join('') === 'abc', c)
+  prova('il primo riempie la barra', c[0].quota === 1)
+  prova('gli altri in proporzione', Math.abs(c[1].quota - 0.25) < 0.001, c[1])
+  prova('lo zero resta zero, non un filo di barra', c[2].quota === 0)
+
+  // I punti vanno sotto zero, ed e' li' che una barra si rompe: larghezza
+  // negativa il browser la butta, e resta disegnata quella di prima.
+  const conPunti = classificaPerVoce(tabella({ membri: MEMBRI, conteggi: {} }), 'punti')
+  prova('nessuna barra va sotto zero', conPunti.every((r) => r.quota >= 0), conPunti)
+  prova('ne sopra il pieno', conPunti.every((r) => r.quota <= 1))
+  prova(
+    'chi ha punti negativi non ha barra ma tiene il suo numero',
+    conPunti.find((r) => r.id === 'c').quota === 0 &&
+      conPunti.find((r) => r.id === 'c').valore === -4
+  )
+  prova('e chi sta in cima ce l’ha piena', conPunti[0].quota === 1)
+
+  const tuttiNegativi = classificaPerVoce(
+    [{ id: 'x', nome: 'X', punti: -5 }, { id: 'y', nome: 'Y', punti: -2 }],
+    'punti'
+  )
+  prova('se sono tutti negativi nessuna barra', tuttiNegativi.every((r) => r.quota === 0))
+  prova('ma l’ordine resta giusto', tuttiNegativi[0].id === 'y', tuttiNegativi)
+
+  const vuoto = classificaPerVoce(tabella({ membri: MEMBRI, conteggi: {} }), 'foto')
+  prova('se nessuno ha fatto niente nessuna barra', vuoto.every((r) => r.quota === 0))
+
+  const rovescio = classificaPerVoce(
+    tabella({ membri: [...MEMBRI].reverse(), conteggi: { messaggi: { a: 5, b: 5 } } }),
+    'messaggi'
+  )
+  prova('a pari merito lo stesso ordine ovunque', rovescio[0].id === 'a', rovescio)
+}
+
+console.log('\nla scheda personale')
+{
+  const righe = tabella({
+    membri: MEMBRI,
+    conteggi: { messaggi: { a: 40, b: 10 }, foto: { b: 9, c: 3 } },
+  })
+
+  const p = posizioneDi(righe, 'messaggi', 'b')
+  prova('dice a che posto sei e su quanti', p.posto === 2 && p.su === 3, p)
+  prova('e con quale numero', p.valore === 10)
+  prova('chi non esiste non ha posizione', posizioneDi(righe, 'messaggi', 'zzz') === null)
+
+  const forte = dovePrimeggia(righe, 'b')
+  prova('elenca dove te la cavi meglio', forte.length > 0, forte)
+  prova('col piazzamento migliore per primo', forte[0].posto <= forte[forte.length - 1].posto)
+  prova(
+    'e non elenca le voci in cui hai fatto zero',
+    forte.every((r) => r.valore > 0),
+    forte
+  )
+  // I punti arrivano dal profilo e non dai conteggi: chi ne ha comunque
+  // un primato ce l'ha, ed e' giusto cosi'. Per non averne proprio
+  // nessuno bisogna essere a zero dappertutto.
+  prova(
+    'chi ha dei punti figura almeno per quelli',
+    dovePrimeggia(tabella({ membri: MEMBRI, conteggi: {} }), 'a')[0]?.voce.id === 'punti'
+  )
+  prova(
+    'chi e a zero dappertutto non ha primati',
+    dovePrimeggia(
+      tabella({ membri: [{ id: 'z', nome: 'Nessuno', punteggio: 0 }], conteggi: {} }),
+      'z'
+    ).length === 0
+  )
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)

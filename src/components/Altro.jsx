@@ -5,6 +5,7 @@ import Documenti from './Documenti.jsx'
 import Posizioni from './Posizioni.jsx'
 import Guida from './Guida.jsx'
 import Statistiche from './Statistiche.jsx'
+import Info from './Info.jsx'
 
 // Il quinto tab dello spec. Ci vive il materiale di consultazione: roba
 // che serve in un momento preciso e poi non si guarda più, e che in
@@ -18,10 +19,11 @@ const SCHEDE = [
   ['spese', 'Spese'],
   ['documenti', 'Documenti'],
   ['mappa', 'Mappa'],
-  ['numeri', 'Numeri'],
+  ['stat', 'Stat.'],
   // La guida vive qui perche' e' consultazione: si guarda una volta, poi
   // solo quando qualcuno chiede "ma come si fa a...".
   ['guida', 'Guida'],
+  ['info', 'Info'],
 ]
 
 export default function Altro({ membro }) {
@@ -47,8 +49,9 @@ export default function Altro({ membro }) {
       {vista === 'spese' && <Spese membro={membro} senzaCornice />}
       {vista === 'documenti' && <Documenti membro={membro} />}
       {vista === 'mappa' && <Posizioni membro={membro} />}
-      {vista === 'numeri' && <Statistiche membro={membro} />}
+      {vista === 'stat' && <Statistiche membro={membro} />}
       {vista === 'guida' && <Guida />}
+      {vista === 'info' && <Info />}
     </div>
   )
 }

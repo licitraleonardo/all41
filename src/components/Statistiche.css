@@ -1,5 +1,5 @@
-/* I numeri di ognuno. I titoli in cima perché sono la parte che si
-   legge; la tabella sotto, per chi vuole il dettaglio. */
+/* I numeri di ognuno, a barre invece che in tabella: sette colonne per
+   undici persone erano un tabellone, non una lettura. */
 
 .statistiche {
   padding: 4px 0 24px;
@@ -64,84 +64,175 @@
   color: var(--ink-soft, #55636b);
 }
 
-/* ------------------------------------------------------------ la tabella */
-
-/* Scorre da sola invece di stringere le colonne fino a renderle
-   illeggibili: sette numeri su un telefono non ci stanno, e fingere di
-   sì è peggio che ammetterlo. */
-.stat-scorrevole {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid var(--line, #e4dfd2);
-  border-radius: 11px;
-  background: #fff;
-}
-
-.stat-tabella {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.stat-tabella th,
-.stat-tabella td {
-  padding: 9px 10px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.stat-tabella thead th {
-  font-size: 15px;
-  font-weight: 400;
-  border-bottom: 1px solid var(--line, #e4dfd2);
-}
-
-/* La colonna dei nomi resta ferma mentre il resto scorre: senza, si
-   perde di vista di chi sono i numeri che si stanno guardando. */
-.stat-tabella tbody th {
-  position: sticky;
-  left: 0;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 700;
-  background: #fff;
-}
-
-.stat-tabella tbody th img {
-  border-radius: 50%;
-  background: var(--sand, #f7f4ec);
-}
-
-.stat-tabella tbody tr + tr th,
-.stat-tabella tbody tr + tr td {
-  border-top: 1px solid var(--line, #e4dfd2);
-}
-
-.stat-tabella td {
-  font-variant-numeric: tabular-nums;
-  color: var(--ink, #16323f);
-}
-
-.stat-io td,
-.stat-io th {
-  background: var(--sand, #f7f4ec);
-}
-
-.stat-solo-lettori {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .stat-nota {
   margin: 14px 0 0;
   font-size: 12px;
   line-height: 1.5;
   color: var(--ink-soft, #55636b);
+}
+
+/* ------------------------------------------------------- la tua scheda */
+
+.stat-vuoto {
+  padding: 24px 4px;
+  color: var(--ink-soft, #55636b);
+}
+
+.stat-tua {
+  margin-top: 4px;
+  padding: 14px 15px 13px;
+  background: var(--sea, #0b3550);
+  border-radius: 14px;
+}
+
+.stat-tua-titolo {
+  margin: 0 0 11px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold, #f2a93b);
+}
+
+.stat-tua-numeri {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+  gap: 10px;
+}
+
+.stat-tua-voce {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.stat-tua-valore {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--sand, #f7f4ec);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-tua-nome {
+  font-size: 11px;
+  color: rgba(247, 244, 236, 0.7);
+}
+
+.stat-tua-forte {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(247, 244, 236, 0.85);
+}
+
+.stat-tua-forte strong {
+  color: var(--sand, #f7f4ec);
+}
+
+/* ------------------------------------------------------------ le barre */
+
+.stat-scelta {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.stat-scelta::-webkit-scrollbar {
+  display: none;
+}
+
+.stat-chip {
+  flex: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft, #55636b);
+  background: #fff;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 100px;
+  padding: 7px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.stat-chip.acceso {
+  color: var(--sand, #f7f4ec);
+  background: var(--sea, #0b3550);
+  border-color: var(--sea, #0b3550);
+}
+
+.stat-barre {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.stat-barra {
+  display: grid;
+  grid-template-columns: 18px 74px 1fr 46px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.stat-barra-posto {
+  text-align: right;
+  color: var(--ink-soft, #55636b);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-barra-nome {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-barra-pista {
+  height: 12px;
+  background: rgba(11, 53, 80, 0.08);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.stat-barra-riempi {
+  display: block;
+  height: 100%;
+  border-radius: 100px;
+  /* Una barra che cresce quando cambi categoria: dice che il numero è
+     cambiato, invece di sostituirsi di scatto. */
+  transition: width 0.3s ease;
+}
+
+.stat-barra-valore {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #16323f);
+}
+
+.stat-barra.io .stat-barra-valore {
+  color: var(--coral, #e8604a);
+}
+
+.stat-chip:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-barra-riempi {
+    transition: none;
+  }
+}
+
+/* Un numero sotto zero non ha barra: si legge dal colore. */
+.stat-barra-valore.sottozero {
+  color: var(--coral, #e8604a);
 }

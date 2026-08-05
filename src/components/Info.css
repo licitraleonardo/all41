@@ -1,0 +1,151 @@
+/* Le informazioni pratiche. Grandi e toccabili: se questa schermata
+   serve, serve di fretta. */
+
+.info {
+  padding: 4px 0 24px;
+}
+
+.info-etichetta {
+  margin: 18px 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #55636b);
+}
+
+.info-etichetta:first-child {
+  margin-top: 4px;
+}
+
+.info-scheda {
+  padding: 14px 15px;
+  background: #fff;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 13px;
+}
+
+.info-nome {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: var(--sea, #0b3550);
+}
+
+.info-riga {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft, #55636b);
+}
+
+.info-manca {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--coral, #e8604a);
+}
+
+.info-chiama,
+.info-mappa {
+  display: inline-block;
+  margin-top: 11px;
+  padding: 9px 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--sea, #0b3550);
+  border: 1px solid var(--sea, #0b3550);
+  border-radius: 100px;
+}
+
+.info-chiama + .info-mappa,
+.info-manca + .info-mappa {
+  margin-left: 7px;
+}
+
+/* --------------------------------------------------------- i numeri */
+
+.info-numeri {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+/* Tutto il riquadro è il tasto: in emergenza non si centra un link
+   piccolo, si schiaccia dove capita. */
+.info-numero {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  text-decoration: none;
+  background: #fdf1ee;
+  border: 2px solid var(--coral, #e8604a);
+  border-radius: 13px;
+}
+
+.info-numero-cifre {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--coral, #e8604a);
+  font-variant-numeric: tabular-nums;
+}
+
+.info-numero-cosa {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink, #16323f);
+}
+
+.info-numero-cosa strong {
+  font-size: 14px;
+}
+
+.info-numero-cosa small {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-soft, #55636b);
+}
+
+/* ------------------------------------------------------ quel che manca */
+
+.info-mancanti {
+  margin-top: 20px;
+  padding: 13px 15px;
+  background: var(--sand, #f7f4ec);
+  border: 1px dashed var(--line, #e4dfd2);
+  border-radius: 12px;
+}
+
+.info-mancanti-titolo {
+  margin: 0 0 7px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink, #16323f);
+}
+
+.info-mancanti ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft, #55636b);
+}
+
+.info-mancanti-nota {
+  margin: 9px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft, #55636b);
+}
+
+.info-chiama:focus-visible,
+.info-mappa:focus-visible,
+.info-numero:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
