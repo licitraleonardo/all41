@@ -235,7 +235,17 @@ tipografia dei numeri romani — che texture e fondi scuri insieme.
 
 In ordine di quanto servono davvero, non di numero:
 
-1. **Tutorial** (14)
+Niente: lo spec è finito.
+
+Il **Tutorial** (14) è l'ultimo arrivato, e non assomiglia a quello che
+lo spec descriveva. Lo spec diceva di generarlo da
+`POINT_RULES.filter(r => r.discoverable)`, ma di Leggi pubbliche non ne è
+rimasta nessuna — si era deciso che si scoprono usando l'app. Un tutorial
+che le elenca smonterebbe proprio quella scelta, quindi la guida spiega
+**dove stanno le cose e i tre gesti che nessuno indovina** (tocca la
+classifica per proporre punti, tieni premuto il microfono, tocca la foto
+per aprirla) e chiude con la card vaga che lo spec voleva. I testi stanno
+in `src/config/guida.js`, non nel componente.
 
 L'**Impostore** (15) è fatto. Il motore sta in `src/lib/impostore.js` e
 non sa cosa sia Supabase: le partite si rigiocano uguali passandogli un

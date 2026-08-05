@@ -1,0 +1,135 @@
+/* La guida. Da compatta vive in cima al tab Gioco e deve sapersi
+   togliere di mezzo; intera vive in Altro e puo' prendersi lo spazio
+   che serve. */
+
+.guida {
+  padding: 4px 0 20px;
+}
+
+.guida.compatta {
+  margin-bottom: 14px;
+  padding: 13px 15px;
+  background: var(--sand, #f7f4ec);
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 13px;
+}
+
+.guida-testa {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.guida-titolo {
+  margin: 0;
+  font-size: 18px;
+  color: var(--sea, #0b3550);
+}
+
+.guida.compatta .guida-titolo {
+  font-size: 15px;
+}
+
+.guida-apertura {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft, #55636b);
+}
+
+.guida-via {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--ink-soft, #55636b);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.guida-apri {
+  display: block;
+  width: 100%;
+  margin-top: 11px;
+  padding: 10px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sea, #0b3550);
+  background: transparent;
+  border: 1px solid var(--sea, #0b3550);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.guida-voci {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.guida-voce {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 11px;
+  align-items: start;
+}
+
+.guida-icona {
+  font-size: 19px;
+  line-height: 1.3;
+}
+
+.guida-voce-titolo {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink, #16323f);
+}
+
+.guida-voce-testo {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft, #55636b);
+}
+
+/* I gesti sono la parte che serve davvero: nessuno indovina che si
+   tiene premuto il microfono o che la classifica si tocca. */
+.guida-gesto {
+  margin: 5px 0 0;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--sea, #0b3550);
+  background: rgba(11, 53, 80, 0.06);
+  border-radius: 8px;
+}
+
+.guida-finale {
+  margin-top: 18px;
+  padding: 13px 15px;
+  background: var(--sea, #0b3550);
+  border-radius: 12px;
+}
+
+.guida-finale .guida-voce-titolo {
+  color: var(--amber, #f2a93b);
+}
+
+.guida-finale .guida-voce-testo {
+  color: rgba(247, 244, 236, 0.88);
+}
+
+.guida-apri:focus-visible,
+.guida-via:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}

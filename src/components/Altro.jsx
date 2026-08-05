@@ -3,6 +3,7 @@ import './Altro.css'
 import Spese from './Spese.jsx'
 import Documenti from './Documenti.jsx'
 import Posizioni from './Posizioni.jsx'
+import Guida from './Guida.jsx'
 
 // Il quinto tab dello spec. Ci vive il materiale di consultazione: roba
 // che serve in un momento preciso e poi non si guarda più, e che in
@@ -16,6 +17,9 @@ const SCHEDE = [
   ['spese', 'Spese'],
   ['documenti', 'Documenti'],
   ['mappa', 'Mappa'],
+  // La guida vive qui perche' e' consultazione: si guarda una volta, poi
+  // solo quando qualcuno chiede "ma come si fa a...".
+  ['guida', 'Guida'],
 ]
 
 export default function Altro({ membro }) {
@@ -41,6 +45,7 @@ export default function Altro({ membro }) {
       {vista === 'spese' && <Spese membro={membro} senzaCornice />}
       {vista === 'documenti' && <Documenti membro={membro} />}
       {vista === 'mappa' && <Posizioni membro={membro} />}
+      {vista === 'guida' && <Guida />}
     </div>
   )
 }

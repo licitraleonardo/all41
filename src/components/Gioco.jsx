@@ -4,6 +4,7 @@ import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
 import Pecora from './Pecora.jsx'
 import Impostore from './Impostore.jsx'
+import Guida, { guidaGiaChiusa } from './Guida.jsx'
 import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
@@ -22,6 +23,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta }) {
   const [vista, setVista] = useState('classifica')
   const [inCorso, setInCorso] = useState(false)
   const [erroreProposta, setErroreProposta] = useState(null)
+  const [guidaVia, setGuidaVia] = useState(guidaGiaChiusa)
 
   const membri = Object.fromEntries(classifica.map((m) => [m.id, m]))
 
@@ -48,6 +50,11 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta }) {
 
   return (
     <div className="gioco-schermo">
+      {/* In cima e richiudibile, come dice lo spec: un tutorial che
+          sbarra l'ingresso viene saltato senza leggerlo. Una volta tolta
+          resta in Altro, che è dove si va a cercarla. */}
+      {!guidaVia && <Guida compatta onChiudi={() => setGuidaVia(true)} />}
+
       {/* Sotto-schede in alto: pattern standard, non aggiunge profondità */}
       <div className="segmenti" role="tablist">
         {SCHEDE.map(([id, etichetta]) => (
