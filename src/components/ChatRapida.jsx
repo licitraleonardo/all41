@@ -34,7 +34,6 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   const fondo = useRef(null)
   const barra = useRef(null)
   const schermo = useRef(null)
-  const giaSceso = useRef(false)
 
   // Gli avvisi se ne vanno da soli. Restavano appesi sopra la barra
   // finché non ne arrivava un altro, e dopo dieci secondi non dicono più
@@ -68,30 +67,31 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
     if (b && s) s.style.setProperty('--altezza-scrittura', `${Math.ceil(b.offsetHeight)}px`)
   })
 
-  // Aprendo la chat si arriva in fondo di colpo; dopo, ogni messaggio
-  // nuovo ci scivola. La prima volta senza animazione: entrare e vedere
-  // la pagina scorrere da sola per due secondi è solo fastidio.
+  // Si arriva in fondo sempre di colpo, mai con l'animazione. Lo
+  // scorrimento morbido qui non arriva mai a destinazione: la pagina
+  // cresce di una bolla mentre l'animazione e' in corso, e resta a meta'.
+  // E' il difetto per cui "la chat non va giu'" quando mandi un
+  // messaggio. Le chat vere fanno lo stesso: quando mandi tu, sbatte in
+  // fondo e basta.
   //
   // In un layout effect e non dentro un requestAnimationFrame: il rAF non
-  // gira quando la scheda non sta disegnando, e la chat si sarebbe aperta
-  // a metà senza che nessuno capisse perché.
+  // gira quando la scheda non sta disegnando.
   useLayoutEffect(() => {
     if (stato !== 'pronto') return
 
-    const primo = !giaSceso.current
-    giaSceso.current = true
-    const scendi = () =>
-      fondo.current?.scrollIntoView({ block: 'end', behavior: primo ? 'auto' : 'smooth' })
-
+    const scendi = () => fondo.current?.scrollIntoView({ block: 'end', behavior: 'auto' })
     scendi()
 
-    // Gli avatar arrivano dalla rete e alzano le bolle dopo: la prima
-    // volta si ripassa, o si resta fermi a un fondo che nel frattempo si
-    // è spostato più in giù.
-    if (!primo) return
+    // Un ripasso subito dopo: gli avatar arrivano dalla rete e le bolle
+    // si alzano, quindi il fondo di un attimo fa non e' piu' il fondo.
     const ripasso = setTimeout(scendi, 250)
     return () => clearTimeout(ripasso)
-  }, [stato, azioni.length])
+    // Si guarda l'id dell'ultimo arrivato, non quanti sono. Il feed si
+    // ferma a TETTO_FEED: a elenco pieno, un messaggio nuovo ne fa
+    // cadere uno vecchio e il numero resta identico — quindi contarli
+    // voleva dire non accorgersi mai di niente, esattamente dal
+    // trentesimo messaggio in poi.
+  }, [stato, azioni[0]?.id])
 
   async function manda(tipo, payload = {}, importante = false) {
     setInCorso(true)

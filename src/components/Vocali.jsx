@@ -38,9 +38,14 @@ export default function Vocali({ membro }) {
   // basso come una conversazione.
   const inOrdine = useMemo(() => [...vocali].reverse(), [vocali])
 
+  // Stesso difetto della chat, qui ancora addormentato: l'elenco si
+  // ferma a TETTO_VOCALI, quindi da li' in poi un vocale nuovo ne fa
+  // cadere uno vecchio e il numero non cambia. Si guarda l'id
+  // dell'ultimo. E senza animazione, che non arriva mai in fondo se
+  // intanto la pagina cresce.
   useEffect(() => {
-    fondo.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [inOrdine.length])
+    fondo.current?.scrollIntoView({ behavior: 'auto', block: 'end' })
+  }, [vocali[0]?.id])
 
   // Se si cambia scheda mentre si tiene premuto, il microfono resta
   // acceso: su iPhone l'indicatore arancione non si spegne piu' e sembra
