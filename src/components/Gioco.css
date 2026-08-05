@@ -22,6 +22,22 @@
   padding: 4px;
 }
 
+/* Il pallino sulla sotto-scheda: dice quale delle due ha roba nuova,
+   perche' il pallino sull'icona in basso dice solo "in Gruppo". */
+.segmento {
+  position: relative;
+}
+
+.segmento-punto {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
 .segmento {
   flex: 1;
   font: inherit;

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './Gioco.css'
 import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
@@ -19,12 +19,18 @@ const SCHEDE = [
   ['pecora', 'All'],
 ]
 
-export default function Gioco({ membro, proposteAperte = [], onVotaProposta }) {
+export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto }) {
   const { classifica, eventi, scoperte, stato, errore, ricarica } = useGioco()
   const [vista, setVista] = useState('classifica')
   const [inCorso, setInCorso] = useState(false)
   const [erroreProposta, setErroreProposta] = useState(null)
   const [guidaVia, setGuidaVia] = useState(guidaGiaChiusa)
+
+  // Il Testamento si segna letto mentre lo guardi, come le schede del
+  // Gruppo: se una Legge si sblocca mentre sei lì, l'hai vista.
+  useEffect(() => {
+    if (vista === 'testamento') onVisto?.('testamento')
+  }, [vista, onVisto, nonLetto.testamento])
 
   const membri = Object.fromEntries(classifica.map((m) => [m.id, m]))
 
@@ -68,6 +74,9 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta }) {
             onClick={() => setVista(id)}
           >
             {etichetta}
+            {id === 'testamento' && nonLetto.testamento && vista !== id && (
+              <span className="segmento-punto" />
+            )}
           </button>
         ))}
       </div>

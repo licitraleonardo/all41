@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './Gruppo.css'
 import ChatRapida from './ChatRapida.jsx'
 import Vocali from './Vocali.jsx'
@@ -11,8 +11,15 @@ import Vocali from './Vocali.jsx'
 // Le schede stanno in cima e fisse: la chat sotto scorre da sola, e se
 // scorressero insieme per cambiare scheda bisognerebbe risalire tutta la
 // conversazione.
-export default function Gruppo({ membro, suoniDisponibili }) {
+export default function Gruppo({ membro, suoniDisponibili, nonLetto = {}, onVisto }) {
   const [vista, setVista] = useState('chat')
+
+  // Si segna letto finché la scheda è aperta, non solo entrandoci: se
+  // resti in chat mentre arrivano messaggi, il pallino non deve
+  // accendersi alle tue spalle per roba che stai leggendo.
+  useEffect(() => {
+    onVisto?.(vista)
+  }, [vista, onVisto, nonLetto.chat, nonLetto.vocali])
 
   return (
     <div className="gruppo-schermo">
@@ -30,6 +37,7 @@ export default function Gruppo({ membro, suoniDisponibili }) {
             onClick={() => setVista(id)}
           >
             {etichetta}
+            {nonLetto[id] && vista !== id && <span className="segmento-punto" />}
           </button>
         ))}
       </div>

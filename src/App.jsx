@@ -32,6 +32,7 @@ import { useDerisione } from './hooks/useDerisione.js'
 import { useProposteAperte } from './hooks/useProposteAperte.js'
 import { useConnessione } from './hooks/useConnessione.js'
 import { useRinfrescaPosizione } from './hooks/useRinfrescaPosizione.js'
+import { useNonLetto } from './hooks/useNonLetto.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import Derisione from './components/Derisione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
@@ -90,6 +91,11 @@ export default function App() {
       window.location.reload()
     }
   }, [inLinea, vista])
+
+  // I pallini stanno qui perché devono accendersi mentre guardi
+  // un'altra scheda: se vivessero dentro la chat, la chat dovrebbe
+  // restare aperta per accorgersi dei messaggi nuovi.
+  const nonLetto = useNonLetto(membro?.id, vista === 'dentro')
 
   // Le proposte aperte vivono qui e non dentro una scheda: il banner deve
   // raggiungerti su qualunque tab, come la celebrazione delle Leggi.
@@ -253,7 +259,12 @@ export default function App() {
           <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
         )}
         {tab === 'gruppo' && (
-          <Gruppo membro={membro} suoniDisponibili={suoniDisponibili} />
+          <Gruppo
+            membro={membro}
+            suoniDisponibili={suoniDisponibili}
+            nonLetto={nonLetto.dettaglio}
+            onVisto={nonLetto.segna}
+          />
         )}
         {tab === 'foto' && <Album membro={membro} />}
         {tab === 'gioco' && (
@@ -261,10 +272,12 @@ export default function App() {
             membro={membro}
             proposteAperte={proposte.aperte}
             onVotaProposta={proposte.vota}
+            nonLetto={nonLetto.dettaglio}
+            onVisto={nonLetto.segna}
           />
         )}
         {tab === 'altro' && <Altro membro={membro} />}
-        <BarraTab attivo={tab} onCambia={setTab} />
+        <BarraTab attivo={tab} onCambia={setTab} novita={nonLetto.novita} />
         <StrisciaOffline attiva={!inLinea} />
 
         {/* Uno solo alla volta in cima, e la precedenza è delle
