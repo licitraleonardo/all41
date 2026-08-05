@@ -9,11 +9,10 @@ export default function Feed({
   onElimina,
   voti,
   onVota,
-  battuteAllan = [],
 }) {
   const visibili = azioni.filter((a) => !a.eliminato)
 
-  if (visibili.length === 0 && battuteAllan.length === 0) {
+  if (visibili.length === 0) {
     return <p className="feed-vuoto">Ancora niente. Qualcuno si muova.</p>
   }
 
@@ -35,13 +34,6 @@ export default function Feed({
           voti={voti}
           onVota={onVota}
         />
-      ))}
-
-      {battuteAllan.map((b) => (
-        <li className="voce allan" key={b.id}>
-          <span className="bolla-nome">Allan</span>
-          <div className="bolla">{b.testo}</div>
-        </li>
       ))}
     </ul>
   )
@@ -71,6 +63,32 @@ function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
           onVota={onVota}
         />
         <Ora azione={azione} mio={mio} onElimina={onElimina} />
+      </li>
+    )
+  }
+
+  // Un suono lanciato non è un annuncio: è una risata, dura un secondo e
+  // il suo effetto lo hai già sentito. In cartello grosso riempiva la
+  // chat di scatole verdi fra un messaggio e l'altro. Una riga sottile e
+  // grigia basta a dire chi è stato.
+  if (azione.tipo === 'soundboard') {
+    return (
+      <li className="voce sussurro">
+        <span>
+          🔊 {autore?.nome ?? 'Qualcuno'} ha lanciato{' '}
+          <strong>{azione.payload.etichetta ?? 'un suono'}</strong>
+        </span>
+        <span className="sussurro-ora">{ora(azione.creatoIl)}</span>
+        {mio && ritirabile(azione.creatoIl) && (
+          <button
+            type="button"
+            className="sussurro-elimina"
+            onClick={() => onElimina(azione.id)}
+            aria-label="Elimina"
+          >
+            ×
+          </button>
+        )}
       </li>
     )
   }

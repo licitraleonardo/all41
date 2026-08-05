@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './ChatRapida.css'
 import Feed from './Feed.jsx'
 import FoglioSOS from './FoglioSOS.jsx'
@@ -14,7 +14,6 @@ import {
   dopoTesto,
   suoniBloccati,
 } from '../lib/regole.js'
-import { forseAllanCommenta } from '../lib/allan.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
 import { SUONI } from '../config/suoni.js'
@@ -33,9 +32,11 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   const [importante, setImportante] = useState(false)
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
-  const [battuteAllan, setBattuteAllan] = useState([])
   const [bloccati, setBloccati] = useState(new Set())
   const fondo = useRef(null)
+  const barra = useRef(null)
+  const schermo = useRef(null)
+  const giaSceso = useRef(false)
 
   // Un suono spento resta spento anche ricaricando: si deduce dalle
   // penalità nel database, non da uno stato in memoria.
@@ -45,11 +46,45 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
       .catch(() => {})
   }, [membro.id])
 
-  // La chat si legge dal basso: all'arrivo di roba nuova si scende, con
-  // un filo di scorrimento visibile così si capisce che è partito.
-  useEffect(() => {
-    fondo.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
-  }, [azioni.length, battuteAllan.length])
+  // La barra si misura, non si indovina: il CSS ne dichiarava 112px fissi
+  // mentre ne è alta 103, e cambia ancora quando compare un avviso o si
+  // apre un menu. Ogni volta che cresce, l'ultimo messaggio le finisce
+  // sotto e non si capisce perché.
+  //
+  // Senza array di dipendenze, quindi a ogni disegno: è esattamente
+  // quando l'altezza può essere cambiata, e costa una lettura. Prima
+  // c'era un ResizeObserver, ma non serviva un osservatore per una cosa
+  // che cambia solo quando questo componente si ridisegna.
+  useLayoutEffect(() => {
+    const b = barra.current
+    const s = schermo.current
+    if (b && s) s.style.setProperty('--altezza-scrittura', `${Math.ceil(b.offsetHeight)}px`)
+  })
+
+  // Aprendo la chat si arriva in fondo di colpo; dopo, ogni messaggio
+  // nuovo ci scivola. La prima volta senza animazione: entrare e vedere
+  // la pagina scorrere da sola per due secondi è solo fastidio.
+  //
+  // In un layout effect e non dentro un requestAnimationFrame: il rAF non
+  // gira quando la scheda non sta disegnando, e la chat si sarebbe aperta
+  // a metà senza che nessuno capisse perché.
+  useLayoutEffect(() => {
+    if (stato !== 'pronto') return
+
+    const primo = !giaSceso.current
+    giaSceso.current = true
+    const scendi = () =>
+      fondo.current?.scrollIntoView({ block: 'end', behavior: primo ? 'auto' : 'smooth' })
+
+    scendi()
+
+    // Gli avatar arrivano dalla rete e alzano le bolle dopo: la prima
+    // volta si ripassa, o si resta fermi a un fondo che nel frattempo si
+    // è spostato più in giù.
+    if (!primo) return
+    const ripasso = setTimeout(scendi, 250)
+    return () => clearTimeout(ripasso)
+  }, [stato, azioni.length])
 
   async function manda(tipo, payload = {}, importante = false) {
     setInCorso(true)
@@ -86,9 +121,6 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
     if (!azione) return
     setTesto('')
     setImportante(false)
-
-    const battuta = forseAllanCommenta()
-    if (battuta) setBattuteAllan((p) => [...p, battuta])
 
     dopoTesto(membro.id, pulito, azione.id)
       .then((r) => r.scattata && setAvviso('Quella parola ti costa -2.'))
@@ -159,7 +191,7 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   return (
     // `senzaCornice` quando vive dentro il tab Gruppo, che la schermata
     // la mette già lui insieme alle due schede.
-    <div className={senzaCornice ? 'chat-dentro' : 'gruppo-schermo'}>
+    <div className={senzaCornice ? 'chat-dentro' : 'gruppo-schermo'} ref={schermo}>
       <div className="conversazione">
         {stato === 'caricamento' && <Rotella />}
         {stato === 'guasto' && <p className="feed-guasto">{errore}</p>}
@@ -171,7 +203,6 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
             onElimina={elimina}
             voti={voti}
             onVota={(votoId, opzione) => vota(votoId, membro.id, opzione)}
-            battuteAllan={battuteAllan}
           />
         )}
 
@@ -179,7 +210,7 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
       </div>
 
       {/* ------------------------------------------ barra di scrittura */}
-      <div className="barra-scrittura">
+      <div className="barra-scrittura" ref={barra}>
         {avviso && <p className="avviso">{avviso}</p>}
 
         {/* Attaccati alla barra e non in cima alla chat: è dov'è il

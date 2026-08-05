@@ -45,28 +45,34 @@
   border-color: var(--gold);
 }
 
+/* Resta l'unico colorato dei quattro, ma non piu' un mattone pieno:
+   contornato si riconosce lo stesso e non domina la barra tutto il
+   giorno per una cosa che si usa forse una volta. */
 .bottone-sos {
   font: inherit;
   font-family: var(--font-titoli);
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 700;
-  color: #fff;
-  background: var(--coral);
-  border: 0;
+  color: var(--coral);
+  background: #fff;
+  border: 1.5px solid var(--coral);
   border-radius: 100px;
-  padding: 9px 15px;
+  padding: 7px 14px;
   cursor: pointer;
 }
 
+/* Piu' sobri: erano quattro pillole bianche in rilievo che gridavano
+   quanto l'SOS. Adesso sono trasparenti e sottili, e l'unico che alza la
+   voce resta quello che deve. */
 .azione {
   font: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--ink);
-  background: #fff;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.55);
   border: 1px solid var(--line);
   border-radius: 100px;
-  padding: 9px 13px;
+  padding: 8px 12px;
   cursor: pointer;
 }
 
@@ -256,9 +262,40 @@
   background: #fdf4e4;
 }
 
-.cartello.suono {
-  border-left-color: var(--juniper);
-  background: #eef5f0;
+/* Un suono lanciato e' una risata, non un annuncio: dura un secondo e
+   l'hai gia' sentito. Una riga grigia in mezzo alla chat, non una
+   scatola verde che spezza la conversazione. */
+.voce.sussurro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 2px 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.voce.sussurro strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sussurro-ora {
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.sussurro-elimina {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  padding: 0 2px;
+  cursor: pointer;
 }
 
 .voce.piena {
@@ -317,7 +354,7 @@
 .riga-scrittura {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   max-width: 616px;
   margin: 0 auto;
 }
@@ -339,11 +376,18 @@
   color: #9aa4ab;
 }
 
+/* Tre tondi identici attorno alla casella, non tre misure diverse: il
+   ❗ ne misurava 38 contro i 42 degli altri e la riga sembrava montata
+   storta. Uno solo e' pieno, ed e' quello che manda. */
 .tasto-suoni,
-.tasto-invio {
+.tasto-invio,
+.tasto-importante {
   flex: none;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   font-size: 17px;
   line-height: 1;
   border: 1px solid var(--line);
@@ -681,16 +725,7 @@
    mandare e si spegne da solo dopo. Uno che resta acceso finirebbe per
    marcare tutto, e a quel punto non marcherebbe piu' niente. */
 .tasto-importante {
-  flex: none;
-  width: 38px;
-  height: 38px;
-  font-size: 15px;
-  line-height: 1;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  cursor: pointer;
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .tasto-importante.acceso {

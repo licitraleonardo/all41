@@ -147,13 +147,19 @@ export default function Vocali({ membro }) {
               onPointerCancel={lascia}
               onPointerLeave={registrando ? lascia : undefined}
               disabled={inCorso}
+              aria-label="Tieni premuto e parla"
             >
-              <Microfono />
+              {/* Da fermo solo il microfono: "Tieni premuto e parla" era
+                  un'istruzione ripetuta all'infinito a gente che l'ha
+                  imparata al primo tocco, e chi arriva la trova comunque
+                  scritta nella chat vuota. Mentre registra invece il
+                  numero serve: dice quanto ti resta. */}
+              <Microfono grande={!registrando && !inCorso} />
               {inCorso
                 ? 'Mando…'
                 : registrando
-                  ? `Sto registrando — ${LIMITI.voice.durataMax - secondi}s`
-                  : 'Tieni premuto e parla'}
+                  ? `${LIMITI.voice.durataMax - secondi}s`
+                  : ''}
             </button>
 
             {/* Un interruttore che si vede, non un doppio tocco: il tasto
@@ -271,9 +277,16 @@ function Vocale({ vocale, autore, mio, inAscolto, onAscolta, onElimina }) {
 // Un microfono disegnato invece dell'emoji: sul tasto grande l'emoji
 // resta multicolore anche quando il tasto diventa corallo, e stona.
 // Così prende il colore del testo che ha accanto.
-function Microfono() {
+function Microfono({ grande = false }) {
+  const lato = grande ? 26 : 20
   return (
-    <svg className="voc-mic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <svg
+      className="voc-mic"
+      viewBox="0 0 24 24"
+      width={lato}
+      height={lato}
+      aria-hidden="true"
+    >
       <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z" fill="currentColor" />
       <path
         d="M5 11a1 1 0 0 1 2 0 5 5 0 0 0 10 0 1 1 0 0 1 2 0 7 7 0 0 1-6 6.93V20h2a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2h2v-2.07A7 7 0 0 1 5 11Z"
