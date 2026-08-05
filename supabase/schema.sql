@@ -279,6 +279,38 @@ create table if not exists documents (
 create index if not exists documents_viaggio_idx
   on documents (trip_id, created_at desc);
 
+-- -------------------------------------------------------------- impostore
+-- L'app fa solo il mazziere: distribuisce le parole, tiene il conto dei
+-- turni, raccoglie i voti e rivela. Il gioco vero succede a voce.
+--
+-- I ruoli stanno qui in chiaro e chi apre il database li vede. E' un
+-- attacco poco praticabile: servirebbero i devtools su un telefono, che
+-- e' scomodissimo e soprattutto visibile. Chi fissa lo schermo con aria
+-- strana per trenta secondi si e' gia' tradito da solo.
+create table if not exists impostore_games (
+  id               uuid primary key default gen_random_uuid(),
+  trip_id          text not null references trips (id) on delete cascade,
+  parola_gruppo    text not null,
+  parola_impostore text not null,
+  impostori        uuid[] not null,
+  giocatori        uuid[] not null,
+  -- Parola vista da ciascuno: si legge solo la propria, ma sta qui
+  -- perche' il telefono di chi apre dopo deve poterla ritrovare.
+  assegnazioni     jsonb not null default '{}'::jsonb,
+  -- Rimescolato a ogni giro, non l'ordine in cui si e' seduti.
+  ordine           uuid[] not null,
+  turno            int not null default 0,
+  giro             int not null default 1,
+  giri_totali      int not null default 2,
+  vote_id          uuid references votes (id) on delete set null,
+  stato            text not null default 'in-corso'
+                     check (stato in ('in-corso', 'voto', 'finita')),
+  created_at       timestamptz not null default now()
+);
+
+create index if not exists impostore_recenti_idx
+  on impostore_games (trip_id, created_at desc);
+
 -- ------------------------------------------------------------ adeguamenti
 --
 -- "create table if not exists" crea la tabella la prima volta e poi non
@@ -372,6 +404,7 @@ alter table payments      enable row level security;
 alter table sheep_records enable row level security;
 alter table documents     enable row level security;
 alter table voice_messages enable row level security;
+alter table impostore_games enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -401,6 +434,9 @@ drop policy if exists "documenti: modifica per autenticati"  on documents;
 drop policy if exists "vocali: lettura per autenticati"     on voice_messages;
 drop policy if exists "vocali: creazione per autenticati"   on voice_messages;
 drop policy if exists "vocali: modifica per autenticati"    on voice_messages;
+drop policy if exists "impostore: lettura per autenticati"   on impostore_games;
+drop policy if exists "impostore: creazione per autenticati" on impostore_games;
+drop policy if exists "impostore: modifica per autenticati"  on impostore_games;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -453,6 +489,19 @@ create policy "leggi: lettura per autenticati"
 
 create policy "sfide: lettura per autenticati"
   on challenges for select to authenticated using (true);
+
+-- L'Impostore: chiunque apre una partita e chiunque la fa avanzare, che
+-- e' il punto — se a chi e' di turno si scarica il telefono, la partita
+-- non si blocca. L'avanzamento vero passa comunque dalla funzione, che
+-- controlla di non saltare un turno.
+create policy "impostore: lettura per autenticati"
+  on impostore_games for select to authenticated using (true);
+
+create policy "impostore: creazione per autenticati"
+  on impostore_games for insert to authenticated with check (true);
+
+create policy "impostore: modifica per autenticati"
+  on impostore_games for update to authenticated using (true) with check (true);
 
 -- Le spese non passano da nessuna funzione: qui non c'è niente da
 -- proteggere dal furbo di turno, perché non danno punti e non entrano in
@@ -831,10 +880,47 @@ begin
   return v;
 end $$;
 
+-- Chiunque puo' far avanzare il turno dell'Impostore, non solo chi e' di
+-- turno. Il rischio e' che due premano "fatto" nello stesso istante e il
+-- giro salti una persona: si scrive solo se il turno e' ancora quello che
+-- il telefono aveva in mano quando ha premuto. Chi arriva secondo non
+-- combina niente e si ritrova lo stato vero.
+create or replace function avanza_impostore(
+  p_partita uuid,
+  p_turno_atteso int,
+  p_ordine uuid[],
+  p_turno int,
+  p_giro int,
+  p_stato text
+)
+returns impostore_games
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  g impostore_games;
+begin
+  select * into g from impostore_games where id = p_partita for update;
+
+  if not found then raise exception 'Questa partita non esiste.'; end if;
+
+  if g.stato = 'in-corso' and g.turno = p_turno_atteso then
+    update impostore_games
+       set ordine = p_ordine, turno = p_turno, giro = p_giro, stato = p_stato
+     where id = p_partita
+    returning * into g;
+  end if;
+
+  return g;
+end $$;
+
 revoke execute on function vota(uuid, uuid, int) from public;
 revoke execute on function chiudi_voto(uuid) from public;
+revoke execute on function avanza_impostore(uuid, int, uuid[], int, int, text) from public;
 grant execute on function vota(uuid, uuid, int) to authenticated;
 grant execute on function chiudi_voto(uuid) to authenticated;
+grant execute on function avanza_impostore(uuid, int, uuid[], int, int, text) to authenticated;
 
 -- ------------------------------------------------------------- realtime
 -- Senza questo il feed non si aggiorna da solo sugli altri telefoni.
@@ -882,6 +968,15 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'leggi'
   ) then
     alter publication supabase_realtime add table leggi;
+  end if;
+
+  -- Otto telefoni devono vedere lo stesso turno nello stesso momento,
+  -- altrimenti parlano in due insieme.
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'impostore_games'
+  ) then
+    alter publication supabase_realtime add table impostore_games;
   end if;
 
   if not exists (

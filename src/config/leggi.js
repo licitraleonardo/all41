@@ -33,7 +33,7 @@ export const LEGGI = [
   // della caccia al tesoro, e tutto il resto rumore di fondo.
   { n: 2, id: 'challenge-won', punti: CACCIA.premioPrimo, attiva: true,
     testo: 'Hai vinto più sfide della caccia al tesoro di chiunque altro' },
-  { n: 3, id: 'impostore-impunito', punti: 5, attiva: false,
+  { n: 3, id: 'impostore-impunito', punti: 5, attiva: true,
     testo: "Sei sfuggito al voto: l'impostore l'ha fatta franca" },
 
   // ——— NASCOSTE: ritmo quotidiano ———
@@ -87,7 +87,7 @@ export const LEGGI = [
     testo: 'Hai fatto scattare una Legge mai vista prima' },
   { n: 23, id: 'riscatto', punti: 3, attiva: false,
     testo: 'Eri Maglia Nera e non lo sei più' },
-  { n: 24, id: 'smascheratore', punti: 2, attiva: false,
+  { n: 24, id: 'smascheratore', punti: 2, attiva: true,
     testo: 'Hai votato l’impostore giusto' },
   { n: 25, id: 'sheep-trip', punti: 5, attiva: true,
     testo: 'Record della Pecora al termine del viaggio' },

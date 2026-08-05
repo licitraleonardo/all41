@@ -1,0 +1,278 @@
+/* L'Impostore. La regola che tiene insieme tutto il foglio: se il
+   telefono e' piu' interessante della stanza, il gioco e' morto. Quindi
+   poca roba per schermata, e la scritta del turno enorme. */
+
+.impostore {
+  padding: 4px 0 24px;
+}
+
+.imp-vuoto,
+.imp-fuori {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-guasto {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fdf1ee;
+  color: var(--coral, #e8604a);
+  font-size: 13.5px;
+}
+
+.imp-titolo {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: var(--sea, #0b3550);
+}
+
+.imp-spiega {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-etichetta {
+  margin: 16px 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-nota {
+  margin: 8px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--ink-soft, #55636b);
+}
+
+/* ------------------------------------------------------ si apparecchia */
+
+.imp-gente {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.imp-tessera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 6px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink, #16323f);
+  background: #fff;
+  border: 2px solid var(--line, #e4dfd2);
+  border-radius: 12px;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.imp-tessera.dentro {
+  border-color: var(--sea, #0b3550);
+  opacity: 1;
+}
+
+.imp-tessera img {
+  border-radius: 50%;
+  background: var(--sand, #f7f4ec);
+}
+
+.imp-tessera small {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--coral, #e8604a);
+}
+
+.imp-tessera:disabled {
+  cursor: default;
+}
+
+.imp-varianti {
+  display: grid;
+  gap: 8px;
+}
+
+.imp-variante {
+  display: block;
+  padding: 11px 13px;
+  font: inherit;
+  text-align: left;
+  color: var(--ink, #16323f);
+  background: #fff;
+  border: 2px solid var(--line, #e4dfd2);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.imp-variante.scelta {
+  border-color: var(--sea, #0b3550);
+  background: var(--sand, #f7f4ec);
+}
+
+.imp-variante strong {
+  display: block;
+  font-size: 14px;
+}
+
+.imp-variante span {
+  font-size: 12.5px;
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-comincia {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 15px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sand, #f7f4ec);
+  background: var(--sea, #0b3550);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.imp-comincia:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------ il segreto */
+
+.imp-segreto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 46vh;
+  text-align: center;
+}
+
+.imp-svela {
+  width: 100%;
+  padding: 46px 16px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--sand, #f7f4ec);
+  background: var(--sea, #0b3550);
+  border: 0;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.imp-parola {
+  margin: 4px 0 10px;
+  font-size: clamp(34px, 12vw, 58px);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--sea, #0b3550);
+  /* La parola non si seleziona e non si copia per sbaglio mentre la si
+     mostra a mezzo metro dagli occhi di qualcun altro. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.imp-parola.niente {
+  color: var(--coral, #e8604a);
+}
+
+.imp-parola.piccola {
+  font-size: 22px;
+  margin: 0;
+}
+
+/* -------------------------------------------------------------- il turno */
+
+.imp-turno {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 46vh;
+  text-align: center;
+}
+
+.imp-giro {
+  margin: 10px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #55636b);
+}
+
+/* Deve leggersi da tre metri con un'occhiata, senza avvicinarsi. */
+.imp-tocca-a {
+  margin: 18px 0 10px;
+  font-size: clamp(30px, 11vw, 54px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--sea, #0b3550);
+  overflow-wrap: anywhere;
+}
+
+.imp-ripassa {
+  margin-top: 22px;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-soft, #55636b);
+  background: transparent;
+  border: 1px dashed var(--line, #e4dfd2);
+  border-radius: 100px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
+/* ---------------------------------------------------------------- voto */
+
+.imp-voto .imp-gente {
+  margin-bottom: 14px;
+}
+
+/* --------------------------------------------------------- rivelazione */
+
+.imp-rivelazione {
+  margin-bottom: 26px;
+  padding: 16px;
+  background: var(--sand, #f7f4ec);
+  border: 2px solid var(--sea, #0b3550);
+  border-radius: 14px;
+}
+
+.imp-parole {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.imp-parole .imp-etichetta {
+  margin-top: 0;
+}
+
+.imp-comincia:focus-visible,
+.imp-tessera:focus-visible,
+.imp-variante:focus-visible,
+.imp-svela:focus-visible,
+.imp-ripassa:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}

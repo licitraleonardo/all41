@@ -235,11 +235,26 @@ tipografia dei numeri romani — che texture e fondi scuri insieme.
 
 In ordine di quanto servono davvero, non di numero:
 
-1. **Tutorial** (14) e **L'Impostore** (15)
+1. **Tutorial** (14)
+
+L'**Impostore** (15) è fatto. Il motore sta in `src/lib/impostore.js` e
+non sa cosa sia Supabase: le partite si rigiocano uguali passandogli un
+generatore, ed è così che sono venuti fuori i due difetti che a occhio
+non si vedevano — `avanza()` che perdeva `giriTotali` e non arrivava mai
+al voto, e le schede del database che sono **numeri di opzione, non id di
+persone** (i punti sarebbero andati a nessuno, in silenzio). Se un giorno
+qualcuno tocca i voti, `schedePerId` è il punto dove si rompe tutto.
 
 Il **tutorial va tenuto per ultimo davvero**: lo spec lo dice, e queste
 sessioni l'hanno dimostrato — le regole sono cambiate una decina di volte
 in una sera. Scritto adesso sarebbe già falso.
+
+**Da decidere sull'Impostore**: i punti non hanno un tetto giornaliero.
+Una partita in otto con due impostori può iniettare fino a 16 punti, e in
+una sera se ne giocano quattro o cinque. Tutte le Leggi insieme ne valgono
+44. Non l'ho limitato perché lo spec non lo prevede, ma se dopo la prima
+sera la classifica si ribalta, il posto giusto è `IMPOSTORE` in
+`src/config/impostore.js`.
 
 Lo spec dice esplicitamente che dal punto 6 in poi tutto può arrivare
 **durante** il viaggio, con un deploy la sera. Vale ancora: mancano nove
