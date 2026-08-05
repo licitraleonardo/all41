@@ -14,7 +14,8 @@ import { descriviErrore } from '../lib/errori.js'
 // lasciata stare. Niente timer: un countdown trasforma una cosa
 // rilassata in ansia da prestazione.
 export default function Impostore({ membro, membri }) {
-  const { partita, voto, stato, errore, nuova, avanti, avviaVoto, rivela } = useImpostore()
+  const { partita, voto, stato, errore, nuova, avanti, avviaVoto, rivela, setVoto } =
+    useImpostore()
   const nome = (id) => membri[id]?.nome ?? 'Qualcuno'
 
   if (stato === 'caricamento') return <p className="imp-vuoto">Un attimo.</p>
@@ -36,7 +37,17 @@ export default function Impostore({ membro, membri }) {
       )}
 
       {partita?.stato === 'in-corso' && inGioco && (
-        <Giro partita={partita} membro={membro} nome={nome} onAvanti={avanti} />
+        // La chiave sull'id: "ho gia' letto la mia parola" e' uno stato
+        // interno, e senza rimontare resterebbe acceso anche sulla
+        // partita dopo — saltando la schermata della parola nuova. Capita
+        // se in due premono "Comincia" nello stesso momento.
+        <Giro
+          key={partita.id}
+          partita={partita}
+          membro={membro}
+          nome={nome}
+          onAvanti={avanti}
+        />
       )}
 
       {partita?.stato === 'in-corso' && !inGioco && (
@@ -54,6 +65,7 @@ export default function Impostore({ membro, membri }) {
           nome={nome}
           onApri={avviaVoto}
           onRivela={rivela}
+          onVotato={setVoto}
         />
       )}
     </div>
@@ -245,7 +257,7 @@ function Giro({ partita, membro, nome, onAvanti }) {
 
 // ----------------------------------------------------------------- voto
 
-function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela }) {
+function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotato }) {
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
 
@@ -270,7 +282,10 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela }) {
     setInCorso(true)
     setAvviso(null)
     try {
-      await vota(voto.id, membro.id, partita.giocatori.indexOf(id))
+      // La riga aggiornata torna gia' dalla chiamata: usarla invece di
+      // aspettare l'eco del realtime fa vedere subito il proprio voto,
+      // invece di lasciare il dito a mezz'aria per un secondo.
+      onVotato(await vota(voto.id, membro.id, partita.giocatori.indexOf(id)))
     } catch (e) {
       setAvviso(descriviErrore(e))
     } finally {

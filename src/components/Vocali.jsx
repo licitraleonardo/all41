@@ -38,6 +38,17 @@ export default function Vocali({ membro }) {
     fondo.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [inOrdine.length])
 
+  // Se si cambia scheda mentre si tiene premuto, il microfono resta
+  // acceso: su iPhone l'indicatore arancione non si spegne piu' e sembra
+  // che l'app stia ascoltando di nascosto. `annulla` esisteva apposta e
+  // non la chiamava nessuno.
+  useEffect(() => {
+    return () => {
+      sessione.current?.annulla()
+      sessione.current = null
+    }
+  }, [])
+
   async function premi() {
     if (registrando || inCorso) return
     setAvviso(null)
@@ -177,6 +188,15 @@ function Vocale({ vocale, autore, mio, inAscolto, onAscolta, onElimina }) {
   useEffect(() => {
     return () => suono.current?.pause()
   }, [])
+
+  // Quando parte un altro vocale questo deve tacere. Senza, il secondo
+  // tocco ne fa suonare due insieme: il primo non lo ferma nessuno,
+  // perche' il suo bottone non viene piu' toccato.
+  useEffect(() => {
+    if (inAscolto || !suono.current) return
+    suono.current.pause()
+    suono.current = null
+  }, [inAscolto])
 
   function ascolta() {
     if (inAscolto) {
