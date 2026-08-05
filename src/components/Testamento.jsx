@@ -23,7 +23,7 @@ export default function Testamento({ scoperte, membri }) {
     <div className="gioco-corpo">
       <header className="testamento-testata">
         <div className="testamento-custode-riga">
-          <FacciaAllan lato={44} />
+          <FacciaAllan espressione="giudica" lato={52} />
           <div>
             <h2 className="testamento-titolo">Testamento</h2>
             <p className="testamento-custode">Custodito da Allan</p>

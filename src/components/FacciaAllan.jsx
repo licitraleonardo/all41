@@ -1,28 +1,27 @@
-import { urlAllan } from '../config/avatar.js'
+import { ESPRESSIONE_PREDEFINITA, urlAlan } from '../config/alan.js'
 
-// La faccia di Allan.
+// La faccia di Alan, ritagliata dallo character sheet.
 //
-// Viene dalla stessa fonte degli avatar del gruppo e dallo stesso stile,
-// quindi e' della stessa famiglia invece di essere un disegno estraneo
-// appiccicato sopra. Ma il seme e' fisso e l'espressione e' scelta a
-// mano: Allan non cambia faccia a ogni ricaricamento come fa la gente, e
-// non gli capita di sorridere.
-//
-// Quale espressione sta in config/avatar.js, che e' l'unico posto da
-// toccare se un giorno non convince piu'.
-export default function FacciaAllan({ lato = 40, className = '' }) {
+// Prima era un avatar generato: sbagliato, perche' Alan non e' uno del
+// gruppo sorteggiato da un nome — e' un personaggio disegnato, con otto
+// espressioni sue. Quale usare lo decide chi lo mette in pagina, cosi'
+// puo' sbuffare dove serve sbuffare e giudicare dove serve giudicare.
+export default function FacciaAllan({
+  espressione = ESPRESSIONE_PREDEFINITA,
+  lato = 40,
+  className = '',
+}) {
   return (
     <img
       className={`faccia-allan ${className}`.trim()}
-      src={urlAllan()}
-      alt="Allan"
+      src={urlAlan(espressione)}
+      alt="Alan"
       width={lato}
       height={lato}
-      // Senza rete resta il buco invece dell'icona di immagine rotta: la
-      // faccia e' un di piu', non un'informazione che manca.
-      onError={(e) => {
-        e.currentTarget.style.visibility = 'hidden'
-      }}
+      // Niente caricamento pigro: sono immagini piccole e sempre visibili
+      // quando vengono disegnate, e dentro una nuvoletta che si apre di
+      // colpo il pigro fa lampeggiare il vuoto dove dovrebbe esserci lui.
+      draggable="false"
     />
   )
 }

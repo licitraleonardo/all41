@@ -41,30 +41,3 @@ export function coloreNome(id) {
   for (let i = 0; i < testo.length; i++) somma = (somma * 31 + testo.charCodeAt(i)) >>> 0
   return COLORI_NOME[somma % COLORI_NOME.length]
 }
-
-// La faccia di Allan. Viene dalla stessa fonte degli avatar del gruppo e
-// dallo stesso stile, cosi' e' della stessa famiglia — ma il seme e'
-// fisso e l'espressione e' scelta, non sorteggiata: Allan non cambia
-// faccia a ogni ricaricamento come fa la gente.
-//
-// occhi e bocca sono i nomi veri dello stile bottts. Cambiare questi due
-// valori cambia il carattere della faccia, ed e' l'unico posto da toccare.
-export const ALLAN_FACCIA = {
-  stile: 'bottts',
-  seme: 'allan',
-  occhi: 'eva',
-  bocca: 'diagram',
-  sfondo: '0b3550',
-}
-
-export function urlAllan() {
-  const { stile, seme, occhi, bocca, sfondo } = ALLAN_FACCIA
-  const q = new URLSearchParams({
-    seed: seme,
-    eyes: occhi,
-    mouth: bocca,
-    backgroundColor: sfondo,
-    radius: '50',
-  })
-  return `https://api.dicebear.com/${DICEBEAR_VERSIONE}/${stile}/svg?${q}`
-}
