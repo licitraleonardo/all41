@@ -16,7 +16,8 @@
     "prova:audio": "node prove/formato-audio.mjs",
     "prova:pecora": "node prove/pecora.mjs && node prove/pecora-record.mjs",
     "preview": "vite preview",
-    "prova:impostore": "node prove/impostore.mjs"
+    "prova:impostore": "node prove/impostore.mjs",
+    "prova:mvp": "node prove/mvp.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

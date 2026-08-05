@@ -311,6 +311,23 @@ create table if not exists impostore_games (
 create index if not exists impostore_recenti_idx
   on impostore_games (trip_id, created_at desc);
 
+-- -------------------------------------------------------------- mvp
+-- L'MVP di giornata vive solo dentro la sua giornata: a mezzanotte la
+-- data cambia e quello di ieri sparisce, perche' l'app tiene in memoria
+-- solo gli ultimi eventi. Qui i giorni finiti restano scritti.
+--
+-- Una riga per giorno anche quando non c'e' nessun MVP (member_id nullo,
+-- cioe' nessuno ha guadagnato niente): serve a sapere che quel giorno e'
+-- gia' stato guardato, altrimenti si riproverebbe a ogni apertura.
+create table if not exists mvp_days (
+  trip_id    text not null references trips (id) on delete cascade,
+  giorno     date not null,
+  member_id  uuid references members (id) on delete set null,
+  saldo      int,
+  created_at timestamptz not null default now(),
+  primary key (trip_id, giorno)
+);
+
 -- ------------------------------------------------------------ adeguamenti
 --
 -- "create table if not exists" crea la tabella la prima volta e poi non
@@ -405,6 +422,7 @@ alter table sheep_records enable row level security;
 alter table documents     enable row level security;
 alter table voice_messages enable row level security;
 alter table impostore_games enable row level security;
+alter table mvp_days      enable row level security;
 
 drop policy if exists "trips: lettura per autenticati"    on trips;
 drop policy if exists "members: lettura per autenticati"  on members;
@@ -437,6 +455,8 @@ drop policy if exists "vocali: modifica per autenticati"    on voice_messages;
 drop policy if exists "impostore: lettura per autenticati"   on impostore_games;
 drop policy if exists "impostore: creazione per autenticati" on impostore_games;
 drop policy if exists "impostore: modifica per autenticati"  on impostore_games;
+drop policy if exists "mvp: lettura per autenticati"         on mvp_days;
+drop policy if exists "mvp: creazione per autenticati"       on mvp_days;
 
 create policy "trips: lettura per autenticati"
   on trips for select to authenticated using (true);
@@ -502,6 +522,15 @@ create policy "impostore: creazione per autenticati"
 
 create policy "impostore: modifica per autenticati"
   on impostore_games for update to authenticated using (true) with check (true);
+
+-- L'MVP lo fissa il primo telefono che apre l'app dopo mezzanotte. Non
+-- si modifica e non si cancella: una giornata chiusa resta chiusa, ed e'
+-- la chiave primaria a impedire che due telefoni ne scrivano due diversi.
+create policy "mvp: lettura per autenticati"
+  on mvp_days for select to authenticated using (true);
+
+create policy "mvp: creazione per autenticati"
+  on mvp_days for insert to authenticated with check (true);
 
 -- Le spese non passano da nessuna funzione: qui non c'è niente da
 -- proteggere dal furbo di turno, perché non danno punti e non entrano in
@@ -968,6 +997,15 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'leggi'
   ) then
     alter publication supabase_realtime add table leggi;
+  end if;
+
+  -- I coriandoli dell'MVP partono su tutti i telefoni, non solo su
+  -- quello che ha chiuso la giornata.
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'mvp_days'
+  ) then
+    alter publication supabase_realtime add table mvp_days;
   end if;
 
   -- Otto telefoni devono vedere lo stesso turno nello stesso momento,

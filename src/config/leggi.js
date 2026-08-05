@@ -81,7 +81,7 @@ export const LEGGI = [
   // ——— NASCOSTE: pecora e classifica ———
   { n: 20, id: 'sheep-daily', punti: 3, attiva: true,
     testo: 'Detieni il record della pecora a fine giornata' },
-  { n: 21, id: 'double-mvp', punti: 5, attiva: false,
+  { n: 21, id: 'double-mvp', punti: 5, attiva: true,
     testo: 'Sei stato MVP di giornata due volte' },
   { n: 22, id: 'discoverer', punti: 1, attiva: true,
     testo: 'Hai fatto scattare una Legge mai vista prima' },

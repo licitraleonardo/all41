@@ -103,6 +103,15 @@
   border-left: 4px solid var(--sea);
 }
 
+/* L'albo delle giornate gia' vinte, sotto l'MVP di oggi. */
+.titolo-albo {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.75;
+}
+
 .titolo-etichetta {
   display: block;
   font-size: 10.5px;

@@ -14,10 +14,14 @@ export default function Classifica({
   onCrea,
   inCorso,
   errore,
+  conteggiMvp = {},
 }) {
   const oggi = dataDiOggi()
   const saldi = saldiDelGiorno(eventi, oggi)
   const mvp = mvpDelGiorno(saldi)
+
+  // Chi ha gia' vinto una giornata, dal piu' titolato in giu'.
+  const albo = Object.entries(conteggiMvp).sort((a, b) => b[1] - a[1])
   const magliaNera = magliaNeraDelGiorno(saldi)
   const finito = statoDelViaggio(oggi) === 'dopo'
 
@@ -60,6 +64,14 @@ export default function Classifica({
           <span className="titolo-nome">
             {mvp ? `${nome(mvp.membroId)} (+${mvp.saldo})` : 'Ancora nessuno.'}
           </span>
+          {/* Le giornate gia' chiuse: prima sparivano a mezzanotte e non
+              tornavano piu'. Adesso restano, e sono anche il conto da cui
+              dipende la Legge XXI. */}
+          {albo.length > 0 && (
+            <span className="titolo-albo">
+              {albo.map(([id, quante]) => `${nome(id)}${quante > 1 ? ` ×${quante}` : ''}`).join(' · ')}
+            </span>
+          )}
         </div>
 
         <div className="titolo-card nera">

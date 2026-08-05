@@ -22,20 +22,41 @@ export default function Celebrazione({ celebrazione, onChiudi }) {
 
   if (!celebrazione) return null
 
-  const { legge, chi } = celebrazione
+  const { legge, chi, mvp } = celebrazione
 
   return (
     <div className="celebrazione" role="alert" onClick={onChiudi}>
       <canvas ref={tela} className="coriandoli" aria-hidden="true" />
 
-      <div className="pergamena">
-        <p className="celebrazione-occhiello">📜 Nuova Legge scoperta</p>
-        <p className="celebrazione-numero">{etichetta(legge)}</p>
-        <p className="celebrazione-testo">{legge.testo}</p>
-        <p className="celebrazione-chi">
-          svelata da <strong>{chi}</strong>
-        </p>
-      </div>
+      {/* Due cose da festeggiare, stessi coriandoli: una Legge scoperta e
+          l'MVP della giornata appena finita. */}
+      {mvp ? (
+        <div className="pergamena">
+          <p className="celebrazione-occhiello">👑 MVP di ieri</p>
+          <p className="celebrazione-numero">{mvp.nome}</p>
+          <p className="celebrazione-testo">
+            {mvp.saldo > 0 ? `+${mvp.saldo} punti in un giorno solo` : 'La giornata è sua'}
+          </p>
+          <p className="celebrazione-chi">
+            {mvp.quante > 1 ? (
+              <>
+                ed è la <strong>{mvp.quante}ª volta</strong>
+              </>
+            ) : (
+              'nessuno ha fatto meglio'
+            )}
+          </p>
+        </div>
+      ) : (
+        <div className="pergamena">
+          <p className="celebrazione-occhiello">📜 Nuova Legge scoperta</p>
+          <p className="celebrazione-numero">{etichetta(legge)}</p>
+          <p className="celebrazione-testo">{legge.testo}</p>
+          <p className="celebrazione-chi">
+            svelata da <strong>{chi}</strong>
+          </p>
+        </div>
+      )}
     </div>
   )
 }

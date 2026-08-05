@@ -19,7 +19,7 @@ const SCHEDE = [
   ['pecora', 'All'],
 ]
 
-export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto }) {
+export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto, conteggiMvp = {} }) {
   const { classifica, eventi, scoperte, stato, errore, ricarica } = useGioco()
   const [vista, setVista] = useState('classifica')
   const [inCorso, setInCorso] = useState(false)
@@ -102,6 +102,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
           onCrea={crea}
           inCorso={inCorso}
           errore={erroreProposta}
+          conteggiMvp={conteggiMvp}
         />
       )}
 

@@ -33,6 +33,7 @@ import { useProposteAperte } from './hooks/useProposteAperte.js'
 import { useConnessione } from './hooks/useConnessione.js'
 import { useRinfrescaPosizione } from './hooks/useRinfrescaPosizione.js'
 import { useNonLetto } from './hooks/useNonLetto.js'
+import { useMvp } from './hooks/useMvp.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import Derisione from './components/Derisione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
@@ -91,6 +92,11 @@ export default function App() {
       window.location.reload()
     }
   }, [inLinea, vista])
+
+  // L'MVP della giornata finita si fissa alla prima apertura dopo
+  // mezzanotte, e i coriandoli partono su tutti i telefoni: sta qui e non
+  // nel tab Gioco perché non si deve dipendere da dove stavi guardando.
+  const mvp = useMvp(membro?.id, vista === 'dentro')
 
   // I pallini stanno qui perché devono accendersi mentre guardi
   // un'altra scheda: se vivessero dentro la chat, la chat dovrebbe
@@ -274,6 +280,7 @@ export default function App() {
             onVotaProposta={proposte.vota}
             nonLetto={nonLetto.dettaglio}
             onVisto={nonLetto.segna}
+            conteggiMvp={mvp.conteggi}
           />
         )}
         {tab === 'altro' && <Altro membro={membro} />}
@@ -302,6 +309,19 @@ export default function App() {
           onRimanda={proposte.rimanda}
         />
         <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
+
+        {mvp.festa && (
+          <Celebrazione
+            celebrazione={{
+              mvp: {
+                nome: membriPerId[mvp.festa.membroId]?.nome ?? 'Qualcuno',
+                saldo: mvp.festa.saldo,
+                quante: mvp.conteggi[mvp.festa.membroId] ?? 1,
+              },
+            }}
+            onChiudi={mvp.chiudi}
+          />
+        )}
         <Derisione derisione={derisione} onChiudi={chiudiDerisione} />
       </>
     )
