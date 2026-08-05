@@ -792,3 +792,15 @@
     transition: none;
   }
 }
+
+/* Allan in persona sopra il Testamento: e' lui che lo custodisce. */
+.testamento-custode-riga {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.testamento-custode-riga .testamento-titolo,
+.testamento-custode-riga .testamento-custode {
+  margin: 0;
+}

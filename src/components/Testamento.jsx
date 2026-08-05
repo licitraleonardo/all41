@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LEGGI, PUNIZIONI, TROFEI, etichetta } from '../config/leggi.js'
+import FacciaAllan from './FacciaAllan.jsx'
 
 // Il codice delle Leggi scoperte. Continua di proposito il tono
 // legislativo: qui Allan non parla, custodisce e basta.
@@ -21,8 +22,13 @@ export default function Testamento({ scoperte, membri }) {
   return (
     <div className="gioco-corpo">
       <header className="testamento-testata">
-        <h2 className="testamento-titolo">Testamento</h2>
-        <p className="testamento-custode">Custodito da Allan</p>
+        <div className="testamento-custode-riga">
+          <FacciaAllan lato={44} />
+          <div>
+            <h2 className="testamento-titolo">Testamento</h2>
+            <p className="testamento-custode">Custodito da Allan</p>
+          </div>
+        </div>
 
         <p className="testamento-conto">
           Scoperte: <strong>{quante}</strong> / {LEGGI.length}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './NuvolettaAllan.css'
 import { NUVOLETTE } from '../config/guida.js'
+import FacciaAllan from './FacciaAllan.jsx'
 
 // Allan dice una cosa sola, la prima volta che entri in un tab, e poi non
 // la ripete mai piu'.
@@ -48,7 +49,10 @@ export default function NuvolettaAllan({ membroId, tab }) {
   return (
     <div className="nuvoletta-fondo" onClick={via} role="presentation">
       <div className="nuvoletta" role="alert">
-        <p className="nuvoletta-chi">Allan</p>
+        <div className="nuvoletta-testa">
+          <FacciaAllan lato={38} />
+          <p className="nuvoletta-chi">Allan</p>
+        </div>
         <p className="nuvoletta-testo">{NUVOLETTE[tab]}</p>
         <button type="button" className="nuvoletta-ok" onClick={via}>
           Va bene

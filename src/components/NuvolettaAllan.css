@@ -88,3 +88,14 @@
     animation: none;
   }
 }
+
+.nuvoletta-testa {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 7px;
+}
+
+.nuvoletta-testa .nuvoletta-chi {
+  margin: 0;
+}
