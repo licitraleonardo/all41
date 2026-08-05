@@ -32,13 +32,10 @@ export default function Spese({ membro, senzaCornice = false }) {
 
       {stato === 'pronto' && (
         <>
-          <SaldoMio conti={conti} ioId={membro.id} />
-
-          <h3 className="sezione">Come stanno tutti</h3>
-          <ComeStannoTutti
+          <SaldoMio
             conti={conti}
             ioId={membro.id}
-            onScegli={(id) => setFoglio({ tipo: 'persona', id })}
+            onApri={() => setFoglio({ tipo: 'persona', id: membro.id })}
           />
 
           <Cronologia conti={conti} ioId={membro.id} />
@@ -73,79 +70,34 @@ export default function Spese({ membro, senzaCornice = false }) {
   )
 }
 
-function SaldoMio({ conti, ioId }) {
+// Il proprio saldo, e si tocca per aprire i conti aperti.
+//
+// Sotto c'era l'elenco di tutti con il saldo di ciascuno, e sembrava una
+// classifica: chi sta in alto e chi in basso, in una sezione che parla di
+// soldi fra amici. E non era nemmeno utile — sapere che Turi deve dei
+// soldi a Leo non e' una cosa su cui puoi agire. Adesso si vede solo
+// quello che ti riguarda: a chi devi dare e chi deve dare a te.
+function SaldoMio({ conti, ioId, onApri }) {
   const mio = conti.saldi[ioId] ?? 0
+  const quanti = conti.passaggi.filter((p) => p.da === ioId || p.a === ioId).length
 
   return (
-    <div className={mio < 0 ? 'saldo-mio devi' : 'saldo-mio'}>
+    <button
+      type="button"
+      className={mio < 0 ? 'saldo-mio devi' : 'saldo-mio'}
+      onClick={onApri}
+      disabled={quanti === 0}
+    >
       <span className="saldo-etichetta">
         {mio === 0 ? 'Sei in pari' : mio > 0 ? 'Devi ricevere' : 'Devi dare'}
       </span>
       {mio !== 0 && <strong className="saldo-cifra">{formattaEuro(Math.abs(mio))}</strong>}
-    </div>
-  )
-}
-
-function ComeStannoTutti({ conti, ioId, onScegli }) {
-  const { membri, saldi, passaggi } = conti
-
-  // Si apre solo quello che si può fare: il tuo, e quello di chi ha un
-  // conto in sospeso con te. Gli altri restano righe da leggere — sapere
-  // che Turi deve dei soldi a Leo non è una cosa su cui puoi agire.
-  const apribile = (id) =>
-    id === ioId ||
-    passaggi.some(
-      (p) => (p.da === ioId && p.a === id) || (p.a === ioId && p.da === id)
-    )
-
-  return (
-    <ul className="saldi">
-      {membri.map((m) => {
-        const saldo = saldi[m.id] ?? 0
-        const dentro = (
-          <>
-            <img
-              className="saldo-avatar"
-              src={urlAvatar(m.avatarStyle, m.avatarSeed)}
-              alt=""
-              width="30"
-              height="30"
-            />
-            <span className="saldo-nome">{m.nome}</span>
-            <span
-              className={
-                saldo < 0
-                  ? 'saldo-cifra-riga meno'
-                  : saldo > 0
-                    ? 'saldo-cifra-riga piu'
-                    : 'saldo-cifra-riga'
-              }
-            >
-              {saldo === 0 ? '—' : formattaEuro(saldo)}
-            </span>
-            {apribile(m.id) && (
-              <span className="saldo-freccia" aria-hidden="true">
-                ›
-              </span>
-            )}
-          </>
-        )
-
-        const classe = m.id === ioId ? 'saldo-riga io' : 'saldo-riga'
-
-        return (
-          <li key={m.id}>
-            {apribile(m.id) ? (
-              <button type="button" className={classe} onClick={() => onScegli(m.id)}>
-                {dentro}
-              </button>
-            ) : (
-              <div className={classe}>{dentro}</div>
-            )}
-          </li>
-        )
-      })}
-    </ul>
+      {quanti > 0 && (
+        <span className="saldo-apri">
+          {quanti === 1 ? 'un conto aperto' : `${quanti} conti aperti`} ›
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -317,6 +269,8 @@ function FoglioPersona({ conti, ioId, personaId, onChiudi }) {
   )
 
   const mio = saldi[ioId] ?? 0
+  const dare = miei.filter((p) => p.da === ioId)
+  const avere = miei.filter((p) => p.a === ioId)
 
   return (
     <div className="foglio-sfondo" role="dialog" aria-modal="true" aria-label={persona?.nome}>
@@ -339,17 +293,43 @@ function FoglioPersona({ conti, ioId, personaId, onChiudi }) {
           </p>
         )}
 
-        {miei.map((p) => (
-          <Salda
-            key={`${p.da}-${p.a}`}
-            passaggio={p}
-            ioId={ioId}
-            nome={nome}
-            conNome={io}
-            onRegistra={registraRimborso}
-            onFatto={onChiudi}
-          />
-        ))}
+        {/* Due elenchi separati: quello che devi tirare fuori dal
+            portafoglio e quello che ti deve rientrare sono due cose
+            diverse, e mescolarle costringe a leggere ogni riga per capire
+            da che parte sta. */}
+        {dare.length > 0 && (
+          <>
+            <p className="foglio-gruppo">A chi devi dare</p>
+            {dare.map((p) => (
+              <Salda
+                key={`${p.da}-${p.a}`}
+                passaggio={p}
+                ioId={ioId}
+                nome={nome}
+                conNome={io}
+                onRegistra={registraRimborso}
+                onFatto={onChiudi}
+              />
+            ))}
+          </>
+        )}
+
+        {avere.length > 0 && (
+          <>
+            <p className="foglio-gruppo">Chi deve dare a te</p>
+            {avere.map((p) => (
+              <Salda
+                key={`${p.da}-${p.a}`}
+                passaggio={p}
+                ioId={ioId}
+                nome={nome}
+                conNome={io}
+                onRegistra={registraRimborso}
+                onFatto={onChiudi}
+              />
+            ))}
+          </>
+        )}
 
         <button type="button" className="secondario-foglio" onClick={onChiudi}>
           Chiudi

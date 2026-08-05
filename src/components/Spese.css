@@ -50,13 +50,25 @@
 
 /* --------------------------------------------------------- saldo mio */
 
+/* È un bottone: si tocca e si aprono i propri conti. Sotto c'era
+   l'elenco di tutti col saldo di ciascuno, che sembrava una classifica
+   di chi sta bene e chi sta male. */
 .saldo-mio {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
   background: #e7f0e9;
+  border: 0;
   border-radius: 14px;
   padding: 16px;
+  cursor: pointer;
+}
+
+.saldo-mio:disabled {
+  cursor: default;
 }
 
 .saldo-mio.devi {
@@ -78,74 +90,12 @@
 
 /* ------------------------------------------------------------- saldi */
 
-.saldi {
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
-}
-
 /* Ogni riga si tocca e apre il foglio della persona: il saldo da solo
    dice quanto, non cosa farci. */
-.saldo-riga {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  padding: 10px 2px;
-}
-
 /* Solo le righe su cui c'è qualcosa da fare sono un bottone: chi non ha
    conti in sospeso con te resta una riga da leggere, senza freccia e
    senza invito a toccarla. */
-button.saldo-riga {
-  cursor: pointer;
-}
-
-.saldo-riga.io .saldo-nome {
-  font-weight: 700;
-}
-
-.saldo-avatar {
-  flex: none;
-  border-radius: 50%;
-  background: #fff;
-}
-
-.saldo-nome {
-  flex: 1;
-  min-width: 0;
-  font-size: 14.5px;
-}
-
-.saldo-cifra-riga {
-  font-size: 14px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-soft);
-}
-
-.saldo-cifra-riga.piu {
-  color: #2f6b47;
-}
-
-.saldo-cifra-riga.meno {
-  color: #a2402c;
-}
-
-.saldo-freccia {
-  flex: none;
-  font-size: 18px;
-  line-height: 1;
-  color: #b3bcc2;
-}
-
-/* -------------------------------------------------------- cronologia */
+button/* -------------------------------------------------------- cronologia */
 
 /* Le due schede della cronologia: stesso segmented control del Gioco,
    staccato dall'elenco dei saldi che gli sta sopra. */
@@ -365,8 +315,30 @@ button.saldo-riga {
 .secondario-foglio:focus-visible,
 .sezione-azione:focus-visible,
 .riga-secondaria:focus-visible,
-.saldo-riga:focus-visible,
-.spesa-elimina:focus-visible {
-  outline: 2px solid var(--sea);
+
+.saldo-mio:disabled {
+  cursor: default;
+}
+
+.saldo-apri {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.saldo-mio:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
   outline-offset: 2px;
+}
+
+/* I due versi, separati: quello che esce dal portafoglio e quello che
+   rientra sono due cose diverse. */
+.foglio-gruppo {
+  margin: 16px 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #55636b);
 }
