@@ -1,0 +1,147 @@
+/* I numeri di ognuno. I titoli in cima perché sono la parte che si
+   legge; la tabella sotto, per chi vuole il dettaglio. */
+
+.statistiche {
+  padding: 4px 0 24px;
+}
+
+.stat-guasto {
+  padding: 20px 4px;
+  font-size: 14px;
+  color: var(--coral, #e8604a);
+}
+
+.stat-etichetta {
+  margin: 18px 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #55636b);
+}
+
+.stat-etichetta:first-child {
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------- i titoli */
+
+.stat-premi {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.stat-premio {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 13px;
+  background: #fff;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 11px;
+}
+
+.stat-premio-titolo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #16323f);
+}
+
+.stat-premio-chi {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.stat-premio-quanto {
+  min-width: 34px;
+  text-align: right;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft, #55636b);
+}
+
+/* ------------------------------------------------------------ la tabella */
+
+/* Scorre da sola invece di stringere le colonne fino a renderle
+   illeggibili: sette numeri su un telefono non ci stanno, e fingere di
+   sì è peggio che ammetterlo. */
+.stat-scorrevole {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.stat-tabella {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.stat-tabella th,
+.stat-tabella td {
+  padding: 9px 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stat-tabella thead th {
+  font-size: 15px;
+  font-weight: 400;
+  border-bottom: 1px solid var(--line, #e4dfd2);
+}
+
+/* La colonna dei nomi resta ferma mentre il resto scorre: senza, si
+   perde di vista di chi sono i numeri che si stanno guardando. */
+.stat-tabella tbody th {
+  position: sticky;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  background: #fff;
+}
+
+.stat-tabella tbody th img {
+  border-radius: 50%;
+  background: var(--sand, #f7f4ec);
+}
+
+.stat-tabella tbody tr + tr th,
+.stat-tabella tbody tr + tr td {
+  border-top: 1px solid var(--line, #e4dfd2);
+}
+
+.stat-tabella td {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #16323f);
+}
+
+.stat-io td,
+.stat-io th {
+  background: var(--sand, #f7f4ec);
+}
+
+.stat-solo-lettori {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.stat-nota {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft, #55636b);
+}
