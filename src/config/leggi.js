@@ -98,7 +98,11 @@ export const LEGGI = [
   { n: 26, id: 'parola-proibita', punti: -2, attiva: true,
     testo: 'Hai scritto una parola che il Testamento non tollera' },
   { n: 27, id: 'sound-abuse', punti: -3, attiva: true,
-    testo: 'Hai pestato lo stesso suono finché non si è stancato di te' },
+    testo: 'Hai svuotato la soundboard a raffica e te l’hanno tolta' },
+  // La recidiva nella stessa giornata costa il doppio e dura dodici volte
+  // tanto: la prima volta puo' essere entusiasmo, la seconda no.
+  { n: 31, id: 'sound-abuse-ancora', punti: -6, attiva: true,
+    testo: 'Hai rifatto la stessa raffica nello stesso giorno' },
   { n: 28, id: 'sfida-solitario', punti: CACCIA.puntiUnico, attiva: true,
     testo: 'Sei stato l’unico a mandare una foto per una sfida' },
   // La collettiva non è una gara e non può passare dalla Legge II, che

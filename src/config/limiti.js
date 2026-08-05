@@ -45,11 +45,17 @@ export const PENALITA = {
   massimoPerBlocco: 5,
 }
 
-// Abuso di un suono (Legge XXVII). Non rallenta nessuno: chi pesta lo
-// stesso bottone all'infinito se lo vede togliere, e solo quello. Meglio
-// una punizione mirata che un freno addosso a tutti.
+// Abuso della soundboard (Leggi XXVII e XXVIII). Il conteggio è
+// cumulativo: prima si guardava un suono per volta, ma cinque suoni
+// diversi in un minuto sono la stessa raffica di cinque volte lo stesso,
+// e cambiare bottone non la rende meno insopportabile per chi la sente.
+//
+// Quindi si spegne tutta, e non un suono solo. Il primo blocco è corto,
+// il secondo nella stessa giornata è lungo: chi ci ricasca dopo aver
+// visto cosa succede non lo sta facendo per sbaglio.
 export const ABUSO_SUONO = {
   pressioni: 5,
   entroSecondi: 60,
-  bloccoMinuti: 60,
+  bloccoMinuti: 15,
+  bloccoRipetutoMinuti: 180,
 }

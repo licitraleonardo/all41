@@ -117,7 +117,14 @@ export function dopoInvioRiuscito(memberId, tipo) {
 // penalità. Se c'è un evento di abuso per quel suono nell'ultima ora, il
 // bottone è spento. Così sopravvive a un ricaricamento e a un cambio di
 // telefono, senza una tabella in più.
-export async function dopoSuonoPremuto(memberId, file) {
+// La raffica si conta su tutta la soundboard, non su un suono per volta:
+// cinque suoni diversi in un minuto sono la stessa raffica di cinque
+// volte lo stesso, e chi la sente non ringrazia per la varieta'.
+//
+// Il primo blocco dura un quarto d'ora. Se nella stessa giornata ci
+// ricaschi, tre ore: la prima volta puo' essere entusiasmo, la seconda
+// l'hai gia' visto succedere.
+export async function dopoSuonoPremuto(memberId) {
   const da = new Date(Date.now() - ABUSO_SUONO.entroSecondi * 1000).toISOString()
 
   const { count, error } = await supabase
@@ -125,42 +132,75 @@ export async function dopoSuonoPremuto(memberId, file) {
     .select('id', { count: 'exact', head: true })
     .eq('author_id', memberId)
     .eq('kind', 'soundboard')
-    .eq('payload->>file', file)
     .gte('created_at', da)
   if (error) throw error
 
   if ((count ?? 0) < ABUSO_SUONO.pressioni) return { abuso: false }
 
-  const blocco = Math.floor(Date.now() / (ABUSO_SUONO.bloccoMinuti * 60000))
+  const oggi = dataDiOggi()
+  const gia = await quantiBlocchiOggi(memberId, oggi)
+  const recidiva = gia >= 1
+
+  // Chiave sul numero del blocco della giornata: la stessa raffica non
+  // paga due volte, ma il blocco di stasera e' diverso da quello di
+  // stamattina.
   const esito = await faiScattareLegge(
-    'sound-abuse',
+    recidiva ? 'sound-abuse-ancora' : 'sound-abuse',
     memberId,
-    `sound-abuse_${memberId}_${file}_${blocco}`
+    `sound-abuse_${memberId}_${oggi}_${gia}`
   )
-  return { abuso: true, file, ...esito }
+
+  return {
+    abuso: true,
+    recidiva,
+    minuti: recidiva ? ABUSO_SUONO.bloccoRipetutoMinuti : ABUSO_SUONO.bloccoMinuti,
+    ...esito,
+  }
 }
 
-// Quali suoni sono spenti adesso per questa persona.
-export async function suoniBloccati(memberId) {
-  const da = new Date(Date.now() - ABUSO_SUONO.bloccoMinuti * 60000).toISOString()
+// Quante volte la soundboard e' gia' stata spenta oggi a questa persona.
+async function quantiBlocchiOggi(memberId, oggi) {
+  const { data, error } = await supabase
+    .from('point_events')
+    .select('dedupe_key')
+    .eq('member_id', memberId)
+    .in('rule_id', ['sound-abuse', 'sound-abuse-ancora'])
+    .like('dedupe_key', `sound-abuse_${memberId}_${oggi}_%`)
+    .limit(10)
+  if (error) throw error
+  return data.length
+}
+
+// La soundboard e' spenta adesso per questa persona? Restituisce fino a
+// quando, o null se si puo' suonare.
+//
+// Prima tornava l'elenco dei suoni spenti uno per uno; adesso o e'
+// spenta tutta o non lo e'.
+export async function soundboardSpenta(memberId) {
+  const piuLungo = Math.max(ABUSO_SUONO.bloccoMinuti, ABUSO_SUONO.bloccoRipetutoMinuti)
+  const da = new Date(Date.now() - piuLungo * 60000).toISOString()
 
   const { data, error } = await supabase
     .from('point_events')
-    .select('dedupe_key, created_at')
+    .select('rule_id, created_at')
     .eq('member_id', memberId)
-    .eq('rule_id', 'sound-abuse')
+    .in('rule_id', ['sound-abuse', 'sound-abuse-ancora'])
     .gte('created_at', da)
-    .limit(20)
+    .order('created_at', { ascending: false })
+    .limit(5)
   if (error) throw error
 
-  // dedupe_key: sound-abuse_<membro>_<file>_<blocco>
-  return new Set(
-    data
-      .map((r) => r.dedupe_key?.split('_')?.[2])
-      .filter(Boolean)
-  )
-}
+  for (const riga of data) {
+    const minuti =
+      riga.rule_id === 'sound-abuse-ancora'
+        ? ABUSO_SUONO.bloccoRipetutoMinuti
+        : ABUSO_SUONO.bloccoMinuti
+    const fine = Date.parse(riga.created_at) + minuti * 60000
+    if (fine > Date.now()) return new Date(fine)
+  }
 
+  return null
+}
 // Legge VIII: soundboard lanciato tra l'01:00 e le 07:00. Una volta per
 // persona al giorno, non a ogni suono: la Legge punisce l'ora, non il
 // numero di volte.

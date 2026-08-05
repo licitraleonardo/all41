@@ -12,7 +12,7 @@ import {
   dopoSuono,
   dopoSuonoPremuto,
   dopoTesto,
-  suoniBloccati,
+  soundboardSpenta,
 } from '../lib/regole.js'
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
@@ -28,7 +28,9 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   const [testo, setTesto] = useState('')
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
-  const [bloccati, setBloccati] = useState(new Set())
+  // Non piu' un elenco di suoni spenti: o la soundboard e' spenta tutta,
+  // o si suona. Qui dentro c'e' l'ora in cui riapre.
+  const [spentaFino, setSpentaFino] = useState(null)
   const fondo = useRef(null)
   const barra = useRef(null)
   const schermo = useRef(null)
@@ -46,8 +48,8 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   // Un suono spento resta spento anche ricaricando: si deduce dalle
   // penalità nel database, non da uno stato in memoria.
   useEffect(() => {
-    suoniBloccati(membro.id)
-      .then(setBloccati)
+    soundboardSpenta(membro.id)
+      .then(setSpentaFino)
       .catch(() => {})
   }, [membro.id])
 
@@ -135,8 +137,8 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   // il menu resta aperto per poterne premere un altro. A regolare gli
   // eccessi ci pensa la Legge XXVII, che spegne il bottone abusato.
   async function lanciaSuono(s) {
-    if (bloccati.has(s.file)) {
-      setAvviso('Quel suono si è stancato di te. Riprova fra un po’.')
+    if (spentaFino && spentaFino > new Date()) {
+      setAvviso(`Soundboard spenta fino alle ${oraDi(spentaFino)}.`)
       return
     }
 
@@ -145,11 +147,17 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
     if (!azione) return
 
     dopoSuono(membro.id).catch(() => {})
-    dopoSuonoPremuto(membro.id, s.file)
+    dopoSuonoPremuto(membro.id)
       .then((r) => {
         if (!r.abuso) return
-        setBloccati((p) => new Set(p).add(s.file))
-        setAvviso(`${s.etichetta} si è stancato di te. Spento per un’ora.`)
+        const fine = new Date(Date.now() + r.minuti * 60000)
+        setSpentaFino(fine)
+        setFoglio(null)
+        setAvviso(
+          r.recidiva
+            ? `Di nuovo. Soundboard spenta per ${r.minuti / 60} ore.`
+            : `Basta. Soundboard spenta per ${r.minuti} minuti.`
+        )
       })
       .catch(() => {})
   }
@@ -293,9 +301,9 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
                 type="button"
                 className="voce-menu"
                 onClick={() => lanciaSuono(s)}
-                disabled={suoniDisponibili[s.file] === false || bloccati.has(s.file)}
+                disabled={suoniDisponibili[s.file] === false}
               >
-                {bloccati.has(s.file) ? `${s.etichetta} 🚫` : s.etichetta}
+                {s.etichetta}
               </button>
             ))}
           </div>
@@ -319,7 +327,7 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
               {/* Aperto diventa la × che lo chiude: il suggerimento
                   scritto "tocca di nuovo per chiudere" era una didascalia
                   al posto di un bottone che si spiega da solo. */}
-              {foglio === 'suoni' ? '×' : '🔊'}
+              {foglio === 'suoni' ? '×' : spentaFino && spentaFino > new Date() ? '🔇' : '🔊'}
             </button>
           )}
 
@@ -356,4 +364,8 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
       )}
     </div>
   )
+}
+
+function oraDi(data) {
+  return data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 }
