@@ -181,33 +181,43 @@
   max-width: 608px;
 }
 
-/* Un interruttore che si vede, non un doppio tocco: il tasto qui sotto
+/* Il microfono largo, e l'interruttore stretto di fianco: tenerli sulla
+   stessa riga dice che riguardano lo stesso messaggio. */
+.voc-tasti {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* Un interruttore che si vede, non un doppio tocco: il tasto qui accanto
    si tiene premuto per registrare, e due gesti sullo stesso tasto si
    pestano i piedi. */
 .voc-importante {
-  display: block;
-  width: 100%;
-  margin-bottom: 7px;
+  flex: none;
+  width: 56px;
   font: inherit;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink-soft, #55636b);
+  font-size: 20px;
+  line-height: 1;
   background: rgba(247, 244, 236, 0.94);
   border: 1px dashed var(--line, #e4dfd2);
-  border-radius: 100px;
-  padding: 7px 12px;
+  border-radius: 12px;
   cursor: pointer;
+  opacity: 0.5;
 }
 
 .voc-importante.acceso {
-  color: #fff;
   background: var(--coral);
   border-style: solid;
   border-color: var(--coral);
+  opacity: 1;
 }
 
 .voc-premi {
-  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   font: inherit;
   font-size: 16px;
   font-weight: 700;
@@ -229,6 +239,28 @@
 .voc-premi.attivo {
   background: var(--coral);
   font-variant-numeric: tabular-nums;
+}
+
+/* Mentre registra il microfono pulsa: dice che sta prendendo, senza
+   aggiungere una seconda spia da guardare. */
+.voc-mic {
+  flex: none;
+}
+
+.voc-premi.attivo .voc-mic {
+  animation: voc-battito 1s ease-in-out infinite;
+}
+
+@keyframes voc-battito {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voc-premi.attivo .voc-mic {
+    animation: none;
+  }
 }
 
 .voc-premi:disabled {

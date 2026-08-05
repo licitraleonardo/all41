@@ -126,34 +126,39 @@ export default function Vocali({ membro }) {
         </p>
       ) : (
         <div className="voc-barra">
-          {/* Un interruttore che si vede, non un doppio tocco: il tasto
-              qui accanto si tiene premuto per registrare, e due gesti
-              sullo stesso tasto si pestano i piedi. Resta acceso finché
-              non mandi, poi si spegne da solo. */}
-          <button
-            type="button"
-            className={importante ? 'voc-importante acceso' : 'voc-importante'}
-            onClick={() => setImportante((v) => !v)}
-            aria-pressed={importante}
-          >
-            {importante ? '❗ Importante' : 'Segna come importante'}
-          </button>
+          <div className="voc-tasti">
+            <button
+              type="button"
+              className={registrando ? 'voc-premi attivo' : 'voc-premi'}
+              onPointerDown={premi}
+              onPointerUp={lascia}
+              onPointerCancel={lascia}
+              onPointerLeave={registrando ? lascia : undefined}
+              disabled={inCorso}
+            >
+              <Microfono />
+              {inCorso
+                ? 'Mando…'
+                : registrando
+                  ? `Sto registrando — ${LIMITI.voice.durataMax - secondi}s`
+                  : 'Tieni premuto e parla'}
+            </button>
 
-          <button
-            type="button"
-            className={registrando ? 'voc-premi attivo' : 'voc-premi'}
-            onPointerDown={premi}
-            onPointerUp={lascia}
-            onPointerCancel={lascia}
-            onPointerLeave={registrando ? lascia : undefined}
-            disabled={inCorso}
-          >
-            {inCorso
-              ? 'Mando…'
-              : registrando
-                ? `Sto registrando — ${LIMITI.voice.durataMax - secondi}s`
-                : 'Tieni premuto e parla'}
-          </button>
+            {/* Un interruttore che si vede, non un doppio tocco: il tasto
+                qui accanto si tiene premuto per registrare, e due gesti
+                sullo stesso tasto si pestano i piedi. Resta acceso finché
+                non mandi, poi si spegne da solo. */}
+            <button
+              type="button"
+              className={importante ? 'voc-importante acceso' : 'voc-importante'}
+              onClick={() => setImportante((v) => !v)}
+              aria-pressed={importante}
+              aria-label="Segna come importante"
+              title="Segna come importante"
+            >
+              ❗
+            </button>
+          </div>
 
           {registrando && (
             <div className="voc-avanzamento" role="presentation">
@@ -239,6 +244,21 @@ function Vocale({ vocale, autore, mio, inAscolto, onAscolta, onElimina }) {
         </span>
       </div>
     </li>
+  )
+}
+
+// Un microfono disegnato invece dell'emoji: sul tasto grande l'emoji
+// resta multicolore anche quando il tasto diventa corallo, e stona.
+// Così prende il colore del testo che ha accanto.
+function Microfono() {
+  return (
+    <svg className="voc-mic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z" fill="currentColor" />
+      <path
+        d="M5 11a1 1 0 0 1 2 0 5 5 0 0 0 10 0 1 1 0 0 1 2 0 7 7 0 0 1-6 6.93V20h2a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2h2v-2.07A7 7 0 0 1 5 11Z"
+        fill="currentColor"
+      />
+    </svg>
   )
 }
 
