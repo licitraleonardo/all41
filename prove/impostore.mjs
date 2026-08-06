@@ -13,6 +13,9 @@ import {
   stessaParola,
   chiPuoTentare,
   bastaPerRivelare,
+  bastaPerCominciare,
+  maggioranza,
+  sceltaVincente,
   tuttiHannoVotato,
   schedePerId,
 } from '../src/lib/impostore.js'
@@ -376,6 +379,37 @@ console.log('\ni punti quando il colpo riesce')
     vinto.assegnazioni.length ===
       new Set(vinto.assegnazioni.map((a) => a.membroId + a.leggeId)).size
   )
+}
+
+console.log('\nil voto d\u2019apertura: quando si parte')
+{
+  prova('in sette bastano quattro voti', bastaPerCominciare(4, 7))
+  prova('tre no', !bastaPerCominciare(3, 7))
+  prova('in otto ne servono cinque', bastaPerCominciare(5, 8) && !bastaPerCominciare(4, 8))
+  prova('in quattro ne servono tre', bastaPerCominciare(3, 4) && !bastaPerCominciare(2, 4))
+  prova('e votando tutti si parte comunque', bastaPerCominciare(7, 7))
+  prova('senza giocatori non si parte', !bastaPerCominciare(0, 0))
+  prova(
+    'la soglia e\u2019 la stessa che serve per rivelare',
+    [4, 5, 6, 7, 8].every((n) => maggioranza(n) === quantiPerRivelare(n))
+  )
+}
+
+console.log('\nil voto d\u2019apertura: cosa ha vinto')
+{
+  const scelte = [1, 2]
+
+  prova('vince chi ha piu\u2019 voti', sceltaVincente([1, 3], scelte, 2) === 2)
+  prova('anche se e\u2019 il meno consigliato', sceltaVincente([3, 1], scelte, 2) === 1)
+  prova('a parita\u2019 vince la consigliata', sceltaVincente([2, 2], scelte, 2) === 2)
+  prova('e se la consigliata e\u2019 l\u2019altra, vince quella', sceltaVincente([2, 2], scelte, 1) === 1)
+  prova('senza nemmeno un voto si prende la consigliata', sceltaVincente([0, 0], scelte, 2) === 2)
+
+  // Due telefoni che chiudono il voto nello stesso istante devono far
+  // partire la stessa partita: la regola dev'essere sempre la stessa.
+  const a = sceltaVincente([2, 2], scelte, 2)
+  const b = sceltaVincente([2, 2], scelte, 2)
+  prova('e la risposta non cambia fra una chiamata e l\u2019altra', a === b)
 }
 
 console.log('\nle coppie di parole')

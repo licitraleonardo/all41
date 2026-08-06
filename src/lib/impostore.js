@@ -207,11 +207,19 @@ export function tuttiHannoVotato(partita, hannoVotato = []) {
   return partita.giocatori.length > 0 && hannoVotato.length >= partita.giocatori.length
 }
 
+// Piu' della meta'. Non la meta': un gruppo spaccato a meta' non ha
+// deciso niente. Vale per tutte le decisioni collettive del gioco —
+// rivelare in anticipo e far partire la partita — perche' due soglie
+// diverse per due votazioni della stessa sera sarebbero solo confusione.
+export function maggioranza(quanti) {
+  return Math.floor(quanti / 2) + 1
+}
+
 // Se manca qualcuno, rivelare e' una scelta del gruppo e non di chi tocca
 // il tasto per primo: un tocco per sbaglio brucerebbe la partita a tutti
-// gli altri. Serve piu' della meta'.
+// gli altri.
 export function quantiPerRivelare(quantiGiocatori) {
-  return Math.floor(quantiGiocatori / 2) + 1
+  return maggioranza(quantiGiocatori)
 }
 
 export function bastaPerRivelare(partita, chiesta = []) {
@@ -246,4 +254,24 @@ export function stessaParola(a, b) {
 // l'ha fatta franca ha gia' vinto e non ha niente da tentare.
 export function chiPuoTentare({ impostori, giocatori, schede }) {
   return esito({ impostori, giocatori, schede }).scoperti
+}
+
+// Quale opzione ha vinto il voto d'apertura. A parita' vince quella
+// consigliata, e se non e' in ballo la prima: serve una regola qualunque
+// purche' sia sempre la stessa, o due telefoni che chiudono il voto nello
+// stesso istante farebbero partire due partite diverse.
+export function sceltaVincente(conteggi, scelte, consigliata) {
+  const voti = scelte.map((_, i) => conteggi?.[i] ?? 0)
+  const massimo = Math.max(...voti)
+  if (massimo === 0) return consigliata ?? scelte[0]
+
+  const inTesta = scelte.filter((_, i) => voti[i] === massimo)
+  return inTesta.includes(consigliata) ? consigliata : inTesta[0]
+}
+
+// Il voto d'apertura si chiude quando ha votato piu' della meta', non
+// quando hanno votato tutti: aspettare l'ultimo vuol dire restare fermi
+// per chi e' in bagno, e l'ultimo non arriva mai.
+export function bastaPerCominciare(quantiHannoVotato, quantiGiocatori) {
+  return quantiGiocatori > 0 && quantiHannoVotato >= maggioranza(quantiGiocatori)
 }

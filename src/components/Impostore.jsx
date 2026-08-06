@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './Impostore.css'
 import { useImpostore } from '../hooks/useImpostore.js'
 import {
+  bastaPerCominciare,
   bastaPerRivelare,
   chiPuoTentare,
   diTurno,
@@ -9,6 +10,8 @@ import {
   esito,
   quantiMancano,
   quantiPerRivelare,
+  maggioranza,
+  sceltaVincente,
   schedePerId,
   tuttiHannoVotato,
 } from '../lib/impostore.js'
@@ -192,16 +195,19 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
   const quanti = voto?.hannoVotato?.length ?? 0
   const tutti = partita.giocatori.length
   const conteggi = voto?.conteggi ?? scelte.map(() => 0)
+  const serve = maggioranza(tutti)
 
-  // Quando hanno votato tutti si parte, e lo fa il primo telefono che se
-  // ne accorge. Il freno serve perche' l'effetto rigira a ogni voto che
-  // arriva, e partire due volte non si puo'.
+  // Si parte quando ha votato piu' della meta', non quando hanno votato
+  // tutti: aspettare l'ultimo vuol dire restare fermi per chi e' in
+  // bagno, e l'ultimo non arriva mai. Lo fa il primo telefono che se ne
+  // accorge, e il freno serve perche' l'effetto rigira a ogni voto che
+  // arriva — partire due volte non si puo'.
   useEffect(() => {
-    if (!voto || quanti < tutti || partito.current) return
+    if (!voto || partito.current) return
+    if (!bastaPerCominciare(quanti, tutti)) return
     partito.current = true
-    const vincente = conteggi.indexOf(Math.max(...conteggi))
-    onAvvia(scelte[vincente < 0 ? 0 : vincente])
-  }, [voto, quanti, tutti, conteggi, scelte, onAvvia])
+    onAvvia(sceltaVincente(conteggi, scelte, consigliata))
+  }, [voto, quanti, tutti, conteggi, scelte, consigliata, onAvvia])
 
   async function vota(i) {
     setInCorso(true)
@@ -221,7 +227,8 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
     <section className="imp-preparazione">
       <h2 className="imp-titolo">Quanti impostori?</h2>
       <p className="imp-spiega">
-        Lo decidete voi, prima di sapere chi sono. Hanno votato {quanti} su {tutti}.
+        Lo decidete voi, prima di sapere chi sono. Hanno votato {quanti} su {tutti} — si
+        parte a {serve}.
       </p>
 
       {avviso && <p className="imp-guasto">{avviso}</p>}
@@ -249,7 +256,7 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
 
       <p className="imp-nota">
         {hoVotato
-          ? 'Hai votato. Si parte quando hanno votato tutti.'
+          ? `Hai votato. Si parte appena arriva il ${serve}º voto: non si aspetta chi manca.`
           : 'Tocca il numero che preferisci.'}
       </p>
     </section>
