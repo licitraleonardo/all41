@@ -21,6 +21,12 @@ export const IMPOSTORE = {
   // Le scelte del voto d'apertura.
   sceltePerImpostori: [1, 2],
 
+  // Dopo un'accusa sbagliata si riparte, ma con un giro solo: due giri
+  // servivano a farsi un'idea da zero, e adesso l'idea ce l'avete gia' —
+  // ripartire da capo ogni volta allungherebbe la partita senza
+  // aggiungerci niente.
+  giriDopoEliminazione: 1,
+
   // Il voto non ha un timer visibile: serve solo a non lasciare un voto
   // appeso per sempre se la partita finisce in una birra.
   minutiVoto: 30,

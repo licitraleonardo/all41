@@ -275,3 +275,88 @@ export function sceltaVincente(conteggi, scelte, consigliata) {
 export function bastaPerCominciare(quantiHannoVotato, quantiGiocatori) {
   return quantiGiocatori > 0 && quantiHannoVotato >= maggioranza(quantiGiocatori)
 }
+
+// -------------------------------------------------------- l'eliminazione
+
+// Chi accusi e sbagli esce dal gioco, e si continua. E' quello che rende
+// il voto una decisione invece di un sondaggio finale: sbagliare costa,
+// e costa a tutto il gruppo.
+
+export function vivi(partita) {
+  const fuori = partita.fuori ?? []
+  return partita.giocatori.filter((id) => !fuori.includes(id))
+}
+
+export function impostoriVivi(partita) {
+  const fuori = partita.fuori ?? []
+  return partita.impostori.filter((id) => !fuori.includes(id))
+}
+
+export function innocentiVivi(partita) {
+  const fuori = partita.fuori ?? []
+  return partita.giocatori.filter(
+    (id) => !fuori.includes(id) && !partita.impostori.includes(id)
+  )
+}
+
+export function eFuori(partita, id) {
+  return (partita.fuori ?? []).includes(id)
+}
+
+// Gli impostori vincono per numeri quando smettono di essere in
+// minoranza: da li' in poi qualunque voto lo decidono loro, e continuare
+// sarebbe allungare una partita gia' decisa.
+export function impostoriInMaggioranza(partita) {
+  const imp = impostoriVivi(partita).length
+  return imp > 0 && innocentiVivi(partita).length <= imp
+}
+
+// Cosa succede dopo un'accusa. E' il cuore della regola nuova, e sta qui
+// dentro tutto insieme apposta: chi esce, chi e' stato beccato, se la
+// partita finisce o riparte.
+//
+// `schede` sono gia' passate da schedePerId, e `opzioni` e' l'elenco di
+// chi era votabile in quel giro — che dal secondo in poi non e' piu'
+// tutto il gruppo.
+export function dopoAccusa(partita, schede, casuale = Math.random) {
+  const inGioco = vivi(partita)
+  const impostoriOra = impostoriVivi(partita)
+  const r = esito({ impostori: impostoriOra, giocatori: inGioco, schede })
+
+  const scopertiOra = r.accusati.filter((id) => impostoriOra.includes(id))
+  const eliminatiOra = r.accusati.filter((id) => !impostoriOra.includes(id))
+  const fuori = [...(partita.fuori ?? []), ...r.accusati]
+
+  const dopo = { ...partita, fuori }
+  const restano = impostoriVivi(dopo)
+
+  // Beccati tutti: al gruppo resta da temere solo il colpo di coda.
+  if (restano.length === 0) {
+    return {
+      fuori,
+      scopertiOra,
+      eliminatiOra,
+      vincitore: 'gruppo',
+      stato: scopertiOra.length > 0 ? 'colpo' : 'finita',
+    }
+  }
+
+  // Non sono piu' in minoranza: hanno vinto, e non serve un altro giro
+  // per scoprirlo.
+  if (impostoriInMaggioranza(dopo)) {
+    return { fuori, scopertiOra, eliminatiOra, vincitore: 'impostori', stato: 'finita' }
+  }
+
+  // Si continua, coi superstiti e con l'ordine rimescolato.
+  return {
+    fuori,
+    scopertiOra,
+    eliminatiOra,
+    vincitore: null,
+    stato: 'in-corso',
+    ordine: mescola(vivi(dopo), casuale),
+    turno: 0,
+    giro: 1,
+    giriTotali: IMPOSTORE.giriDopoEliminazione,
+  }
+}

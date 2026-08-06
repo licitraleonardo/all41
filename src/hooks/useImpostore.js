@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import {
   abbandonaPartita,
   apriVoto,
-  apriColpo,
+  chiudiAccusa,
   avanzaTurno,
   avviaPartita,
   chiediRivelazione,
@@ -174,17 +174,18 @@ export function useImpostore(membroId) {
     }
   }, [partita, membroId])
 
-  // Rivelare non chiude piu' la partita per forza: se il gruppo ha
-  // beccato qualcuno, quel qualcuno ha un'ultima carta.
+  // Rivelare chiude il giro d'accusa, e da li' la partita fa una di tre
+  // cose: va al colpo di coda, finisce, o riparte coi superstiti perche'
+  // il gruppo ha eliminato un innocente.
   const rivela = useCallback(async () => {
     if (!partita) return
     setErrore(null)
     try {
-      setPartita(await apriColpo(partita, voto?.schede ?? {}))
+      setPartita(await chiudiAccusa(partita, voto))
     } catch (e) {
       setErrore(descriviErrore(e))
     }
-  }, [partita, voto?.schede])
+  }, [partita, voto])
 
   const tenta = useCallback(
     async (parola) => {
@@ -192,12 +193,12 @@ export function useImpostore(membroId) {
       setErrore(null)
       try {
         const dopo = await tentaColpo(partita, membroId, parola)
-        setPartita(await chiudiPartita(dopo, voto?.schede ?? {}))
+        setPartita(await chiudiPartita(dopo, voto))
       } catch (e) {
         setErrore(descriviErrore(e))
       }
     },
-    [partita, membroId, voto?.schede]
+    [partita, membroId, voto]
   )
 
   // Se il tentativo arriva da un altro telefono, la partita si chiude
@@ -206,11 +207,11 @@ export function useImpostore(membroId) {
   const chiudi = useCallback(async () => {
     if (!partita) return
     try {
-      setPartita(await chiudiPartita(partita, voto?.schede ?? {}))
+      setPartita(await chiudiPartita(partita, voto))
     } catch (e) {
       setErrore(descriviErrore(e))
     }
-  }, [partita, voto?.schede])
+  }, [partita, voto])
 
   // Lo storico si rilegge quando una partita finisce: e' l'unico momento
   // in cui puo' essere cambiato.

@@ -3,11 +3,12 @@ import { VIAGGIO } from '../config/viaggio.js'
 import { IMPOSTORE } from '../config/impostore.js'
 import {
   avanza,
-  chiPuoTentare,
+  dopoAccusa,
   premi,
   preparaPartita,
   schedePerId,
   stessaParola,
+  vivi,
 } from './impostore.js'
 import { faiScattareLegge } from './punti.js'
 
@@ -16,7 +17,7 @@ import { faiScattareLegge } from './punti.js'
 // impostore.js, che non sa cosa sia Supabase e si puo' provare.
 
 const CAMPI =
-  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, setup_vote_id, tentativo, tentato_da, created_at'
+  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, setup_vote_id, fuori, tentativo, tentato_da, created_at'
 
 export function daRiga(riga) {
   if (!riga) return null
@@ -33,6 +34,7 @@ export function daRiga(riga) {
     giriTotali: riga.giri_totali,
     votoId: riga.vote_id,
     rivelaChiesta: riga.rivela_chiesta ?? [],
+    fuori: riga.fuori ?? [],
     votoAperturaId: riga.setup_vote_id ?? null,
     tentativo: riga.tentativo ?? null,
     tentatoDa: riga.tentato_da ?? null,
@@ -169,7 +171,11 @@ export async function avanzaTurno(partita) {
   return daRiga(data)
 }
 
+// Il voto d'accusa. Si apre a ogni giro, e le opzioni sono solo chi e'
+// ancora in gioco: dal secondo giro in poi votare chi e' gia' uscito non
+// avrebbe senso, e lascerebbe accusare un fantasma.
 export async function apriVoto(partita) {
+  const inGioco = vivi(partita)
   const scade = new Date(Date.now() + IMPOSTORE.minutiVoto * 60000).toISOString()
 
   const { data: voto, error: erroreVoto } = await supabase
@@ -178,11 +184,11 @@ export async function apriVoto(partita) {
       trip_id: VIAGGIO.id,
       category: 'impostore',
       question: 'Chi e’ l’impostore?',
-      options: partita.giocatori,
+      options: inGioco,
       // Mai anonimo: senza sapere chi ha votato chi non si puo' dare il
       // punto a chi ha indovinato.
       anonymous: false,
-      tally: partita.giocatori.map(() => 0),
+      tally: inGioco.map(() => 0),
       expires_at: scade,
     })
     .select('id')
@@ -194,6 +200,7 @@ export async function apriVoto(partita) {
     .from('impostore_games')
     .update({ vote_id: voto.id })
     .eq('id', partita.id)
+    .eq('stato', 'voto')
     .is('vote_id', null)
     .select(CAMPI)
     .maybeSingle()
@@ -208,11 +215,17 @@ export async function apriVoto(partita) {
 // indovinato. La dedupeKey e' obbligatoria perche' la rivelazione la puo'
 // far scattare chiunque, e otto telefoni che rivelano insieme
 // accrediterebbero gli stessi punti otto volte.
-export async function paga(partita, schedeGrezze) {
+//
+// Le schede si leggono con le opzioni di QUEL voto e non con l'elenco dei
+// giocatori: dal secondo giro d'accusa in poi si vota solo fra i
+// superstiti, e usare l'elenco intero sposterebbe ogni numero di un posto
+// — cioe' darebbe i punti alle persone sbagliate, in silenzio.
+export async function paga(partita, voto) {
+  const opzioni = voto?.opzioni ?? partita.giocatori
   const { assegnazioni } = premi({
     impostori: partita.impostori,
     giocatori: partita.giocatori,
-    schede: schedePerId(schedeGrezze, partita.giocatori),
+    schede: schedePerId(voto?.schede, opzioni),
     colpoRiuscito: stessaParola(partita.tentativo, partita.parolaGruppo),
   })
 
@@ -222,29 +235,34 @@ export async function paga(partita, schedeGrezze) {
 
   return assegnazioni
 }
+// Fine di un giro d'accusa. Chi e' stato accusato esce: se era un
+// impostore e' scoperto, se era innocente e' eliminato e il gruppo ha
+// perso un voto. Poi la partita fa una di tre cose — si va al colpo di
+// coda, finisce perche' gli impostori non sono piu' in minoranza, oppure
+// si riparte con un altro giro fra i superstiti.
+export async function chiudiAccusa(partita, voto, casuale) {
+  const opzioni = voto?.opzioni ?? partita.giocatori
+  const esitoGiro = dopoAccusa(partita, schedePerId(voto?.schede, opzioni), casuale)
 
-// Fine del voto: se il gruppo ha beccato qualcuno, quel qualcuno ha
-// un'ultima carta prima che si chiuda. Se non hanno beccato nessuno non
-// c'e' niente da tentare e si va dritti al finale.
-export async function apriColpo(partita, schedeGrezze) {
-  const puo = chiPuoTentare({
-    impostori: partita.impostori,
-    giocatori: partita.giocatori,
-    schede: schedePerId(schedeGrezze, partita.giocatori),
+  const { data, error } = await supabase.rpc('chiudi_accusa', {
+    p_partita: partita.id,
+    p_fuori: esitoGiro.fuori,
+    p_stato: esitoGiro.stato,
+    p_ordine: esitoGiro.ordine ?? null,
+    p_giri: esitoGiro.giriTotali ?? null,
+    // Ripartendo, il voto vecchio non serve piu': il prossimo giro ne
+    // apre uno suo, sui superstiti di allora.
+    p_voto: esitoGiro.stato === 'in-corso' ? null : (partita.votoId ?? null),
   })
 
-  if (puo.length === 0) return chiudiPartita(partita, schedeGrezze)
-
-  const { data, error } = await supabase
-    .from('impostore_games')
-    .update({ stato: 'colpo' })
-    .eq('id', partita.id)
-    .eq('stato', 'voto')
-    .select(CAMPI)
-    .maybeSingle()
-
   if (error) throw error
-  return data ? daRiga(data) : leggiPartita()
+  const dopo = daRiga(data)
+
+  // Se e' gia' finita — hanno vinto gli impostori per numeri — i punti si
+  // assegnano adesso. Se si va al colpo, si aspetta quello.
+  if (dopo.stato === 'finita') await paga(dopo, voto)
+
+  return dopo
 }
 
 // L'impostore beccato scrive la parola del gruppo. Una volta sola: due

@@ -13,6 +13,12 @@ import {
   stessaParola,
   chiPuoTentare,
   bastaPerRivelare,
+  vivi,
+  impostoriVivi,
+  innocentiVivi,
+  eFuori,
+  impostoriInMaggioranza,
+  dopoAccusa,
   bastaPerCominciare,
   maggioranza,
   sceltaVincente,
@@ -410,6 +416,102 @@ console.log('\nil voto d\u2019apertura: cosa ha vinto')
   const a = sceltaVincente([2, 2], scelte, 2)
   const b = sceltaVincente([2, 2], scelte, 2)
   prova('e la risposta non cambia fra una chiamata e l\u2019altra', a === b)
+}
+
+console.log('\nchi e\u2019 dentro e chi e\u2019 fuori')
+{
+  const p = { giocatori: OTTO, impostori: ['a', 'b'], fuori: ['c', 'a'] }
+
+  prova('i vivi sono quelli non usciti', vivi(p).join() === 'b,d,e,f,g,h', vivi(p))
+  prova('un impostore uscito non e\u2019 piu\u2019 vivo', impostoriVivi(p).join() === 'b')
+  prova('gli innocenti vivi non contano gli impostori', innocentiVivi(p).join() === 'd,e,f,g,h')
+  prova('eFuori dice chi e\u2019 uscito', eFuori(p, 'c') && !eFuori(p, 'd'))
+  prova('senza il campo fuori sono tutti dentro', vivi({ giocatori: OTTO, impostori: [] }).length === 8)
+}
+
+console.log('\nquando gli impostori vincono per numeri')
+{
+  const con = (fuori) => impostoriInMaggioranza({ giocatori: OTTO, impostori: ['a', 'b'], fuori })
+
+  prova('in otto con due impostori, no', !con([]))
+  prova('tolti due innocenti (2 contro 4), ancora no', !con(['c', 'd']))
+  prova('tolti tre (2 contro 3), ancora no', !con(['c', 'd', 'e']))
+  prova('tolti quattro: due contro due, hanno vinto', con(['c', 'd', 'e', 'f']))
+  prova('se gli impostori sono fuori non vincono mai', !con(['a', 'b']))
+  // Con un impostore solo servono uno contro uno: uno contro due non
+  // basta, perche' in due lo votano ancora.
+  prova(
+    'un impostore contro due innocenti non ha ancora vinto',
+    !impostoriInMaggioranza({ giocatori: OTTO, impostori: ['a'], fuori: ['c', 'd', 'e', 'f', 'g'] })
+  )
+  prova(
+    'uno contro uno si',
+    impostoriInMaggioranza({ giocatori: OTTO, impostori: ['a'], fuori: ['c', 'd', 'e', 'f', 'g', 'h'] })
+  )
+}
+
+console.log('\ncosa succede dopo un\u2019accusa')
+{
+  const base = { giocatori: OTTO, impostori: ['a', 'b'], fuori: [] }
+  const fisso = () => 0.5
+
+  {
+    // Il gruppo li becca tutti e due: si va al colpo di coda.
+    const schede = schedePerId({ c: [0, 1], d: [0, 1], e: [0, 1] }, OTTO)
+    const r = dopoAccusa(base, schede, fisso)
+    prova('beccati entrambi, si va al colpo', r.stato === 'colpo', r)
+    prova('e sono segnati come scoperti', r.scopertiOra.sort().join() === 'a,b')
+    prova('nessun innocente eliminato', r.eliminatiOra.length === 0)
+    prova('ha vinto il gruppo', r.vincitore === 'gruppo')
+    prova('e sono usciti tutti e due', r.fuori.sort().join() === 'a,b')
+  }
+
+  {
+    // Sbagliano entrambe le accuse: due innocenti fuori, si continua.
+    const schede = schedePerId({ c: [3, 4], f: [3, 4], g: [3, 4] }, OTTO)
+    const r = dopoAccusa(base, schede, fisso)
+    prova('sbagliando si continua', r.stato === 'in-corso', r)
+    prova('escono i due innocenti accusati', r.eliminatiOra.sort().join() === 'd,e')
+    prova('nessuno scoperto', r.scopertiOra.length === 0)
+    prova('nessun vincitore ancora', r.vincitore === null)
+    prova('si riparte da un giro solo', r.giriTotali === 1 && r.giro === 1 && r.turno === 0)
+    prova('e i morti non sono nell\u2019ordine', !r.ordine.includes('d') && !r.ordine.includes('e'))
+    prova('ma i vivi ci sono tutti', r.ordine.length === 6)
+  }
+
+  {
+    // Ne beccano uno e sbagliano l'altro: si continua a tre contro uno.
+    const schede = schedePerId({ c: [0, 3], f: [0, 3], g: [0, 3] }, OTTO)
+    const r = dopoAccusa(base, schede, fisso)
+    prova('uno beccato e uno sbagliato: si continua', r.stato === 'in-corso', r)
+    prova('a e\u2019 scoperto', r.scopertiOra.join() === 'a')
+    prova('d e\u2019 eliminato', r.eliminatiOra.join() === 'd')
+  }
+
+  {
+    // Gia' ridotti all'osso: un altro errore e gli impostori vincono.
+    const quasi = { giocatori: OTTO, impostori: ['a', 'b'], fuori: ['c', 'd'] }
+    const schede = schedePerId({ e: [4, 5], f: [4, 5], g: [4, 5] }, ['a','b','c','d','e','f','g','h'])
+    const r = dopoAccusa(quasi, schede, fisso)
+    prova('sbagliando ancora, vincono gli impostori', r.vincitore === 'impostori', r)
+    prova('e la partita finisce', r.stato === 'finita')
+  }
+
+  {
+    // Nessuno vota: non esce nessuno e si continua.
+    const r = dopoAccusa(base, {}, fisso)
+    prova('senza voti non esce nessuno', r.fuori.length === 0, r)
+    prova('e si continua', r.stato === 'in-corso')
+  }
+
+  {
+    // Chi e' gia' fuori non si vota e non rientra.
+    const dopoUnGiro = { giocatori: OTTO, impostori: ['a', 'b'], fuori: ['d'] }
+    const schede = schedePerId({ c: ['e', 'f'] }, OTTO)
+    const r = dopoAccusa(dopoUnGiro, schede, fisso)
+    prova('chi era gia\u2019 fuori resta fuori', r.fuori.includes('d'))
+    prova('e non compare due volte', r.fuori.filter((x) => x === 'd').length === 1, r.fuori)
+  }
 }
 
 console.log('\nle coppie di parole')

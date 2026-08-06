@@ -775,3 +775,76 @@
   outline: 2px solid var(--sea, #0b3550);
   outline-offset: 2px;
 }
+
+/* ------------------------------------------------------- chi e' fuori */
+
+/* Fuori dal gioco, dentro il segreto: non parla e non vota, ma vede le
+   parole di tutti. Restare venti minuti a guardare senza sapere niente
+   sarebbe la parte peggiore di un gioco a eliminazione. */
+.imp-morto {
+  padding-top: 8px;
+}
+
+.imp-carte-scoperte {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.imp-scoperta {
+  display: grid;
+  grid-template-columns: 26px 1fr auto auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  font-size: 13px;
+  background: #fff;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 10px;
+}
+
+.imp-scoperta.uscito {
+  opacity: 0.5;
+}
+
+.imp-scoperta img {
+  border-radius: 50%;
+  background: var(--sand, #f7f4ec);
+}
+
+.imp-scoperta-nome {
+  font-weight: 700;
+  color: var(--ink, #16323f);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imp-scoperta-parola {
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-scoperta-parola.impostore {
+  font-weight: 700;
+  color: var(--coral, #e8604a);
+}
+
+.imp-scoperta-bollo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--coral, #e8604a);
+  border-radius: 100px;
+  padding: 3px 8px;
+}
+
+.imp-scoperta-fuori {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-soft, #55636b);
+}

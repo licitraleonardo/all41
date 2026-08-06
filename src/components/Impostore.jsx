@@ -4,6 +4,9 @@ import { useImpostore } from '../hooks/useImpostore.js'
 import {
   bastaPerCominciare,
   bastaPerRivelare,
+  eFuori,
+  impostoriVivi,
+  vivi,
   chiPuoTentare,
   diTurno,
   stessaParola,
@@ -108,7 +111,11 @@ export default function Impostore({ membro, membri }) {
         </>
       )}
 
-      {partita?.stato === 'in-corso' && inGioco && (
+      {inCorsoOra && inGioco && eFuori(partita, membro.id) && (
+        <Fuori partita={partita} membri={membri} nome={nome} />
+      )}
+
+      {partita?.stato === 'in-corso' && inGioco && !eFuori(partita, membro.id) && (
         // La chiave sull'id: "ho gia' letto la mia parola" e' uno stato
         // interno, e senza rimontare resterebbe acceso anche sulla
         // partita dopo — saltando la schermata della parola nuova. Capita
@@ -163,7 +170,7 @@ export default function Impostore({ membro, membri }) {
         />
       )}
 
-      {partita?.stato === 'voto' && (
+      {partita?.stato === 'voto' && !eFuori(partita, membro.id) && (
         <Accusa
           partita={partita}
           voto={voto}
@@ -639,7 +646,11 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
   const [avviso, setAvviso] = useState(null)
   const [scelti, setScelti] = useState([])
 
-  const quanti = partita.impostori.length
+  // Tanti quanti sono gli impostori ANCORA in gioco: dal secondo giro
+  // in poi ce ne puo' essere uno solo, e chiederne due sarebbe chiedere
+  // di accusare per forza un innocente.
+  const opzioni = voto?.opzioni ?? partita.giocatori
+  const quanti = impostoriVivi(partita).length
 
   const gia = useRef(null)
   useEffect(() => {
@@ -649,7 +660,7 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
   }, [partita.id, partita.votoId, onApri])
 
   const chiesta = partita.rivelaChiesta ?? []
-  const serve = quantiPerRivelare(partita.giocatori.length)
+  const serve = quantiPerRivelare(opzioni.length)
   const bastano = bastaPerRivelare(partita, chiesta)
   const hoChiesto = chiesta.includes(membro.id)
   const tuttiDentro = tuttiHannoVotato(partita, voto?.hannoVotato ?? [])
@@ -657,10 +668,10 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
   const hoVotato = voto?.hannoVotato?.includes(membro.id)
   const mieScelte = voto?.schede?.[membro.id]
   const quantiHannoVotato = voto?.hannoVotato?.length ?? 0
-  const tutti = partita.giocatori.length
+  const tutti = opzioni.length
 
   function alterna(id) {
-    const i = partita.giocatori.indexOf(id)
+    const i = opzioni.indexOf(id)
     setScelti((prima) => {
       if (prima.includes(i)) return prima.filter((x) => x !== i)
       // Non piu' di quanti sono gli impostori: indicarne cinque non e'
@@ -705,10 +716,10 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
       {avviso && <p className="imp-guasto">{avviso}</p>}
 
       <div className="imp-gente">
-        {partita.giocatori
+        {opzioni
           .filter((id) => id !== membro.id)
           .map((id) => {
-            const i = partita.giocatori.indexOf(id)
+            const i = opzioni.indexOf(id)
             const preso = scelteMostrate.includes(i)
             return (
               <button
@@ -792,9 +803,9 @@ function Colpo({ partita, voto, membro, nome, onTenta, onChiudi }) {
       chiPuoTentare({
         impostori: partita.impostori,
         giocatori: partita.giocatori,
-        schede: schedePerId(voto?.schede, partita.giocatori),
+        schede: schedePerId(voto?.schede, voto?.opzioni ?? partita.giocatori),
       }),
-    [partita, voto?.schede]
+    [partita, voto?.schede, voto?.opzioni]
   )
 
   const tocca = puo.includes(membro.id)
@@ -862,6 +873,61 @@ function Colpo({ partita, voto, membro, nome, onTenta, onChiudi }) {
   )
 }
 
+// Chi e' uscito. Non parla e non vota, ma in cambio vede tutte le
+// parole: e' la regola scelta per il viaggio — fuori dal gioco, dentro il
+// segreto. Restare seduti venti minuti senza sapere niente sarebbe la
+// parte peggiore di un gioco a eliminazione, cosi' invece diventa la piu'
+// divertente da guardare.
+function Fuori({ partita, membri, nome }) {
+  const dentro = vivi(partita)
+  const usciti = (partita.fuori ?? []).filter((id) => id !== undefined)
+
+  return (
+    <section className="imp-morto">
+      <p className="imp-etichetta">Sei fuori</p>
+      <h2 className="imp-titolo">Adesso guardi</h2>
+      <p className="imp-spiega">
+        Non parli e non voti. In compenso vedi tutto: sotto ci sono le parole di
+        tutti. Buon divertimento, e niente facce strane.
+      </p>
+
+      <p className="imp-etichetta">Chi ha cosa</p>
+      <ul className="imp-carte-scoperte">
+        {partita.giocatori.map((id) => {
+          const parola = partita.assegnazioni[id]
+          const impostore = partita.impostori.includes(id)
+          const ancoraDentro = dentro.includes(id)
+
+          return (
+            <li
+              key={id}
+              className={ancoraDentro ? 'imp-scoperta' : 'imp-scoperta uscito'}
+            >
+              <img
+                src={urlAvatar(membri[id]?.avatarStyle, membri[id]?.avatarSeed || id)}
+                alt=""
+                width="26"
+                height="26"
+              />
+              <span className="imp-scoperta-nome">{nome(id)}</span>
+              <span className={impostore ? 'imp-scoperta-parola impostore' : 'imp-scoperta-parola'}>
+                {parola === NESSUNA_PAROLA ? '—' : parola}
+              </span>
+              {impostore && <span className="imp-scoperta-bollo">impostore</span>}
+              {!ancoraDentro && <span className="imp-scoperta-fuori">fuori</span>}
+            </li>
+          )
+        })}
+      </ul>
+
+      <p className="imp-nota">
+        {usciti.length === 1 ? 'È uscito uno.' : `Sono usciti in ${usciti.length}.`} In
+        gioco restano {dentro.length}.
+      </p>
+    </section>
+  )
+}
+
 // ---------------------------------------------------------- rivelazione
 
 function Rivelazione({ partita, voto, nome, membri }) {
@@ -870,19 +936,41 @@ function Rivelazione({ partita, voto, nome, membri }) {
       esito({
         impostori: partita.impostori,
         giocatori: partita.giocatori,
-        schede: schedePerId(voto?.schede, partita.giocatori),
+        schede: schedePerId(voto?.schede, voto?.opzioni ?? partita.giocatori),
       }),
-    [partita, voto?.schede]
+    [partita, voto?.schede, voto?.opzioni]
   )
 
   const colpo = stessaParola(partita.tentativo, partita.parolaGruppo)
   const scampati = r.impuniti.length > 0
+  const perNumeri = partita.stato === 'finita' && impostoriVivi(partita).length > 0 && !colpo
+
+  // Chi e' stato eliminato per errore: e' meta' della storia di una
+  // partita a eliminazione, e senza non si capisce come si e' arrivati
+  // alla fine.
+  const eliminati = (partita.fuori ?? []).filter((id) => !partita.impostori.includes(id))
 
   return (
     <section className={colpo ? 'imp-rivelazione ribaltata' : 'imp-rivelazione'}>
       <h2 className="imp-titolo">
-        {colpo ? 'Ribaltata all’ultimo' : scampati ? 'L’ha fatta franca' : 'Beccato'}
+        {colpo
+          ? 'Ribaltata all’ultimo'
+          : perNumeri
+            ? 'Vi hanno fatti fuori'
+            : scampati
+              ? 'L’ha fatta franca'
+              : 'Beccato'}
       </h2>
+
+      {/* Il finale per numeri va detto, o non si capisce perche' la
+          partita e' finita senza che nessuno fosse beccato. */}
+      {perNumeri && (
+        <p className="imp-colpo-esito riuscito">
+          Sono rimasti in {impostoriVivi(partita).length} contro{' '}
+          {partita.giocatori.length - (partita.fuori ?? []).length - impostoriVivi(partita).length}
+          : da lì in poi il voto lo decidevano loro.
+        </p>
+      )}
 
       {/* Il colpo di coda va raccontato, o il finale non si spiega: uno
           scoperto che vince sembra un errore, non un colpo di scena. */}
@@ -927,6 +1015,12 @@ function Rivelazione({ partita, voto, nome, membri }) {
           </div>
         ))}
       </div>
+
+      {eliminati.length > 0 && (
+        <p className="imp-spiega">
+          Per strada ci hanno rimesso {eliminati.map(nome).join(', ')}.
+        </p>
+      )}
 
       {r.indovini.length > 0 ? (
         <p className="imp-spiega">
