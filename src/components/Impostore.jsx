@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './Impostore.css'
 import { useImpostore } from '../hooks/useImpostore.js'
-import { diTurno, esito, quantiMancano, schedePerId } from '../lib/impostore.js'
+import {
+  bastaPerRivelare,
+  diTurno,
+  esito,
+  quantiMancano,
+  quantiPerRivelare,
+  schedePerId,
+  tuttiHannoVotato,
+} from '../lib/impostore.js'
 import { IMPOSTORE, NESSUNA_PAROLA, VARIANTI } from '../config/impostore.js'
 import { PER_ID } from '../config/leggi.js'
 import { urlAvatar } from '../config/avatar.js'
@@ -22,8 +30,8 @@ const DURATA_FINALE = 7000
 // lasciata stare. Niente timer: un countdown trasforma una cosa
 // rilassata in ansia da prestazione.
 export default function Impostore({ membro, membri }) {
-  const { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, rivela, setVoto } =
-    useImpostore()
+  const { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, chiedi, rivela, setVoto } =
+    useImpostore(membro.id)
   const nome = (id) => membri[id]?.nome ?? 'Qualcuno'
 
   // Quale finale hai già letto: sta su questo telefono, perché è una
@@ -118,6 +126,7 @@ export default function Impostore({ membro, membri }) {
           membri={membri}
           nome={nome}
           onApri={avviaVoto}
+          onChiedi={chiedi}
           onRivela={rivela}
           onVotato={setVoto}
         />
@@ -429,7 +438,7 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
 
 // ----------------------------------------------------------------- voto
 
-function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotato }) {
+function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivela, onVotato }) {
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [scelti, setScelti] = useState([])
@@ -442,6 +451,12 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotat
     gia.current = partita.id
     onApri()
   }, [partita.id, partita.votoId, onApri])
+
+  const chiesta = partita.rivelaChiesta ?? []
+  const serve = quantiPerRivelare(partita.giocatori.length)
+  const bastano = bastaPerRivelare(partita, chiesta)
+  const hoChiesto = chiesta.includes(membro.id)
+  const tuttiDentro = tuttiHannoVotato(partita, voto?.hannoVotato ?? [])
 
   const hoVotato = voto?.hannoVotato?.includes(membro.id)
   const mieScelte = voto?.schede?.[membro.id]
@@ -537,11 +552,33 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotat
         </button>
       )}
 
-      {/* Non si aspetta l'ultimo: se uno e' andato a dormire col telefono
-          in tasca, il gruppo non resta ostaggio. */}
-      <button type="button" className="imp-rivela" onClick={onRivela}>
-        {quantiHannoVotato >= tutti ? 'Rivela' : 'Rivela lo stesso'}
-      </button>
+      {/* Rivelare in anticipo non e' di chi tocca il tasto per primo: un
+          tocco per sbaglio brucerebbe la partita a tutti gli altri.
+          Serve che lo chieda piu' della meta'. Quando hanno votato tutti
+          invece non c'e' niente da chiedere. */}
+      {tuttiDentro ? (
+        <button type="button" className="imp-comincia" onClick={onRivela}>
+          Rivela
+        </button>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="imp-rivela"
+            onClick={bastano ? onRivela : onChiedi}
+            disabled={!bastano && hoChiesto}
+          >
+            {bastano
+              ? 'Il gruppo ha deciso: rivela'
+              : hoChiesto
+                ? `Hai chiesto di rivelare — ${chiesta.length} su ${serve}`
+                : `Chiedi di rivelare (${chiesta.length} su ${serve})`}
+          </button>
+          <p className="imp-nota">
+            Manca ancora qualcuno. Per rivelare prima devono chiederlo in {serve}.
+          </p>
+        </>
+      )}
     </section>
   )
 }

@@ -342,6 +342,11 @@ alter table point_events add column if not exists proposed_by uuid
 
 alter table members add column if not exists last_known_location jsonb;
 
+-- Chi ha chiesto di rivelare prima che abbiano votato tutti. Rivelare e'
+-- una scelta del gruppo e non di chi tocca il tasto per primo: un tocco
+-- per sbaglio brucerebbe la partita a tutti gli altri.
+alter table impostore_games add column if not exists rivela_chiesta uuid[] not null default '{}';
+
 -- Gli id delle sfide sono etichette leggibili ('faro', 'seada'), non
 -- uuid: la colonna nasceva uuid e va convertita dove esiste già.
 alter table photos add column if not exists challenge_id text;
@@ -985,6 +990,34 @@ begin
 
   return v;
 end $$;
+
+-- Chiedere di rivelare in anticipo. In una funzione e non in un update
+-- perche' due che la chiedono nello stesso istante si sovrascriverebbero
+-- a vicenda, e uno dei due voti sparirebbe.
+create or replace function chiedi_rivelazione(p_partita uuid, p_membro uuid)
+returns impostore_games
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  g impostore_games;
+begin
+  select * into g from impostore_games where id = p_partita for update;
+  if not found then raise exception 'Questa partita non esiste.'; end if;
+
+  if not (p_membro = any(g.rivela_chiesta)) then
+    update impostore_games
+       set rivela_chiesta = rivela_chiesta || p_membro
+     where id = p_partita
+    returning * into g;
+  end if;
+
+  return g;
+end $$;
+
+revoke execute on function chiedi_rivelazione(uuid, uuid) from public;
+grant execute on function chiedi_rivelazione(uuid, uuid) to authenticated;
 
 revoke execute on function vota_impostore(uuid, uuid, int[]) from public;
 grant execute on function vota_impostore(uuid, uuid, int[]) to authenticated;

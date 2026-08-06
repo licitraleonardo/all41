@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import {
   apriVoto,
   avanzaTurno,
+  chiediRivelazione,
   chiudiPartita,
   creaPartita,
   daRiga,
@@ -15,7 +16,7 @@ import { descriviErrore } from '../lib/errori.js'
 // Una partita per volta, la piu' recente. Il turno deve essere lo stesso
 // su otto telefoni nello stesso momento, altrimenti parlano in due
 // insieme: qui il realtime non e' un lusso, e' il gioco.
-export function useImpostore() {
+export function useImpostore(membroId) {
   const [partita, setPartita] = useState(null)
   const [voto, setVoto] = useState(null)
   const [storico, setStorico] = useState([])
@@ -131,6 +132,16 @@ export function useImpostore() {
     }
   }, [partita])
 
+  const chiedi = useCallback(async () => {
+    if (!partita) return
+    setErrore(null)
+    try {
+      setPartita(await chiediRivelazione(partita, membroId))
+    } catch (e) {
+      setErrore(descriviErrore(e))
+    }
+  }, [partita, membroId])
+
   const rivela = useCallback(async () => {
     if (!partita) return
     setErrore(null)
@@ -153,5 +164,5 @@ export function useImpostore() {
     }
   }, [partita?.id, partita?.stato])
 
-  return { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, rivela, setVoto }
+  return { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, chiedi, rivela, setVoto }
 }

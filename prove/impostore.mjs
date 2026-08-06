@@ -10,6 +10,9 @@ import {
   preparaPartita,
   premi,
   quantiMancano,
+  quantiPerRivelare,
+  bastaPerRivelare,
+  tuttiHannoVotato,
   schedePerId,
 } from '../src/lib/impostore.js'
 import { COPPIE, IMPOSTORE, NESSUNA_PAROLA } from '../src/config/impostore.js'
@@ -286,6 +289,27 @@ console.log('\ni punti')
     'nessuno viene pagato due volte',
     p.assegnazioni.length === new Set(p.assegnazioni.map((a) => a.membroId + a.leggeId)).size
   )
+}
+
+console.log('\nrivelare prima che abbiano votato tutti')
+{
+  const partita = { giocatori: OTTO }
+
+  prova('quando hanno votato tutti non c’è niente da chiedere',
+    tuttiHannoVotato(partita, OTTO))
+  prova('se ne manca uno, no', !tuttiHannoVotato(partita, OTTO.slice(0, 7)))
+  prova('e a partita vuota nemmeno', !tuttiHannoVotato({ giocatori: [] }, []))
+
+  prova('in otto serve che lo chiedano in cinque', quantiPerRivelare(8) === 5)
+  prova('in sette in quattro', quantiPerRivelare(7) === 4)
+  prova('in quattro in tre', quantiPerRivelare(4) === 3)
+  prova('sempre piu’ della meta’', [4, 5, 6, 7, 8, 9, 10].every((n) => quantiPerRivelare(n) > n / 2))
+
+  prova('uno solo non basta mai', !bastaPerRivelare(partita, ['a']))
+  prova('quattro su otto nemmeno: e’ meta’, non piu’ della meta’',
+    !bastaPerRivelare(partita, ['a', 'b', 'c', 'd']))
+  prova('cinque su otto bastano', bastaPerRivelare(partita, ['a', 'b', 'c', 'd', 'e']))
+  prova('e senza nessuna richiesta no', !bastaPerRivelare(partita, []))
 }
 
 console.log('\nle coppie di parole')

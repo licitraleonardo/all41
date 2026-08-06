@@ -574,3 +574,8 @@
   outline: 2px solid var(--sea, #0b3550);
   outline-offset: 2px;
 }
+
+.imp-rivela:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

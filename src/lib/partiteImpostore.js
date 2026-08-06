@@ -9,7 +9,7 @@ import { faiScattareLegge } from './punti.js'
 // impostore.js, che non sa cosa sia Supabase e si puo' provare.
 
 const CAMPI =
-  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, created_at'
+  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, created_at'
 
 export function daRiga(riga) {
   if (!riga) return null
@@ -25,6 +25,7 @@ export function daRiga(riga) {
     giro: riga.giro,
     giriTotali: riga.giri_totali,
     votoId: riga.vote_id,
+    rivelaChiesta: riga.rivela_chiesta ?? [],
     stato: riga.stato,
     creataIl: riga.created_at,
   }
@@ -164,6 +165,18 @@ export async function paga(partita, schedeGrezze) {
   }
 
   return assegnazioni
+}
+
+// Chiedere di rivelare prima che abbiano votato tutti. Passa da una
+// funzione: due che la chiedono nello stesso istante si sovrascriverebbero
+// a vicenda, e uno dei due voti sparirebbe.
+export async function chiediRivelazione(partita, membroId) {
+  const { data, error } = await supabase.rpc('chiedi_rivelazione', {
+    p_partita: partita.id,
+    p_membro: membroId,
+  })
+  if (error) throw error
+  return daRiga(data)
 }
 
 export async function chiudiPartita(partita, schede) {

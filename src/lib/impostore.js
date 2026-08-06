@@ -180,3 +180,21 @@ export function premi({ impostori, giocatori, schede }) {
     ],
   }
 }
+
+// ------------------------------------------------------ la rivelazione
+
+// Quando tutti hanno votato non serve chiedere niente: si rivela e basta.
+export function tuttiHannoVotato(partita, hannoVotato = []) {
+  return partita.giocatori.length > 0 && hannoVotato.length >= partita.giocatori.length
+}
+
+// Se manca qualcuno, rivelare e' una scelta del gruppo e non di chi tocca
+// il tasto per primo: un tocco per sbaglio brucerebbe la partita a tutti
+// gli altri. Serve piu' della meta'.
+export function quantiPerRivelare(quantiGiocatori) {
+  return Math.floor(quantiGiocatori / 2) + 1
+}
+
+export function bastaPerRivelare(partita, chiesta = []) {
+  return chiesta.length >= quantiPerRivelare(partita.giocatori.length)
+}
