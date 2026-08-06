@@ -167,78 +167,100 @@ console.log('\nquanto manca')
 
 console.log('\nle schede come arrivano dal database')
 {
-  // Il database salva il numero dell'opzione, non chi e' stato accusato:
-  // e' il passo dove i punti finivano a nessuno, in silenzio.
-  const grezze = { c: 0, d: 0, e: 1, f: 7 }
+  // Il database salva il numero dell'opzione, non chi e' stato accusato.
+  // E una scheda puo' portarne piu' di uno: con due impostori se ne
+  // indicano due, altrimenti tocca sceglierne uno e sperare.
+  const grezze = { c: 0, d: [0, 1], e: 1, f: 7 }
   const tradotte = schedePerId(grezze, OTTO)
 
+  prova('un numero solo diventa un elenco di uno', tradotte.c.join() === 'a', tradotte)
+  prova('un elenco diventa un elenco di persone', tradotte.d.join() === 'a,b', tradotte)
+  prova('lo zero non si perde per strada', tradotte.c.includes('a'))
+  prova('i numeri fuori elenco si buttano', !('x' in schedePerId({ x: 99 }, OTTO)))
   prova(
-    'i numeri diventano persone',
-    tradotte.c === 'a' && tradotte.d === 'a' && tradotte.e === 'b' && tradotte.f === 'h',
-    tradotte
-  )
-  prova('lo zero non si perde per strada', 'c' in tradotte && tradotte.c === 'a')
-  prova(
-    'un numero fuori elenco si butta invece di sporcare il conto',
-    !('x' in schedePerId({ x: 99 }, OTTO))
+    'una scheda con soli numeri sbagliati sparisce',
+    !('y' in schedePerId({ y: [99, 100] }, OTTO))
   )
   prova('senza schede non esplode', Object.keys(schedePerId(undefined, OTTO)).length === 0)
-
-  const r = esito({ impostori: ['a'], giocatori: OTTO, schede: tradotte })
-  prova('e il conteggio finale torna', r.accusati.join() === 'a' && r.scoperti.join() === 'a', r)
-  prova('con i numeri crudi invece non tornerebbe', esito({
-    impostori: ['a'], giocatori: OTTO, schede: grezze,
-  }).accusati.length === 0)
 }
 
-console.log('\nil voto')
+console.log('\nil voto, con un impostore solo')
 {
-  const impostori = ['a', 'b']
-
-  // Tutti accusano 'a': scoperto lui, 'b' la fa franca.
-  const schede = { c: 'a', d: 'a', e: 'a', f: 'a', g: 'a', h: 'b', a: 'c', b: 'c' }
+  const impostori = ['a']
+  const schede = schedePerId({ c: 0, d: 0, e: 1, f: 0 }, OTTO)
   const r = esito({ impostori, giocatori: OTTO, schede })
 
-  prova('il piu’ votato e’ accusato', r.accusati.join() === 'a', r.accusati)
-  prova('l’impostore votato e’ scoperto', r.scoperti.join() === 'a')
-  prova('l’altro la fa franca', r.impuniti.join() === 'b')
+  prova('si accusa uno solo, il piu\u2019 votato', r.accusati.join() === 'a', r.accusati)
+  prova('ed e\u2019 scoperto', r.scoperti.join() === 'a')
+  prova('nessun impunito', r.impuniti.length === 0)
+  prova('indovina chi l\u2019ha indicato', r.indovini.sort().join() === 'c,d,f', r.indovini)
+}
+
+console.log('\nil voto, con due impostori')
+{
+  const impostori = ['a', 'b']
+  const schede = schedePerId(
+    { c: [0, 1], d: [0, 1], e: [0, 2], f: [1, 2], g: [0, 1], h: [0, 1] },
+    OTTO
+  )
+  const r = esito({ impostori, giocatori: OTTO, schede })
+
+  prova('si accusano in due, quanti sono gli impostori', r.accusati.length === 2, r.accusati)
+  prova('e sono quelli giusti', r.accusati.sort().join() === 'a,b')
+  prova('scoperti tutti e due', r.scoperti.sort().join() === 'a,b')
+  prova('nessuno la fa franca', r.impuniti.length === 0)
   prova(
-    'chi ha indovinato e’ chi ha votato un impostore',
+    'ha indovinato chi ne ha indicato almeno uno vero',
     r.indovini.sort().join() === 'c,d,e,f,g,h',
     r.indovini
   )
-  prova('gli impostori non prendono il punto da indovino', !r.indovini.includes('a'))
 }
 
 {
-  // Nessuno li becca: due voti a testa su innocenti.
   const impostori = ['a', 'b']
-  const schede = { a: 'c', b: 'c', c: 'd', d: 'c', e: 'c', f: 'd', g: 'c', h: 'd' }
+  const schede = schedePerId(
+    { c: [0, 2], d: [0, 2], e: [0, 2], f: [0, 2], g: [0, 3], h: [0, 3] },
+    OTTO
+  )
+  const r = esito({ impostori, giocatori: OTTO, schede })
+
+  prova('ne becca uno e sbaglia l\u2019altro', r.accusati.sort().join() === 'a,c', r.accusati)
+  prova('a e\u2019 scoperto', r.scoperti.join() === 'a')
+  prova('b la fa franca', r.impuniti.join() === 'b')
+  prova('ma chi ha indicato a ha comunque indovinato', r.indovini.length === 6)
+}
+
+{
+  const impostori = ['a', 'b']
+  const schede = schedePerId({ c: [2, 3], d: [2, 3], e: [2, 3], f: [3, 4] }, OTTO)
   const r = esito({ impostori, giocatori: OTTO, schede })
   prova('nessun impostore scoperto', r.scoperti.length === 0)
   prova('tutti e due impuniti', r.impuniti.sort().join() === 'a,b')
-  prova('nessun indovino', r.indovini.length === 0, r.indovini)
-}
-
-{
-  // Parita': accusati entrambi, e chi era impostore fra loro e' scoperto.
-  const impostori = ['a']
-  const schede = { c: 'a', d: 'a', e: 'b', f: 'b' }
-  const r = esito({ impostori, giocatori: OTTO, schede })
-  prova('a parita’ si accusano tutti e due', r.accusati.sort().join() === 'a,b', r.accusati)
-  prova('l’impostore in parita’ e’ comunque scoperto', r.scoperti.join() === 'a')
+  prova('e nessun indovino', r.indovini.length === 0, r.indovini)
 }
 
 {
   const r = esito({ impostori: ['a'], giocatori: OTTO, schede: {} })
   prova('senza voti non si accusa nessuno', r.accusati.length === 0)
-  prova('e l’impostore la fa franca', r.impuniti.join() === 'a')
+  prova('e l\u2019impostore la fa franca', r.impuniti.join() === 'a')
 }
+
+{
+  // Gli impostori votano anche loro, ma non prendono mai il premio da
+  // indovino: nemmeno indicando il complice.
+  const impostori = ['a', 'b']
+  const schede = schedePerId({ a: [1, 2], b: [0, 2], c: [0, 1] }, OTTO)
+  const r = esito({ impostori, giocatori: OTTO, schede })
+  prova('un impostore non indovina mai', !r.indovini.includes('a') && !r.indovini.includes('b'))
+  prova('l\u2019innocente che li becca si', r.indovini.join() === 'c', r.indovini)
+}
+
 
 console.log('\ni punti')
 {
   const impostori = ['a', 'b']
-  const schede = { c: 'a', d: 'a', e: 'a', f: 'a', g: 'a', h: 'b' }
+  // Tutti indicano solo 'a': scoperto lui, 'b' la fa franca.
+  const schede = schedePerId({ c: 0, d: 0, e: 0, f: 0, g: 0, h: 0 }, OTTO)
   const p = premi({ impostori, giocatori: OTTO, schede })
 
   const perMembro = {}

@@ -6,7 +6,7 @@ import { IMPOSTORE, NESSUNA_PAROLA, VARIANTI } from '../config/impostore.js'
 import { PER_ID } from '../config/leggi.js'
 import { urlAvatar } from '../config/avatar.js'
 import FacciaAllan from './FacciaAllan.jsx'
-import { vota } from '../lib/voti.js'
+import { votaImpostore } from '../lib/voti.js'
 import { descriviErrore } from '../lib/errori.js'
 import Rotella from './Rotella.jsx'
 
@@ -63,7 +63,7 @@ export default function Impostore({ membro, membri }) {
               partita che non ha giocato. Da lì in poi sta nello storico,
               che è il posto dei finali vecchi. */}
           {partita?.stato === 'finita' && !chiusa && (
-            <Rivelazione
+            <FinestraFinale
               partita={partita}
               voto={voto}
               nome={nome}
@@ -97,33 +97,17 @@ export default function Impostore({ membro, membri }) {
         </p>
       )}
 
-      {/* Una partita vecchia riaperta dallo storico: sopra tutto, e si
-          chiude. Aperta in mezzo all'elenco spingeva giù tutto il resto
-          e faceva perdere il segno. */}
+      {/* Una partita vecchia riaperta dallo storico: stessa finestra del
+          finale, perché è la stessa cosa — un resoconto che si legge e si
+          chiude. */}
       {daStorico && (
-        <div
-          className="imp-sfondo"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Com’è andata"
-          onClick={() => setDaStorico(null)}
-        >
-          <div className="imp-finestra" onClick={(e) => e.stopPropagation()}>
-            <Rivelazione
-              partita={daStorico}
-              voto={{ schede: daStorico.schede }}
-              nome={nome}
-              membri={membri}
-            />
-            <button
-              type="button"
-              className="imp-chiudi-finestra"
-              onClick={() => setDaStorico(null)}
-            >
-              Chiudi
-            </button>
-          </div>
-        </div>
+        <FinestraFinale
+          partita={daStorico}
+          voto={{ schede: daStorico.schede }}
+          nome={nome}
+          membri={membri}
+          onChiudi={() => setDaStorico(null)}
+        />
       )}
 
       {partita?.stato === 'voto' && (
@@ -235,6 +219,28 @@ function Apparecchia({ membro, membri, onCrea }) {
         </p>
       )}
     </section>
+  )
+}
+
+// La finestra del resoconto. La stessa a fine partita e riaprendo una
+// partita vecchia: e' la stessa cosa, e due finestre diverse per dire lo
+// stesso finale sarebbero due posti dove sbagliare.
+function FinestraFinale({ partita, voto, nome, membri, onChiudi }) {
+  return (
+    <div
+      className="imp-sfondo"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Com’è andata"
+      onClick={onChiudi}
+    >
+      <div className="imp-finestra" onClick={(e) => e.stopPropagation()}>
+        <Rivelazione partita={partita} voto={voto} nome={nome} membri={membri} />
+        <button type="button" className="imp-chiudi-finestra" onClick={onChiudi}>
+          Chiudi
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -426,12 +432,10 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
 function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotato }) {
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
+  const [scelti, setScelti] = useState([])
 
-  // Il voto lo apre il primo telefono che arriva qui: nessuno deve fare
-  // l'operatore. Una volta sola per partita, pero': `onApri` cambia a
-  // ogni aggiornamento della partita, e senza il freno questo effetto
-  // rifarebbe partire l'apertura prima che il primo voto sia tornato,
-  // lasciando in giro sondaggi orfani.
+  const quanti = partita.impostori.length
+
   const gia = useRef(null)
   useEffect(() => {
     if (partita.votoId || gia.current === partita.id) return
@@ -440,18 +444,26 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotat
   }, [partita.id, partita.votoId, onApri])
 
   const hoVotato = voto?.hannoVotato?.includes(membro.id)
-  const mioVoto = voto?.schede?.[membro.id]
+  const mieScelte = voto?.schede?.[membro.id]
   const quantiHannoVotato = voto?.hannoVotato?.length ?? 0
   const tutti = partita.giocatori.length
 
-  async function accusa(id) {
+  function alterna(id) {
+    const i = partita.giocatori.indexOf(id)
+    setScelti((prima) => {
+      if (prima.includes(i)) return prima.filter((x) => x !== i)
+      // Non piu' di quanti sono gli impostori: indicarne cinque non e'
+      // votare, e' fare la lista della spesa.
+      if (prima.length >= quanti) return prima
+      return [...prima, i]
+    })
+  }
+
+  async function conferma() {
     setInCorso(true)
     setAvviso(null)
     try {
-      // La riga aggiornata torna gia' dalla chiamata: usarla invece di
-      // aspettare l'eco del realtime fa vedere subito il proprio voto,
-      // invece di lasciare il dito a mezz'aria per un secondo.
-      onVotato(await vota(voto.id, membro.id, partita.giocatori.indexOf(id)))
+      onVotato(await votaImpostore(voto.id, membro.id, scelti))
     } catch (e) {
       setAvviso(descriviErrore(e))
     } finally {
@@ -459,47 +471,75 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotat
     }
   }
 
-  if (!voto) return <p className="imp-vuoto">Apro il voto…</p>
+  if (!voto) return <Rotella testo="Apro il voto" />
+
+  const scelteMostrate = hoVotato
+    ? (Array.isArray(mieScelte) ? mieScelte : [mieScelte]).filter((x) => x !== undefined)
+    : scelti
 
   return (
     <section className="imp-voto">
-      <h2 className="imp-titolo">Chi è l’impostore?</h2>
+      <h2 className="imp-titolo">
+        {quanti === 1 ? 'Vota l’impostore' : 'Vota i due impostori'}
+      </h2>
+      <p className="imp-spiega">
+        {hoVotato
+          ? 'Hai votato.'
+          : quanti === 1
+            ? 'Indica chi sospetti.'
+            : `Indicane due: ne mancano ${quanti - scelti.length}.`}{' '}
+        Hanno votato {quantiHannoVotato} su {tutti}.
+      </p>
+
       {avviso && <p className="imp-guasto">{avviso}</p>}
 
       <div className="imp-gente">
         {partita.giocatori
           .filter((id) => id !== membro.id)
-          .map((id) => (
-            <button
-              key={id}
-              type="button"
-              className={
-                mioVoto === partita.giocatori.indexOf(id)
-                  ? 'imp-tessera dentro'
-                  : 'imp-tessera'
-              }
-              onClick={() => accusa(id)}
-              disabled={hoVotato || inCorso}
-            >
-              <img
-                src={urlAvatar(membri[id]?.avatarStyle, membri[id]?.avatarSeed || id)}
-                alt=""
-                width="34"
-                height="34"
-              />
-              <span>{nome(id)}</span>
-            </button>
-          ))}
+          .map((id) => {
+            const i = partita.giocatori.indexOf(id)
+            const preso = scelteMostrate.includes(i)
+            return (
+              <button
+                key={id}
+                type="button"
+                className={preso ? 'imp-tessera dentro' : 'imp-tessera'}
+                onClick={() => alterna(id)}
+                disabled={hoVotato || inCorso}
+                aria-pressed={preso}
+              >
+                <img
+                  src={urlAvatar(membri[id]?.avatarStyle, membri[id]?.avatarSeed || id)}
+                  alt=""
+                  width="34"
+                  height="34"
+                />
+                <span>{nome(id)}</span>
+              </button>
+            )
+          })}
       </div>
 
-      <p className="imp-spiega">
-        {hoVotato ? 'Hai votato.' : 'Tocca chi sospetti.'} Hanno votato {quantiHannoVotato} su{' '}
-        {tutti}.
-      </p>
+      {/* Finche' non ne hai indicati quanti servono non si conferma: con
+          due impostori votarne uno solo vuol dire buttare mezzo voto. */}
+      {!hoVotato && (
+        <button
+          type="button"
+          className="imp-comincia"
+          onClick={conferma}
+          disabled={scelti.length !== quanti || inCorso}
+        >
+          {inCorso
+            ? '…'
+            : scelti.length !== quanti
+              ? `Indicane ${quanti - scelti.length} ancora`
+              : 'Conferma il voto'}
+        </button>
+      )}
 
       {/* Non si aspetta l'ultimo: se uno e' andato a dormire col telefono
           in tasca, il gruppo non resta ostaggio. */}
-      <button type="button" className="imp-comincia" onClick={onRivela}>
+      <button type="button" className="imp-rivela" onClick={onRivela}>
         {quantiHannoVotato >= tutti ? 'Rivela' : 'Rivela lo stesso'}
       </button>
     </section>
@@ -508,7 +548,7 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotat
 
 // ---------------------------------------------------------- rivelazione
 
-function Rivelazione({ partita, voto, nome, membri, onChiudi = null }) {
+function Rivelazione({ partita, voto, nome, membri }) {
   const r = useMemo(
     () =>
       esito({
@@ -569,16 +609,6 @@ function Rivelazione({ partita, voto, nome, membri, onChiudi = null }) {
         <p className="imp-spiega">Nessuno ha indovinato. Complimenti a nessuno.</p>
       )}
 
-      {onChiudi && (
-        <button
-          type="button"
-          className="imp-chiudi-finale"
-          onClick={onChiudi}
-          aria-label="Chiudi"
-        >
-          ×
-        </button>
-      )}
     </section>
   )
 }

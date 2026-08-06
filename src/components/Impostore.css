@@ -497,23 +497,6 @@
   outline-offset: 2px;
 }
 
-/* Il finale sta in piedi sette secondi e si toglie da solo. La × serve
-   a chi ha già letto e non vuole aspettare. */
-.imp-chiudi-finale {
-  display: block;
-  width: 40px;
-  height: 40px;
-  margin: 14px auto 0;
-  font: inherit;
-  font-size: 22px;
-  line-height: 1;
-  color: var(--sea, #0b3550);
-  background: transparent;
-  border: 1px solid var(--sea, #0b3550);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
 .imp-chiudi-finale:focus-visible {
   outline: 2px solid var(--sea, #0b3550);
   outline-offset: 2px;
@@ -564,8 +547,30 @@
   cursor: pointer;
 }
 
-.imp-chiudi-finale:focus-visible,
 .imp-chiudi-finestra:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
+
+/* Il tasto per rivelare: sotto il voto, e chiaramente separato dalla
+   conferma — sono due gesti diversi e premerne uno per l'altro rovina
+   la partita. */
+.imp-rivela {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-soft, #55636b);
+  background: transparent;
+  border: 1px dashed var(--line, #e4dfd2);
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.imp-rivela:focus-visible {
   outline: 2px solid var(--sea, #0b3550);
   outline-offset: 2px;
 }

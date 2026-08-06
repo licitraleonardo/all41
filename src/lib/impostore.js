@@ -99,11 +99,20 @@ export function quantiMancano({ ordine, turno, giro, giriTotali }) {
 // perche' i sondaggi normali hanno opzioni di testo. Qui le opzioni sono
 // le persone, quindi il numero va riportato a chi e': senza questo passo
 // i punti finirebbero a nessuno, e in silenzio.
+// Una scheda puo' contenere piu' di un'accusa: con due impostori se ne
+// indicano due, altrimenti si e' costretti a indovinarne uno e sperare.
+// Dal database arriva un numero o un elenco di numeri, e qui esce sempre
+// un elenco di persone.
 export function schedePerId(schede, giocatori) {
   return Object.fromEntries(
     Object.entries(schede ?? {})
-      .map(([chi, quale]) => [chi, giocatori[quale]])
-      .filter(([, accusato]) => accusato)
+      .map(([chi, quali]) => [
+        chi,
+        (Array.isArray(quali) ? quali : [quali])
+          .map((q) => giocatori[q])
+          .filter(Boolean),
+      ])
+      .filter(([, accusati]) => accusati.length > 0)
   )
 }
 
@@ -111,19 +120,35 @@ export function schedePerId(schede, giocatori) {
 // schedePerId: qui dentro sono id di persone, non numeri.
 export function esito({ impostori, giocatori, schede }) {
   const conteggi = Object.fromEntries(giocatori.map((id) => [id, 0]))
-  for (const accusato of Object.values(schede)) {
-    if (accusato in conteggi) conteggi[accusato] += 1
+  for (const accusati of Object.values(schede ?? {})) {
+    // Ogni scheda puo' portare piu' accuse, e ognuna vale un voto.
+    for (const accusato of Array.isArray(accusati) ? accusati : [accusati]) {
+      if (accusato in conteggi) conteggi[accusato] += 1
+    }
   }
 
   const massimo = Math.max(0, ...Object.values(conteggi))
-  // A parita' di voti sono accusati tutti: nessuno spareggio inventato,
-  // e il gruppo se la vede da solo.
-  const accusati = massimo === 0 ? [] : giocatori.filter((id) => conteggi[id] === massimo)
+  // Si accusano tanti quanti sono gli impostori, presi dai piu' votati.
+  // A parita' sull'ultimo posto utile entrano tutti i pari: nessuno
+  // spareggio inventato, e il gruppo se la vede da solo.
+  const ordinati = [...giocatori]
+    .filter((id) => conteggi[id] > 0)
+    .sort((a, b) => conteggi[b] - conteggi[a] || (a < b ? -1 : 1))
+
+  const soglia = ordinati.length
+    ? conteggi[ordinati[Math.min(impostori.length, ordinati.length) - 1]]
+    : 0
+  const accusati = massimo === 0 ? [] : giocatori.filter((id) => conteggi[id] >= soglia && conteggi[id] > 0)
 
   const scoperti = impostori.filter((id) => accusati.includes(id))
   const impuniti = impostori.filter((id) => !accusati.includes(id))
-  const indovini = Object.entries(schede)
-    .filter(([chi, accusato]) => impostori.includes(accusato) && !impostori.includes(chi))
+  // Indovina chi ha indicato almeno un impostore vero.
+  const indovini = Object.entries(schede ?? {})
+    .filter(
+      ([chi, accusati_]) =>
+        !impostori.includes(chi) &&
+        (Array.isArray(accusati_) ? accusati_ : [accusati_]).some((a) => impostori.includes(a))
+    )
     .map(([chi]) => chi)
 
   return { conteggi, accusati, scoperti, impuniti, indovini }

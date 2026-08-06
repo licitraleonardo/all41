@@ -86,3 +86,16 @@ export async function chiudiScaduti() {
   await Promise.all(data.map((v) => chiudiVoto(v.id).catch(() => {})))
   return data.length
 }
+
+// Il voto dell'Impostore: piu' accuse in una scheda sola. Passa da una
+// funzione sua e non da `vota`, che per i sondaggi normali deve
+// continuare ad accettare una preferenza e basta.
+export async function votaImpostore(votoId, memberId, opzioni) {
+  const { data, error } = await supabase.rpc('vota_impostore', {
+    p_voto: votoId,
+    p_membro: memberId,
+    p_opzioni: opzioni,
+  })
+  if (error) throw error
+  return daRiga(data)
+}

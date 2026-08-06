@@ -944,6 +944,51 @@ begin
   return g;
 end $$;
 
+-- Il voto dell'Impostore accetta piu' di una accusa: con due impostori
+-- se ne indicano due, altrimenti tocca sceglierne uno e sperare. La
+-- funzione dei sondaggi normali resta com'e' — li' una preferenza sola
+-- e' giusta, e cambiarla per fare un favore a un'altra sezione e' il
+-- modo di rompere tutte e due.
+create or replace function vota_impostore(
+  p_voto uuid,
+  p_membro uuid,
+  p_opzioni int[]
+)
+returns votes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v votes;
+  o int;
+begin
+  select * into v from votes where id = p_voto for update;
+
+  if not found then raise exception 'Questo voto non esiste.'; end if;
+  if v.closed_at is not null then raise exception 'Il voto e'' chiuso.'; end if;
+  if p_membro = any(v.voted) then raise exception 'Hai gia'' votato.'; end if;
+  if array_length(p_opzioni, 1) is null then raise exception 'Non hai indicato nessuno.'; end if;
+
+  foreach o in array p_opzioni loop
+    if o < 0 or o >= array_length(v.options, 1) then
+      raise exception 'Opzione inesistente.';
+    end if;
+    update votes set tally[o + 1] = tally[o + 1] + 1 where id = p_voto;
+  end loop;
+
+  update votes
+     set voted = voted || p_membro,
+         ballots = ballots || jsonb_build_object(p_membro::text, to_jsonb(p_opzioni))
+   where id = p_voto
+  returning * into v;
+
+  return v;
+end $$;
+
+revoke execute on function vota_impostore(uuid, uuid, int[]) from public;
+grant execute on function vota_impostore(uuid, uuid, int[]) to authenticated;
+
 revoke execute on function vota(uuid, uuid, int) from public;
 revoke execute on function chiudi_voto(uuid) from public;
 revoke execute on function avanza_impostore(uuid, int, uuid[], int, int, text) from public;
