@@ -46,6 +46,7 @@ export default function Impostore({ membro, membri }) {
           key={partita.id}
           partita={partita}
           membro={membro}
+          membri={membri}
           nome={nome}
           onAvanti={avanti}
         />
@@ -171,7 +172,7 @@ function Apparecchia({ membro, membri, onCrea }) {
 
 // ------------------------------------------------------- il giro di parole
 
-function Giro({ partita, membro, nome, onAvanti }) {
+function Giro({ partita, membro, membri, nome, onAvanti }) {
   const chiave = `impostore-letta-${partita.id}`
   const [letta, setLetta] = useState(() => localStorage.getItem(chiave) === 'si')
   const [scoperta, setScoperta] = useState(false)
@@ -201,19 +202,26 @@ function Giro({ partita, membro, nome, onAvanti }) {
         {!scoperta ? (
           <>
             <p className="imp-spiega">Solo tu. Guarda che nessuno ti veda dietro.</p>
-            <button type="button" className="imp-svela" onClick={() => setScoperta(true)}>
-              Scopri la tua parola
+            {/* Una carta coperta, non un bottone: si capisce che sotto
+                c'è qualcosa e che è roba tua. */}
+            <button type="button" className="imp-carta" onClick={() => setScoperta(true)}>
+              <span className="imp-carta-dorso" aria-hidden="true">
+                ?
+              </span>
+              <span className="imp-carta-invito">Scopri la tua parola</span>
             </button>
           </>
         ) : (
           <>
             <p className="imp-etichetta">La tua parola è</p>
-            <p className={mia === NESSUNA_PAROLA ? 'imp-parola niente' : 'imp-parola'}>
-              {mia === NESSUNA_PAROLA ? 'Nessuna' : mia}
-            </p>
-            {mia === NESSUNA_PAROLA && (
-              <p className="imp-spiega">Sei l’impostore. Inventa e non farti sgamare.</p>
-            )}
+            <div className={mia === NESSUNA_PAROLA ? 'imp-carta-su niente' : 'imp-carta-su'}>
+              <p className={mia === NESSUNA_PAROLA ? 'imp-parola niente' : 'imp-parola'}>
+                {mia === NESSUNA_PAROLA ? 'Nessuna' : mia}
+              </p>
+              {mia === NESSUNA_PAROLA && (
+                <p className="imp-carta-nota">Sei l’impostore. Inventa e non farti sgamare.</p>
+              )}
+            </div>
             <button type="button" className="imp-comincia" onClick={hoLetto}>
               Ho letto, nascondi
             </button>
@@ -225,13 +233,38 @@ function Giro({ partita, membro, nome, onAvanti }) {
 
   // Da qui in poi lo schermo deve dire una cosa sola, leggibile da tre
   // metri, perche' il gioco e' nella stanza e non qui dentro.
+  const mioTurno = tocca === membro.id
+
   return (
-    <section className="imp-turno">
+    <section className={mioTurno ? 'imp-turno mio' : 'imp-turno'}>
+      {/* I pallini del giro: quanti hanno gia' parlato e quanti mancano,
+          senza far contare a nessuno. Uno sguardo e sai a che punto sei. */}
+      <div className="imp-pallini" role="img" aria-label={`Giro ${partita.giro} di ${partita.giriTotali}`}>
+        {partita.ordine.map((id, i) => (
+          <span
+            key={id}
+            className={
+              i < partita.turno ? 'imp-pallino fatto' : i === partita.turno ? 'imp-pallino ora' : 'imp-pallino'
+            }
+          />
+        ))}
+      </div>
+
       <p className="imp-giro">
         Giro {partita.giro} di {partita.giriTotali}
       </p>
 
-      <p className="imp-tocca-a">{tocca === membro.id ? 'TOCCA A TE' : `TOCCA A ${nome(tocca).toUpperCase()}`}</p>
+      {/* La faccia prima del nome: da lontano si riconosce quella, e a
+          quel punto il nome serve solo a confermare. */}
+      <img
+        className="imp-faccia"
+        src={urlAvatar(membri[tocca]?.avatarStyle, membri[tocca]?.avatarSeed || tocca)}
+        alt=""
+        width="96"
+        height="96"
+      />
+
+      <p className="imp-tocca-a">{mioTurno ? 'TOCCA A TE' : nome(tocca).toUpperCase()}</p>
 
       <p className="imp-spiega">
         {mancano === 1 ? 'Ultimo, poi si vota.' : `Ancora ${mancano} prima del voto.`}
@@ -244,13 +277,13 @@ function Giro({ partita, membro, nome, onAvanti }) {
 
       <button
         type="button"
-        className="imp-ripassa"
+        className={scoperta ? 'imp-ripassa aperta' : 'imp-ripassa'}
         onPointerDown={() => setScoperta(true)}
         onPointerUp={() => setScoperta(false)}
         onPointerLeave={() => setScoperta(false)}
         onPointerCancel={() => setScoperta(false)}
       >
-        {scoperta ? (mia === NESSUNA_PAROLA ? 'Nessuna parola' : mia) : 'Tieni premuto: la tua parola'}
+        {scoperta ? (mia === NESSUNA_PAROLA ? 'Nessuna parola' : mia) : '👁 Tieni premuto: la tua parola'}
       </button>
     </section>
   )
