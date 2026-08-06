@@ -27,6 +27,7 @@ import Gioco from './components/Gioco.jsx'
 import Altro from './components/Altro.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import NuvolettaAllan from './components/NuvolettaAllan.jsx'
+import Riparo from './components/Riparo.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
 import { useDerisione } from './hooks/useDerisione.js'
@@ -44,6 +45,15 @@ import Pecora from './components/Pecora.jsx'
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
+// Come si chiama ogni scheda quando bisogna dire che si e' rotta.
+const NOMI_TAB = {
+  oggi: 'Il programma',
+  gruppo: 'La chat',
+  foto: 'L’album',
+  gioco: 'Il gioco',
+  altro: 'Questa sezione',
+}
+
 const commit = __COMMIT__
 const buildTime = __BUILD_TIME__
 
@@ -262,73 +272,94 @@ export default function App() {
   if (vista === 'dentro') {
     return (
       <>
-        {tab === 'oggi' && (
-          <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
-        )}
-        {tab === 'gruppo' && (
-          <Gruppo
-            membro={membro}
-            suoniDisponibili={suoniDisponibili}
-            nonLetto={nonLetto.dettaglio}
-            onVisto={nonLetto.segna}
-          />
-        )}
-        {tab === 'foto' && <Album membro={membro} />}
-        {tab === 'gioco' && (
-          <Gioco
-            membro={membro}
-            proposteAperte={proposte.aperte}
-            onVotaProposta={proposte.vota}
-            nonLetto={nonLetto.dettaglio}
-            onVisto={nonLetto.segna}
-            conteggiMvp={mvp.conteggi}
-          />
-        )}
-        {tab === 'altro' && <Altro membro={membro} />}
+        {/* Ogni scheda dentro la sua rete: se una si rompe, le altre
+            quattro restano in piedi. Senza, una svista in una schermata
+            faceva pagina bianca su tutta l'app — ed e' successo davvero.
+            La chiave sul tab rimonta la rete cambiando scheda, cosi'
+            tornandoci si riprova invece di trovare il cartello. */}
+        <Riparo key={tab} nome={NOMI_TAB[tab]}>
+          {tab === 'oggi' && (
+            <Itinerario membro={membro} onProfilo={() => vaiA('profilo')} />
+          )}
+          {tab === 'gruppo' && (
+            <Gruppo
+              membro={membro}
+              suoniDisponibili={suoniDisponibili}
+              nonLetto={nonLetto.dettaglio}
+              onVisto={nonLetto.segna}
+            />
+          )}
+          {tab === 'foto' && <Album membro={membro} />}
+          {tab === 'gioco' && (
+            <Gioco
+              membro={membro}
+              proposteAperte={proposte.aperte}
+              onVotaProposta={proposte.vota}
+              nonLetto={nonLetto.dettaglio}
+              onVisto={nonLetto.segna}
+              conteggiMvp={mvp.conteggi}
+            />
+          )}
+          {tab === 'altro' && <Altro membro={membro} />}
+        </Riparo>
         <BarraTab attivo={tab} onCambia={setTab} novita={nonLetto.novita} />
 
-        {/* Allan dice la sua la prima volta che entri in un tab, e mai
-            più. Sta qui e non dentro le schermate perché è la stessa cosa
-            per tutte e cinque, e perché deve stare sopra a tutto. */}
-        <NuvolettaAllan membroId={membro?.id} tab={tab} />
+        {/* Banner, nuvolette e coriandoli in una rete che tace: sono
+            tutte cose in piu', e una che si rompe deve sparire invece di
+            prendersi lo schermo con un cartello d'errore. La barra dei
+            tab resta fuori, perche' senza quella non si va da nessuna
+            parte. */}
+        <Riparo zitto>
+          {/* Allan dice la sua la prima volta che entri in un tab, e mai
+              più. Sta qui e non dentro le schermate perché è la stessa
+              cosa per tutte e cinque, e perché deve stare sopra a tutto. */}
+          <NuvolettaAllan membroId={membro?.id} tab={tab} />
+        </Riparo>
+
         <StrisciaOffline attiva={!inLinea} />
 
-        {/* Uno solo alla volta in cima, e la precedenza è delle
-            proposte: quelle scadono in un'ora, la posizione può
-            aspettare la prossima apertura. Due banner fissi nello stesso
-            posto si coprirebbero a vicenda. */}
-        {inLinea && posizione.daChiedere && proposte.daDecidere.length === 0 && (
-          <BannerPosizione
-            mia={posizione.mia}
-            onAggiorna={posizione.aggiorna}
-            onNo={posizione.no}
-            onNonOra={posizione.nonOra}
+        <Riparo zitto>
+          {/* Uno solo alla volta in cima, e la precedenza è delle
+              proposte: quelle scadono in un'ora, la posizione può
+              aspettare la prossima apertura. Due banner fissi nello
+              stesso posto si coprirebbero a vicenda. */}
+          {inLinea && posizione.daChiedere && proposte.daDecidere.length === 0 && (
+            <BannerPosizione
+              mia={posizione.mia}
+              onAggiorna={posizione.aggiorna}
+              onNo={posizione.no}
+              onNonOra={posizione.nonOra}
+            />
+          )}
+          {/* Senza rete il voto non partirebbe: il banner si toglie
+              invece di restare lì con due bottoni che falliscono. Torna
+              da solo col segnale, e intanto quel posto lo occupa la
+              striscia. */}
+          <BannerProposta
+            proposte={inLinea ? proposte.daDecidere : []}
+            membri={membriPerId}
+            onVota={proposte.vota}
+            onRimanda={proposte.rimanda}
           />
-        )}
-        {/* Senza rete il voto non partirebbe: il banner si toglie invece
-            di restare lì con due bottoni che falliscono. Torna da solo
-            col segnale, e intanto quel posto lo occupa la striscia. */}
-        <BannerProposta
-          proposte={inLinea ? proposte.daDecidere : []}
-          membri={membriPerId}
-          onVota={proposte.vota}
-          onRimanda={proposte.rimanda}
-        />
-        <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
+        </Riparo>
 
-        {mvp.festa && (
-          <Celebrazione
-            celebrazione={{
-              mvp: {
-                nome: membriPerId[mvp.festa.membroId]?.nome ?? 'Qualcuno',
-                saldo: mvp.festa.saldo,
-                quante: mvp.conteggi[mvp.festa.membroId] ?? 1,
-              },
-            }}
-            onChiudi={mvp.chiudi}
-          />
-        )}
-        <Derisione derisione={derisione} onChiudi={chiudiDerisione} />
+        <Riparo zitto>
+          <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
+
+          {mvp.festa && (
+            <Celebrazione
+              celebrazione={{
+                mvp: {
+                  nome: membriPerId[mvp.festa.membroId]?.nome ?? 'Qualcuno',
+                  saldo: mvp.festa.saldo,
+                  quante: mvp.conteggi[mvp.festa.membroId] ?? 1,
+                },
+              }}
+              onChiudi={mvp.chiudi}
+            />
+          )}
+          <Derisione derisione={derisione} onChiudi={chiudiDerisione} />
+        </Riparo>
       </>
     )
   }

@@ -1,0 +1,49 @@
+/* La rete sotto le sezioni. Deve sembrare un contrattempo, non un
+   disastro: chi la vede è in vacanza, non al lavoro. */
+
+.riparo {
+  margin: 20px 16px;
+  padding: 18px 16px;
+  text-align: center;
+  background: var(--sand, #f7f4ec);
+  border: 1px dashed var(--line, #e4dfd2);
+  border-radius: 14px;
+}
+
+.riparo-titolo {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #16323f);
+}
+
+.riparo-testo {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft, #55636b);
+}
+
+.riparo-riprova {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sand, #f7f4ec);
+  background: var(--sea, #0b3550);
+  border: 0;
+  border-radius: 100px;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+
+.riparo-nota {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-soft, #55636b);
+}
+
+.riparo-riprova:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
