@@ -256,6 +256,56 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
   )
 }
 
+// L'uscita di sicurezza. Una partita che si pianta — uno se n'e' andato,
+// un telefono e' morto — blocca tutti, perche' finche' ce n'e' una aperta
+// non se ne puo' cominciare un'altra.
+//
+// Chiede due volte e dice chiaramente che vale per tutti: non serve il
+// consenso del gruppo, perche' chiedere una maggioranza ricrerebbe
+// esattamente il blocco che si sta cercando di togliere.
+function Abbandona({ onAbbandona }) {
+  const [sicuro, setSicuro] = useState(false)
+  const [inCorso, setInCorso] = useState(false)
+
+  useEffect(() => {
+    if (!sicuro) return
+    // Se ci ripensa e non tocca niente, la domanda si richiude da sola.
+    const via = setTimeout(() => setSicuro(false), 6000)
+    return () => clearTimeout(via)
+  }, [sicuro])
+
+  async function davvero() {
+    setInCorso(true)
+    await onAbbandona()
+    setInCorso(false)
+  }
+
+  return (
+    <div className="imp-abbandona">
+      {sicuro ? (
+        <>
+          <span className="imp-abbandona-domanda">Annulli la partita per tutti?</span>
+          <button
+            type="button"
+            className="imp-abbandona-si"
+            onClick={davvero}
+            disabled={inCorso}
+          >
+            {inCorso ? '…' : 'Sì, annulla'}
+          </button>
+          <button type="button" className="imp-abbandona-no" onClick={() => setSicuro(false)}>
+            No
+          </button>
+        </>
+      ) : (
+        <button type="button" className="imp-abbandona-tasto" onClick={() => setSicuro(true)}>
+          Annulla la partita
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ------------------------------------------------------- si apparecchia
 
 function Apparecchia({ membro, membri, onCrea }) {
