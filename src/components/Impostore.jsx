@@ -497,6 +497,7 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
   const [inCorso, setInCorso] = useState(false)
 
   const mia = partita.assegnazioni[membro.id]
+  const sonoImpostore = partita.impostori.includes(membro.id)
   const tocca = diTurno(partita)
   const mancano = quantiMancano(partita)
 
@@ -531,13 +532,28 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
           </>
         ) : (
           <>
-            <div className={mia === NESSUNA_PAROLA ? 'imp-carta-su niente' : 'imp-carta-su'}>
-              <span className="imp-carta-etichetta">La tua parola</span>
+            {/* Chi e' l'impostore deve saperlo, e vedersi da lontano. Con
+                la parola simile non lo sapeva: si ritrovava "Lago" senza
+                capire se era normale o no — e senza saperlo non puo'
+                bluffare, che e' tutto il senso di quella variante. */}
+            <div className={sonoImpostore ? 'imp-carta-su impostore' : 'imp-carta-su'}>
+              {sonoImpostore && (
+                <span className="imp-bollo">SEI TU L’IMPOSTORE</span>
+              )}
+
+              <span className="imp-carta-etichetta">
+                {sonoImpostore ? 'La tua parola è' : 'La tua parola'}
+              </span>
               <p className={mia === NESSUNA_PAROLA ? 'imp-parola niente' : 'imp-parola'}>
                 {mia === NESSUNA_PAROLA ? 'Nessuna' : mia}
               </p>
-              {mia === NESSUNA_PAROLA && (
-                <p className="imp-carta-nota">Sei l’impostore. Inventa e non farti sgamare.</p>
+
+              {sonoImpostore && (
+                <p className="imp-carta-nota">
+                  {mia === NESSUNA_PAROLA
+                    ? 'Non hai niente in mano. Ascolta gli altri e inventa una parola che stia nel discorso.'
+                    : 'Gli altri ne hanno un’altra. Di’ qualcosa che vada bene per tutte e due, e non farti sgamare.'}
+                </p>
               )}
             </div>
             <button type="button" className="imp-comincia" onClick={hoLetto}>
@@ -601,7 +617,9 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
         onPointerLeave={() => setScoperta(false)}
         onPointerCancel={() => setScoperta(false)}
       >
-        {scoperta ? (mia === NESSUNA_PAROLA ? 'Nessuna parola' : mia) : '👁 Tieni premuto: la tua parola'}
+        {scoperta
+          ? `${sonoImpostore ? '🎭 ' : ''}${mia === NESSUNA_PAROLA ? 'Nessuna parola' : mia}`
+          : '👁 Tieni premuto: la tua parola'}
       </button>
     </section>
   )
