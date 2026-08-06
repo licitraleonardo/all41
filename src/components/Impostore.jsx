@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './Impostore.css'
 import { useImpostore } from '../hooks/useImpostore.js'
 import { diTurno, esito, quantiMancano, schedePerId } from '../lib/impostore.js'
@@ -13,6 +13,9 @@ import Rotella from './Rotella.jsx'
 // Quale finale e' gia' stato letto su questo telefono.
 const VISTA_FINALE = 'impostore-finale-visto'
 
+// Quanto resta in piedi il finale prima di togliersi da solo.
+const DURATA_FINALE = 7000
+
 // L'app fa il mazziere e basta. Il gioco vero — dire la propria parola,
 // accusarsi, difendersi — succede a voce nella stanza, quindi ogni
 // schermata qui dentro deve poter essere guardata di sfuggita e poi
@@ -26,12 +29,22 @@ export default function Impostore({ membro, membri }) {
   // Quale finale hai già letto: sta su questo telefono, perché è una
   // cosa tua — un altro che apre l'app dopo deve poterlo vedere lui.
   const [letteVia, setLetteVia] = useState(() => localStorage.getItem(VISTA_FINALE) ?? '')
+  const [daStorico, setDaStorico] = useState(null)
   const chiusa = partita?.id && letteVia === partita.id
 
-  function chiudiRivelazione(id) {
+  const chiudiRivelazione = useCallback((id) => {
     localStorage.setItem(VISTA_FINALE, id)
     setLetteVia(id)
-  }
+  }, [])
+
+  // Sette secondi e si toglie da sola: il tempo di leggere chi era e con
+  // che parola, non abbastanza da restare li' a occupare la schermata.
+  // La × serve a chi ha gia' letto e non vuole aspettare.
+  useEffect(() => {
+    if (partita?.stato !== 'finita' || chiusa) return
+    const via = setTimeout(() => chiudiRivelazione(partita.id), DURATA_FINALE)
+    return () => clearTimeout(via)
+  }, [partita?.stato, partita?.id, chiusa, chiudiRivelazione])
 
   if (stato === 'caricamento') return <Rotella />
   if (stato === 'guasto') return <p className="imp-guasto">{errore}</p>
@@ -59,7 +72,7 @@ export default function Impostore({ membro, membri }) {
             />
           )}
           <Apparecchia membro={membro} membri={membri} onCrea={nuova} />
-          <Storico partite={storico} nome={nome} ioId={membro.id} membri={membri} />
+          <Storico partite={storico} nome={nome} ioId={membro.id} onApri={setDaStorico} />
         </>
       )}
 
@@ -82,6 +95,35 @@ export default function Impostore({ membro, membri }) {
         <p className="imp-fuori">
           C’è una partita in corso e tu non ci sei dentro. Goditela da fuori.
         </p>
+      )}
+
+      {/* Una partita vecchia riaperta dallo storico: sopra tutto, e si
+          chiude. Aperta in mezzo all'elenco spingeva giù tutto il resto
+          e faceva perdere il segno. */}
+      {daStorico && (
+        <div
+          className="imp-sfondo"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Com’è andata"
+          onClick={() => setDaStorico(null)}
+        >
+          <div className="imp-finestra" onClick={(e) => e.stopPropagation()}>
+            <Rivelazione
+              partita={daStorico}
+              voto={{ schede: daStorico.schede }}
+              nome={nome}
+              membri={membri}
+            />
+            <button
+              type="button"
+              className="imp-chiudi-finestra"
+              onClick={() => setDaStorico(null)}
+            >
+              Chiudi
+            </button>
+          </div>
+        </div>
       )}
 
       {partita?.stato === 'voto' && (
@@ -201,8 +243,7 @@ function Apparecchia({ membro, membri, onCrea }) {
 // Le partite finite, sotto il tasto per cominciarne una nuova. Chiuse:
 // aperte sarebbero un muro di roba vecchia davanti alla cosa che uno e'
 // venuto a fare, che e' giocare adesso.
-function Storico({ partite, nome, ioId, membri }) {
-  const [aperta, setAperta] = useState(null)
+function Storico({ partite, nome, ioId, onApri }) {
   const [tutte, setTutte] = useState(false)
 
   if (!partite || partite.length === 0) return null
@@ -220,39 +261,26 @@ function Storico({ partite, nome, ioId, membri }) {
             schede: schedePerId(p.schede, p.giocatori),
           })
           const scampati = r.impuniti.length > 0
-          const apertaQui = aperta === p.id
+          const mie = p.impostori.includes(ioId)
 
           return (
             <li key={p.id}>
               <button
                 type="button"
-                className={apertaQui ? 'imp-storico-riga aperta' : 'imp-storico-riga'}
-                onClick={() => setAperta(apertaQui ? null : p.id)}
-                aria-expanded={apertaQui}
+                className="imp-storico-riga"
+                onClick={() => onApri(p)}
               >
                 <span className="imp-storico-quando">{quando(p.creataIl)}</span>
                 <span className={scampati ? 'imp-storico-esito franca' : 'imp-storico-esito preso'}>
                   {scampati ? 'L’ha fatta franca' : 'Beccato'}
                 </span>
-                <span className="imp-storico-parola">{p.parolaGruppo}</span>
+                <span className="imp-storico-parola">
+                  {mie ? 'eri tu' : p.parolaGruppo}
+                </span>
                 <span className="imp-storico-freccia" aria-hidden="true">
-                  {apertaQui ? '−' : '+'}
+                  ›
                 </span>
               </button>
-
-              {apertaQui && (
-                <div className="imp-storico-dettaglio">
-                  {/* La rivelazione intera, la stessa di fine partita:
-                      ripeterla in tre righe scarne voleva dire scrivere
-                      due volte la stessa cosa, e la seconda peggio. */}
-                  <Rivelazione
-                    partita={p}
-                    voto={{ schede: p.schede }}
-                    nome={nome}
-                    membri={membri}
-                  />
-                </div>
-              )}
             </li>
           )
         })}
@@ -542,8 +570,13 @@ function Rivelazione({ partita, voto, nome, membri, onChiudi = null }) {
       )}
 
       {onChiudi && (
-        <button type="button" className="imp-chiudi-finale" onClick={onChiudi}>
-          Ho visto
+        <button
+          type="button"
+          className="imp-chiudi-finale"
+          onClick={onChiudi}
+          aria-label="Chiudi"
+        >
+          ×
         </button>
       )}
     </section>
