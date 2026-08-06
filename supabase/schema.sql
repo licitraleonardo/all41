@@ -350,6 +350,12 @@ alter table impostore_games add column if not exists rivela_chiesta uuid[] not n
 -- Il colpo di coda: l'impostore beccato scrive la parola del gruppo e,
 -- se la indovina, ribalta la partita. Qui resta cosa ha scritto — il
 -- confronto lo fa il client, che sa gia' com'e' fatto.
+-- Il voto d'apertura: quanti impostori. Prima lo decideva una regola
+-- fissa sul numero di giocatori; adesso lo decide il gruppo, e la
+-- partita comincia solo dopo.
+alter table impostore_games add column if not exists setup_vote_id uuid
+  references votes (id) on delete set null;
+
 alter table impostore_games add column if not exists tentativo text;
 alter table impostore_games add column if not exists tentato_da uuid
   references members (id) on delete set null;
@@ -360,7 +366,7 @@ do $$
 begin
   alter table impostore_games drop constraint if exists impostore_games_stato_check;
   alter table impostore_games add constraint impostore_games_stato_check
-    check (stato in ('in-corso', 'voto', 'colpo', 'finita'));
+    check (stato in ('preparazione', 'in-corso', 'voto', 'colpo', 'finita'));
 exception when others then
   raise notice 'Vincolo sullo stato non aggiornato (%).', sqlerrm;
 end $$;
@@ -1015,6 +1021,43 @@ end $$;
 -- L'impostore beccato scrive la sua parola. Una volta sola: la prima
 -- che arriva vale, perche' due che tentano insieme non possono avere due
 -- finali diversi per la stessa partita.
+-- Finito il voto d'apertura si distribuiscono le parole e si parte. In
+-- una funzione perche' devono farlo in uno solo: due telefoni che
+-- assegnano gli impostori insieme darebbero due partite diverse alla
+-- stessa gente.
+create or replace function avvia_impostore(
+  p_partita uuid,
+  p_impostori uuid[],
+  p_assegnazioni jsonb,
+  p_ordine uuid[]
+)
+returns impostore_games
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  g impostore_games;
+begin
+  select * into g from impostore_games where id = p_partita for update;
+  if not found then raise exception 'Questa partita non esiste.'; end if;
+
+  if g.stato = 'preparazione' then
+    update impostore_games
+       set impostori = p_impostori,
+           assegnazioni = p_assegnazioni,
+           ordine = p_ordine,
+           stato = 'in-corso'
+     where id = p_partita
+    returning * into g;
+  end if;
+
+  return g;
+end $$;
+
+revoke execute on function avvia_impostore(uuid, uuid[], jsonb, uuid[]) from public;
+grant execute on function avvia_impostore(uuid, uuid[], jsonb, uuid[]) to authenticated;
+
 create or replace function tenta_colpo(p_partita uuid, p_membro uuid, p_parola text)
 returns impostore_games
 language plpgsql

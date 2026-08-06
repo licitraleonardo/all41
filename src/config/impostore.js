@@ -11,9 +11,15 @@ export const IMPOSTORE = {
   // Sotto i quattro non e' un gioco, e' un interrogatorio.
   minimoGiocatori: 4,
 
-  // Uno fino a sei, due da sette in su: con otto persone e un impostore
-  // solo, gli innocenti vincono quasi sempre per forza di numeri.
+  // Quanti impostori lo decide il gruppo a voto, all'inizio di ogni
+  // partita. Questa resta come proposta: e' l'opzione gia' evidenziata,
+  // perche' con otto persone e un impostore solo gli innocenti vincono
+  // quasi sempre per forza di numeri, ma il gruppo puo' pensarla
+  // diversamente e sono affari suoi.
   quantiImpostori: (quanti) => (quanti >= 7 ? 2 : 1),
+
+  // Le scelte del voto d'apertura.
+  sceltePerImpostori: [1, 2],
 
   // Il voto non ha un timer visibile: serve solo a non lasciare un voto
   // appeso per sempre se la partita finisce in una birra.

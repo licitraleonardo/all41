@@ -163,7 +163,10 @@
 
 .imp-parola {
   margin: 4px 0 10px;
-  font-size: clamp(34px, 12vw, 58px);
+  /* Piu' contenuta: a 58px una parola lunga come "Aria condizionata"
+     riempiva la carta e si spezzava male. Resta grande abbastanza da
+     leggersi in un colpo, che e' tutto quello che deve fare. */
+  font-size: clamp(24px, 8vw, 38px);
   font-weight: 800;
   line-height: 1.1;
   color: var(--sea, #0b3550);
@@ -636,4 +639,75 @@
 
 .imp-colpo-esito.fallito {
   color: var(--ink-soft, #55636b);
+}
+
+/* -------------------------------------------------- il voto d'apertura */
+
+.imp-preparazione {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 40vh;
+  text-align: center;
+  padding-top: 12px;
+}
+
+.imp-scelte {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  margin-top: 6px;
+}
+
+.imp-scelta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 18px 10px;
+  font: inherit;
+  color: var(--ink, #16323f);
+  background: #fff;
+  border: 2px solid var(--line, #e4dfd2);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+/* Quella davanti nel conteggio, non quella che hai votato tu: il voto è
+   pubblico e il gruppo deve vedere dove sta andando. */
+.imp-scelta.avanti {
+  border-color: var(--sea, #0b3550);
+  background: var(--sand, #f7f4ec);
+}
+
+.imp-scelta:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.imp-scelta-numero {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--sea, #0b3550);
+}
+
+.imp-scelta-nome {
+  font-size: 12px;
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-scelta-voti {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--coral, #e8604a);
+}
+
+.imp-scelta:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
 }

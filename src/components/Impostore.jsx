@@ -41,6 +41,7 @@ export default function Impostore({ membro, membri }) {
     nuova,
     avanti,
     avviaVoto,
+    avvia,
     chiedi,
     rivela,
     tenta,
@@ -133,6 +134,16 @@ export default function Impostore({ membro, membri }) {
         />
       )}
 
+      {partita?.stato === 'preparazione' && (
+        <Preparazione
+          partita={partita}
+          voto={voto}
+          membro={membro}
+          onVotato={setVoto}
+          onAvvia={avvia}
+        />
+      )}
+
       {partita?.stato === 'colpo' && (
         <Colpo
           partita={partita}
@@ -158,6 +169,85 @@ export default function Impostore({ membro, membri }) {
         />
       )}
     </div>
+  )
+}
+
+// Il voto d'apertura: quanti impostori. Prima lo decideva una regola
+// fissa sul numero di giocatori, e il gruppo se lo trovava deciso. Adesso
+// e' una scelta, ed e' anche il primo momento in cui ci si guarda in
+// faccia — quindi vale la pena farlo.
+function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
+  const [inCorso, setInCorso] = useState(false)
+  const [avviso, setAvviso] = useState(null)
+  const partito = useRef(false)
+
+  const scelte = IMPOSTORE.sceltePerImpostori
+  const consigliata = IMPOSTORE.quantiImpostori(partita.giocatori.length)
+  const hoVotato = voto?.hannoVotato?.includes(membro.id)
+  const quanti = voto?.hannoVotato?.length ?? 0
+  const tutti = partita.giocatori.length
+  const conteggi = voto?.conteggi ?? scelte.map(() => 0)
+
+  // Quando hanno votato tutti si parte, e lo fa il primo telefono che se
+  // ne accorge. Il freno serve perche' l'effetto rigira a ogni voto che
+  // arriva, e partire due volte non si puo'.
+  useEffect(() => {
+    if (!voto || quanti < tutti || partito.current) return
+    partito.current = true
+    const vincente = conteggi.indexOf(Math.max(...conteggi))
+    onAvvia(scelte[vincente < 0 ? 0 : vincente])
+  }, [voto, quanti, tutti, conteggi, scelte, onAvvia])
+
+  async function vota(i) {
+    setInCorso(true)
+    setAvviso(null)
+    try {
+      onVotato(await votaImpostore(voto.id, membro.id, [i]))
+    } catch (e) {
+      setAvviso(descriviErrore(e))
+    } finally {
+      setInCorso(false)
+    }
+  }
+
+  if (!voto) return <Rotella testo="Preparo il voto" />
+
+  return (
+    <section className="imp-preparazione">
+      <h2 className="imp-titolo">Quanti impostori?</h2>
+      <p className="imp-spiega">
+        Lo decidete voi, prima di sapere chi sono. Hanno votato {quanti} su {tutti}.
+      </p>
+
+      {avviso && <p className="imp-guasto">{avviso}</p>}
+
+      <div className="imp-scelte">
+        {scelte.map((n, i) => (
+          <button
+            key={n}
+            type="button"
+            className={i === conteggi.indexOf(Math.max(...conteggi)) && quanti > 0
+              ? 'imp-scelta avanti'
+              : 'imp-scelta'}
+            onClick={() => vota(i)}
+            disabled={hoVotato || inCorso}
+          >
+            <span className="imp-scelta-numero">{n}</span>
+            <span className="imp-scelta-nome">
+              {n === 1 ? 'impostore' : 'impostori'}
+              {n === consigliata && ' · consigliato'}
+            </span>
+            <span className="imp-scelta-voti">{conteggi[i] ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
+      <p className="imp-nota">
+        {hoVotato
+          ? 'Hai votato. Si parte quando hanno votato tutti.'
+          : 'Tocca il numero che preferisci.'}
+      </p>
+    </section>
   )
 }
 

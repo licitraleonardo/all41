@@ -16,7 +16,7 @@ import { faiScattareLegge } from './punti.js'
 // impostore.js, che non sa cosa sia Supabase e si puo' provare.
 
 const CAMPI =
-  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, tentativo, tentato_da, created_at'
+  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, setup_vote_id, tentativo, tentato_da, created_at'
 
 export function daRiga(riga) {
   if (!riga) return null
@@ -33,6 +33,7 @@ export function daRiga(riga) {
     giriTotali: riga.giri_totali,
     votoId: riga.vote_id,
     rivelaChiesta: riga.rivela_chiesta ?? [],
+    votoAperturaId: riga.setup_vote_id ?? null,
     tentativo: riga.tentativo ?? null,
     tentatoDa: riga.tentato_da ?? null,
     stato: riga.stato,
@@ -83,8 +84,28 @@ export async function leggiStorico(quante = 20) {
   return partite.map((p) => ({ ...p, schede: perId[p.votoId] ?? {} }))
 }
 
+// La partita nasce in preparazione: le parole si pescano subito — non
+// dicono niente a nessuno finche' non si distribuiscono — ma chi e'
+// impostore lo si sa solo dopo che il gruppo ha votato quanti ne vuole.
 export async function creaPartita({ giocatori, variante = 'parola-simile', casuale }) {
   const preparata = preparaPartita({ giocatori, variante, casuale })
+  const scade = new Date(Date.now() + IMPOSTORE.minutiVoto * 60000).toISOString()
+
+  const { data: voto, error: erroreVoto } = await supabase
+    .from('votes')
+    .insert({
+      trip_id: VIAGGIO.id,
+      category: 'impostore',
+      question: 'Quanti impostori?',
+      options: IMPOSTORE.sceltePerImpostori.map(String),
+      anonymous: false,
+      tally: IMPOSTORE.sceltePerImpostori.map(() => 0),
+      expires_at: scade,
+    })
+    .select('id')
+    .single()
+
+  if (erroreVoto) throw erroreVoto
 
   const { data, error } = await supabase
     .from('impostore_games')
@@ -92,14 +113,39 @@ export async function creaPartita({ giocatori, variante = 'parola-simile', casua
       trip_id: VIAGGIO.id,
       parola_gruppo: preparata.parolaGruppo,
       parola_impostore: preparata.parolaImpostore,
-      impostori: preparata.impostori,
+      // Ancora nessuno: si decide col voto.
+      impostori: [],
       giocatori,
-      assegnazioni: preparata.assegnazioni,
+      assegnazioni: {},
       ordine: preparata.ordine,
       giri_totali: IMPOSTORE.giriTotali,
+      stato: 'preparazione',
+      setup_vote_id: voto.id,
     })
     .select(CAMPI)
     .single()
+
+  if (error) throw error
+  return daRiga(data)
+}
+
+// Finito il voto d'apertura si sorteggia chi e' impostore e si parte.
+// Passa da una funzione: due telefoni che assegnano insieme darebbero
+// due partite diverse alla stessa gente.
+export async function avviaPartita(partita, quantiImpostori, casuale) {
+  const preparata = preparaPartita({
+    giocatori: partita.giocatori,
+    coppia: [partita.parolaGruppo, partita.parolaImpostore],
+    quantiImpostori,
+    casuale,
+  })
+
+  const { data, error } = await supabase.rpc('avvia_impostore', {
+    p_partita: partita.id,
+    p_impostori: preparata.impostori,
+    p_assegnazioni: preparata.assegnazioni,
+    p_ordine: preparata.ordine,
+  })
 
   if (error) throw error
   return daRiga(data)

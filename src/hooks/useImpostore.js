@@ -4,6 +4,7 @@ import {
   apriVoto,
   apriColpo,
   avanzaTurno,
+  avviaPartita,
   chiediRivelazione,
   chiudiPartita,
   tentaColpo,
@@ -98,8 +99,9 @@ export function useImpostore(membroId) {
   // Quando la partita apre il voto su un altro telefono, qui arriva solo
   // l'id: le schede vanno chieste.
   useEffect(() => {
-    if (partita?.votoId && partita.votoId !== voto?.id) caricaVoto(partita.votoId)
-  }, [partita?.votoId, voto?.id, caricaVoto])
+    const quale = partita?.stato === 'preparazione' ? partita?.votoAperturaId : partita?.votoId
+    if (quale && quale !== voto?.id) caricaVoto(quale)
+  }, [partita?.stato, partita?.votoAperturaId, partita?.votoId, voto?.id, caricaVoto])
 
   const nuova = useCallback(async (giocatori, variante) => {
     setErrore(null)
@@ -113,6 +115,23 @@ export function useImpostore(membroId) {
       return null
     }
   }, [])
+
+  // Finito il voto d'apertura, si sorteggia e si parte. Lo fa il primo
+  // telefono che se ne accorge, e la funzione sul database lascia
+  // passare uno solo: due che sorteggiano insieme darebbero due partite
+  // diverse alla stessa gente.
+  const avvia = useCallback(
+    async (quanti) => {
+      if (!partita) return
+      setErrore(null)
+      try {
+        setPartita(await avviaPartita(partita, quanti))
+      } catch (e) {
+        setErrore(descriviErrore(e))
+      }
+    },
+    [partita]
+  )
 
   const avanti = useCallback(async () => {
     if (!partita) return
@@ -203,6 +222,7 @@ export function useImpostore(membroId) {
     nuova,
     avanti,
     avviaVoto,
+    avvia,
     chiedi,
     rivela,
     tenta,
