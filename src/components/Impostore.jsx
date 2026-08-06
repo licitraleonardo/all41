@@ -10,6 +10,9 @@ import { vota } from '../lib/voti.js'
 import { descriviErrore } from '../lib/errori.js'
 import Rotella from './Rotella.jsx'
 
+// Quale finale e' gia' stato letto su questo telefono.
+const VISTA_FINALE = 'impostore-finale-visto'
+
 // L'app fa il mazziere e basta. Il gioco vero — dire la propria parola,
 // accusarsi, difendersi — succede a voce nella stanza, quindi ogni
 // schermata qui dentro deve poter essere guardata di sfuggita e poi
@@ -19,6 +22,16 @@ export default function Impostore({ membro, membri }) {
   const { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, rivela, setVoto } =
     useImpostore()
   const nome = (id) => membri[id]?.nome ?? 'Qualcuno'
+
+  // Quale finale hai già letto: sta su questo telefono, perché è una
+  // cosa tua — un altro che apre l'app dopo deve poterlo vedere lui.
+  const [letteVia, setLetteVia] = useState(() => localStorage.getItem(VISTA_FINALE) ?? '')
+  const chiusa = partita?.id && letteVia === partita.id
+
+  function chiudiRivelazione(id) {
+    localStorage.setItem(VISTA_FINALE, id)
+    setLetteVia(id)
+  }
 
   if (stato === 'caricamento') return <Rotella />
   if (stato === 'guasto') return <p className="imp-guasto">{errore}</p>
@@ -31,11 +44,22 @@ export default function Impostore({ membro, membri }) {
 
       {(!partita || partita.stato === 'finita') && (
         <>
-          {partita?.stato === 'finita' && (
-            <Rivelazione partita={partita} voto={voto} nome={nome} membri={membri} />
+          {/* La rivelazione si vede una volta e si chiude. Restava
+              appesa in cima per sempre, davanti al tasto per giocare
+              ancora: chi arriva un'ora dopo trovava il finale di una
+              partita che non ha giocato. Da lì in poi sta nello storico,
+              che è il posto dei finali vecchi. */}
+          {partita?.stato === 'finita' && !chiusa && (
+            <Rivelazione
+              partita={partita}
+              voto={voto}
+              nome={nome}
+              membri={membri}
+              onChiudi={() => chiudiRivelazione(partita.id)}
+            />
           )}
           <Apparecchia membro={membro} membri={membri} onCrea={nuova} />
-          <Storico partite={storico} nome={nome} ioId={membro.id} />
+          <Storico partite={storico} nome={nome} ioId={membro.id} membri={membri} />
         </>
       )}
 
@@ -177,7 +201,7 @@ function Apparecchia({ membro, membri, onCrea }) {
 // Le partite finite, sotto il tasto per cominciarne una nuova. Chiuse:
 // aperte sarebbero un muro di roba vecchia davanti alla cosa che uno e'
 // venuto a fare, che e' giocare adesso.
-function Storico({ partite, nome, ioId }) {
+function Storico({ partite, nome, ioId, membri }) {
   const [aperta, setAperta] = useState(null)
   const [tutte, setTutte] = useState(false)
 
@@ -218,27 +242,15 @@ function Storico({ partite, nome, ioId }) {
 
               {apertaQui && (
                 <div className="imp-storico-dettaglio">
-                  <p className="imp-storico-riga-dett">
-                    Il gruppo aveva <strong>{p.parolaGruppo}</strong>, l’impostore{' '}
-                    <strong>
-                      {p.parolaImpostore === NESSUNA_PAROLA ? 'niente' : p.parolaImpostore}
-                    </strong>
-                    .
-                  </p>
-                  <p className="imp-storico-riga-dett">
-                    {p.impostori.length === 1 ? 'Era ' : 'Erano '}
-                    {p.impostori
-                      .map((id) => `${id === ioId ? 'tu' : nome(id)}${r.scoperti.includes(id) ? '' : ' (impunito)'}`)
-                      .join(', ')}
-                    .
-                  </p>
-                  <p className="imp-storico-riga-dett">
-                    {r.indovini.length === 0
-                      ? 'Non l’ha indovinato nessuno.'
-                      : `L’hanno indovinato ${r.indovini
-                          .map((id) => (id === ioId ? 'tu' : nome(id)))
-                          .join(', ')}.`}
-                  </p>
+                  {/* La rivelazione intera, la stessa di fine partita:
+                      ripeterla in tre righe scarne voleva dire scrivere
+                      due volte la stessa cosa, e la seconda peggio. */}
+                  <Rivelazione
+                    partita={p}
+                    voto={{ schede: p.schede }}
+                    nome={nome}
+                    membri={membri}
+                  />
                 </div>
               )}
             </li>
@@ -468,7 +480,7 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onRivela, onVotat
 
 // ---------------------------------------------------------- rivelazione
 
-function Rivelazione({ partita, voto, nome, membri }) {
+function Rivelazione({ partita, voto, nome, membri, onChiudi = null }) {
   const r = useMemo(
     () =>
       esito({
@@ -527,6 +539,12 @@ function Rivelazione({ partita, voto, nome, membri }) {
         </p>
       ) : (
         <p className="imp-spiega">Nessuno ha indovinato. Complimenti a nessuno.</p>
+      )}
+
+      {onChiudi && (
+        <button type="button" className="imp-chiudi-finale" onClick={onChiudi}>
+          Ho visto
+        </button>
       )}
     </section>
   )

@@ -482,27 +482,10 @@
   color: var(--ink-soft, #55636b);
 }
 
+/* Dentro c'è la rivelazione, che ha già il suo riquadro: qui non ne
+   serve un secondo attorno. */
 .imp-storico-dettaglio {
-  padding: 11px 13px;
-  background: var(--sand, #f7f4ec);
-  border: 1px solid var(--sea, #0b3550);
-  border-top: 0;
-  border-radius: 0 0 11px 11px;
-}
-
-.imp-storico-riga-dett {
-  margin: 0 0 5px;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--ink-soft, #55636b);
-}
-
-.imp-storico-riga-dett:last-child {
-  margin-bottom: 0;
-}
-
-.imp-storico-riga-dett strong {
-  color: var(--ink, #16323f);
+  padding: 0;
 }
 
 .imp-storico-tutte {
@@ -524,4 +507,32 @@
 .imp-storico-tutte:focus-visible {
   outline: 2px solid var(--sea, #0b3550);
   outline-offset: 2px;
+}
+
+/* Il finale si legge e si chiude. Restava appeso in cima per sempre,
+   davanti al tasto per giocare ancora. */
+.imp-chiudi-finale {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sea, #0b3550);
+  background: transparent;
+  border: 1px solid var(--sea, #0b3550);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.imp-chiudi-finale:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
+
+.imp-storico-dettaglio .imp-rivelazione {
+  margin-bottom: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
