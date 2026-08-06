@@ -42,6 +42,7 @@ export default function Impostore({ membro, membri }) {
     avanti,
     avviaVoto,
     avvia,
+    abbandona,
     chiedi,
     rivela,
     tenta,
@@ -73,13 +74,17 @@ export default function Impostore({ membro, membri }) {
   if (stato === 'caricamento') return <Rotella />
   if (stato === 'guasto') return <p className="imp-guasto">{errore}</p>
 
-  const inGioco = partita && partita.stato !== 'finita' && partita.giocatori.includes(membro.id)
+  const finita = !partita || partita.stato === 'finita' || partita.stato === 'annullata'
+  const inCorsoOra = Boolean(partita) && !finita
+  const inGioco = inCorsoOra && partita.giocatori.includes(membro.id)
 
   return (
     <div className="impostore">
       {errore && <p className="imp-guasto">{errore}</p>}
 
-      {(!partita || partita.stato === 'finita') && (
+      {inCorsoOra && <Abbandona onAbbandona={abbandona} />}
+
+      {(!partita || partita.stato === 'finita' || partita.stato === 'annullata') && (
         <>
           {/* La rivelazione si vede una volta e si chiude. Restava
               appesa in cima per sempre, davanti al tasto per giocare

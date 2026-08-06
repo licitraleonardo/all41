@@ -362,11 +362,15 @@ alter table impostore_games add column if not exists tentato_da uuid
 
 -- Lo stato 'colpo' sta fra il voto e la fine: il gruppo ha beccato
 -- qualcuno, e prima di chiudere si aspetta la sua ultima carta.
+--
+-- 'annullata' e' l'uscita di sicurezza: una partita che si pianta —
+-- qualcuno se n'e' andato, un telefono e' morto — bloccherebbe tutti,
+-- perche' finche' ce n'e' una aperta non se ne puo' cominciare un'altra.
 do $$
 begin
   alter table impostore_games drop constraint if exists impostore_games_stato_check;
   alter table impostore_games add constraint impostore_games_stato_check
-    check (stato in ('preparazione', 'in-corso', 'voto', 'colpo', 'finita'));
+    check (stato in ('preparazione', 'in-corso', 'voto', 'colpo', 'finita', 'annullata'));
 exception when others then
   raise notice 'Vincolo sullo stato non aggiornato (%).', sqlerrm;
 end $$;

@@ -260,6 +260,29 @@ export async function tentaColpo(partita, membroId, parola) {
   return daRiga(data)
 }
 
+// L'uscita di sicurezza. Una partita che si pianta blocca tutti, perche'
+// finche' ce n'e' una aperta non se ne puo' cominciare un'altra: deve
+// esserci sempre un modo di chiuderla.
+//
+// Non serve il consenso del gruppo, e non e' una svista: se serve
+// abbandonare e' perche' qualcuno se n'e' andato o ha il telefono morto,
+// e chiedere una maggioranza ricrerebbe esattamente il blocco che si sta
+// cercando di togliere. La conferma sta nell'interfaccia, che chiede due
+// volte e dice che vale per tutti.
+export async function abbandonaPartita(partita) {
+  const { data, error } = await supabase
+    .from('impostore_games')
+    .update({ stato: 'annullata' })
+    .eq('id', partita.id)
+    .neq('stato', 'finita')
+    .neq('stato', 'annullata')
+    .select(CAMPI)
+    .maybeSingle()
+
+  if (error) throw error
+  return data ? daRiga(data) : leggiPartita()
+}
+
 // Chiedere di rivelare prima che abbiano votato tutti. Passa da una
 // funzione: due che la chiedono nello stesso istante si sovrascriverebbero
 // a vicenda, e uno dei due voti sparirebbe.

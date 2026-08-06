@@ -153,6 +153,16 @@ export function useImpostore(membroId) {
     }
   }, [partita])
 
+  const abbandona = useCallback(async () => {
+    if (!partita) return
+    setErrore(null)
+    try {
+      setPartita(await abbandonaPartita(partita))
+    } catch (e) {
+      setErrore(descriviErrore(e))
+    }
+  }, [partita])
+
   const chiedi = useCallback(async () => {
     if (!partita) return
     setErrore(null)
@@ -223,6 +233,7 @@ export function useImpostore(membroId) {
     avanti,
     avviaVoto,
     avvia,
+    abbandona,
     chiedi,
     rivela,
     tenta,
