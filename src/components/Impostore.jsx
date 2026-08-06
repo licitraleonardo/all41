@@ -3,7 +3,9 @@ import './Impostore.css'
 import { useImpostore } from '../hooks/useImpostore.js'
 import {
   bastaPerRivelare,
+  chiPuoTentare,
   diTurno,
+  stessaParola,
   esito,
   quantiMancano,
   quantiPerRivelare,
@@ -30,8 +32,21 @@ const DURATA_FINALE = 7000
 // lasciata stare. Niente timer: un countdown trasforma una cosa
 // rilassata in ansia da prestazione.
 export default function Impostore({ membro, membri }) {
-  const { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, chiedi, rivela, setVoto } =
-    useImpostore(membro.id)
+  const {
+    partita,
+    voto,
+    storico,
+    stato,
+    errore,
+    nuova,
+    avanti,
+    avviaVoto,
+    chiedi,
+    rivela,
+    tenta,
+    chiudi,
+    setVoto,
+  } = useImpostore(membro.id)
   const nome = (id) => membri[id]?.nome ?? 'Qualcuno'
 
   // Quale finale hai già letto: sta su questo telefono, perché è una
@@ -115,6 +130,17 @@ export default function Impostore({ membro, membri }) {
           nome={nome}
           membri={membri}
           onChiudi={() => setDaStorico(null)}
+        />
+      )}
+
+      {partita?.stato === 'colpo' && (
+        <Colpo
+          partita={partita}
+          voto={voto}
+          membro={membro}
+          nome={nome}
+          onTenta={tenta}
+          onChiudi={chiudi}
         />
       )}
 
@@ -583,6 +609,89 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
   )
 }
 
+// L'ultima carta dell'impostore beccato: scrive la parola del gruppo e,
+// se la indovina, ribalta tutto. Per tutti gli altri e' un'attesa — ed e'
+// giusto che sia un'attesa, perche' e' il momento in cui si trattiene il
+// fiato.
+function Colpo({ partita, voto, membro, nome, onTenta, onChiudi }) {
+  const [scritto, setScritto] = useState('')
+  const [inCorso, setInCorso] = useState(false)
+
+  const puo = useMemo(
+    () =>
+      chiPuoTentare({
+        impostori: partita.impostori,
+        giocatori: partita.giocatori,
+        schede: schedePerId(voto?.schede, partita.giocatori),
+      }),
+    [partita, voto?.schede]
+  )
+
+  const tocca = puo.includes(membro.id)
+
+  // Se il tentativo e' gia' arrivato da un altro telefono, la partita si
+  // chiude: chi lo vede sistema il finale per tutti.
+  useEffect(() => {
+    if (partita.tentativo != null) onChiudi()
+  }, [partita.tentativo, onChiudi])
+
+  async function manda(e) {
+    e.preventDefault()
+    if (!scritto.trim() || inCorso) return
+    setInCorso(true)
+    await onTenta(scritto.trim())
+    setInCorso(false)
+  }
+
+  return (
+    <section className="imp-colpo">
+      <p className="imp-etichetta">Ti hanno beccato</p>
+
+      {tocca ? (
+        <>
+          <h2 className="imp-titolo">Ultima carta</h2>
+          <p className="imp-spiega">
+            Scrivi la parola che aveva il gruppo. Se la indovini vinci lo stesso, e
+            tutta la loro indagine non è servita a niente.
+          </p>
+
+          <form onSubmit={manda}>
+            <input
+              className="imp-tentativo"
+              type="text"
+              value={scritto}
+              onChange={(e) => setScritto(e.target.value)}
+              placeholder="La parola del gruppo"
+              aria-label="La parola del gruppo"
+              autoFocus
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              className="imp-comincia"
+              disabled={!scritto.trim() || inCorso}
+            >
+              {inCorso ? '…' : 'È questa'}
+            </button>
+          </form>
+          <p className="imp-nota">Una sola volta. Maiuscole e accenti non contano.</p>
+        </>
+      ) : (
+        <>
+          <h2 className="imp-titolo">
+            {puo.length === 1 ? `${nome(puo[0])} ci prova` : 'Ci provano'}
+          </h2>
+          <p className="imp-spiega">
+            {puo.length === 1 ? 'Sta scrivendo' : 'Stanno scrivendo'} la parola che
+            avevate voi. Se la indovina, avete perso lo stesso.
+          </p>
+          <Rotella testo="Un attimo di silenzio" />
+        </>
+      )}
+    </section>
+  )
+}
+
 // ---------------------------------------------------------- rivelazione
 
 function Rivelazione({ partita, voto, nome, membri }) {
@@ -596,11 +705,23 @@ function Rivelazione({ partita, voto, nome, membri }) {
     [partita, voto?.schede]
   )
 
+  const colpo = stessaParola(partita.tentativo, partita.parolaGruppo)
   const scampati = r.impuniti.length > 0
 
   return (
-    <section className="imp-rivelazione">
-      <h2 className="imp-titolo">{scampati ? 'L’ha fatta franca' : 'Beccato'}</h2>
+    <section className={colpo ? 'imp-rivelazione ribaltata' : 'imp-rivelazione'}>
+      <h2 className="imp-titolo">
+        {colpo ? 'Ribaltata all’ultimo' : scampati ? 'L’ha fatta franca' : 'Beccato'}
+      </h2>
+
+      {/* Il colpo di coda va raccontato, o il finale non si spiega: uno
+          scoperto che vince sembra un errore, non un colpo di scena. */}
+      {partita.tentativo != null && (
+        <p className={colpo ? 'imp-colpo-esito riuscito' : 'imp-colpo-esito fallito'}>
+          {nome(partita.tentatoDa)} ha tentato <strong>«{partita.tentativo}»</strong>:{' '}
+          {colpo ? 'era quella giusta.' : 'non era quella.'}
+        </p>
+      )}
 
       <div className="imp-parole">
         <div>

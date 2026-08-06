@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import {
   apriVoto,
+  apriColpo,
   avanzaTurno,
   chiediRivelazione,
   chiudiPartita,
+  tentaColpo,
   creaPartita,
   daRiga,
   leggiPartita,
@@ -142,9 +144,37 @@ export function useImpostore(membroId) {
     }
   }, [partita, membroId])
 
+  // Rivelare non chiude piu' la partita per forza: se il gruppo ha
+  // beccato qualcuno, quel qualcuno ha un'ultima carta.
   const rivela = useCallback(async () => {
     if (!partita) return
     setErrore(null)
+    try {
+      setPartita(await apriColpo(partita, voto?.schede ?? {}))
+    } catch (e) {
+      setErrore(descriviErrore(e))
+    }
+  }, [partita, voto?.schede])
+
+  const tenta = useCallback(
+    async (parola) => {
+      if (!partita) return
+      setErrore(null)
+      try {
+        const dopo = await tentaColpo(partita, membroId, parola)
+        setPartita(await chiudiPartita(dopo, voto?.schede ?? {}))
+      } catch (e) {
+        setErrore(descriviErrore(e))
+      }
+    },
+    [partita, membroId, voto?.schede]
+  )
+
+  // Se il tentativo arriva da un altro telefono, la partita si chiude
+  // comunque: chi la vede passare a 'colpo' con il tentativo dentro
+  // sistema il finale per tutti.
+  const chiudi = useCallback(async () => {
+    if (!partita) return
     try {
       setPartita(await chiudiPartita(partita, voto?.schede ?? {}))
     } catch (e) {
@@ -164,5 +194,19 @@ export function useImpostore(membroId) {
     }
   }, [partita?.id, partita?.stato])
 
-  return { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, chiedi, rivela, setVoto }
+  return {
+    partita,
+    voto,
+    storico,
+    stato,
+    errore,
+    nuova,
+    avanti,
+    avviaVoto,
+    chiedi,
+    rivela,
+    tenta,
+    chiudi,
+    setVoto,
+  }
 }

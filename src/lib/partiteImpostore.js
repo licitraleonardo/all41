@@ -1,7 +1,14 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { IMPOSTORE } from '../config/impostore.js'
-import { avanza, premi, preparaPartita, schedePerId } from './impostore.js'
+import {
+  avanza,
+  chiPuoTentare,
+  premi,
+  preparaPartita,
+  schedePerId,
+  stessaParola,
+} from './impostore.js'
 import { faiScattareLegge } from './punti.js'
 
 // Le partite dell'Impostore sul database. Il mazziere vero — chi e'
@@ -9,7 +16,7 @@ import { faiScattareLegge } from './punti.js'
 // impostore.js, che non sa cosa sia Supabase e si puo' provare.
 
 const CAMPI =
-  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, created_at'
+  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, tentativo, tentato_da, created_at'
 
 export function daRiga(riga) {
   if (!riga) return null
@@ -26,6 +33,8 @@ export function daRiga(riga) {
     giriTotali: riga.giri_totali,
     votoId: riga.vote_id,
     rivelaChiesta: riga.rivela_chiesta ?? [],
+    tentativo: riga.tentativo ?? null,
+    tentatoDa: riga.tentato_da ?? null,
     stato: riga.stato,
     creataIl: riga.created_at,
   }
@@ -158,6 +167,7 @@ export async function paga(partita, schedeGrezze) {
     impostori: partita.impostori,
     giocatori: partita.giocatori,
     schede: schedePerId(schedeGrezze, partita.giocatori),
+    colpoRiuscito: stessaParola(partita.tentativo, partita.parolaGruppo),
   })
 
   for (const { membroId, leggeId } of assegnazioni) {
@@ -165,6 +175,43 @@ export async function paga(partita, schedeGrezze) {
   }
 
   return assegnazioni
+}
+
+// Fine del voto: se il gruppo ha beccato qualcuno, quel qualcuno ha
+// un'ultima carta prima che si chiuda. Se non hanno beccato nessuno non
+// c'e' niente da tentare e si va dritti al finale.
+export async function apriColpo(partita, schedeGrezze) {
+  const puo = chiPuoTentare({
+    impostori: partita.impostori,
+    giocatori: partita.giocatori,
+    schede: schedePerId(schedeGrezze, partita.giocatori),
+  })
+
+  if (puo.length === 0) return chiudiPartita(partita, schedeGrezze)
+
+  const { data, error } = await supabase
+    .from('impostore_games')
+    .update({ stato: 'colpo' })
+    .eq('id', partita.id)
+    .eq('stato', 'voto')
+    .select(CAMPI)
+    .maybeSingle()
+
+  if (error) throw error
+  return data ? daRiga(data) : leggiPartita()
+}
+
+// L'impostore beccato scrive la parola del gruppo. Una volta sola: due
+// che tentano insieme non possono avere due finali diversi per la stessa
+// partita, quindi la prima che arriva vale.
+export async function tentaColpo(partita, membroId, parola) {
+  const { data, error } = await supabase.rpc('tenta_colpo', {
+    p_partita: partita.id,
+    p_membro: membroId,
+    p_parola: parola,
+  })
+  if (error) throw error
+  return daRiga(data)
 }
 
 // Chiedere di rivelare prima che abbiano votato tutti. Passa da una

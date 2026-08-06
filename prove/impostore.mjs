@@ -11,6 +11,8 @@ import {
   premi,
   quantiMancano,
   quantiPerRivelare,
+  stessaParola,
+  chiPuoTentare,
   bastaPerRivelare,
   tuttiHannoVotato,
   schedePerId,
@@ -310,6 +312,71 @@ console.log('\nrivelare prima che abbiano votato tutti')
     !bastaPerRivelare(partita, ['a', 'b', 'c', 'd']))
   prova('cinque su otto bastano', bastaPerRivelare(partita, ['a', 'b', 'c', 'd', 'e']))
   prova('e senza nessuna richiesta no', !bastaPerRivelare(partita, []))
+}
+
+console.log('\nil colpo di coda: la parola indovinata')
+{
+  prova('uguale e uguale', stessaParola('Mare', 'Mare'))
+  prova('le maiuscole non contano', stessaParola('MARE', 'mare'))
+  prova('gli spazi ai lati nemmeno', stessaParola('  mare  ', 'mare'))
+  prova('gli accenti nemmeno', stessaParola('caffe', 'caff\u00e8'))
+  prova('e nemmeno al contrario', stessaParola('Caff\u00c8', 'caffe'))
+  prova('l\u2019apostrofo storto vale come quello dritto', stessaParola("S\u2019oru", "s'oru"))
+  prova('due spazi in mezzo valgono per uno', stessaParola('pane  carasau', 'pane carasau'))
+
+  prova('parole diverse restano diverse', !stessaParola('mare', 'lago'))
+  prova('una parola dentro l\u2019altra non basta', !stessaParola('mar', 'mare'))
+  prova('il vuoto non indovina niente', !stessaParola('', ''))
+  prova('nemmeno gli spazi soli', !stessaParola('   ', 'mare'))
+  prova('e nemmeno il nulla', !stessaParola(null, 'mare') && !stessaParola(undefined, 'mare'))
+}
+
+console.log('\nchi puo\u2019 tentare il colpo')
+{
+  const impostori = ['a', 'b']
+  const schede = schedePerId({ c: [0, 2], d: [0, 2], e: [0, 2], f: [0, 2] }, OTTO)
+
+  const puo = chiPuoTentare({ impostori, giocatori: OTTO, schede })
+  prova('solo chi e\u2019 stato beccato', puo.join() === 'a', puo)
+  prova('chi l\u2019ha fatta franca non tenta: ha gia\u2019 vinto', !puo.includes('b'))
+  prova(
+    'se non becchi nessuno non tenta nessuno',
+    chiPuoTentare({ impostori, giocatori: OTTO, schede: {} }).length === 0
+  )
+}
+
+console.log('\ni punti quando il colpo riesce')
+{
+  const impostori = ['a', 'b']
+  const schede = schedePerId({ c: [0, 2], d: [0, 2], e: [0, 2], f: [0, 2] }, OTTO)
+
+  const perso = premi({ impostori, giocatori: OTTO, schede })
+  const vinto = premi({ impostori, giocatori: OTTO, schede, colpoRiuscito: true })
+
+  const somma = (p) => {
+    const per = {}
+    for (const a of p.assegnazioni) per[a.membroId] = (per[a.membroId] ?? 0) + a.punti
+    return per
+  }
+
+  prova(
+    'senza colpo: b impunito, e chi ha beccato prende il suo',
+    somma(perso).b > 0 && somma(perso).c > 0,
+    somma(perso)
+  )
+  prova('col colpo riuscito pagano tutti e due gli impostori', somma(vinto).a > 0 && somma(vinto).b > 0, somma(vinto))
+  prova(
+    'e chi li aveva beccati non prende piu\u2019 niente',
+    somma(vinto).c === undefined && somma(vinto).d === undefined,
+    somma(vinto)
+  )
+  prova('il colpo si porta dietro la sua bandierina', vinto.colpoRiuscito === true)
+  prova('e senza colpo resta abbassata', perso.colpoRiuscito === false)
+  prova(
+    'nessuno viene pagato due volte nemmeno col colpo',
+    vinto.assegnazioni.length ===
+      new Set(vinto.assegnazioni.map((a) => a.membroId + a.leggeId)).size
+  )
 }
 
 console.log('\nle coppie di parole')

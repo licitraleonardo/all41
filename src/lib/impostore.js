@@ -156,16 +156,35 @@ export function esito({ impostori, giocatori, schede }) {
 
 // I punti non si scrivono qui: si prendono dalle Leggi, cosi' cambiare
 // una Legge cambia il gioco e non restano due numeri da tenere allineati.
-export function premi({ impostori, giocatori, schede }) {
+export function premi({ impostori, giocatori, schede, colpoRiuscito = false }) {
   const { impuniti, indovini, ...resto } = esito({ impostori, giocatori, schede })
 
   const impunito = PER_ID['impostore-impunito']
   const smascheratore = PER_ID['smascheratore']
 
+  // Col colpo di coda riuscito la partita e' ribaltata: hanno vinto gli
+  // impostori, tutti quanti, e chi li aveva beccati non prende niente.
+  // Premiare chi ha indovinato in una partita che il gruppo ha perso
+  // vorrebbe dire pagare due volte lo stesso finale, ai due lati opposti.
+  if (colpoRiuscito) {
+    return {
+      ...resto,
+      impuniti,
+      indovini,
+      colpoRiuscito: true,
+      assegnazioni: impostori.map((id) => ({
+        membroId: id,
+        punti: impunito.punti,
+        leggeId: impunito.id,
+      })),
+    }
+  }
+
   return {
     ...resto,
     impuniti,
     indovini,
+    colpoRiuscito: false,
     assegnazioni: [
       ...impuniti.map((id) => ({
         membroId: id,
@@ -197,4 +216,34 @@ export function quantiPerRivelare(quantiGiocatori) {
 
 export function bastaPerRivelare(partita, chiesta = []) {
   return chiesta.length >= quantiPerRivelare(partita.giocatori.length)
+}
+
+// -------------------------------------------------- il colpo di coda
+
+// L'impostore beccato ha un'ultima carta: se indovina la parola del
+// gruppo, vince lo stesso. Quindi il confronto deve essere generoso —
+// chi ha in testa la parola giusta non deve perdere per un accento o per
+// una maiuscola, che sarebbe perdere per colpa della tastiera.
+export function normalizzaParola(testo) {
+  return String(testo ?? '')
+    .trim()
+    .toLowerCase()
+    // Toglie gli accenti scomponendo le lettere e buttando i segni.
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    // Apostrofi tipografici e dritti sono la stessa cosa per chi scrive.
+    .replace(/[\u2018\u2019\u02bc]/g, "'")
+    // Spazi doppi da copia-incolla o da pollice incerto.
+    .replace(/\s+/g, ' ')
+}
+
+export function stessaParola(a, b) {
+  const x = normalizzaParola(a)
+  return x.length > 0 && x === normalizzaParola(b)
+}
+
+// Chi puo' tentare il colpo: gli impostori che sono stati scoperti. Chi
+// l'ha fatta franca ha gia' vinto e non ha niente da tentare.
+export function chiPuoTentare({ impostori, giocatori, schede }) {
+  return esito({ impostori, giocatori, schede }).scoperti
 }

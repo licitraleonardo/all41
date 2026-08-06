@@ -347,6 +347,24 @@ alter table members add column if not exists last_known_location jsonb;
 -- per sbaglio brucerebbe la partita a tutti gli altri.
 alter table impostore_games add column if not exists rivela_chiesta uuid[] not null default '{}';
 
+-- Il colpo di coda: l'impostore beccato scrive la parola del gruppo e,
+-- se la indovina, ribalta la partita. Qui resta cosa ha scritto — il
+-- confronto lo fa il client, che sa gia' com'e' fatto.
+alter table impostore_games add column if not exists tentativo text;
+alter table impostore_games add column if not exists tentato_da uuid
+  references members (id) on delete set null;
+
+-- Lo stato 'colpo' sta fra il voto e la fine: il gruppo ha beccato
+-- qualcuno, e prima di chiudere si aspetta la sua ultima carta.
+do $$
+begin
+  alter table impostore_games drop constraint if exists impostore_games_stato_check;
+  alter table impostore_games add constraint impostore_games_stato_check
+    check (stato in ('in-corso', 'voto', 'colpo', 'finita'));
+exception when others then
+  raise notice 'Vincolo sullo stato non aggiornato (%).', sqlerrm;
+end $$;
+
 -- Gli id delle sfide sono etichette leggibili ('faro', 'seada'), non
 -- uuid: la colonna nasceva uuid e va convertita dove esiste già.
 alter table photos add column if not exists challenge_id text;
@@ -994,6 +1012,36 @@ end $$;
 -- Chiedere di rivelare in anticipo. In una funzione e non in un update
 -- perche' due che la chiedono nello stesso istante si sovrascriverebbero
 -- a vicenda, e uno dei due voti sparirebbe.
+-- L'impostore beccato scrive la sua parola. Una volta sola: la prima
+-- che arriva vale, perche' due che tentano insieme non possono avere due
+-- finali diversi per la stessa partita.
+create or replace function tenta_colpo(p_partita uuid, p_membro uuid, p_parola text)
+returns impostore_games
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  g impostore_games;
+begin
+  select * into g from impostore_games where id = p_partita for update;
+  if not found then raise exception 'Questa partita non esiste.'; end if;
+  if g.tentativo is not null then return g; end if;
+  if not (p_membro = any(g.impostori)) then
+    raise exception 'Solo un impostore puo'' tentare.';
+  end if;
+
+  update impostore_games
+     set tentativo = p_parola, tentato_da = p_membro
+   where id = p_partita and tentativo is null
+  returning * into g;
+
+  return g;
+end $$;
+
+revoke execute on function tenta_colpo(uuid, uuid, text) from public;
+grant execute on function tenta_colpo(uuid, uuid, text) to authenticated;
+
 create or replace function chiedi_rivelazione(p_partita uuid, p_membro uuid)
 returns impostore_games
 language plpgsql

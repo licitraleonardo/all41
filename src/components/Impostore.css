@@ -6,7 +6,6 @@
   padding: 4px 0 24px;
 }
 
-.imp-vuoto,
 .imp-fuori {
   padding: 28px 16px;
   text-align: center;
@@ -497,11 +496,6 @@
   outline-offset: 2px;
 }
 
-.imp-chiudi-finale:focus-visible {
-  outline: 2px solid var(--sea, #0b3550);
-  outline-offset: 2px;
-}
-
 
 /* Una partita vecchia riaperta dallo storico: sopra tutto, e si chiude.
    In linea spingeva giù l'elenco e faceva perdere il segno. */
@@ -578,4 +572,68 @@
 .imp-rivela:disabled {
   opacity: 0.55;
   cursor: default;
+}
+
+/* ------------------------------------------------------ il colpo di coda */
+
+.imp-colpo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 46vh;
+  text-align: center;
+}
+
+.imp-colpo .imp-titolo {
+  font-size: clamp(24px, 8vw, 34px);
+  margin-bottom: 8px;
+}
+
+.imp-colpo form {
+  width: 100%;
+  max-width: 340px;
+}
+
+.imp-tentativo {
+  width: 100%;
+  font: inherit;
+  /* 16px minimo o iOS zooma da solo al focus, e in quel momento zoomare
+     addosso a chi sta giocando l'ultima carta è una cattiveria. */
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink, #16323f);
+  background: #fff;
+  border: 3px solid var(--coral, #e8604a);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.imp-tentativo:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
+
+/* Il ribaltone si vede prima di leggerlo. */
+.imp-rivelazione.ribaltata {
+  border-color: var(--coral, #e8604a);
+  background: #fdf1ee;
+}
+
+.imp-colpo-esito {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.imp-colpo-esito.riuscito {
+  color: var(--coral, #e8604a);
+  font-weight: 700;
+}
+
+.imp-colpo-esito.fallito {
+  color: var(--ink-soft, #55636b);
 }
