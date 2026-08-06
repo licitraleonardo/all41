@@ -5,6 +5,7 @@ import { diTurno, esito, quantiMancano, schedePerId } from '../lib/impostore.js'
 import { IMPOSTORE, NESSUNA_PAROLA, VARIANTI } from '../config/impostore.js'
 import { PER_ID } from '../config/leggi.js'
 import { urlAvatar } from '../config/avatar.js'
+import FacciaAllan from './FacciaAllan.jsx'
 import { vota } from '../lib/voti.js'
 import { descriviErrore } from '../lib/errori.js'
 import Rotella from './Rotella.jsx'
@@ -15,7 +16,7 @@ import Rotella from './Rotella.jsx'
 // lasciata stare. Niente timer: un countdown trasforma una cosa
 // rilassata in ansia da prestazione.
 export default function Impostore({ membro, membri }) {
-  const { partita, voto, stato, errore, nuova, avanti, avviaVoto, rivela, setVoto } =
+  const { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, rivela, setVoto } =
     useImpostore()
   const nome = (id) => membri[id]?.nome ?? 'Qualcuno'
 
@@ -34,6 +35,7 @@ export default function Impostore({ membro, membri }) {
             <Rivelazione partita={partita} voto={voto} nome={nome} membri={membri} />
           )}
           <Apparecchia membro={membro} membri={membri} onCrea={nuova} />
+          <Storico partite={storico} nome={nome} ioId={membro.id} />
         </>
       )}
 
@@ -170,6 +172,96 @@ function Apparecchia({ membro, membri, onCrea }) {
   )
 }
 
+// ----------------------------------------------------------- lo storico
+
+// Le partite finite, sotto il tasto per cominciarne una nuova. Chiuse:
+// aperte sarebbero un muro di roba vecchia davanti alla cosa che uno e'
+// venuto a fare, che e' giocare adesso.
+function Storico({ partite, nome, ioId }) {
+  const [aperta, setAperta] = useState(null)
+  const [tutte, setTutte] = useState(false)
+
+  if (!partite || partite.length === 0) return null
+  const mostrate = tutte ? partite : partite.slice(0, 5)
+
+  return (
+    <section className="imp-storico">
+      <p className="imp-etichetta">Le partite di prima</p>
+
+      <ul className="imp-storico-elenco">
+        {mostrate.map((p) => {
+          const r = esito({
+            impostori: p.impostori,
+            giocatori: p.giocatori,
+            schede: schedePerId(p.schede, p.giocatori),
+          })
+          const scampati = r.impuniti.length > 0
+          const apertaQui = aperta === p.id
+
+          return (
+            <li key={p.id}>
+              <button
+                type="button"
+                className={apertaQui ? 'imp-storico-riga aperta' : 'imp-storico-riga'}
+                onClick={() => setAperta(apertaQui ? null : p.id)}
+                aria-expanded={apertaQui}
+              >
+                <span className="imp-storico-quando">{quando(p.creataIl)}</span>
+                <span className={scampati ? 'imp-storico-esito franca' : 'imp-storico-esito preso'}>
+                  {scampati ? 'L’ha fatta franca' : 'Beccato'}
+                </span>
+                <span className="imp-storico-parola">{p.parolaGruppo}</span>
+                <span className="imp-storico-freccia" aria-hidden="true">
+                  {apertaQui ? '−' : '+'}
+                </span>
+              </button>
+
+              {apertaQui && (
+                <div className="imp-storico-dettaglio">
+                  <p className="imp-storico-riga-dett">
+                    Il gruppo aveva <strong>{p.parolaGruppo}</strong>, l’impostore{' '}
+                    <strong>
+                      {p.parolaImpostore === NESSUNA_PAROLA ? 'niente' : p.parolaImpostore}
+                    </strong>
+                    .
+                  </p>
+                  <p className="imp-storico-riga-dett">
+                    {p.impostori.length === 1 ? 'Era ' : 'Erano '}
+                    {p.impostori
+                      .map((id) => `${id === ioId ? 'tu' : nome(id)}${r.scoperti.includes(id) ? '' : ' (impunito)'}`)
+                      .join(', ')}
+                    .
+                  </p>
+                  <p className="imp-storico-riga-dett">
+                    {r.indovini.length === 0
+                      ? 'Non l’ha indovinato nessuno.'
+                      : `L’hanno indovinato ${r.indovini
+                          .map((id) => (id === ioId ? 'tu' : nome(id)))
+                          .join(', ')}.`}
+                  </p>
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+
+      {partite.length > 5 && !tutte && (
+        <button type="button" className="imp-storico-tutte" onClick={() => setTutte(true)}>
+          Vedi tutte ({partite.length})
+        </button>
+      )}
+    </section>
+  )
+}
+
+function quando(iso) {
+  const d = new Date(iso)
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) +
+    ' · ' +
+    d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+}
+
 // ------------------------------------------------------- il giro di parole
 
 function Giro({ partita, membro, membri, nome, onAvanti }) {
@@ -205,16 +297,16 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
             {/* Una carta coperta, non un bottone: si capisce che sotto
                 c'è qualcosa e che è roba tua. */}
             <button type="button" className="imp-carta" onClick={() => setScoperta(true)}>
-              <span className="imp-carta-dorso" aria-hidden="true">
-                ?
-              </span>
+              {/* Sul retro c'è Allan: è lui che tiene i segreti di questa
+                  app, e una carta coperta è il posto dove sta meglio. */}
+              <FacciaAllan espressione="sarcastico" lato={128} className="imp-carta-allan" />
               <span className="imp-carta-invito">Scopri la tua parola</span>
             </button>
           </>
         ) : (
           <>
-            <p className="imp-etichetta">La tua parola è</p>
             <div className={mia === NESSUNA_PAROLA ? 'imp-carta-su niente' : 'imp-carta-su'}>
+              <span className="imp-carta-etichetta">La tua parola</span>
               <p className={mia === NESSUNA_PAROLA ? 'imp-parola niente' : 'imp-parola'}>
                 {mia === NESSUNA_PAROLA ? 'Nessuna' : mia}
               </p>

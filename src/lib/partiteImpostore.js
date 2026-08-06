@@ -44,6 +44,35 @@ export async function leggiPartita() {
   return daRiga(data[0])
 }
 
+// Le partite finite, dalla piu' recente. Con le schede del voto, che
+// servono a dire chi aveva indovinato: senza, lo storico direbbe solo
+// chi era l'impostore, che e' meta' della storia.
+export async function leggiStorico(quante = 20) {
+  const { data, error } = await supabase
+    .from('impostore_games')
+    .select(CAMPI)
+    .eq('trip_id', VIAGGIO.id)
+    .eq('stato', 'finita')
+    .order('created_at', { ascending: false })
+    .limit(quante)
+
+  if (error) throw error
+  const partite = data.map(daRiga)
+
+  const voti = partite.map((p) => p.votoId).filter(Boolean)
+  if (voti.length === 0) return partite.map((p) => ({ ...p, schede: {} }))
+
+  const { data: righe, error: erroreVoti } = await supabase
+    .from('votes')
+    .select('id, ballots')
+    .in('id', voti)
+    .limit(voti.length)
+
+  if (erroreVoti) throw erroreVoti
+  const perId = Object.fromEntries((righe ?? []).map((r) => [r.id, r.ballots ?? {}]))
+  return partite.map((p) => ({ ...p, schede: perId[p.votoId] ?? {} }))
+}
+
 export async function creaPartita({ giocatori, variante = 'parola-simile', casuale }) {
   const preparata = preparaPartita({ giocatori, variante, casuale })
 

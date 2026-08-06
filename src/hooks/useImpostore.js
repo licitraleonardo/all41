@@ -7,6 +7,7 @@ import {
   creaPartita,
   daRiga,
   leggiPartita,
+  leggiStorico,
 } from '../lib/partiteImpostore.js'
 import { leggiVoti } from '../lib/voti.js'
 import { descriviErrore } from '../lib/errori.js'
@@ -17,6 +18,7 @@ import { descriviErrore } from '../lib/errori.js'
 export function useImpostore() {
   const [partita, setPartita] = useState(null)
   const [voto, setVoto] = useState(null)
+  const [storico, setStorico] = useState([])
   const [stato, setStato] = useState('caricamento')
   const [errore, setErrore] = useState(null)
   const vivo = useRef(true)
@@ -139,5 +141,17 @@ export function useImpostore() {
     }
   }, [partita, voto?.schede])
 
-  return { partita, voto, stato, errore, nuova, avanti, avviaVoto, rivela, setVoto }
+  // Lo storico si rilegge quando una partita finisce: e' l'unico momento
+  // in cui puo' essere cambiato.
+  useEffect(() => {
+    let vivo2 = true
+    leggiStorico()
+      .then((s) => vivo2 && setStorico(s))
+      .catch(() => {})
+    return () => {
+      vivo2 = false
+    }
+  }, [partita?.id, partita?.stato])
+
+  return { partita, voto, storico, stato, errore, nuova, avanti, avviaVoto, rivela, setVoto }
 }

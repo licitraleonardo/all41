@@ -296,16 +296,11 @@
   box-shadow: 0 16px 34px -18px rgba(11, 53, 80, 0.9);
 }
 
-.imp-carta-dorso {
-  display: grid;
-  place-items: center;
-  width: 92px;
-  height: 92px;
-  font-size: 46px;
-  font-weight: 800;
-  color: var(--gold, #f2a93b);
-  border: 3px dashed rgba(242, 169, 59, 0.55);
+.imp-carta-allan {
   border-radius: 50%;
+  border: 3px dashed rgba(242, 169, 59, 0.55);
+  padding: 6px;
+  background: rgba(247, 244, 236, 0.06);
 }
 
 .imp-carta-invito {
@@ -313,19 +308,31 @@
   font-weight: 700;
 }
 
-/* La carta girata: fondo chiaro, perché adesso quello che conta è la
-   parola e non la scenografia. */
+/* Girata resta una carta: stessa larghezza, stessa altezza minima,
+   stessi angoli. Prima diventava un riquadro basso e sembrava un'altra
+   cosa invece della stessa carta voltata. */
 .imp-carta-su {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 10px;
   flex: none;
-  width: min(320px, 100%);
+  width: min(300px, 100%);
+  min-height: 300px;
   padding: 26px 18px;
   background: #fff;
   border: 3px solid var(--sea, #0b3550);
   border-radius: 18px;
   box-shadow: 0 16px 34px -20px rgba(11, 53, 80, 0.8);
+}
+
+.imp-carta-etichetta {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #55636b);
 }
 
 .imp-carta-su.niente {
@@ -401,4 +408,120 @@
   background: #fff;
   border: 1px solid var(--line, #e4dfd2);
   border-radius: 11px;
+}
+
+/* ---------------------------------------------------------- lo storico */
+
+/* Sotto il tasto per cominciare, e chiuse: aperte sarebbero un muro di
+   roba vecchia davanti alla cosa che uno è venuto a fare. */
+.imp-storico {
+  margin-top: 26px;
+}
+
+.imp-storico-elenco {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.imp-storico-riga {
+  display: grid;
+  grid-template-columns: auto auto 1fr 16px;
+  align-items: baseline;
+  gap: 9px;
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  color: var(--ink, #16323f);
+  background: #fff;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.imp-storico-riga.aperta {
+  border-color: var(--sea, #0b3550);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.imp-storico-quando {
+  color: var(--ink-soft, #55636b);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.imp-storico-esito {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.imp-storico-esito.franca {
+  color: var(--coral, #e8604a);
+}
+
+.imp-storico-esito.preso {
+  color: var(--juniper, #3f6e5c);
+}
+
+.imp-storico-parola {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-storico-freccia {
+  text-align: center;
+  font-weight: 700;
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-storico-dettaglio {
+  padding: 11px 13px;
+  background: var(--sand, #f7f4ec);
+  border: 1px solid var(--sea, #0b3550);
+  border-top: 0;
+  border-radius: 0 0 11px 11px;
+}
+
+.imp-storico-riga-dett {
+  margin: 0 0 5px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft, #55636b);
+}
+
+.imp-storico-riga-dett:last-child {
+  margin-bottom: 0;
+}
+
+.imp-storico-riga-dett strong {
+  color: var(--ink, #16323f);
+}
+
+.imp-storico-tutte {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--sea, #0b3550);
+  background: transparent;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.imp-storico-riga:focus-visible,
+.imp-storico-tutte:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
 }
