@@ -101,7 +101,7 @@ export default function Impostore({ membro, membri }) {
             />
           )}
           <Apparecchia membro={membro} membri={membri} onCrea={nuova} />
-          <Storico partite={storico} nome={nome} ioId={membro.id} onApri={setDaStorico} />
+          <Storico partite={storico} ioId={membro.id} onApri={setDaStorico} />
         </>
       )}
 
@@ -429,7 +429,7 @@ function FinestraFinale({ partita, voto, nome, membri, onChiudi }) {
 // Le partite finite, sotto il tasto per cominciarne una nuova. Chiuse:
 // aperte sarebbero un muro di roba vecchia davanti alla cosa che uno e'
 // venuto a fare, che e' giocare adesso.
-function Storico({ partite, nome, ioId, onApri }) {
+function Storico({ partite, ioId, onApri }) {
   const [tutte, setTutte] = useState(false)
 
   if (!partite || partite.length === 0) return null

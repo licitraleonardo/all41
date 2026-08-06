@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import {
+  abbandonaPartita,
   apriVoto,
   apriColpo,
   avanzaTurno,

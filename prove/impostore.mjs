@@ -6,7 +6,6 @@ import {
   avanza,
   diTurno,
   esito,
-  mescola,
   preparaPartita,
   premi,
   quantiMancano,

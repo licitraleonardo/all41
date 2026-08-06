@@ -5,8 +5,16 @@
     "__COMMIT__": "readonly",
     "__BUILD_TIME__": "readonly"
   },
+  "env": {
+    "browser": true,
+    "es2024": true,
+    "node": true
+  },
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+
+    "no-undef": "error",
+    "react/jsx-no-undef": "error"
   }
 }

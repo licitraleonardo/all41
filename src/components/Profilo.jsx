@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { urlAvatar } from '../config/avatar.js'
-import { VIAGGIO } from '../config/viaggio.js'
 
 // Segnaposto: qui al punto 3 arriva l'itinerario e la struttura a tab.
 // Modifica e uscita traslocheranno nel tab Altro quando esisterà.
