@@ -3,6 +3,12 @@
 Coda di lavoro decisa, in ordine. Diversa da `IDEE.md`, che è il parcheggio
 delle cose non decise. Aggiornata prima della partenza.
 
+⚠️ **SQL da lanciare**: `supabase/dama.sql` (la Dama, 7 agosto). Senza,
+la scheda Dama lo dice e il resto dell'app va avanti.
+
+Da qui in poi tutte le prove insieme: **`npm run prova`** (dieci
+famiglie, ~450 controlli). Prima di ogni commit: quello più `npm run lint`.
+
 ## Dove siamo
 
 Fatti i punti **1-8** dello spec: setup e deploy, onboarding col codice,
