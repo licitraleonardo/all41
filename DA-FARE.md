@@ -295,3 +295,54 @@ Due cose da sapere quando si riprenderà:
 - Deve funzionare **offline e senza account**: è l'unico posto dell'app
   che potrebbe servire quando il telefono non prende e uno ha fretta.
   Quindi dati nel codice, non sul database.
+
+### La Pecora in verticale, cioè GAME-1 (rimandata il 7 agosto)
+
+`Specifiche Modifiche.md` chiede al punto **GAME-1** di ingrandire l'area
+di gioco "fino a occupare quasi tutta la schermata". **Non si può**, e i
+numeri dicono perché — vale la pena tenerli, perché la domanda tornerà.
+
+La larghezza sullo schermo è quella del telefono e non si tratta. L'unico
+modo di far crescere il riquadro in altezza è **mettere meno mondo
+dentro**, cioè far vedere meno pista davanti ad Allan:
+
+| Mondo visibile | Preavviso a velocità massima | Riquadro su 390px |
+|---|---|---|
+| **500 (oggi)** | 0,64 s | 250 px |
+| 460 | 0,58 s — *esattamente un salto* | 271 px |
+| 420 | 0,53 s | 297 px |
+| 208 | 0,22 s | 600 px |
+
+Un salto dura **0,58 s**. Sotto le 460 unità l'ostacolo compare più tardi
+di quanto ci metta il salto a concludersi: dovresti saltare prima di
+poterlo vedere. **Le 500 di oggi erano già scelte vicino al limite**, non
+a caso.
+
+Alzare il cielo invece della larghezza non serve: **il 45% del mondo è
+già cielo irraggiungibile**. La terra sta a y=272 su 320, l'apice del
+salto è 93 unità, la testa di Allan al massimo arriva a y=143. Un mondo
+più alto aggiunge cielo morto, e Allan resta 31px comunque — la sua
+dimensione a schermo dipende solo da `MONDO.larghezza`.
+
+⚠️ **Le due richieste dentro GAME-1 sono in conflitto.** "Il riquadro
+occupa più schermo" si ottiene alzando il rapporto altezza/larghezza; "il
+gioco si vede meglio, Allan è più grande" si ottiene solo abbassando
+`larghezza`, ed è tappato a 460. Una versione verticale soddisfa la prima
+e **non** la seconda.
+
+**Perché serve un secondo comando.** Lo dice già il commento su
+`navicella.quote` in `config/pecora.js`: la quota alta è "un respiro, non
+un terzo pericolo — coi due soli comandi che ci sono non potrebbe essere
+altro". Con un tocco solo non esiste gioco verticale. Il candidato più
+piccolo è il **doppio salto** (apice da 93 a ~186, testa fino a y=50, che
+giustificherebbe un riquadro quasi doppio).
+
+**Cosa costa, quando si riprenderà**: i record del viaggio **ripartono da
+zero**, perché un punteggio col salto singolo e uno col doppio non sono
+la stessa cosa. E vanno riscritte le prove che derivano dal salto: "nessuna
+coppia più larga di un salto", le quote del gabbiano e della navicella.
+Sono 82 controlli, e il pilota automatico è l'unico che trova gli errori
+di questo tipo — la coppia di muretti impossibile non si vedeva a occhio.
+
+Rimandata da qui perché mancano cinque giorni alla partenza e questa è la
+sezione dove un errore non si vede leggendo il codice.
