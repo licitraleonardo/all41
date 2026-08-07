@@ -34,7 +34,7 @@ export const VOCI = [
     icona: '🏆',
     titolo: 'Gioco',
     testo:
-      'La classifica, il Testamento delle Leggi scoperte, l’Impostore per il dopocena e un gioco della Pecora per le attese.',
+      'La classifica, il Testamento delle Leggi scoperte, l’Impostore per il dopocena, la Dama per sfidarsi in due e un gioco della Pecora per le attese.',
     gesto: 'Tocca qualcuno nella classifica per proporgli punti, in su o in giù. Poi vota il gruppo.',
   },
   {
