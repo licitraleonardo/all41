@@ -13,6 +13,12 @@
   /* Spazio che la barra dei tab toglie in fondo a ogni schermata */
   --altezza-tab: calc(58px + env(safe-area-inset-bottom));
 
+  /* Spazio che la barra di stato toglie in cima. Da browser vale zero;
+     nell'app installata no, perché index.html chiede la barra di stato
+     translucida e viewport-fit=cover, quindi il contenuto parte da sotto
+     il notch. Chi sta in cima somma questo, o finisce lì dietro. */
+  --spazio-alto: env(safe-area-inset-top);
+
   font-family: var(--font-testo);
   color-scheme: dark;
   -webkit-text-size-adjust: 100%;

@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 28px 20px calc(20px + env(safe-area-inset-bottom));
+  padding: calc(28px + var(--spazio-alto)) 20px calc(20px + env(safe-area-inset-bottom));
   text-align: center;
 }
 

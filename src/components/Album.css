@@ -8,7 +8,7 @@
   color: var(--ink);
   text-align: left;
   /* In fondo ci stanno i due tasti fissi, oltre alla barra dei tab */
-  padding: 16px 16px calc(28px + var(--altezza-tab) + 56px);
+  padding: calc(16px + var(--spazio-alto)) 16px calc(28px + var(--altezza-tab) + 56px);
   max-width: 640px;
   margin: 0 auto;
 }

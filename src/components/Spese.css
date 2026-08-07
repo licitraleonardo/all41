@@ -15,7 +15,7 @@
   text-align: left;
   /* In fondo ci sta il tasto fisso, oltre alla barra dei tab: senza
      questo spazio l'ultima riga della cronologia gli finisce sotto. */
-  padding: 16px 16px calc(28px + var(--altezza-tab) + 56px);
+  padding: calc(16px + var(--spazio-alto)) 16px calc(28px + var(--altezza-tab) + 56px);
   max-width: 640px;
   margin: 0 auto;
 }

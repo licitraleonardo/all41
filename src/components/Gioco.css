@@ -7,7 +7,7 @@
   background-color: var(--sand);
   color: var(--ink);
   text-align: left;
-  padding: 16px 16px calc(20px + var(--altezza-tab));
+  padding: calc(16px + var(--spazio-alto)) 16px calc(20px + var(--altezza-tab));
   max-width: 640px;
   margin: 0 auto;
 }

@@ -4,7 +4,8 @@
 
 .gruppo-schede {
   position: sticky;
-  top: 0;
+  /* Non zero: nell'app installata zero è dietro il notch. */
+  top: var(--spazio-alto);
   z-index: 12;
   max-width: 616px;
   margin: 0 auto;

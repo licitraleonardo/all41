@@ -6,6 +6,9 @@
   --altezza-scrittura: 112px;
 
   min-height: 100dvh;
+  /* Le schede in cima partono da qui: senza, nell'app installata
+     nascono dietro la barra di stato. */
+  padding-top: var(--spazio-alto);
   background-color: var(--sand);
   color: var(--ink);
   text-align: left;
