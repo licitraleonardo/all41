@@ -1,0 +1,314 @@
+/* La Dama. Stessa carta sabbia del resto del tab Gioco: la scacchiera è
+   l'unica cosa scura, e va bene così — è lei il centro. */
+
+.dama-testata {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dama-titolo {
+  font-family: var(--font-titoli);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.dama-sfida,
+.dama-indietro {
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sea);
+  background: #ece7db;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 13px;
+  cursor: pointer;
+}
+
+.dama-tocca {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.dama-tocca.a-me {
+  color: var(--juniper);
+}
+
+.dama-avversari {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dama-avversario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 7px 12px 7px 7px;
+  cursor: pointer;
+}
+
+.dama-avversario img {
+  border-radius: 50%;
+}
+
+.dama-vuoto,
+.dama-nota {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.dama-avviso {
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #b23a26;
+}
+
+.dama-sezione {
+  margin: 20px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.dama-elenco {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dama-carta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 13px;
+  cursor: pointer;
+}
+
+.dama-carta-chi {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.dama-carta-stato {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.dama-carta-stato.tocca {
+  font-weight: 700;
+  color: var(--juniper);
+}
+
+/* ------------------------------------------------------- la scacchiera */
+
+.dama-giocatori {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.dama-contro {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.dama-pallino {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dama-pallino.bianco {
+  background: #f3efe4;
+  border: 2px solid #b9b2a0;
+}
+
+.dama-pallino.nero {
+  background: #253038;
+  border: 2px solid #0e161c;
+}
+
+.dama-tavola {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1;
+  margin: 12px auto 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid var(--sea);
+  /* Il tocco deve muovere, non selezionare */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dama-tavola.in-corso {
+  opacity: 0.7;
+}
+
+.dama-casella {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 0;
+  background: #efe9da;
+  border: 0;
+  cursor: pointer;
+}
+
+.dama-casella:disabled {
+  cursor: default;
+}
+
+.dama-casella.scura {
+  background: var(--sea);
+}
+
+.dama-casella.scelta {
+  background: var(--gold);
+}
+
+/* Dove si può atterrare: il pallino piccolo, come nei giochi veri. */
+.dama-casella.arrivo::after {
+  content: '';
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.dama-pezzo {
+  width: 76%;
+  height: 76%;
+  border-radius: 50%;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.dama-pezzo.bianco {
+  background: #f3efe4;
+  border: 2px solid #b9b2a0;
+}
+
+.dama-pezzo.nero {
+  background: #253038;
+  border: 2px solid #0e161c;
+}
+
+/* La dama porta la corona: un anello dorato, leggibile anche piccolo. */
+.dama-pezzo.regina {
+  box-shadow:
+    inset 0 0 0 3px var(--gold),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.dama-abbandona,
+.dama-rivincita {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 14px auto 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 11px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.dama-rivincita {
+  color: var(--sand);
+  background: var(--sea);
+  border: 0;
+}
+
+.dama-abbandona {
+  color: #b23a26;
+  background: transparent;
+  border: 1px solid rgba(178, 58, 38, 0.35);
+}
+
+.dama-resa-conferma {
+  max-width: 420px;
+  margin: 14px auto 0;
+  text-align: center;
+}
+
+.dama-resa-conferma p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dama-resa-conferma div {
+  display: flex;
+  gap: 8px;
+}
+
+.dama-resa {
+  flex: 1;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  background: #ece7db;
+  border: 0;
+  border-radius: 11px;
+  padding: 11px;
+  cursor: pointer;
+}
+
+.dama-resa.si {
+  color: var(--sand);
+  background: #b23a26;
+}
+
+.dama-sfida:focus-visible,
+.dama-indietro:focus-visible,
+.dama-avversario:focus-visible,
+.dama-carta:focus-visible,
+.dama-casella:focus-visible,
+.dama-abbandona:focus-visible,
+.dama-rivincita:focus-visible,
+.dama-resa:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}

@@ -5,6 +5,7 @@ import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
 import Pecora from './Pecora.jsx'
 import Impostore from './Impostore.jsx'
+import Dama from './Dama.jsx'
 import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
@@ -16,6 +17,7 @@ const SCHEDE = [
   ['classifica', 'Classifica'],
   ['testamento', 'Testamento'],
   ['impostore', 'Impostore'],
+  ['dama', 'Dama'],
   ['pecora', 'All'],
 ]
 
@@ -114,6 +116,8 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
       {stato === 'pronto' && vista === 'impostore' && (
         <Impostore membro={membro} membri={membri} />
       )}
+
+      {stato === 'pronto' && vista === 'dama' && <Dama membro={membro} membri={membri} />}
     </div>
   )
 }
