@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import { LEGGI, PUNIZIONI, TROFEI, etichetta } from '../config/leggi.js'
 import FacciaAllan from './FacciaAllan.jsx'
+import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 
 // Il codice delle Leggi scoperte. Continua di proposito il tono
 // legislativo: qui Allan non parla, custodisce e basta.
@@ -12,7 +12,9 @@ import FacciaAllan from './FacciaAllan.jsx'
 // Niente parte rivelato: sapere in partenza cosa fa guadagnare punti
 // trasformerebbe il gioco in un elenco di compiti.
 export default function Testamento({ scoperte, membri }) {
-  const [meta, setMeta] = useState('trofei')
+  // Terzo livello, stessa regola dei sotto-tab: ricaricare non deve
+  // riportarti sui Trofei se stavi leggendo le Leggi.
+  const [meta, setMeta] = useSchedaRicordata('scheda.testamento', 'trofei', ['trofei', 'leggi'])
   const rivelata = (l) => Boolean(scoperte[l.id])
   const quante = LEGGI.filter(rivelata).length
   const quota = Math.round((quante / LEGGI.length) * 100)

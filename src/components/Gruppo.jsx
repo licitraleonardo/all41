@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import './Gruppo.css'
 import ChatRapida from './ChatRapida.jsx'
 import Vocali from './Vocali.jsx'
+import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 
 // Il tab Gruppo, come lo vuole lo spec: la Chat Rapida e i Vocali come
 // due sotto-schede in alto. Sono due modi di dire la stessa cosa — "dove
@@ -12,7 +13,7 @@ import Vocali from './Vocali.jsx'
 // scorressero insieme per cambiare scheda bisognerebbe risalire tutta la
 // conversazione.
 export default function Gruppo({ membro, suoniDisponibili, nonLetto = {}, onVisto }) {
-  const [vista, setVista] = useState('chat')
+  const [vista, setVista] = useSchedaRicordata('scheda.gruppo', 'chat', ['chat', 'vocali'])
 
   // Si segna letto finché la scheda è aperta, non solo entrandoci: se
   // resti in chat mentre arrivano messaggi, il pallino non deve

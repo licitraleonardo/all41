@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './Gioco.css'
+import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
 import Pecora from './Pecora.jsx'
@@ -20,7 +21,11 @@ const SCHEDE = [
 
 export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto, conteggiMvp = {} }) {
   const { classifica, eventi, scoperte, stato, errore, ricarica } = useGioco()
-  const [vista, setVista] = useState('classifica')
+  const [vista, setVista] = useSchedaRicordata(
+    'scheda.gioco',
+    'classifica',
+    SCHEDE.map(([id]) => id)
+  )
   const [inCorso, setInCorso] = useState(false)
   const [erroreProposta, setErroreProposta] = useState(null)
 

@@ -6,6 +6,7 @@ import { descriviErrore } from '../lib/errori.js'
 import { dopoFoto } from '../lib/regole.js'
 import { forseChiudiCollettiva } from '../lib/sfide.js'
 import { useSfide } from '../hooks/useSfide.js'
+import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 import Sfide from './Sfide.jsx'
 import FotoGrande from './FotoGrande.jsx'
 import BottoneElimina from './BottoneElimina.jsx'
@@ -31,7 +32,7 @@ export default function Album({ membro }) {
   const campoFile = useRef(null)
   const campoFoto = useRef(null)
   const sfide = useSfide(membro.id)
-  const [vista, setVista] = useState('album')
+  const [vista, setVista] = useSchedaRicordata('scheda.foto', 'album', ['album', 'sfide'])
   const [grande, setGrande] = useState(null)
   const [bloccato, setBloccato] = useState(false)
 

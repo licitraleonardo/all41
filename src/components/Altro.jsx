@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import './Altro.css'
+import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 import Spese from './Spese.jsx'
 import Documenti from './Documenti.jsx'
 import Posizioni from './Posizioni.jsx'
@@ -27,7 +27,11 @@ const SCHEDE = [
 ]
 
 export default function Altro({ membro }) {
-  const [vista, setVista] = useState('spese')
+  const [vista, setVista] = useSchedaRicordata(
+    'scheda.altro',
+    'spese',
+    SCHEDE.map(([id]) => id)
+  )
 
   return (
     <div className="altro-schermo">
