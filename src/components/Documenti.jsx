@@ -172,8 +172,9 @@ export default function Documenti({ membro }) {
         metteteci carte d&rsquo;identità o dati bancari.
       </p>
 
-      {/* Fisso in fondo come "Segna una spesa": è l'azione principale
-          della sezione e deve raggiungerti dove sei. */}
+      {/* Appiccicato in fondo: ti raggiunge dove sei mentre scorri, ma a
+          sezione vuota resta attaccato al testo invece di piantarsi in
+          fondo allo schermo. */}
       <button
         type="button"
         className="doc-aggiungi"

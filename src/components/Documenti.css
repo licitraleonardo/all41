@@ -235,17 +235,18 @@
   cursor: not-allowed;
 }
 
-/* Fisso in fondo come "Segna una spesa": è l'azione principale della
-   sezione e deve raggiungerti dove sei, non solo se hai scorso fino in
-   fondo all'elenco. */
+/* Appiccicato, non fisso. È l'azione principale della sezione e deve
+   raggiungerti dove sei: con l'elenco lungo resta sopra la barra dei tab
+   mentre scorri, esattamente come prima. Ma fisso lo era anche a sezione
+   vuota, e lì il testo finisce in cima e lui restava in fondo allo
+   schermo, mezzo schermo sotto l'ultima riga, come se non c'entrasse
+   niente. Da appiccicato, quando non c'è niente da scorrere sta
+   attaccato al testo. */
 .doc-aggiungi {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
+  position: sticky;
   bottom: calc(var(--altezza-tab) + 10px);
   z-index: 15;
-  width: calc(100% - 32px);
-  max-width: 608px;
+  margin-top: 18px;
   color: var(--sand);
   background: var(--sea);
   border: 0;
