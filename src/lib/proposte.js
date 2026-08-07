@@ -88,7 +88,11 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
 export async function leggiProposteAperte() {
   const { data: voti, error } = await supabase
     .from('votes')
-    .select('id, question, options, tally, voted, expires_at, closed_at')
+    // `ballots` dice chi ha votato cosa. Le proposte nascono con
+    // anonymous:false, quindi il database la riempie già da sempre: qui
+    // si smette solo di ignorarla. Chi la mostra decide poi a chi e
+    // quando — vedi PropostaInAttesa.
+    .select('id, question, options, tally, voted, ballots, expires_at, closed_at')
     .eq('trip_id', VIAGGIO.id)
     .eq('category', 'point-proposal')
     .is('closed_at', null)
@@ -117,6 +121,7 @@ export async function leggiProposteAperte() {
       votoId: v.id,
       conteggi: v.tally,
       hannoVotato: v.voted ?? [],
+      schede: v.ballots ?? {},
       scadeIl: v.expires_at,
       punti: perVoto[v.id].points,
       motivo: perVoto[v.id].reason,

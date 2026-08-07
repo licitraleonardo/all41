@@ -628,11 +628,43 @@
   outline-offset: 2px;
 }
 
-.attesa-nota {
-  margin: 8px 0 0;
-  font-size: 11.5px;
-  color: var(--ink-soft);
+/* Chi ha votato cosa, e non solo quanti. Compare al posto dei numeri e
+   con la stessa regola: solo dopo che hai votato. Il verso prende i
+   colori dei due bottoni, ma il rosso è più scuro — quello dei bottoni è
+   a 3,4:1 e a 12px non si legge. */
+.attesa-esito {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 9px;
+}
+
+.attesa-riga {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.attesa-verso {
+  flex: none;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+.attesa-verso.si {
+  color: var(--juniper);
+}
+
+.attesa-verso.no {
+  color: #b23a26;
+}
+
+.attesa-nomi {
+  min-width: 0;
+  color: var(--ink-soft);
 }
 
 .proposta-avviso {
