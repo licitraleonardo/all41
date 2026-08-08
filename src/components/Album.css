@@ -121,9 +121,23 @@
 }
 
 .coda span {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Scartare è l'unica strada per togliersela di torno, quindi c'è — ma
+   non ha il peso di "Riprova": una foto scartata qui non è recuperabile
+   da nessuna parte. */
+.coda .coda-scarta {
+  color: var(--coral);
+  background: transparent;
+  border: 1px solid rgba(232, 96, 74, 0.4);
+  font-size: 15px;
+  line-height: 1;
+  padding: 5px 9px;
 }
 
 .coda button {

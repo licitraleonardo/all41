@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './Album.css'
 import { useFoto } from '../hooks/useFoto.js'
 import { caricaFoto, eliminaFoto } from '../lib/foto.js'
@@ -7,6 +7,8 @@ import { dopoFoto } from '../lib/regole.js'
 import { forseChiudiCollettiva } from '../lib/sfide.js'
 import { useSfide } from '../hooks/useSfide.js'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
+import { accoda, etichetta, leggiCoda, togliDallaCoda } from '../lib/codaFoto.js'
+import { uuid } from '../lib/id.js'
 import Sfide from './Sfide.jsx'
 import FotoGrande from './FotoGrande.jsx'
 import BottoneElimina from './BottoneElimina.jsx'
@@ -125,12 +127,32 @@ export default function Album({ membro }) {
           .catch(() => {})
       }
     } catch (e) {
-      setInCoda((precedenti) => [...precedenti, { file, nome: file.name }])
-      setAvviso(`Non è partita. ${descriviErrore(e)}`)
+      // La foto va SUL TELEFONO, non in memoria. Quella scattata con
+      // "📷 Scatta" non è nel rullino — è un file temporaneo dato solo
+      // alla pagina — quindi se la PWA viene uccisa mentre lo schermo è
+      // bloccato non esiste più da nessuna parte.
+      const voce = { id: uuid(), file, nome: file.name, quando: Date.now() }
+      const salvata = await accoda(voce)
+      setInCoda((precedenti) => [...precedenti, voce])
+      setAvviso(
+        salvata
+          ? `Non è partita, ma è al sicuro sul telefono. ${descriviErrore(e)}`
+          : `Non è partita, e non riesco a tenerla da parte: non chiudere l'app. ${descriviErrore(e)}`
+      )
     } finally {
       setInCorso(false)
     }
   }
+
+  // La coda si ricostruisce all'avvio: è l'unica cosa che rende utile
+  // averla salvata. Si riprova anche da sola quando torna la rete.
+  useEffect(() => {
+    let vivo = true
+    leggiCoda().then((voci) => vivo && setInCoda(voci))
+    return () => {
+      vivo = false
+    }
+  }, [])
 
   async function scegli(e) {
     const scelti = [...e.target.files]
@@ -138,10 +160,18 @@ export default function Album({ membro }) {
     for (const file of scelti) await carica(file)
   }
 
-  async function riprova(indice) {
-    const voce = inCoda[indice]
-    setInCoda((precedenti) => precedenti.filter((_, i) => i !== indice))
+  async function riprova(voce) {
+    // Si toglie dalla coda solo se il caricamento riesce: se fallisce di
+    // nuovo, `carica` la rimette dentro con un id nuovo e quella vecchia
+    // resterebbe lì come doppione.
+    setInCoda((precedenti) => precedenti.filter((v) => v.id !== voce.id))
+    await togliDallaCoda(voce.id)
     await carica(voce.file)
+  }
+
+  async function scarta(voce) {
+    setInCoda((precedenti) => precedenti.filter((v) => v.id !== voce.id))
+    await togliDallaCoda(voce.id)
   }
 
   async function elimina(f) {
@@ -263,11 +293,20 @@ export default function Album({ membro }) {
 
       {inCoda.length > 0 && (
         <ul className="coda">
-          {inCoda.map((voce, i) => (
-            <li key={`${voce.nome}-${i}`}>
-              <span>{voce.nome}</span>
-              <button type="button" onClick={() => riprova(i)} disabled={inCorso}>
+          {inCoda.map((voce) => (
+            <li key={voce.id}>
+              <span>{etichetta(voce)}</span>
+              <button type="button" onClick={() => riprova(voce)} disabled={inCorso}>
                 Riprova
+              </button>
+              <button
+                type="button"
+                className="coda-scarta"
+                onClick={() => scarta(voce)}
+                disabled={inCorso}
+                aria-label="Scarta questa foto"
+              >
+                ×
               </button>
             </li>
           ))}
