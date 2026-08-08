@@ -1,0 +1,102 @@
+/* La pagina di installazione. Non è l'app: è una pagina sola, che si
+   legge in piedi con una mano, e non deve avere niente da toccare
+   tranne la cosa giusta. */
+
+.installa {
+  min-height: 100dvh;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: calc(32px + var(--spazio-alto)) 22px calc(32px + env(safe-area-inset-bottom));
+  color: var(--sand);
+  text-align: left;
+}
+
+.installa-titolo {
+  font-family: var(--font-titoli);
+  font-size: clamp(28px, 8vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+}
+
+.installa-testo {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(247, 244, 236, 0.86);
+}
+
+/* Il codice di accesso: è la cosa che si dimentica, e la si scopre solo
+   dopo aver installato — l'app installata ha uno storage suo. */
+.installa-avviso {
+  margin: 18px 0;
+  padding: 13px 15px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--gold);
+  background: rgba(242, 169, 59, 0.12);
+  border: 1px solid rgba(242, 169, 59, 0.35);
+  border-radius: 12px;
+}
+
+.installa-primario {
+  display: block;
+  width: 100%;
+  margin: 22px 0 0;
+  padding: 16px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--sea);
+  background: var(--gold);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.installa-primario:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: 3px;
+}
+
+.installa-sotto {
+  margin: 30px 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 244, 236, 0.55);
+}
+
+.installa-passi {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.installa-passi li::marker {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.installa-nota {
+  margin: 20px 0 0;
+  font-size: 14px;
+  font-style: italic;
+  color: rgba(247, 244, 236, 0.6);
+}
+
+/* L'indirizzo scritto per intero: se la copia non funziona, si legge e
+   si scrive a mano. È l'unica via d'uscita che non dipende da niente. */
+.installa-indirizzo {
+  margin: 14px 0 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13.5px;
+  word-break: break-all;
+  color: rgba(247, 244, 236, 0.55);
+}

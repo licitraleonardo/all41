@@ -2,14 +2,26 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import Installa from './components/Installa.jsx'
 import { tieniAggiornata } from './lib/aggiornamento.js'
 
+// /installa è una pagina a sé: la guida per mettersi l'app sulla home, e
+// nient'altro. Niente codice, niente onboarding, niente database.
+//
+// Il corto circuito sta qui e non dentro App perché non è una schermata
+// dell'app: non deve montare i suoi hook, non deve aprire una sessione
+// anonima su Supabase, non deve fare niente. È il link che si condivide
+// nel gruppo, e chi lo apre spesso non ha ancora un profilo.
+const installazione = window.location.pathname.replace(/\/+$/, '') === '/installa'
+
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <StrictMode>{installazione ? <Installa /> : <App />}</StrictMode>
 )
 
 // Fuori da React: non dipende da nessuna schermata e deve girare anche
 // mentre l'app sta ancora partendo.
-tieniAggiornata()
+//
+// Non sulla pagina di installazione: lì il service worker serve solo a
+// registrarsi, e cercare aggiornamenti di un'app che non è ancora
+// installata non ha senso.
+if (!installazione) tieniAggiornata()
