@@ -236,7 +236,28 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
     onAvvia(aperturaVincente(conteggi, consigliata))
   }, [voto, quanti, tutti, conteggi, scelte, consigliata, onAvvia])
 
-  async function vota(i) {
+  // Due domande, un voto solo. Combinate in quattro bottoni erano un
+  // rebus da leggere: "1 · 2 giri" accanto a "2 · 2 giri" costringe a
+  // decifrare quale numero e' cosa. Separate si leggono, e restano sulla
+  // stessa pagina — due votazioni di fila sarebbero due momenti morti.
+  const proposta = IMPOSTORE.aperture.find((a) => a.id === consigliata) ?? IMPOSTORE.aperture[0]
+  const [quantiImp, setQuantiImp] = useState(proposta.impostori)
+  const [quantiGiri, setQuantiGiri] = useState(proposta.giri)
+
+  // Quanti voti ha preso ogni risposta, sommando le combinazioni che la
+  // contengono: il voto sul database resta uno solo, ma a schermo si
+  // vedono i due conti separati come le due domande.
+  const votiPer = (campo, valore) =>
+    IMPOSTORE.aperture.reduce(
+      (somma, a, i) => somma + (a[campo] === valore ? (conteggi[i] ?? 0) : 0),
+      0
+    )
+
+  async function vota() {
+    const i = IMPOSTORE.aperture.findIndex(
+      (a) => a.impostori === quantiImp && a.giri === quantiGiri
+    )
+    if (i < 0) return
     setInCorso(true)
     setAvviso(null)
     try {
@@ -250,6 +271,28 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
 
   if (!voto) return <Rotella testo="Preparo il voto" />
 
+  const domanda = (titolo, campo, valori, scelto, scegli, etichetta) => (
+    <div className="imp-domanda">
+      <p className="imp-domanda-testa">{titolo}</p>
+      <div className="imp-risposte">
+        {valori.map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={n === scelto ? 'imp-risposta scelta' : 'imp-risposta'}
+            onClick={() => scegli(n)}
+            disabled={hoVotato || inCorso}
+            aria-pressed={n === scelto}
+          >
+            <span className="imp-risposta-numero">{n}</span>
+            <span className="imp-risposta-nome">{etichetta(n)}</span>
+            {quanti > 0 && <span className="imp-risposta-voti">{votiPer(campo, n)}</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
   return (
     <section className="imp-preparazione">
       <h2 className="imp-titolo">Come giochiamo?</h2>
@@ -259,31 +302,18 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
 
       {avviso && <p className="imp-guasto">{avviso}</p>}
 
-      <div className="imp-scelte">
-        {scelte.map((a, i) => (
-          <button
-            key={a.id}
-            type="button"
-            className={i === conteggi.indexOf(Math.max(...conteggi)) && quanti > 0
-              ? 'imp-scelta avanti'
-              : 'imp-scelta'}
-            onClick={() => vota(i)}
-            disabled={hoVotato || inCorso}
-          >
-            <span className="imp-scelta-numero">{a.impostori}</span>
-            <span className="imp-scelta-nome">
-              {a.impostori === 1 ? 'impostore' : 'impostori'}
-              <small>
-                {a.giri} giri{a.id === consigliata ? ' · consigliato' : ''}
-              </small>
-            </span>
-            <span className="imp-scelta-voti">{conteggi[i] ?? 0}</span>
-          </button>
-        ))}
-      </div>
+      {domanda('Quanti impostori?', 'impostori', IMPOSTORE.sceltePerImpostori, quantiImp, setQuantiImp,
+        (n) => (n === 1 ? 'impostore' : 'impostori'))}
 
-      {hoVotato && (
+      {domanda('Quanti giri prima del voto?', 'giri', IMPOSTORE.scelteGiri, quantiGiri, setQuantiGiri,
+        () => 'giri')}
+
+      {hoVotato ? (
         <p className="imp-nota">Si parte al {serve}º voto: non si aspetta chi manca.</p>
+      ) : (
+        <button type="button" className="imp-comincia" onClick={vota} disabled={inCorso}>
+          {inCorso ? '…' : `Vota ${quantiImp} e ${quantiGiri} giri`}
+        </button>
       )}
     </section>
   )

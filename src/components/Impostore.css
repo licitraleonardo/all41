@@ -870,3 +870,86 @@
   font-weight: 600;
   opacity: 0.7;
 }
+
+
+/* ------------------------------------------- l'apertura, due domande */
+
+/* Combinate in quattro bottoni erano un rebus: "1 · 2 giri" accanto a
+   "2 · 2 giri" costringe a decifrare quale numero e' cosa. Separate si
+   leggono in un colpo d'occhio, e restano sulla stessa pagina — due
+   votazioni di fila sarebbero due momenti morti prima di cominciare. */
+.imp-domanda {
+  margin-top: 22px;
+}
+
+.imp-domanda-testa {
+  margin: 0 0 9px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.imp-risposte {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.imp-risposta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 13px;
+  padding: 14px 10px;
+  cursor: pointer;
+}
+
+.imp-risposta.scelta {
+  border-color: var(--sea);
+  background: #eef4f7;
+}
+
+.imp-risposta:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.imp-risposta-numero {
+  font-family: var(--font-titoli);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.imp-risposta-nome {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+/* Quanti l'hanno votata: sta in un angolo, non ruba la scena al numero
+   grande che e' la cosa da leggere. */
+.imp-risposta-voti {
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  min-width: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sea);
+  background: #ece7db;
+  border-radius: 100px;
+  padding: 1px 6px;
+}
+
+.imp-risposta:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
