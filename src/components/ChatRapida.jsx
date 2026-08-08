@@ -7,6 +7,7 @@ import { useFeed } from '../hooks/useFeed.js'
 import { useVoti } from '../hooks/useVoti.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
 import { descriviErrore } from '../lib/errori.js'
+import { conScadenza, eScaduta } from '../lib/scadenza.js'
 import {
   dopoInvioRiuscito,
   dopoRifiuto,
@@ -15,7 +16,7 @@ import {
   dopoTesto,
   soundboardSpenta,
 } from '../lib/regole.js'
-import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA } from '../config/azioni.js'
+import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA, SECONDI_ATTESA } from '../config/azioni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
 import { SUONI } from '../config/suoni.js'
 import { suona } from '../lib/audio.js'
@@ -29,6 +30,10 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   const [testo, setTesto] = useState('')
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
+  // Scaduto è diverso da fallito, e all'SOS lo si dice: fallito vuol dire
+  // "non è partita", scaduto vuol dire "non lo so". Prometterne una per
+  // l'altra è il difetto che stiamo togliendo, non un dettaglio di stile.
+  const [scaduto, setScaduto] = useState(false)
   // Non piu' un elenco di suoni spenti: o la soundboard e' spenta tutta,
   // o si suona. Qui dentro c'e' l'ora in cui riapre.
   const [spentaFino, setSpentaFino] = useState(null)
@@ -99,8 +104,15 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   async function manda(tipo, payload = {}, importante = false) {
     setInCorso(true)
     setAvviso(null)
+    setScaduto(false)
     try {
-      const esito = await inviaAzione({ tipo, payload, memberId: membro.id, importante })
+      // Quasi tutti gli invii aspettano all'infinito: se tardano si vede
+      // che non sono comparsi. L'SOS no — vedi SECONDI_ATTESA.
+      const secondi = SECONDI_ATTESA[tipo]
+      const esito = await conScadenza(
+        inviaAzione({ tipo, payload, memberId: membro.id, importante }),
+        secondi ? secondi * 1000 : 0
+      )
       if (!esito.ok) {
         // Legge XIX: insistere su un bottone bloccato costa, con la scala
         // che perdona i primi due tentativi.
@@ -116,6 +128,7 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
       setFoglio(null)
       return esito.azione
     } catch (e) {
+      setScaduto(eScaduta(e))
       setAvviso(descriviErrore(e))
       return null
     } finally {
@@ -368,9 +381,11 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
           onAnnulla={() => {
             setFoglio(null)
             setAvviso(null)
+            setScaduto(false)
           }}
           inCorso={inCorso}
           errore={avviso}
+          scaduto={scaduto}
         />
       )}
     </div>

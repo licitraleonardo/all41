@@ -137,7 +137,9 @@ Dalla caccia sistematica dell'8 agosto restano **30 segnalazioni non verificate*
 - Con due impostori beccati insieme, **entrambi** possono scrivere la parola ma vale solo la prima: va deciso chi tenta.
 - Gli **indovini dei giri precedenti** non vengono pagati: `paga()` guarda solo l'ultimo voto.
 
-Dalla critica funzionale del 7 agosto restano alcuni "rovina" non affrontati, fra cui **l'SOS che fallisce senza dirlo** e **la foto scattata che sparisce se l'upload fallisce**.
+Dalla critica funzionale del 7 agosto resta **la foto scattata che sparisce se l'upload fallisce**: chi ha appena scattato deve riscattare, e intanto il momento è passato.
+
+**L'SOS non è più in questo elenco.** L'errore era già finito dentro il foglio con `f2d8def`; restava il caso opposto, che è più subdolo: una richiesta che non fallisce ma **resta appesa**. Con una tacca di segnale la fetch non solleva niente, aspetta — quindi nessun `catch` scattava e il bottone restava su *"Invio…"* all'infinito, senza né errore né conferma. Ora l'SOS ha dieci secondi (`SECONDI_ATTESA` in `src/config/azioni.js`, l'unico tipo che ne ha) e allo scadere dice **"Non ha risposto"**, non "non è partita": sono due cose diverse, e la richiesta non viene annullata, quindi può ancora arrivare.
 
 ### Decisioni ancora aperte
 

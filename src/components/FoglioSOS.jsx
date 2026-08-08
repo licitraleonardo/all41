@@ -4,7 +4,7 @@ import { MOTIVI_SOS } from '../config/azioni.js'
 // Testi piani, nessuna battuta, nessuna emoji decorativa: è l'unica
 // funzione di sicurezza dell'app. Due tap per inviare, così non parte da
 // solo in tasca, ma nessun limite e nessuna penalità, mai.
-export default function FoglioSOS({ onInvia, onAnnulla, inCorso, errore }) {
+export default function FoglioSOS({ onInvia, onAnnulla, inCorso, errore, scaduto = false }) {
   const [motivo, setMotivo] = useState('')
   const [libero, setLibero] = useState('')
 
@@ -50,10 +50,25 @@ export default function FoglioSOS({ onInvia, onAnnulla, inCorso, errore }) {
             secondi: chi chiedeva aiuto senza segnale vedeva il bottone
             tornare com'era e se ne andava convinto di aver chiamato.
             È l'unica funzione di sicurezza dell'app: qui un fallimento
-            silenzioso è il difetto peggiore possibile. */}
+            silenzioso è il difetto peggiore possibile.
+
+            Scaduto ha un testo suo, e non è pignoleria: se la richiesta
+            non ha risposto in tempo nessuno può dire se sia partita o no,
+            e scrivere "non è partita" sarebbe inventarsi una certezza che
+            non c'è. La riga sotto invece è la stessa nei due casi, perché
+            la cosa da fare è la stessa. */}
         {errore && (
           <p className="sos-errore" role="alert">
-            <strong>Non è partita.</strong> {errore}
+            {scaduto ? (
+              <>
+                <strong>Non ha risposto.</strong> Forse è partita, forse no: da qui
+                non si può sapere.
+              </>
+            ) : (
+              <>
+                <strong>Non è partita.</strong> {errore}
+              </>
+            )}
             <span>Riprova, o chiama qualcuno al telefono.</span>
           </p>
         )}
