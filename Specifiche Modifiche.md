@@ -7,9 +7,10 @@
 >
 > | | |
 > |---|---|
-> | ✅ Fatti | AUTH-1/2/3, BUG-1/2/3, PUNTI-1/2/3/4, TUT-1/2/3, TEST-2, SFI-1, SOTTOTAB |
-> | ⬜ Da fare | TEST-1, PWA-1…5 |
+> | ✅ Fatti | **tutto**, tranne GAME-1 |
 > | ❌ / ⏸ | GAME-1 (impossibile come scritto, vedi `DA-FARE.md`) |
+>
+> **Resta solo quello che non può fare il codice**: l'orario e il molo della barca del 14, e il telefono del villaggio. Sono in `DA-FARE.md`.
 >
 > I cinque "Punti da chiarire" in fondo hanno tutti una risposta: sono nella sezione **Decisioni prese**.
 
@@ -99,7 +100,13 @@ Per ogni step è indicato se il tutorial **parte dentro il tab** (si entra nella
 
 ---
 
-## 3. Testamento
+## 3. Testamento ✅ **fatto** (`2204ab5`, `ae96d99`)
+
+> **Due decisioni che il documento lasciava indecidibili:**
+> 1. *Il pallino segnala anche le Leggi non ancora scoperte?* **No.** La nota di bilanciamento diceva "le Leggi non ancora scoperte restano non lette": presa alla lettera, ogni persona si sarebbe trovata una ventina di pallini accesi **per sempre** sulle voci oscurate — il contrario di una notifica.
+> 2. *Cosa vuol dire "aprire" un trofeo?* Non esisteva: erano righe di elenco già tutte aperte, e senza un gesto il pallino non aveva modo di spegnersi. Ora la riga si tocca e si apre, e dentro c'è **chi l'ha fatta scattare e quando** — così aprire significa qualcosa invece di spegnere un pallino.
+>
+> ⚠️ Lo stato è un insieme di **ID**, mai numeri romani né posizioni: l'etichetta si calcola dalla posizione nell'array, quindi bastava aggiungere un Trofeo in mezzo — ed è successo, quindici volte in un giorno — perché tutti i pallini si riaccendessero sulle voci sbagliate.
 
 ### [TEST-1] Pallini di notifica
 - Su **Trofei** e **Leggi**: pallino di notifica **per singolo elemento non ancora visualizzato** (non un badge unico di sezione).
@@ -221,6 +228,14 @@ Il tetto massimo di voti verso la stessa persona è **3 al giorno**: il contator
 **Premessa:** allo stato attuale nessuno ha la PWA installata (chi ce l'ha la cancellerà), quindi si parte da zero e non serve gestire migrazioni.
 
 **Obiettivo:** avere un **link da condividere** che apre una **pagina web dedicata alla sola installazione**, con guida specifica per il dispositivo. Non è l'onboarding dell'app: è una pagina a sé. Una volta che l'app è sulla home del telefono, si usa normalmente.
+
+> ✅ **Fatto** (`d2ac7dc`). Il riconoscimento del dispositivo è una funzione pura con **25 prove su user agent veri** (`npm run prova:dispositivo`).
+>
+> ⚠️ **Il caso che conta di più non è riconoscere WhatsApp**: è *non* scambiare Safari per un browser interno. Dire "apri in Safari" a chi è già in Safari è un vicolo cieco. C'è anche l'iPad, che da anni si dichiara Macintosh e si distingue da un Mac solo dal touch.
+>
+> ⚠️ **PWA-4, la difesa che serviva davvero**: su iOS "Aggiungi alla schermata Home" fissa l'indirizzo della pagina corrente, quindi installando **da /installa** l'icona riaprirebbe per sempre la guida all'installazione. Chi ci arriva già in standalone viene rimandato all'app vera. L'app da browser continua a funzionare normalmente.
+>
+> ❌ **Niente QR per il desktop**: lo spec lo dava per "eventuale", le librerie non si possono caricare da fuori (CSP) e scriverne uno sarebbe ~150 righe per un caso che si risolve copiando il link.
 
 ### [PWA-1] Pagina di installazione separata
 - URL dedicato, distinto da quello dell'app (es. `/installa`).
