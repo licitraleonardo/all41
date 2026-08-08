@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './Altro.css'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
-import NuvolettaAllan, { SequenzaAllan, nuvolettaGiaVista } from './NuvolettaAllan.jsx'
+import NuvolettaAllan, { nuvolettaGiaVista } from './NuvolettaAllan.jsx'
 import Spese from './Spese.jsx'
 import Documenti from './Documenti.jsx'
 import Posizioni from './Posizioni.jsx'
@@ -35,8 +35,9 @@ export default function Altro({ membro }) {
     SCHEDE.map(([id]) => id)
   )
 
-  // La sequenza parte solo dopo che si è chiuso il messaggio del tab: due
-  // fumetti sovrapposti al primo ingresso sono un muro, non una guida.
+  // Le sotto-voci parlano solo dopo che si è chiuso il messaggio del
+  // tab: al primo ingresso si atterra su Spese, e due fumetti
+  // sovrapposti sono un muro invece che una guida.
   const [altroGiaVisto, setAltroGiaVisto] = useState(false)
   useEffect(() => {
     if (!membro?.id) return undefined
@@ -51,12 +52,12 @@ export default function Altro({ membro }) {
 
   return (
     <div className="altro-schermo">
-      {/* Prima il messaggio del tab, poi i cinque delle sotto-voci in
-          fila: qui dentro nessuno entra per curiosità, e con l'innesco
-          "la prima volta che apri questa scheda" tre su cinque non si
-          sarebbero mai visti. */}
+      {/* Il messaggio del tab, e poi una voce per sotto-sezione come in
+          Gruppo, Foto e Gioco. Erano in fila automatica come chiedeva lo
+          spec, ma alla prova sono cinque cartelli uno dietro l'altro
+          appena entri, e si leggono come un muro. */}
       <NuvolettaAllan membroId={membro?.id} passo="altro" />
-      {altroGiaVisto && <SequenzaAllan membroId={membro?.id} />}
+      {altroGiaVisto && <NuvolettaAllan membroId={membro?.id} passo={`altro.${vista}`} />}
 
       <div className="segmenti" role="tablist">
         {SCHEDE.map(([id, etichetta]) => (

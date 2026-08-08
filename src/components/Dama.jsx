@@ -101,7 +101,16 @@ export default function Dama({ membro, membri }) {
               className="dama-avversario"
               onClick={() => lanciaSfida(m.id)}
             >
-              <img src={urlAvatar(m)} alt="" width="34" height="34" />
+              {/* urlAvatar vuole stile e seme, due argomenti. Passandole
+                  il membro intero finiva tutto in `stile`, che non
+                  riconosceva niente e ricadeva sul predefinito col seme
+                  'all41': otto persone, un avatar solo. */}
+              <img
+                src={urlAvatar(m.avatarStyle, m.avatarSeed)}
+                alt=""
+                width="34"
+                height="34"
+              />
               <span>{m.nome}</span>
             </button>
           ))}

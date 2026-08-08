@@ -117,32 +117,37 @@ export const NUVOLETTE = {
   altro: {
     testo: 'Le cose utili che nessuno cerca finché non servono davvero.',
   },
-}
 
-// Gli ultimi cinque step: non aspettano che si apra ogni sotto-sezione,
-// scorrono uno dietro l'altro appena si entra in Altro.
+// Le cinque sotto-voci di Altro. Lo spec le voleva in fila automatica
+// all'ingresso, ed e' stato fatto: alla prova sono cinque cartelli uno
+// dietro l'altro appena entri, e si leggono come un muro. Adesso ognuna
+// aspetta la sua sezione, come tutte le altre dieci.
 //
-// Sono le voci che si guardano una volta e poi mai più — nessuno ci
-// entra per curiosità, quindi con l'innesco "la prima volta che apri
-// questa scheda" tre su cinque non si sarebbero mai visti.
-export const SEQUENZA_ALTRO = [
-  {
-    id: 'altro.spese',
+// Il prezzo lo si sapeva ed e' quello: in Guida e Info nessuno entra per
+// curiosita', quindi quei due messaggi molti non li vedranno mai. Meglio
+// due non visti che cinque saltati in blocco.
+  'altro.spese': {
     testo:
       'Segnate chi ha pagato. Così a fine viaggio smettete di dire “non mi ricordo quanto ti devo”.',
   },
-  { id: 'altro.mappa', testo: 'Per chi si perde anche seguendo il gruppo.' },
-  {
-    id: 'altro.stat',
-    testo: 'Numeri, record e altre prove oggettive delle vostre pessime decisioni.',
+
+  'altro.mappa': {
+    testo:
+      'Per chi si perde anche seguendo il gruppo.',
   },
-  {
-    id: 'altro.guida',
-    testo: 'Se siete arrivati qui significa che non avete ascoltato il tutorial. Classico.',
+
+  'altro.stat': {
+    testo:
+      'Numeri, record e altre prove oggettive delle vostre pessime decisioni.',
   },
-  {
-    id: 'altro.info',
+
+  'altro.guida': {
+    testo:
+      'Se siete arrivati qui significa che non avete ascoltato il tutorial. Classico.',
+  },
+
+  'altro.info': {
     testo:
       'Versione dell’app, crediti e altre cose che leggerete per circa quattro secondi.',
   },
-]
+}

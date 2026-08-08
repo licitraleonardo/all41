@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import { supabaseConfigurato, assicuraSessione } from './lib/supabase.js'
 import {
@@ -18,6 +18,7 @@ import { allApertura, forseSottoZero } from './lib/regole.js'
 import { leggiRecordPecora, risolviRecordPecora } from './lib/recordPecora.js'
 import Onboarding from './components/Onboarding.jsx'
 import Toast from './components/Toast.jsx'
+
 import Profilo from './components/Profilo.jsx'
 import ModificaProfilo from './components/ModificaProfilo.jsx'
 import Itinerario from './components/Itinerario.jsx'
@@ -42,6 +43,10 @@ import BannerProposta from './components/BannerProposta.jsx'
 import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
 import Pecora from './components/Pecora.jsx'
+// Quattordici secondi di pixel art su canvas: pesa, e serve solo a chi
+// non e' ancora entrato. Chi apre l'app col profilo gia' salvato non la
+// scarica nemmeno. Stessa scelta della mappa con Leaflet.
+const Intro = lazy(() => import('./components/Intro.jsx'))
 
 // Iniettati a build time da vite.config.js — servono a capire quale deploy
 // si sta guardando.
@@ -75,6 +80,28 @@ export default function App() {
   // Vive qui e non dentro una schermata: deve poter comparire mentre la
   // schermata che l'ha chiesto si sta smontando — è il caso dell'uscita.
   const [toast, setToast] = useState(null)
+
+  // L'intro si vede al primo accesso e quando si esce, non a ogni
+  // ricaricamento della schermata d'ingresso: quattordici secondi sono
+  // un bel regalo la prima volta e una tassa la terza. Il segnalibro sta
+  // in sessionStorage e lo cancella `esci`, che e' l'altro momento in
+  // cui va rivista.
+  const [introFinita, setIntroFinita] = useState(() => {
+    try {
+      return sessionStorage.getItem('all41.intro') === 'vista'
+    } catch {
+      return true
+    }
+  })
+
+  const chiudiIntro = useCallback(() => {
+    try {
+      sessionStorage.setItem('all41.intro', 'vista')
+    } catch {
+      // Navigazione privata: la rivedra'. Non e' un motivo per bloccarsi.
+    }
+    setIntroFinita(true)
+  }, [])
 
   // Sta qui e non nella Chat Rapida: il suono lanciato da un altro deve
   // sentirsi qualunque tab sia aperta.
@@ -322,6 +349,15 @@ export default function App() {
     setMembro(null)
     setErrore(null)
     setVista('onboarding')
+
+    // Uscendo si torna alla copertina: e' l'altro momento in cui l'intro
+    // ha senso, perche' si sta ricominciando da capo.
+    try {
+      sessionStorage.removeItem('all41.intro')
+    } catch {
+      // pazienza
+    }
+    setIntroFinita(false)
   }, [membro])
 
   function vaiA(prossima) {
@@ -497,6 +533,15 @@ export default function App() {
           inCorso={inCorso}
           errore={errore}
         />
+      )}
+
+      {/* Sopra tutto: e' una copertina, non una schermata dell'app.
+          Copre da sola con position:fixed, quindi puo' stare qui in
+          fondo senza spostare niente. */}
+      {vista === 'onboarding' && !introFinita && (
+        <Suspense fallback={null}>
+          <Intro onFine={chiudiIntro} />
+        </Suspense>
       )}
 
       <Toast messaggio={toast} onChiudi={() => setToast(null)} />

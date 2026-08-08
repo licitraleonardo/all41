@@ -122,6 +122,26 @@ begin
   return g;
 end $$;
 
+-- ⚠️ Senza questo, le mosse dell'altro non arrivano.
+--
+-- Il realtime di Supabase non ascolta tutte le tabelle: ascolta quelle
+-- iscritte alla pubblicazione, e le altre le ignora in silenzio. La
+-- sottoscrizione dal telefono riesce lo stesso, non arriva nessun
+-- errore, semplicemente non succede mai niente — e sembra che il gioco
+-- sia rotto, mentre e' il database che non sta parlando.
+--
+-- Con la dama e' il difetto peggiore possibile: due persone davanti a
+-- due telefoni, ognuna che aspetta la mossa dell'altra.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'dama_games'
+  ) then
+    alter publication supabase_realtime add table dama_games;
+  end if;
+end $$;
+
 revoke execute on function gioca_dama(uuid, uuid, text, int) from public;
 grant execute on function gioca_dama(uuid, uuid, text, int) to authenticated;
 revoke execute on function abbandona_dama(uuid, uuid) from public;

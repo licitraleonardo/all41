@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import './NuvolettaAllan.css'
-import { NUVOLETTE, SEQUENZA_ALTRO } from '../config/guida.js'
+import { NUVOLETTE } from '../config/guida.js'
 import FacciaAllan from './FacciaAllan.jsx'
 
 // Allan dice una cosa sola la prima volta che apri un pezzo dell'app, e
@@ -81,55 +81,6 @@ export default function NuvolettaAllan({ membroId, passo }) {
         <button type="button" className="nuvoletta-ok" onClick={via}>
           Va bene
         </button>
-      }
-    />
-  )
-}
-
-// Gli ultimi cinque step, in fila. Entrando in Altro scorrono uno dietro
-// l'altro senza dover aprire ogni sotto-sezione: sono voci che si
-// guardano una volta sola e con l'innesco "la prima volta che apri
-// questa scheda" tre su cinque non si sarebbero mai visti.
-//
-// Il "Salta" c'è perché una catena di cinque cartelli senza uscita, in
-// un'app che si apre per sapere a che ora è la cena, è una porta chiusa.
-export function SequenzaAllan({ membroId }) {
-  const [passo, setPasso] = useState(-1)
-
-  useEffect(() => {
-    if (!membroId) return
-    const primo = SEQUENZA_ALTRO.findIndex((v) => !nuvolettaGiaVista(membroId, v.id))
-    setPasso(primo)
-  }, [membroId])
-
-  if (passo < 0 || passo >= SEQUENZA_ALTRO.length) return null
-  const voce = SEQUENZA_ALTRO[passo]
-
-  function avanti() {
-    segnaVista(membroId, voce.id)
-    setPasso((p) => p + 1)
-  }
-
-  function salta() {
-    // Saltare vuol dire saltare tutto: chiudere il primo e ritrovarsi il
-    // secondo sarebbe un "Salta" che non salta niente.
-    for (const v of SEQUENZA_ALTRO) segnaVista(membroId, v.id)
-    setPasso(SEQUENZA_ALTRO.length)
-  }
-
-  return (
-    <Guscio
-      testo={voce.testo}
-      onFondo={avanti}
-      azioni={
-        <>
-          <button type="button" className="nuvoletta-salta" onClick={salta}>
-            Salta
-          </button>
-          <button type="button" className="nuvoletta-ok" onClick={avanti}>
-            {passo === SEQUENZA_ALTRO.length - 1 ? 'Va bene' : `Avanti (${passo + 1}/5)`}
-          </button>
-        </>
       }
     />
   )
