@@ -38,6 +38,7 @@ import { useRinfrescaPosizione } from './hooks/useRinfrescaPosizione.js'
 import { useNonLetto } from './hooks/useNonLetto.js'
 import { useMvp } from './hooks/useMvp.js'
 import { useSfideDama } from './hooks/useSfideDama.js'
+import { useLeggiDaLeggere } from './hooks/useLeggiDaLeggere.js'
 import { risolviDama } from './lib/puntiDama.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import Derisione from './components/Derisione.jsx'
@@ -45,6 +46,7 @@ import BannerProposta from './components/BannerProposta.jsx'
 import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
 import BannerSfida from './components/BannerSfida.jsx'
+import BannerTestamento from './components/BannerTestamento.jsx'
 import Pecora from './components/Pecora.jsx'
 // Quattordici secondi di pixel art su canvas: pesa, e serve solo a chi
 // non e' ancora entrato. Chi apre l'app col profilo gia' salvato non la
@@ -161,6 +163,26 @@ export default function App() {
   // La partita da aprire accettando: il tab Gioco la riceve e ci atterra
   // dentro, cosi' "Vediamo" porta alla scacchiera e non a un elenco.
   const [damaDaAprire, setDamaDaAprire] = useState(null)
+
+  // Le Leggi scoperte e non ancora lette: la celebrazione coi coriandoli
+  // dura sei secondi e scatta solo alla prima scoperta del gruppo, quindi
+  // chi in quel momento aveva il telefono in tasca non le vede mai.
+  const daLeggere = useLeggiDaLeggere(vista === 'dentro' ? membro?.id : null, vista === 'dentro')
+  const [leggeDaAprire, setLeggeDaAprire] = useState(null)
+
+  const apriLegge = useCallback(
+    (leggeId) => {
+      daLeggere.zittisci()
+      setLeggeDaAprire(leggeId)
+      setTab('gioco')
+      try {
+        sessionStorage.setItem('scheda.gioco', 'testamento')
+      } catch {
+        // pazienza: si atterra sulla classifica, la Legge resta col pallino
+      }
+    },
+    [daLeggere]
+  )
 
   const accettaSfida = useCallback((partitaId) => {
     setDamaDaAprire(partitaId)
@@ -433,6 +455,8 @@ export default function App() {
               conteggiMvp={mvp.conteggi}
               damaDaAprire={damaDaAprire}
               onDamaAperta={() => setDamaDaAprire(null)}
+              leggeDaAprire={leggeDaAprire}
+              onLeggeAperta={() => setLeggeDaAprire(null)}
             />
           )}
           {tab === 'altro' && <Altro membro={membro} />}
@@ -489,6 +513,20 @@ export default function App() {
               onRimanda={sfideDama.rimanda}
             />
           )}
+
+          {/* Ultimo della fila: una Legge scoperta puo' aspettare piu' di
+              una proposta che scade e di una sfida lanciata adesso. E non
+              si mostra a chi sta gia' guardando il Testamento. */}
+          {inLinea &&
+            proposte.daDecidere.length === 0 &&
+            sfideDama.daAccettare.length === 0 &&
+            tab !== 'gioco' && (
+              <BannerTestamento
+                leggi={daLeggere.daAnnunciare}
+                onApri={apriLegge}
+                onDopo={daLeggere.zittisci}
+              />
+            )}
         </Riparo>
 
         <Riparo zitto>

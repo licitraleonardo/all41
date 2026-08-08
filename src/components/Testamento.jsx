@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
-import { LEGGI, PUNIZIONI, TROFEI, etichetta } from '../config/leggi.js'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { LEGGI, PUNIZIONI, TROFEI, etichetta, verso } from '../config/leggi.js'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 import {
   daLeggere,
@@ -16,12 +16,26 @@ import {
 //
 // Niente parte rivelato: sapere in partenza cosa fa guadagnare punti
 // trasformerebbe il gioco in un elenco di compiti.
-export default function Testamento({ scoperte, membri, ioId }) {
+export default function Testamento({ scoperte, membri, ioId, apriLegge, onLeggeAperta }) {
   // Terzo livello, stessa regola dei sotto-tab: ricaricare non deve
   // riportarti sui Trofei se stavi leggendo le Leggi.
   const [meta, setMeta] = useSchedaRicordata('scheda.testamento', 'trofei', ['trofei', 'leggi'])
   const { lette, segnaLetta } = useLetteTestamento(ioId)
   const [aperta, setAperta] = useState(null)
+
+  // Arrivando dal banner si atterra sulla Legge giusta, gia' aperta e
+  // nella sua scheda: senza, "Leggila" avrebbe portato su un elenco di
+  // venticinque voci da spulciare, che e' quello che il banner doveva
+  // evitare.
+  useEffect(() => {
+    if (!apriLegge) return
+    const voce = LEGGI.find((l) => l.id === apriLegge)
+    if (voce) {
+      setMeta(verso(voce) === 'trofeo' ? 'trofei' : 'leggi')
+      setAperta(apriLegge)
+    }
+    onLeggeAperta?.()
+  }, [apriLegge, onLeggeAperta, setMeta])
   const rivelata = (l) => Boolean(scoperte[l.id])
   const quante = LEGGI.filter(rivelata).length
   const quota = Math.round((quante / LEGGI.length) * 100)
@@ -117,6 +131,14 @@ export default function Testamento({ scoperte, membri, ioId }) {
 // un'altra cosa — aprire e vedere chi l'ha fatta scattare.
 function Voce({ legge, scoperta, membri, daAprire, aperta, onApri, onLetta }) {
   const riga = useRef(null)
+
+  // Aperta dal banner: si porta sotto gli occhi da sola. In fondo a
+  // venticinque voci, "aperta" senza "visibile" non vuol dire niente.
+  useEffect(() => {
+    if (aperta && riga.current) {
+      riga.current.scrollIntoView({ block: 'center' })
+    }
+  }, [aperta])
   // La chiamata deve restare la stessa fra un disegno e l'altro, o
   // l'osservatore si smonta e rimonta a ogni fotogramma e il mezzo
   // secondo non scade mai.

@@ -1,0 +1,78 @@
+/* Stesso posto degli altri due banner, e non ce n'è mai più di uno alla
+   volta: chi mostra cosa lo decide App. L'oro perché è il colore del
+   Testamento — le pergamene, i numeri romani, le Leggi scoperte. */
+
+.banner-testamento {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: #4a3410;
+  color: var(--sand);
+  box-shadow: 0 6px 18px -10px rgba(11, 53, 80, 0.8);
+  border-bottom: 2px solid var(--gold);
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+}
+
+.banner-testamento .banner-dentro {
+  max-width: 616px;
+  margin: 0 auto;
+}
+
+.banner-testamento .banner-testo {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.banner-testamento .banner-testo strong {
+  font-family: var(--font-titoli);
+  color: var(--gold);
+}
+
+.banner-testamento .banner-motivo {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: rgba(247, 244, 236, 0.72);
+}
+
+.banner-testamento .banner-scelte {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.banner-testamento .banner-si,
+.banner-testamento .banner-dopo {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 11px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.banner-testamento .banner-si {
+  flex: 1;
+  color: #4a3410;
+  background: var(--gold);
+}
+
+.banner-testamento .banner-dopo {
+  flex: 0 0 auto;
+  padding-left: 18px;
+  padding-right: 18px;
+  color: var(--sand);
+  background: transparent;
+  border-color: rgba(247, 244, 236, 0.35);
+  font-weight: 600;
+}
+
+.banner-testamento .banner-si:focus-visible,
+.banner-testamento .banner-dopo:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: 2px;
+}
