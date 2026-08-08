@@ -7,8 +7,8 @@
 >
 > | | |
 > |---|---|
-> | ✅ Fatti | BUG-1, BUG-2, BUG-3, PUNTI-1, PUNTI-2, PUNTI-3, PUNTI-4, SOTTOTAB |
-> | ⬜ Da fare | AUTH-1/2/3, TUT-1/2/3, TEST-1, TEST-2, SFI-1, PWA-1…5 |
+> | ✅ Fatti | BUG-1, BUG-2, BUG-3, PUNTI-1/2/3/4, TUT-1/2/3, TEST-2, SOTTOTAB, metà di SFI-1 |
+> | ⬜ Da fare | AUTH-1/2/3, TEST-1, PWA-1…5 |
 > | ❌ / ⏸ | GAME-1 (impossibile come scritto, vedi `DA-FARE.md`) |
 >
 > I cinque "Punti da chiarire" in fondo hanno tutti una risposta: sono nella sezione **Decisioni prese**.
@@ -43,7 +43,13 @@ Invertire la gerarchia della schermata: l'azione primaria diventa l'ingresso con
 
 ---
 
-## 2. Tutorial
+## 2. Tutorial ✅ **fatto** (`ae96d99`, `49725c6`)
+
+> Quindici step invece di cinque messaggi generici. Il lavoro vero non erano i testi ma l'innesco: nove step su quindici stanno dentro sotto-schede, e quello stato vive nei contenitori, non in App. La nuvoletta è scesa dentro Gruppo, Foto, Gioco e Altro; in App resta solo Oggi, che sotto-schede non ne ha.
+>
+> **Aggiunto uno step per la Dama**, che nell'elenco non c'era perché quando l'hai scritto non esisteva: senza, sarebbe l'unica scheda muta dell'app.
+>
+> ⚠️ Emersa provando: col ripristino dei sotto-tab (SOTTOTAB) si può atterrare in una scheda senza "entrarci", e il messaggio scatta lì. È il comportamento giusto — la nuvoletta spiega dove sei — ma l'ordine dei quindici non è garantito.
 
 ### [TUT-1] Impostazione grafica (vale per tutti gli step)
 - **ALLAN va fuori dal fumetto**, non dentro.
@@ -122,7 +128,15 @@ Per ogni step è indicato se il tutorial **parte dentro il tab** (si entra nella
 
 ---
 
-## 6. Sfide
+## 6. Sfide — metà fatta (`af67f39`)
+
+> ✅ **La finestra di voto adesso è davvero quella promessa.** La gara nasceva con scadenza "adesso + 24 ore", residuo di quando le gare erano giornaliere: aperta il 17 moriva il 18, mentre `CACCIA.chiude` dice 20. Ora la scadenza è la fine della finestra, uguale per tutte le gare a prescindere da quando si aprono, in una funzione pura con sei prove.
+>
+> ⬜ **Restano due cose che vogliono una tua decisione:**
+> 1. La finestra chiude il **19** (tre giorni dopo il 16, come dice il testo qui sotto) o il **20** come è configurato oggi?
+> 2. Le **"votazioni per persona" non esistono** per le sfide: sono tutte foto, il voto è anonimo su id di foto. O è una feature nuova nascosta dentro SFI-1, o intendevi le proposte di punti, che sono già voti su persone.
+>
+> ⚠️ E soprattutto: aprire i voti **nel giorno della sfida** ribalta una decisione motivata per iscritto in `src/lib/cacciaFinale.js` — i voti si aprono il 17 apposta, perché "il telefono in vacanza si guarda tre volte al giorno". Non è una regolazione di parametri.
 
 ### [SFI-1] Finestre temporali
 - Ogni sfida si **apre nel proprio giorno** e resta **aperta fino a 3 giorni dopo la fine della vacanza**.
