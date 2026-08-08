@@ -375,10 +375,20 @@ export function conteggioAffidabile(conteggi, quantiHannoVotato) {
 // quella consigliata, e se non e' in ballo la prima — serve una regola
 // qualunque purche' sia sempre la stessa, o due telefoni che chiudono il
 // voto nello stesso istante farebbero partire due partite diverse.
-export function aperturaVincente(conteggi, consigliata) {
-  const scelte = IMPOSTORE.aperture.map((a) => a.id)
+// ⚠️ `opzioni` va preso dal VOTO, non dalla configurazione. Aggiungendo
+// una risposta — e' successo col giro singolo — le partite gia' aperte
+// restano con le opzioni di prima, e leggere i conteggi con l'elenco
+// nuovo li sposterebbe tutti di un posto: il gruppo vota "due impostori"
+// e ne esce un'altra cosa, senza nessun errore. E' la stessa trappola
+// delle schede del voto d'accusa, che sono numeri di posizione.
+export function aperturaVincente(conteggi, consigliata, opzioni) {
+  const scelte = opzioni?.length ? opzioni : IMPOSTORE.aperture.map((a) => a.id)
   const vinta = sceltaVincente(conteggi, scelte, consigliata)
-  return IMPOSTORE.aperture.find((a) => a.id === vinta) ?? IMPOSTORE.aperture[0]
+  return (
+    IMPOSTORE.aperture.find((a) => a.id === vinta) ??
+    IMPOSTORE.aperture.find((a) => a.id === consigliata) ??
+    IMPOSTORE.aperture[0]
+  )
 }
 
 export function sceltaVincente(conteggi, scelte, consigliata) {

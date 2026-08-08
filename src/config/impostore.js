@@ -23,7 +23,11 @@ export const IMPOSTORE = {
   // Quanti giri prima del voto. Anche questo lo sceglie il gruppo:
   // due bastano per farsi un'idea, tre servono quando si e' in tanti e
   // con due non fa in tempo a emergere niente.
-  scelteGiri: [2, 3],
+  // ⚠️ Un giro solo c'e' sempre: e' il ritmo di chi vuole una partita
+  // veloce, ed e' anche quello che il gioco usa gia' da solo dopo
+  // un'eliminazione. Non offrirlo all'inizio voleva dire avere una
+  // durata possibile nel gioco e non nel menu.
+  scelteGiri: [1, 2, 3],
 
   // Dopo un'accusa sbagliata si riparte, ma con un giro solo: due giri
   // servivano a farsi un'idea da zero, e adesso l'idea ce l'avete gia' —
@@ -41,12 +45,14 @@ export const IMPOSTORE = {
   // Due votazioni di fila sarebbero due momenti morti prima di
   // cominciare, e il secondo lo salterebbe meta' gruppo. Quattro
   // bottoni si leggono in un colpo d'occhio e si vota una volta.
-  aperture: [
-    { id: '1x2', impostori: 1, giri: 2 },
-    { id: '1x3', impostori: 1, giri: 3 },
-    { id: '2x2', impostori: 2, giri: 2 },
-    { id: '2x3', impostori: 2, giri: 3 },
-  ],
+  // Generate dalle due liste invece che scritte a mano: aggiungere una
+  // risposta a una delle due domande non deve costringere a ricordarsi
+  // di aggiornare anche questo elenco.
+  get aperture() {
+    return this.sceltePerImpostori.flatMap((impostori) =>
+      this.scelteGiri.map((giri) => ({ id: `${impostori}x${giri}`, impostori, giri }))
+    )
+  },
 
   // Quale combinazione proporre, cioe' quale evidenziare. Piu' si e' in
   // tanti piu' servono giri: con otto persone e due giri non fa in tempo

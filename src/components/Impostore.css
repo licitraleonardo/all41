@@ -891,24 +891,32 @@
   color: var(--ink-soft);
 }
 
+/* Tutti della stessa misura, in tutte e due le domande. Con una griglia
+   a colonne uguali i bottoni della riga da due venivano larghi il doppio
+   di quelli della riga da tre, e le due domande sembravano pesare
+   diversamente. Qui la misura e' fissa e non dipende da quante risposte
+   ci sono. */
 .imp-risposte {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .imp-risposta {
   position: relative;
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   font: inherit;
   color: var(--ink);
   background: #fff;
   border: 2px solid var(--line);
   border-radius: 13px;
-  padding: 14px 10px;
   cursor: pointer;
 }
 

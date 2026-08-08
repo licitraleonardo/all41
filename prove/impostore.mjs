@@ -700,8 +700,17 @@ console.log('Il conteggio deve aver raggiunto i votanti prima di partire')
 console.log('L apertura: impostori e giri in una scelta sola')
 {
   const ids = IMPOSTORE.aperture.map((a) => a.id)
-  prova('quattro combinazioni', IMPOSTORE.aperture.length === 4)
-  prova('tutte diverse', new Set(ids).size === 4)
+  prova(
+    'una combinazione per ogni incrocio',
+    IMPOSTORE.aperture.length ===
+      IMPOSTORE.sceltePerImpostori.length * IMPOSTORE.scelteGiri.length
+  )
+  prova('tutte diverse', new Set(ids).size === IMPOSTORE.aperture.length)
+  prova('il giro singolo si puo sempre votare', IMPOSTORE.scelteGiri.includes(1))
+  prova(
+    'e ha la sua combinazione per ogni numero di impostori',
+    IMPOSTORE.sceltePerImpostori.every((n) => ids.includes(`${n}x1`))
+  )
   prova(
     'ogni combinazione ha impostori e giri',
     IMPOSTORE.aperture.every((a) => a.impostori > 0 && a.giri > 0)
@@ -712,12 +721,28 @@ console.log('L apertura: impostori e giri in una scelta sola')
   )
   prova('in tanti si consigliano piu giri', IMPOSTORE.aperturaConsigliata(8).endsWith('3'))
 
-  prova('vince quella votata', aperturaVincente([0, 0, 0, 5], '1x2').id === '2x3')
-  prova('e ne escono impostori e giri', aperturaVincente([0, 4, 0, 0], '1x2').giri === 3)
+  const tutte = ids
+  prova('vince quella votata', aperturaVincente([0, 0, 0, 0, 0, 5], '1x2', tutte).id === '2x3')
+  prova('e ne escono impostori e giri', aperturaVincente([0, 0, 4, 0, 0, 0], '1x2', tutte).giri === 3)
   // ⚠️ Coi conteggi a zero si ripiega sulla consigliata: e il caso che
   // conteggioAffidabile deve impedire prima che si arrivi qui.
-  prova('senza voti si ripiega sulla consigliata', aperturaVincente([0, 0, 0, 0], '2x3').id === '2x3')
-  prova('restituisce sempre una combinazione vera', Boolean(aperturaVincente([], '1x2')?.impostori))
+  prova('senza voti si ripiega sulla consigliata',
+    aperturaVincente([0, 0, 0, 0, 0, 0], '2x3', tutte).id === '2x3')
+  prova('restituisce sempre una combinazione vera',
+    Boolean(aperturaVincente([], '1x2', tutte)?.impostori))
+
+  // ⚠️ Il caso vero: una partita aperta PRIMA che si aggiungesse il giro
+  // singolo. Il suo voto ha quattro opzioni, la configurazione ne ha sei.
+  // Leggere i conteggi con l'elenco nuovo li sposterebbe tutti di posto.
+  const vecchie = ['1x2', '1x3', '2x2', '2x3']
+  prova(
+    'un voto vecchio si legge con le SUE opzioni',
+    aperturaVincente([0, 0, 0, 4], '1x2', vecchie).id === '2x3'
+  )
+  prova(
+    'e non con quelle nuove, che darebbero un altro risultato',
+    aperturaVincente([0, 0, 0, 4], '1x2', tutte).id === '2x1'
+  )
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} prove fallite.\n`)

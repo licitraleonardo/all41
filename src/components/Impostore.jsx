@@ -233,7 +233,7 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
     // partita partita con uno solo.
     if (!conteggioAffidabile(conteggi, quanti)) return
     partito.current = true
-    onAvvia(aperturaVincente(conteggi, consigliata))
+    onAvvia(aperturaVincente(conteggi, consigliata, voto.opzioni))
   }, [voto, quanti, tutti, conteggi, scelte, consigliata, onAvvia])
 
   // Due domande, un voto solo. Combinate in quattro bottoni erano un
@@ -247,17 +247,22 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
   // Quanti voti ha preso ogni risposta, sommando le combinazioni che la
   // contengono: il voto sul database resta uno solo, ma a schermo si
   // vedono i due conti separati come le due domande.
+  // Anche qui si parte dalle opzioni del voto: un voto aperto prima di
+  // un aggiornamento ne ha meno, e sommare sull'elenco nuovo darebbe
+  // numeri presi dalla riga sbagliata.
   const votiPer = (campo, valore) =>
-    IMPOSTORE.aperture.reduce(
-      (somma, a, i) => somma + (a[campo] === valore ? (conteggi[i] ?? 0) : 0),
-      0
-    )
+    (voto?.opzioni ?? []).reduce((somma, id, i) => {
+      const a = IMPOSTORE.aperture.find((x) => x.id === id)
+      return somma + (a && a[campo] === valore ? (conteggi[i] ?? 0) : 0)
+    }, 0)
 
   async function vota() {
-    const i = IMPOSTORE.aperture.findIndex(
-      (a) => a.impostori === quantiImp && a.giri === quantiGiri
-    )
-    if (i < 0) return
+    // L'indice e' quello delle opzioni DI QUESTO voto.
+    const i = (voto?.opzioni ?? []).indexOf(`${quantiImp}x${quantiGiri}`)
+    if (i < 0) {
+      setAvviso('Questa combinazione non e’ fra le scelte di questa partita.')
+      return
+    }
     setInCorso(true)
     setAvviso(null)
     try {
