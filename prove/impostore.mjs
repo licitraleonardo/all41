@@ -771,5 +771,90 @@ console.log('Un altro giro: si vota insieme all accusa')
   prova('a meta giro no', avanza({ ...P, turno: 1 }).stato === 'in-corso')
 }
 
+
+console.log('I difetti trovati dalla caccia, uno per uno')
+{
+  const SEI = ['a', 'b', 'c', 'd', 'e', 'f']
+
+  // ── 1. L impostore beccato al primo giro non e un impunito ──
+  // Due impostori, a beccato al primo giro. Nel secondo voto a non e
+  // nemmeno fra le opzioni, quindi prende zero voti: prima finiva fra
+  // gli impuniti, si prendeva i 5 punti di chi l ha fatta franca, e il
+  // finale diceva "L ha fatta franca" su una partita vinta dal gruppo.
+  {
+    const schedeSecondoGiro = { c: ['b'], d: ['b'], e: ['b'] }
+    const r = esito({
+      impostori: ['a', 'b'], giocatori: SEI, schede: schedeSecondoGiro, fuori: ['a'],
+    })
+    prova('chi era gia fuori risulta scoperto', r.scoperti.sort().join() === 'a,b')
+    prova('e nessuno resta impunito', r.impuniti.length === 0)
+
+    const f = raccontaFinale({
+      impostori: ['a', 'b'], giocatori: SEI, schede: schedeSecondoGiro,
+      fuori: ['a', 'b'], parolaGruppo: 'Mare',
+    })
+    prova('il finale dice Beccato, non L ha fatta franca', f.titolo === 'Beccato')
+    prova('e ha vinto il gruppo', f.vincitore === 'gruppo')
+
+    const pagati = premi({
+      impostori: ['a', 'b'], giocatori: SEI, schede: schedeSecondoGiro, fuori: ['a', 'b'],
+    })
+    prova(
+      'nessun impostore viene pagato come impunito',
+      !pagati.assegnazioni.some((x) => x.leggeId === 'impostore-impunito')
+    )
+    prova(
+      'e chi ha indovinato prende il suo',
+      pagati.assegnazioni.filter((x) => x.leggeId === 'smascheratore').length === 3
+    )
+  }
+
+  // ── 2. Un voto sparpagliato non manda fuori mezza tavolata ──
+  {
+    // In quattro, voti in cerchio: tutti a un voto. Prima uscivano
+    // TUTTI E QUATTRO e la partita saltava al colpo con zero vivi.
+    const QUATTRO = ['a', 'b', 'c', 'd']
+    const cerchio = { a: ['b'], b: ['c'], c: ['d'], d: ['a'] }
+    const r = esito({ impostori: ['a'], giocatori: QUATTRO, schede: cerchio })
+    prova('coi voti in cerchio non esce nessuno', r.accusati.length === 0)
+    prova('e si sa perche', r.troppiPari === true)
+
+    const partita = {
+      impostori: ['a'], giocatori: QUATTRO, fuori: [],
+      ordine: QUATTRO, turno: 3, giro: 1, giriTotali: 1,
+    }
+    const d = dopoAccusa(partita, cerchio, () => 0.5)
+    prova('la partita riparte invece di svuotarsi', d.stato === 'in-corso')
+    prova('e restano vivi tutti e quattro', d.fuori.length === 0)
+    prova('col motivo scritto', d.motivo === 'pari')
+
+    // In sei con due impostori: a=4, c=2, d=2, e=2 — quattro a soglia
+    // per due posti. Prima uscivano in quattro.
+    const sparpagliato = {
+      a: ['c', 'd'], b: ['c', 'd'], c: ['a', 'e'], d: ['a', 'e'], e: ['a', 'f'], f: ['a', 'b'],
+    }
+    const r2 = esito({ impostori: ['a', 'b'], giocatori: SEI, schede: sparpagliato })
+    prova('quattro a soglia per due posti: non esce nessuno', r2.accusati.length === 0)
+  }
+
+  // ── 3. Il tetto usa gli impostori VIVI, non quanti erano ──
+  {
+    // Due impostori, uno gia' fuori: si accusa UNA persona sola.
+    const schede = { c: ['b'], d: ['b'], e: ['f'] }
+    const r = esito({ impostori: ['a', 'b'], giocatori: SEI, schede, fuori: ['a'] })
+    prova('con un impostore vivo si accusa uno solo', r.accusati.length === 1)
+    prova('ed e il piu votato', r.accusati[0] === 'b')
+  }
+
+  // ── 4. Un accusa normale continua a funzionare ──
+  {
+    const schede = { b: ['a'], c: ['a'], d: ['a'], e: ['f'] }
+    const r = esito({ impostori: ['a'], giocatori: SEI, schede })
+    prova('il piu votato esce', r.accusati.join() === 'a')
+    prova('senza pareggi sospetti', r.troppiPari === false)
+    prova('ed e scoperto', r.scoperti.join() === 'a')
+  }
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} prove fallite.\n`)
 process.exit(falliti === 0 ? 0 : 1)

@@ -377,7 +377,8 @@ function Apparecchia({ membro, membri, onCrea }) {
       <h2 className="imp-titolo">L’Impostore</h2>
       <p className="imp-spiega">
         Ognuno riceve una parola in privato. A turno se ne dice una collegata, ad alta voce.
-        Dopo due giri si vota chi sembra fuori posto.
+        Alla fine di ogni giro si vota: si accusa qualcuno, oppure si chiede un altro
+        giro.
       </p>
 
       <p className="imp-etichetta">Chi gioca</p>
@@ -487,7 +488,11 @@ function Storico({ partite, ioId, onApri }) {
           const f = raccontaFinale({
             impostori: p.impostori,
             giocatori: p.giocatori,
-            schede: schedePerId(p.schede, p.giocatori),
+            // Le opzioni di QUEL voto, non l'elenco dei giocatori: dal
+            // secondo giro d'accusa in poi sono solo i superstiti piu'
+            // "un altro giro", e tradurre con l'elenco intero sposta
+            // ogni numero di un posto.
+            schede: schedePerId(p.schede, p.opzioniVoto?.length ? p.opzioniVoto : p.giocatori),
             tentativo: p.tentativo,
             parolaGruppo: p.parolaGruppo,
             fuori: p.fuori,
@@ -653,8 +658,16 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
           d'apertura — che a meta' partita nessuno si ricorda. */}
       <p className="imp-giro">
         Giro {partita.giro} di {partita.giriTotali}
+        {/* Quanti ne restano DA TROVARE, non quanti erano all'inizio:
+            con due e uno gia' beccato, scrivere "2 impostori" mentre se
+            ne cerca uno solo manda a caccia di un fantasma. */}
         <span className="imp-quanti">
-          {partita.impostori.length === 1 ? '1 impostore' : `${partita.impostori.length} impostori`}
+          {(() => {
+            const vivi = impostoriVivi(partita).length
+            const tutti = partita.impostori.length
+            const testo = vivi === 1 ? '1 impostore' : `${vivi} impostori`
+            return vivi < tutti ? `${testo} · su ${tutti}` : testo
+          })()}
         </span>
       </p>
 
@@ -741,10 +754,15 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
     const i = opzioni.indexOf(id)
     setScelti((prima) => {
       if (prima.includes(i)) return prima.filter((x) => x !== i)
+      // ⚠️ Accusare esclude "un altro giro". Con due impostori il tetto
+      // e' due, quindi si poteva chiedere di sentire ancora E accusare
+      // qualcuno nella stessa scheda: due risposte opposte alla stessa
+      // domanda, e il conteggio le prendeva per buone tutte e due.
+      const pulita = prima.filter((x) => x !== indiceAltroGiro)
       // Non piu' di quanti sono gli impostori: indicarne cinque non e'
       // votare, e' fare la lista della spesa.
-      if (prima.length >= quanti) return prima
-      return [...prima, i]
+      if (pulita.length >= quanti) return pulita
+      return [...pulita, i]
     })
   }
 

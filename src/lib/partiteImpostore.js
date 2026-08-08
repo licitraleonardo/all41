@@ -78,17 +78,28 @@ export async function leggiStorico(quante = 20) {
   const partite = data.map(daRiga)
 
   const voti = partite.map((p) => p.votoId).filter(Boolean)
-  if (voti.length === 0) return partite.map((p) => ({ ...p, schede: {} }))
+  if (voti.length === 0) return partite.map((p) => ({ ...p, schede: {}, opzioniVoto: [] }))
 
+  // ⚠️ Anche `options`, non solo `ballots`. Le schede sono numeri di
+  // posizione dentro le opzioni DI QUEL voto, e dal secondo giro d'accusa
+  // in poi le opzioni sono solo i superstiti piu' "un altro giro":
+  // tradurle con l'elenco intero dei giocatori sposta ogni numero di un
+  // posto e lo storico racconta la partita di qualcun altro.
+  //
+  // E' la terza volta che questo progetto inciampa sulle posizioni.
   const { data: righe, error: erroreVoti } = await supabase
     .from('votes')
-    .select('id, ballots')
+    .select('id, ballots, options')
     .in('id', voti)
     .limit(voti.length)
 
   if (erroreVoti) throw erroreVoti
-  const perId = Object.fromEntries((righe ?? []).map((r) => [r.id, r.ballots ?? {}]))
-  return partite.map((p) => ({ ...p, schede: perId[p.votoId] ?? {} }))
+  const perId = Object.fromEntries((righe ?? []).map((r) => [r.id, r]))
+  return partite.map((p) => ({
+    ...p,
+    schede: perId[p.votoId]?.ballots ?? {},
+    opzioniVoto: perId[p.votoId]?.options ?? [],
+  }))
 }
 
 // La partita nasce in preparazione: le parole si pescano subito — non
@@ -240,10 +251,17 @@ export async function apriVoto(partita) {
 // — cioe' darebbe i punti alle persone sbagliate, in silenzio.
 export async function paga(partita, voto) {
   const opzioni = voto?.opzioni ?? partita.giocatori
+  // ⚠️ `fuori` e' obbligatorio. Senza, un impostore beccato in un giro
+  // precedente non compare nelle schede dell'ultimo voto — non e'
+  // nemmeno fra le opzioni — quindi risultava "impunito" e si prendeva i
+  // cinque punti di chi l'ha fatta franca. Con due impostori beccarli in
+  // due giri diversi e' il modo normale in cui il gruppo vince, quindi
+  // non era un caso limite: era il caso.
   const { assegnazioni } = premi({
     impostori: partita.impostori,
     giocatori: partita.giocatori,
     schede: schedePerId(voto?.schede, opzioni),
+    fuori: partita.fuori ?? [],
     colpoRiuscito: stessaParola(partita.tentativo, partita.parolaGruppo),
   })
 
@@ -276,6 +294,10 @@ export async function chiudiAccusa(partita, voto, casuale) {
     p_stato: esitoGiro.stato,
     p_ordine: esitoGiro.ordine ?? null,
     p_giri: esitoGiro.giriTotali ?? null,
+    // Il numero del giro lo decide il motore. Prima il database lo
+    // forzava a 1 ogni volta che si ripartiva, e il contatore a schermo
+    // restava inchiodato: dopo tre giri d'accusa diceva ancora "Giro 1".
+    p_giro: esitoGiro.giro ?? null,
     // Ripartendo, il voto vecchio non serve piu': il prossimo giro ne
     // apre uno suo, sui superstiti di allora.
     p_voto: esitoGiro.stato === 'in-corso' ? null : (partita.votoId ?? null),

@@ -101,6 +101,22 @@ export function useImpostore(membroId) {
   // l'id: le schede vanno chieste.
   useEffect(() => {
     const quale = partita?.stato === 'preparazione' ? partita?.votoAperturaId : partita?.votoId
+
+    // ⚠️ Quando il voto in mano non e' piu' quello della partita, si
+    // butta. Prima restava, e faceva danni veri: chiuso un giro
+    // d'accusa, chiudiAccusa azzera il vote_id e la partita torna
+    // "in-corso" — ma sul telefono l'oggetto del giro appena finito
+    // restava li'. Finito il giro dopo, nella finestra fra "si apre il
+    // voto" e "arrivano le schede" la schermata mostrava il voto
+    // VECCHIO: risultava "hai gia' votato", risultavano tutti dentro, e
+    // compariva "Rivela". Chi lo toccava chiudeva il giro nuovo con le
+    // schede del giro prima, e mandava fuori qualcuno per un voto che in
+    // quel giro nessuno aveva espresso.
+    //
+    // Al primissimo giro era anche peggio: restava in mano il voto
+    // d'apertura, e la schermata d'accusa mostrava due tessere intestate
+    // a "Qualcuno" — le opzioni '1' e '2'.
+    if (!quale || quale !== voto?.id) setVoto(null)
     if (quale && quale !== voto?.id) caricaVoto(quale)
   }, [partita?.stato, partita?.votoAperturaId, partita?.votoId, voto?.id, caricaVoto])
 

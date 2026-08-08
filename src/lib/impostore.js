@@ -169,7 +169,20 @@ export function schedePerId(schede, giocatori) {
 
 // `schede` e' { chiHaVotato: chiHaVotatoContro }, gia' passato da
 // schedePerId: qui dentro sono id di persone, non numeri.
-export function esito({ impostori, giocatori, schede }) {
+// `fuori` e' chi e' gia' uscito nei giri precedenti. Serve per due cose,
+// e senza sbagliava tutte e due:
+//
+// 1. quante persone si accusano — tante quante sono gli impostori ANCORA
+//    VIVI, non quanti erano all'inizio. Con due impostori e uno gia'
+//    beccato, chiederne ancora due vuol dire chiedere di accusare per
+//    forza un innocente.
+// 2. chi risulta scoperto — un impostore beccato al primo giro nelle
+//    schede dell'ultimo non compare nemmeno fra le opzioni, quindi
+//    finiva fra gli "impuniti", si prendeva i cinque punti di chi l'ha
+//    fatta franca e il finale diceva che era scappato. Con due impostori
+//    beccarli in due giri diversi non e' un caso limite: e' il modo
+//    normale in cui il gruppo vince.
+export function esito({ impostori, giocatori, schede, fuori = [] }) {
   const conteggi = Object.fromEntries(giocatori.map((id) => [id, 0]))
   for (const accusati of Object.values(schede ?? {})) {
     // Ogni scheda puo' portare piu' accuse, e ognuna vale un voto.
@@ -179,20 +192,37 @@ export function esito({ impostori, giocatori, schede }) {
   }
 
   const massimo = Math.max(0, ...Object.values(conteggi))
-  // Si accusano tanti quanti sono gli impostori, presi dai piu' votati.
-  // A parita' sull'ultimo posto utile entrano tutti i pari: nessuno
-  // spareggio inventato, e il gruppo se la vede da solo.
+  const quantiVivi = impostori.filter((id) => !fuori.includes(id)).length || impostori.length
+
+  // Si accusano tanti quanti sono gli impostori ancora vivi, presi dai
+  // piu' votati.
   const ordinati = [...giocatori]
     .filter((id) => conteggi[id] > 0)
     .sort((a, b) => conteggi[b] - conteggi[a] || (a < b ? -1 : 1))
 
   const soglia = ordinati.length
-    ? conteggi[ordinati[Math.min(impostori.length, ordinati.length) - 1]]
+    ? conteggi[ordinati[Math.min(quantiVivi, ordinati.length) - 1]]
     : 0
-  const accusati = massimo === 0 ? [] : giocatori.filter((id) => conteggi[id] >= soglia && conteggi[id] > 0)
+  const aSoglia =
+    massimo === 0 ? [] : giocatori.filter((id) => conteggi[id] >= soglia && conteggi[id] > 0)
 
-  const scoperti = impostori.filter((id) => accusati.includes(id))
-  const impuniti = impostori.filter((id) => !accusati.includes(id))
+  // ⚠️ E se a quella soglia ci sono in piu' di quanti se ne possono
+  // accusare, non esce NESSUNO.
+  //
+  // Prima entravano tutti i pari, senza tetto. In quattro con i voti in
+  // cerchio — a→b, b→c, c→d, d→a, una prima votazione su nove — avevano
+  // tutti un voto, la soglia era uno, e uscivano tutti e quattro: la
+  // partita saltava al colpo di coda con zero giocatori vivi. Anche in
+  // sei un voto sparpagliato ne mandava fuori quattro per due impostori,
+  // e il gruppo perdeva in un voto solo senza aver deciso niente.
+  //
+  // Un gruppo che si divide cosi' non ha accusato nessuno: ha detto che
+  // non lo sa. Quindi non esce nessuno, e si va a un altro giro.
+  const accusati = aSoglia.length > quantiVivi ? [] : aSoglia
+
+  const usciti = [...new Set([...fuori, ...accusati])]
+  const scoperti = impostori.filter((id) => usciti.includes(id))
+  const impuniti = impostori.filter((id) => !usciti.includes(id))
   // Indovina chi ha indicato almeno un impostore vero.
   const indovini = Object.entries(schede ?? {})
     .filter(
@@ -202,13 +232,13 @@ export function esito({ impostori, giocatori, schede }) {
     )
     .map(([chi]) => chi)
 
-  return { conteggi, accusati, scoperti, impuniti, indovini }
+  return { conteggi, accusati, scoperti, impuniti, indovini, troppiPari: aSoglia.length > quantiVivi }
 }
 
 // I punti non si scrivono qui: si prendono dalle Leggi, cosi' cambiare
 // una Legge cambia il gioco e non restano due numeri da tenere allineati.
-export function premi({ impostori, giocatori, schede, colpoRiuscito = false }) {
-  const { impuniti, indovini, ...resto } = esito({ impostori, giocatori, schede })
+export function premi({ impostori, giocatori, schede, fuori = [], colpoRiuscito = false }) {
+  const { impuniti, indovini, ...resto } = esito({ impostori, giocatori, schede, fuori })
 
   const impunito = PER_ID['impostore-impunito']
   const smascheratore = PER_ID['smascheratore']
@@ -270,7 +300,11 @@ export function raccontaFinale({
   parolaGruppo = null,
   fuori = [],
 }) {
-  const r = esito({ impostori, giocatori, schede })
+  // ⚠️ `fuori` va passato: senza, un impostore beccato in un giro
+  // precedente risultava impunito — nelle schede dell'ultimo voto non
+  // compare nemmeno fra le opzioni — e il finale diceva "L'ha fatta
+  // franca" su una partita che il gruppo aveva vinto.
+  const r = esito({ impostori, giocatori, schede, fuori })
   const colpoRiuscito = Boolean(tentativo) && stessaParola(tentativo, parolaGruppo)
 
   // "Vi hanno fatti fuori" e "l'ha fatta franca" non sono la stessa cosa,
@@ -460,26 +494,32 @@ export function impostoriInMaggioranza(partita) {
 // chi era votabile in quel giro — che dal secondo in poi non e' piu'
 // tutto il gruppo.
 export function dopoAccusa(partita, schede, casuale = Math.random) {
-  // Il gruppo ha chiesto di sentire ancora: nessuno esce, si rimescola e
-  // si ricomincia a parlare.
-  if (siRiparte(partita, schede)) {
+  const inGioco = vivi(partita)
+  const impostoriOra = impostoriVivi(partita)
+  const r = esito({ impostori: impostoriOra, giocatori: inGioco, schede })
+
+  // Un altro giro si fa in due casi, e sono la stessa cosa detta in due
+  // modi: o il gruppo l'ha chiesto, o si e' diviso cosi' tanto che alla
+  // soglia ci sono piu' persone di quante se ne possono accusare — che
+  // vuol dire che non ha deciso niente.
+  const nessunaAccusa = siRiparte(partita, schede) || r.troppiPari
+
+  if (nessunaAccusa) {
     return {
       fuori: partita.fuori ?? [],
       scopertiOra: [],
       eliminatiOra: [],
       vincitore: null,
       stato: 'in-corso',
-      ordine: mescola(vivi(partita), casuale),
+      ordine: mescola(inGioco, casuale),
       turno: 0,
       giro: (partita.giro ?? 1) + 1,
       giriTotali: (partita.giro ?? 1) + 1,
       unAltroGiro: true,
+      // Perche' si riparte: il gruppo l'ha chiesto, o si e' spaccato.
+      motivo: r.troppiPari ? 'pari' : 'chiesto',
     }
   }
-
-  const inGioco = vivi(partita)
-  const impostoriOra = impostoriVivi(partita)
-  const r = esito({ impostori: impostoriOra, giocatori: inGioco, schede })
 
   const scopertiOra = r.accusati.filter((id) => impostoriOra.includes(id))
   const eliminatiOra = r.accusati.filter((id) => !impostoriOra.includes(id))
