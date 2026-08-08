@@ -7,15 +7,26 @@
 >
 > | | |
 > |---|---|
-> | ✅ Fatti | BUG-1, BUG-2, BUG-3, PUNTI-1/2/3/4, TUT-1/2/3, TEST-2, SOTTOTAB, metà di SFI-1 |
-> | ⬜ Da fare | AUTH-1/2/3, TEST-1, PWA-1…5 |
+> | ✅ Fatti | AUTH-1/2/3, BUG-1/2/3, PUNTI-1/2/3/4, TUT-1/2/3, TEST-2, SFI-1, SOTTOTAB |
+> | ⬜ Da fare | TEST-1, PWA-1…5 |
 > | ❌ / ⏸ | GAME-1 (impossibile come scritto, vedi `DA-FARE.md`) |
 >
 > I cinque "Punti da chiarire" in fondo hanno tutti una risposta: sono nella sezione **Decisioni prese**.
 
 ---
 
-## 1. Accesso e gestione codice
+## 1. Accesso e gestione codice ✅ **fatto** (`318cf62`)
+
+> ⚠️ **Il pezzo difficile non era nel documento.** Il codice nasce insieme al profilo, cioè dopo un giro di rete, e a quel punto su iPhone il permesso di copiare è già scaduto: Safari lo concede solo dentro il gesto appena fatto, e un `await` in mezzo lo brucia. Scritto nel modo ovvio, AUTH-2 avrebbe mostrato "Codice copiato" **senza aver copiato niente**, proprio sull'unica cosa che riporta dentro l'app. Risolto passando una Promise al posto del testo (`ClipboardItem`), che tiene aperto il permesso.
+>
+> In tutti e due i casi il messaggio **dice la verità**: se la copia non riesce scrive il codice per intero invece di dire "copiato".
+>
+> **Risposte alle domande che il documento lasciava aperte:**
+> - *Quale "copia il codice" rimuovere da AUTH-1?* Nella schermata d'uscita non ce n'era nessuno. L'unico bottone Copia dell'app stava in `CodiceNuovo`, la schermata che AUTH-3 elimina: quindi è sparito da solo.
+> - *Il codice è di 5 o 6 caratteri?* Resta **5**. Lo spec ne mostrava sei (`YHA8HD`), ma sono quelli già distribuiti e allungarli li invaliderebbe tutti.
+> - *"Genera avatar / nome" genera anche il nome?* **No, solo l'avatar.** Con nomi inventati, in classifica e nelle Spese non si riconosce più nessuno — ed è l'unica cosa che il gruppo deve leggere a colpo d'occhio.
+>
+> Spariscono `CodiceNuovo.jsx` e `Recupero.jsx`: il codice si inserisce nell'onboarding, non in una schermata a parte.
 
 ### [AUTH-1] Esci da questo dispositivo
 - **Rimuovere** il pulsante/opzione "copia il codice" dalla schermata di uscita.
