@@ -6,6 +6,24 @@ delle cose non decise. Aggiornata prima della partenza.
 ⚠️ **SQL da lanciare**: `supabase/dama.sql` (la Dama, 7 agosto). Senza,
 la scheda Dama lo dice e il resto dell'app va avanti.
 
+## ⚠️ Tocca a te, e solo a te (8 agosto)
+
+Due buchi che il codice non può riempire da solo. Sono gli unici difetti
+gravi rimasti aperti dopo il giro di critica funzionale.
+
+1. **La barca del 14 non dice a che ora né da dove si parte.**
+   `config/itinerario.js`, la tappa del 14: è la giornata più importante
+   del viaggio, l'unica confermata e pagata, e nell'app non c'è né
+   l'orario d'imbarco né il molo né il link Maps. L'orario vive in un
+   messaggio WhatsApp sul telefono di uno solo. Se l'app è la fonte di
+   verità del programma, proprio lì fa il vuoto. **È un edit di due
+   righe di configurazione, ma i dati li hai solo tu.**
+2. **Il telefono del villaggio**, in `config/info.js`. L'indirizzo l'ho
+   messo — stava già scritto nello spec — ma il numero no: un numero
+   plausibile in una sezione che si chiama emergenze è peggio di nessun
+   numero. Restano da verificare anche guardia medica e farmacia di
+   turno di Quartu.
+
 Da qui in poi tutte le prove insieme: **`npm run prova`** (dieci
 famiglie, ~450 controlli). Prima di ogni commit: quello più `npm run lint`.
 
