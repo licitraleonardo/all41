@@ -1,0 +1,41 @@
+/* Sopra la barra dei tab e sopra tutto il resto: è l'unico messaggio
+   dell'app che deve poter comparire mentre la schermata sotto sta
+   cambiando. */
+.toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--altezza-tab) + 16px);
+  z-index: 70;
+  width: calc(100% - 32px);
+  max-width: 420px;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--sand);
+  background: var(--sea);
+  border-radius: 12px;
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  animation: toast-entra 0.2s ease-out;
+}
+
+/* Fuori dall'app vera non c'è la barra dei tab: il messaggio scende. */
+.schermata .toast {
+  bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+@keyframes toast-entra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

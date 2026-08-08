@@ -10,14 +10,14 @@ import {
   leggiMembri,
 } from './lib/membri.js'
 import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/sessione.js'
+import { negliAppunti, negliAppuntiQuandoPronto } from './lib/appunti.js'
 import { descriviErrore } from './lib/errori.js'
 import { chiudiScaduti } from './lib/voti.js'
 import { risolviProposte } from './lib/proposte.js'
 import { allApertura, forseSottoZero } from './lib/regole.js'
 import { leggiRecordPecora, risolviRecordPecora } from './lib/recordPecora.js'
 import Onboarding from './components/Onboarding.jsx'
-import Recupero from './components/Recupero.jsx'
-import CodiceNuovo from './components/CodiceNuovo.jsx'
+import Toast from './components/Toast.jsx'
 import Profilo from './components/Profilo.jsx'
 import ModificaProfilo from './components/ModificaProfilo.jsx'
 import Itinerario from './components/Itinerario.jsx'
@@ -72,6 +72,9 @@ export default function App() {
   const [membro, setMembro] = useState(null)
   const [errore, setErrore] = useState(null)
   const [inCorso, setInCorso] = useState(false)
+  // Vive qui e non dentro una schermata: deve poter comparire mentre la
+  // schermata che l'ha chiesto si sta smontando — è il caso dell'uscita.
+  const [toast, setToast] = useState(null)
 
   // Sta qui e non nella Chat Rapida: il suono lanciato da un altro deve
   // sentirsi qualunque tab sia aperta.
@@ -209,12 +212,43 @@ export default function App() {
   const entra = useCallback(async ({ nome, avatarStyle }) => {
     setInCorso(true)
     setErrore(null)
+
+    // AUTH-2. La copia si dichiara PRIMA della rete e non dopo: il
+    // codice nasce insieme al profilo, cioè dopo un giro di richieste, e
+    // a quel punto su iPhone il permesso di copiare è già scaduto —
+    // Safari lo concede solo dentro il gesto appena fatto. Passando una
+    // Promise, il permesso resta aperto finché non si risolve.
+    //
+    // Niente await qui davanti, o l'attivazione scade prima di arrivarci.
+    let daiIlCodice
+    const codicePronto = new Promise((r) => {
+      daiIlCodice = r
+    })
+    const copiaFatta = negliAppuntiQuandoPronto(codicePronto)
+
     try {
       const nuovo = await creaMembro({ nome, avatarStyle })
+      daiIlCodice(nuovo.codice)
       salvaMemberId(nuovo.id)
       setMembro(nuovo)
-      setVista('codice')
+
+      // Dentro l'app, senza schermate intermedie: lo dice AUTH-3.
+      setVista('dentro')
+
+      // Il toast dice la verità: se la copia non è riuscita — contesto
+      // non sicuro, permesso negato — il codice si scrive lo stesso,
+      // perché è l'unica cosa che riporta dentro.
+      copiaFatta
+        .then((riuscita) =>
+          setToast(
+            riuscita
+              ? `Codice copiato — ${nuovo.codice}`
+              : `Il tuo codice è ${nuovo.codice}. Segnatelo: senza non si rientra.`
+          )
+        )
+        .catch(() => setToast(`Il tuo codice è ${nuovo.codice}. Segnatelo.`))
     } catch (e) {
+      daiIlCodice('')
       setErrore(descriviErrore(e))
     } finally {
       setInCorso(false)
@@ -258,12 +292,37 @@ export default function App() {
     [membro]
   )
 
+  // AUTH-1. Il codice si copia da solo uscendo, e il messaggio sopravvive
+  // alla schermata che lo mostrava: `esci` la smonta nello stesso istante,
+  // quindi un avviso dichiarato dentro Profilo non si vedrebbe mai.
+  //
+  // Il testo si costruisce prima di azzerare `membro`, che subito dopo è
+  // null. E la copia parte dentro il gesto, senza await davanti.
   const esci = useCallback(() => {
+    const codice = membro?.codice
+    if (!codice) {
+      dimenticaMemberId()
+      setMembro(null)
+      setErrore(null)
+      setVista('onboarding')
+      return
+    }
+
+    negliAppunti(codice)
+      .then((riuscita) =>
+        setToast(
+          riuscita
+            ? 'Codice di accesso copiato'
+            : `Il tuo codice è ${codice}. Senza non si rientra.`
+        )
+      )
+      .catch(() => setToast(`Il tuo codice è ${codice}. Senza non si rientra.`))
+
     dimenticaMemberId()
     setMembro(null)
     setErrore(null)
     setVista('onboarding')
-  }, [])
+  }, [membro])
 
   function vaiA(prossima) {
     setErrore(null)
@@ -364,6 +423,11 @@ export default function App() {
           )}
           <Derisione derisione={derisione} onChiudi={chiudiDerisione} />
         </Riparo>
+
+        {/* Fuori dal Riparo: entrando col profilo appena creato il toast
+            porta il codice di accesso, ed è l'unica cosa che riporta
+            dentro. Non è un di più che può sparire in silenzio. */}
+        <Toast messaggio={toast} onChiudi={() => setToast(null)} />
       </>
     )
   }
@@ -404,26 +468,16 @@ export default function App() {
         </div>
       )}
 
+      {/* Il codice si inserisce dentro l'onboarding e non in una
+          schermata a parte: `onRecupera` entra davvero invece di
+          navigare da qualche altra parte. */}
       {vista === 'onboarding' && (
         <Onboarding
           onEntra={entra}
-          onRecupera={() => vaiA('recupero')}
-          inCorso={inCorso}
-          errore={errore}
-        />
-      )}
-
-      {vista === 'recupero' && (
-        <Recupero
           onRecupera={recupera}
-          onIndietro={() => vaiA('onboarding')}
           inCorso={inCorso}
           errore={errore}
         />
-      )}
-
-      {vista === 'codice' && (
-        <CodiceNuovo membro={membro} onAvanti={() => vaiA('dentro')} />
       )}
 
       {vista === 'profilo' && (
@@ -444,6 +498,8 @@ export default function App() {
           errore={errore}
         />
       )}
+
+      <Toast messaggio={toast} onChiudi={() => setToast(null)} />
 
       <footer className="targhetta">
         {commit} · {buildTime}

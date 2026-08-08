@@ -154,6 +154,51 @@
   margin-bottom: 14px;
 }
 
+/* ------------------------------------------------------------ ingresso */
+
+/* Il codice è l'azione principale, la creazione del profilo quella rara:
+   il gruppo è di otto persone e il profilo lo fanno una volta sola. */
+.ingresso-codice,
+.ingresso-nuovo {
+  display: contents;
+}
+
+.ingresso-oppure {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 26px 0 4px;
+  color: rgba(247, 244, 236, 0.5);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ingresso-oppure::before,
+.ingresso-oppure::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(247, 244, 236, 0.18);
+}
+
+.ingresso-titolo {
+  width: 100%;
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+}
+
+/* L'ultimo bottone del blocco: staccato, così non sembra un'alternativa
+   al "Cambiamela tu" che gli sta sopra. */
+.secondario.avanti {
+  margin-top: 16px;
+  border-color: rgba(247, 244, 236, 0.45);
+  font-weight: 600;
+}
+
 /* -------------------------------------------------------------- bottoni */
 
 .primario,

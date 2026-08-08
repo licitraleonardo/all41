@@ -11,14 +11,20 @@ export default function Profilo({ membro, onModifica, onEsci, onIndietro }) {
       <div className="pannello">
         <h1 className="titolo">Sicuro?</h1>
         <p className="allan">
-          Questo dispositivo si dimentica di te. Per rientrare serve il codice,
-          e l&rsquo;unico modo per riaverlo è questo:
+          Questo dispositivo si dimentica di te. Per rientrare serve il codice, e
+          l&rsquo;unico modo per riaverlo è questo:
         </p>
 
+        {/* Il codice resta scritto grande anche se lo copiamo noi: la
+            copia può fallire — permesso negato, telefono su http — e
+            questa è l'unica azione dell'app che non si può disfare. Una
+            rete di sicurezza che costa una riga. */}
         <p className="codice-grande">{membro.codice}</p>
 
+        <p className="istruzioni">Uscendo te lo copio negli appunti.</p>
+
         <button type="button" className="primario" onClick={onEsci}>
-          L&rsquo;ho segnato, esci
+          Copia ed esci
         </button>
         <button
           type="button"
