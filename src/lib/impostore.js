@@ -371,6 +371,16 @@ export function conteggioAffidabile(conteggi, quantiHannoVotato) {
   return contati > 0 && contati >= quantiHannoVotato
 }
 
+// Quale apertura ha vinto: impostori e giri insieme. A parita' vince
+// quella consigliata, e se non e' in ballo la prima — serve una regola
+// qualunque purche' sia sempre la stessa, o due telefoni che chiudono il
+// voto nello stesso istante farebbero partire due partite diverse.
+export function aperturaVincente(conteggi, consigliata) {
+  const scelte = IMPOSTORE.aperture.map((a) => a.id)
+  const vinta = sceltaVincente(conteggi, scelte, consigliata)
+  return IMPOSTORE.aperture.find((a) => a.id === vinta) ?? IMPOSTORE.aperture[0]
+}
+
 export function sceltaVincente(conteggi, scelte, consigliata) {
   const voti = scelte.map((_, i) => conteggi?.[i] ?? 0)
   const massimo = Math.max(...voti)

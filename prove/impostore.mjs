@@ -28,6 +28,7 @@ import {
   secondiDelTestimone,
   raccontaFinale,
   conteggioAffidabile,
+  aperturaVincente,
 } from '../src/lib/impostore.js'
 import { COPPIE, IMPOSTORE, NESSUNA_PAROLA } from '../src/config/impostore.js'
 import { PER_ID } from '../src/config/leggi.js'
@@ -693,6 +694,30 @@ console.log('Il conteggio deve aver raggiunto i votanti prima di partire')
     'coi conteggi veri vince quello che ha votato il gruppo',
     sceltaVincente([0, 6], [1, 2], 1) === 2
   )
+}
+
+
+console.log('L apertura: impostori e giri in una scelta sola')
+{
+  const ids = IMPOSTORE.aperture.map((a) => a.id)
+  prova('quattro combinazioni', IMPOSTORE.aperture.length === 4)
+  prova('tutte diverse', new Set(ids).size === 4)
+  prova(
+    'ogni combinazione ha impostori e giri',
+    IMPOSTORE.aperture.every((a) => a.impostori > 0 && a.giri > 0)
+  )
+  prova(
+    'la consigliata esiste sempre fra le scelte',
+    [4, 5, 6, 7, 8, 12].every((n) => ids.includes(IMPOSTORE.aperturaConsigliata(n)))
+  )
+  prova('in tanti si consigliano piu giri', IMPOSTORE.aperturaConsigliata(8).endsWith('3'))
+
+  prova('vince quella votata', aperturaVincente([0, 0, 0, 5], '1x2').id === '2x3')
+  prova('e ne escono impostori e giri', aperturaVincente([0, 4, 0, 0], '1x2').giri === 3)
+  // ⚠️ Coi conteggi a zero si ripiega sulla consigliata: e il caso che
+  // conteggioAffidabile deve impedire prima che si arrivi qui.
+  prova('senza voti si ripiega sulla consigliata', aperturaVincente([0, 0, 0, 0], '2x3').id === '2x3')
+  prova('restituisce sempre una combinazione vera', Boolean(aperturaVincente([], '1x2')?.impostori))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} prove fallite.\n`)

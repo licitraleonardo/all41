@@ -848,3 +848,25 @@
   text-transform: uppercase;
   color: var(--ink-soft, #55636b);
 }
+
+/* Quanti impostori ci sono, accanto al giro. Stava solo nella schermata
+   del voto d'apertura, e a meta' partita non se lo ricordava nessuno —
+   ma e' esattamente il numero che serve per ragionare. */
+.imp-quanti {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--coral);
+}
+
+/* La riga sotto al numero nella scelta d'apertura: i giri. */
+.imp-scelta-nome small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+}

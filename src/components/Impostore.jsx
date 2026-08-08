@@ -16,7 +16,7 @@ import {
   quantiMancano,
   quantiPerRivelare,
   maggioranza,
-  sceltaVincente,
+  aperturaVincente,
   conteggioAffidabile,
   schedePerId,
   tuttiHannoVotato,
@@ -209,8 +209,8 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
   const [avviso, setAvviso] = useState(null)
   const partito = useRef(false)
 
-  const scelte = IMPOSTORE.sceltePerImpostori
-  const consigliata = IMPOSTORE.quantiImpostori(partita.giocatori.length)
+  const scelte = IMPOSTORE.aperture
+  const consigliata = IMPOSTORE.aperturaConsigliata(partita.giocatori.length)
   const hoVotato = voto?.hannoVotato?.includes(membro.id)
   const quanti = voto?.hannoVotato?.length ?? 0
   const tutti = partita.giocatori.length
@@ -233,7 +233,7 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
     // partita partita con uno solo.
     if (!conteggioAffidabile(conteggi, quanti)) return
     partito.current = true
-    onAvvia(sceltaVincente(conteggi, scelte, consigliata))
+    onAvvia(aperturaVincente(conteggi, consigliata))
   }, [voto, quanti, tutti, conteggi, scelte, consigliata, onAvvia])
 
   async function vota(i) {
@@ -252,18 +252,17 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
 
   return (
     <section className="imp-preparazione">
-      <h2 className="imp-titolo">Quanti impostori?</h2>
+      <h2 className="imp-titolo">Come giochiamo?</h2>
       <p className="imp-spiega">
-        Lo decidete voi, prima di sapere chi sono. Hanno votato {quanti} su {tutti} — si
-        parte a {serve}.
+        Hanno votato {quanti} su {tutti} — si parte a {serve}.
       </p>
 
       {avviso && <p className="imp-guasto">{avviso}</p>}
 
       <div className="imp-scelte">
-        {scelte.map((n, i) => (
+        {scelte.map((a, i) => (
           <button
-            key={n}
+            key={a.id}
             type="button"
             className={i === conteggi.indexOf(Math.max(...conteggi)) && quanti > 0
               ? 'imp-scelta avanti'
@@ -271,21 +270,21 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
             onClick={() => vota(i)}
             disabled={hoVotato || inCorso}
           >
-            <span className="imp-scelta-numero">{n}</span>
+            <span className="imp-scelta-numero">{a.impostori}</span>
             <span className="imp-scelta-nome">
-              {n === 1 ? 'impostore' : 'impostori'}
-              {n === consigliata && ' · consigliato'}
+              {a.impostori === 1 ? 'impostore' : 'impostori'}
+              <small>
+                {a.giri} giri{a.id === consigliata ? ' · consigliato' : ''}
+              </small>
             </span>
             <span className="imp-scelta-voti">{conteggi[i] ?? 0}</span>
           </button>
         ))}
       </div>
 
-      <p className="imp-nota">
-        {hoVotato
-          ? `Hai votato. Si parte appena arriva il ${serve}º voto: non si aspetta chi manca.`
-          : 'Tocca il numero che preferisci.'}
-      </p>
+      {hoVotato && (
+        <p className="imp-nota">Si parte al {serve}º voto: non si aspetta chi manca.</p>
+      )}
     </section>
   )
 }
@@ -642,8 +641,14 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
         ))}
       </div>
 
+      {/* Quanti impostori ci sono, sempre sotto gli occhi: e' la cosa
+          che serve a ragionare, e stava solo nella schermata del voto
+          d'apertura — che a meta' partita nessuno si ricorda. */}
       <p className="imp-giro">
         Giro {partita.giro} di {partita.giriTotali}
+        <span className="imp-quanti">
+          {partita.impostori.length === 1 ? '1 impostore' : `${partita.impostori.length} impostori`}
+        </span>
       </p>
 
       {/* La faccia prima del nome: da lontano si riconosce quella, e a
@@ -658,10 +663,6 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
 
       <p className="imp-tocca-a">{mioTurno ? 'TOCCA A TE' : nome(tocca).toUpperCase()}</p>
 
-      <p className="imp-spiega">
-        {mancano === 1 ? 'Ultimo, poi si vota.' : `Ancora ${mancano} prima del voto.`}
-      </p>
-
       <button
         type="button"
         className="imp-comincia"
@@ -670,11 +671,12 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
       >
         {inCorso ? '…' : possoAvanzare ? 'Fatto, avanti' : `Aspetta ${restano}s`}
       </button>
-      <p className="imp-nota">
-        {possoAvanzare
-          ? 'Può premerlo chiunque, non solo chi è di turno.'
-          : 'Per mezzo minuto il turno lo passa solo chi parla. Poi anche tu.'}
-      </p>
+      {/* Resta solo quando il tasto e' spento: li' serve a spiegare
+          perche' non si preme. Gli altri suggerimenti sono spariti — il
+          gioco si capisce guardandolo. */}
+      {!possoAvanzare && (
+        <p className="imp-nota">Per mezzo minuto il turno lo passa solo chi parla.</p>
+      )}
 
       <button
         type="button"

@@ -102,10 +102,10 @@ export async function creaPartita({ giocatori, variante = 'parola-simile', casua
     .insert({
       trip_id: VIAGGIO.id,
       category: 'impostore',
-      question: 'Quanti impostori?',
-      options: IMPOSTORE.sceltePerImpostori.map(String),
+      question: 'Come giochiamo?',
+      options: IMPOSTORE.aperture.map((a) => a.id),
       anonymous: false,
-      tally: IMPOSTORE.sceltePerImpostori.map(() => 0),
+      tally: IMPOSTORE.aperture.map(() => 0),
       expires_at: scade,
     })
     .select('id')
@@ -138,11 +138,17 @@ export async function creaPartita({ giocatori, variante = 'parola-simile', casua
 // Finito il voto d'apertura si sorteggia chi e' impostore e si parte.
 // Passa da una funzione: due telefoni che assegnano insieme darebbero
 // due partite diverse alla stessa gente.
-export async function avviaPartita(partita, quantiImpostori, casuale) {
+export async function avviaPartita(partita, apertura, casuale) {
+  // Regge sia { impostori, giri } sia il numero secco di prima: le
+  // partite aperte con la versione vecchia dell'app passano ancora di
+  // qui, e farle esplodere a meta' serata non serve a niente.
+  const quanti = typeof apertura === 'number' ? apertura : apertura?.impostori
+  const giri = typeof apertura === 'number' ? null : (apertura?.giri ?? null)
+
   const preparata = preparaPartita({
     giocatori: partita.giocatori,
     coppia: [partita.parolaGruppo, partita.parolaImpostore],
-    quantiImpostori,
+    quantiImpostori: quanti,
     casuale,
   })
 
@@ -151,6 +157,7 @@ export async function avviaPartita(partita, quantiImpostori, casuale) {
     p_impostori: preparata.impostori,
     p_assegnazioni: preparata.assegnazioni,
     p_ordine: preparata.ordine,
+    p_giri: giri,
   })
 
   if (error) throw error

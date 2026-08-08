@@ -20,6 +20,10 @@ export const IMPOSTORE = {
 
   // Le scelte del voto d'apertura.
   sceltePerImpostori: [1, 2],
+  // Quanti giri prima del voto. Anche questo lo sceglie il gruppo:
+  // due bastano per farsi un'idea, tre servono quando si e' in tanti e
+  // con due non fa in tempo a emergere niente.
+  scelteGiri: [2, 3],
 
   // Dopo un'accusa sbagliata si riparte, ma con un giro solo: due giri
   // servivano a farsi un'idea da zero, e adesso l'idea ce l'avete gia' —
@@ -30,6 +34,25 @@ export const IMPOSTORE = {
   // Il voto non ha un timer visibile: serve solo a non lasciare un voto
   // appeso per sempre se la partita finisce in una birra.
   minutiVoto: 30,
+
+  // Le combinazioni votabili all'apertura: impostori e giri insieme, in
+  // una scelta sola.
+  //
+  // Due votazioni di fila sarebbero due momenti morti prima di
+  // cominciare, e il secondo lo salterebbe meta' gruppo. Quattro
+  // bottoni si leggono in un colpo d'occhio e si vota una volta.
+  aperture: [
+    { id: '1x2', impostori: 1, giri: 2 },
+    { id: '1x3', impostori: 1, giri: 3 },
+    { id: '2x2', impostori: 2, giri: 2 },
+    { id: '2x3', impostori: 2, giri: 3 },
+  ],
+
+  // Quale combinazione proporre, cioe' quale evidenziare. Piu' si e' in
+  // tanti piu' servono giri: con otto persone e due giri non fa in tempo
+  // a emergere niente.
+  aperturaConsigliata: (quanti) =>
+    quanti >= 7 ? '2x3' : quanti >= 6 ? '1x3' : '1x2',
 
   // Il testimone. Chiunque puo' far avanzare il turno — se a qualcuno si
   // scarica il telefono la partita non si blocca — ma per i primi trenta
