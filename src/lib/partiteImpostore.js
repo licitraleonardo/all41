@@ -241,8 +241,16 @@ export async function paga(partita, voto) {
 // coda, finisce perche' gli impostori non sono piu' in minoranza, oppure
 // si riparte con un altro giro fra i superstiti.
 export async function chiudiAccusa(partita, voto, casuale) {
-  const opzioni = voto?.opzioni ?? partita.giocatori
-  const esitoGiro = dopoAccusa(partita, schedePerId(voto?.schede, opzioni), casuale)
+  // ⚠️ Vuole il VOTO, non l'esito del giro. Chiamandola con l'oggetto
+  // sbagliato, `opzioni` e `schede` restavano vuote e il giro si chiudeva
+  // senza accusare nessuno — in silenzio, senza errori: la partita
+  // ripartiva da capo e l'impostore beccato tornava in gioco. Meglio
+  // fermarsi che raccontare una partita che non e' successa.
+  if (!voto?.opzioni) {
+    throw new Error('chiudiAccusa vuole il voto del giro, con le sue opzioni.')
+  }
+
+  const esitoGiro = dopoAccusa(partita, schedePerId(voto.schede, voto.opzioni), casuale)
 
   const { data, error } = await supabase.rpc('chiudi_accusa', {
     p_partita: partita.id,
