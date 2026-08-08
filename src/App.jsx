@@ -335,11 +335,15 @@ export default function App() {
       return
     }
 
+    // Il codice resta scritto nel messaggio anche quando la copia
+    // riesce: la schermata di conferma non c'è più, quindi questa è
+    // l'ultima occasione di vederlo prima che il dispositivo se lo
+    // dimentichi.
     negliAppunti(codice)
       .then((riuscita) =>
         setToast(
           riuscita
-            ? 'Codice di accesso copiato'
+            ? `Codice copiato — ${codice}`
             : `Il tuo codice è ${codice}. Senza non si rientra.`
         )
       )

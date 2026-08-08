@@ -1,42 +1,8 @@
-import { useState } from 'react'
 import { urlAvatar } from '../config/avatar.js'
 
 // Segnaposto: qui al punto 3 arriva l'itinerario e la struttura a tab.
 // Modifica e uscita traslocheranno nel tab Altro quando esisterà.
 export default function Profilo({ membro, onModifica, onEsci, onIndietro }) {
-  const [confermaUscita, setConfermaUscita] = useState(false)
-
-  if (confermaUscita) {
-    return (
-      <div className="pannello">
-        <h1 className="titolo">Sicuro?</h1>
-        <p className="allan">
-          Questo dispositivo si dimentica di te. Per rientrare serve il codice, e
-          l&rsquo;unico modo per riaverlo è questo:
-        </p>
-
-        {/* Il codice resta scritto grande anche se lo copiamo noi: la
-            copia può fallire — permesso negato, telefono su http — e
-            questa è l'unica azione dell'app che non si può disfare. Una
-            rete di sicurezza che costa una riga. */}
-        <p className="codice-grande">{membro.codice}</p>
-
-        <p className="istruzioni">Uscendo te lo copio negli appunti.</p>
-
-        <button type="button" className="primario" onClick={onEsci}>
-          Copia ed esci
-        </button>
-        <button
-          type="button"
-          className="secondario"
-          onClick={() => setConfermaUscita(false)}
-        >
-          Lascia stare
-        </button>
-      </div>
-    )
-  }
-
   return (
     <div className="pannello">
       {/* Si cambia faccia toccando la faccia. Prima era un bottone in
@@ -79,12 +45,11 @@ export default function Profilo({ membro, onModifica, onEsci, onIndietro }) {
       </button>
 
       {/* In rosso perché è l'unica cosa in questa schermata che si può
-          rimpiangere: senza il codice non si rientra. */}
-      <button
-        type="button"
-        className="pericolo"
-        onClick={() => setConfermaUscita(true)}
-      >
+          rimpiangere: senza il codice non si rientra.
+          La schermata di conferma non c'è più: uscendo il codice si
+          copia da solo e resta scritto nel messaggio che compare. È lì
+          la rete di sicurezza adesso, non in un passaggio in più. */}
+      <button type="button" className="pericolo" onClick={onEsci}>
         Esci da questo dispositivo
       </button>
     </div>

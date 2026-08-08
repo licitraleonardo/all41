@@ -156,47 +156,83 @@
 
 /* ------------------------------------------------------------ ingresso */
 
-/* Il codice è l'azione principale, la creazione del profilo quella rara:
-   il gruppo è di otto persone e il profilo lo fanno una volta sola. */
+/* Il codice e' l'unica cosa aperta; la registrazione sta piegata sotto.
+   Il gruppo e' di otto persone e il profilo lo si crea una volta sola:
+   tutte le altre volte serve il codice. */
 .ingresso-codice,
-.ingresso-nuovo {
+.registrati-corpo {
   display: contents;
 }
 
-.ingresso-oppure {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.registrati {
   width: 100%;
-  margin: 26px 0 4px;
-  color: rgba(247, 244, 236, 0.5);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  margin-top: 26px;
+  border-top: 1px solid rgba(247, 244, 236, 0.18);
 }
 
-.ingresso-oppure::before,
-.ingresso-oppure::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(247, 244, 236, 0.18);
-}
-
-.ingresso-titolo {
-  width: 100%;
-  margin: 0 0 4px;
+.registrati-testa {
+  padding: 16px 4px;
   font-size: 15px;
   font-weight: 600;
-  text-align: left;
+  color: var(--sand);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* L'ultimo bottone del blocco: staccato, così non sembra un'alternativa
-   al "Cambiamela tu" che gli sta sopra. */
+/* La freccia la disegniamo noi: il triangolino di sistema e' diverso su
+   ogni browser e su iOS e' quasi invisibile. */
+.registrati-testa::-webkit-details-marker {
+  display: none;
+}
+
+.registrati-testa::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-right: 2px solid rgba(247, 244, 236, 0.55);
+  border-bottom: 2px solid rgba(247, 244, 236, 0.55);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 0.15s ease-out;
+}
+
+.registrati[open] .registrati-testa::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.registrati-testa:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Dentro la tendina i figli tornano in colonna: `display: contents` sul
+   form li lascia al pannello, ma dentro <details> il pannello non li
+   vede piu'. */
+.registrati[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 8px;
+}
+
+.registrati[open] .registrati-testa {
+  align-self: stretch;
+}
+
 .secondario.avanti {
-  margin-top: 16px;
+  margin-top: 18px;
   border-color: rgba(247, 244, 236, 0.45);
   font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registrati-testa::after {
+    transition: none;
+  }
 }
 
 /* -------------------------------------------------------------- bottoni */

@@ -59,6 +59,51 @@ export function useLetteTestamento(membroId) {
   return { lette, segnaLetta }
 }
 
+// Il trucco per spegnere il pallino guardando invece che toccando:
+// IntersectionObserver. Dice quando una riga entra davvero nello
+// schermo, e da lì si aspetta un attimo prima di darla per letta.
+//
+// L'attimo non è un vezzo: senza, scorrere veloce fino in fondo
+// spegnerebbe tutti i pallini di volata, comprese le righe passate
+// davanti agli occhi per un fotogramma. Mezzo secondo di permanenza è
+// la differenza fra "l'ho vista" e "c'è passata davanti".
+//
+// ⚠️ Nel pannello di anteprima non scatta, come ResizeObserver: la
+// scheda non compone fotogrammi. Non è un difetto del codice.
+export function useSpegniGuardando(riferimento, attiva, quando) {
+  useEffect(() => {
+    const nodo = riferimento.current
+    if (!nodo || !attiva) return undefined
+    if (typeof IntersectionObserver !== 'function') {
+      // Browser che non ce l'ha: si dà per letta e basta, meglio di un
+      // pallino che non si spegne mai.
+      quando()
+      return undefined
+    }
+
+    let attesa = null
+    const osserva = new IntersectionObserver(
+      ([voce]) => {
+        if (voce.isIntersecting) {
+          attesa = setTimeout(quando, 500)
+        } else if (attesa) {
+          clearTimeout(attesa)
+          attesa = null
+        }
+      },
+      // Mezza riga dentro lo schermo basta: aspettare che entri tutta
+      // vorrebbe dire non spegnere mai l'ultima quando è tagliata.
+      { threshold: 0.5 }
+    )
+
+    osserva.observe(nodo)
+    return () => {
+      if (attesa) clearTimeout(attesa)
+      osserva.disconnect()
+    }
+  }, [riferimento, attiva, quando])
+}
+
 // Quante ne hai scoperte senza averle ancora aperte. Le non scoperte NON
 // contano: prese alla lettera resterebbero una ventina di pallini accesi
 // per sempre sulle voci oscurate, che è il contrario di una notifica.

@@ -10,7 +10,11 @@ import './Toast.css'
 // alto di tutte.
 //
 // Per questo sta in App e non dentro una schermata.
-export default function Toast({ messaggio, onChiudi, secondi = 6 }) {
+//
+// Tre secondi: sei erano troppi. Un messaggio che resta più a lungo di
+// quanto ci si metta a leggerlo smette di essere un'informazione e
+// diventa una cosa da togliere di mezzo. Si tocca per chiuderlo prima.
+export default function Toast({ messaggio, onChiudi, secondi = 3 }) {
   useEffect(() => {
     if (!messaggio) return undefined
     const via = setTimeout(onChiudi, secondi * 1000)
