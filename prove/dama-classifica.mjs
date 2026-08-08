@@ -158,13 +158,28 @@ console.log('\nquello che ti aspetta')
   prova('tocca a me dove sono il bianco', mie.find((p) => p.id === '1').tuaMossa === true)
   prova('non tocca a me dove sono il nero', mie.find((p) => p.id === '2').tuaMossa === false)
 
-  // Una sfida da accettare: sei il nero e nessuno ha ancora mosso.
+  // Una sfida da accettare: sei il nero e TU non hai ancora mosso.
   const sfide = sfideDaAccettare(partite, A)
   prova('la sfida ricevuta è quella dove sono il nero', sfide.length === 1 && sfide[0].id === '2')
   prova('chi ha sfidato non ha niente da accettare', sfideDaAccettare(partite, B).length === 1)
-  // Appena l'altro muove non è più un invito, è una partita.
-  const dopoLaPrimaMossa = [{ id: '2', bianco: B, nero: A, mosse: ['42-33'], stato: 'in-corso' }]
-  prova('con una mossa fatta non è più un invito', sfideDaAccettare(dopoLaPrimaMossa, A).length === 0)
+
+  // ⚠️ Chi sfida e' il bianco e muove per primo: se l'invito sparisse
+  // alla sua prima mossa — che e' la cosa piu' naturale da fare dopo aver
+  // lanciato una sfida — chi e' stato sfidato non riceverebbe piu'
+  // niente. E' successo davvero, provando a giocare.
+  const soloIlBiancoHaMosso = [{ id: '2', bianco: B, nero: A, mosse: ['42-33'], stato: 'in-corso' }]
+  prova(
+    'l’invito resta dopo la mossa di chi ha sfidato',
+    sfideDaAccettare(soloIlBiancoHaMosso, A).length === 1
+  )
+
+  // Appena rispondi tu, non e' piu' un invito: e' una partita.
+  const hoRisposto = [{ id: '2', bianco: B, nero: A, mosse: ['42-33', '19-28'], stato: 'in-corso' }]
+  prova('ma sparisce quando hai risposto', sfideDaAccettare(hoRisposto, A).length === 0)
+
+  // E una partita abbandonata non invita nessuno.
+  const chiusa = [{ id: '2', bianco: B, nero: A, mosse: [], stato: 'abbandonata', abbandonataDa: B }]
+  prova('una partita chiusa non e’ un invito', sfideDaAccettare(chiusa, A).length === 0)
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)

@@ -83,9 +83,16 @@ export function inCorsoPerMe(partite, ioId) {
 }
 
 // Una sfida ancora da accettare: sei il nero — cioè non l'hai aperta tu
-// — e nessuno ha ancora mosso. Da lì in poi è una partita come le altre.
+// — e TU non hai ancora mosso. Da lì in poi è una partita come le altre.
+//
+// ⚠️ Il conto è sulle mosse tue, non su quelle della partita. Chi sfida è
+// il bianco e muove per primo: contando "nessuno ha ancora mosso"
+// l'invito spariva nell'istante in cui l'altro apriva il gioco, che è la
+// cosa più naturale del mondo da fare dopo aver lanciato una sfida — e
+// chi era stato sfidato non riceveva più niente. Sotto le due mosse il
+// nero non ha ancora toccato la scacchiera.
 export function sfideDaAccettare(partite, ioId) {
   return partite.filter(
-    (p) => p.stato === 'in-corso' && p.nero === ioId && (p.mosse?.length ?? 0) === 0
+    (p) => p.stato === 'in-corso' && p.nero === ioId && (p.mosse?.length ?? 0) < 2
   )
 }
