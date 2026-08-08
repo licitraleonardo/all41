@@ -8,11 +8,15 @@
 
 ## ⚠️ DUE COSE PRIMA DI TUTTO
 
-### 1. Quattro file SQL da lanciare, in quest'ordine
+### 1. Un file SQL da lanciare
 
-Nell'**SQL Editor di Supabase**. Sono tutti rieseguibili: rilanciarli non rompe niente.
+Apri **`supabase/DA-LANCIARE.sql`**, copia tutto, incollalo nell'**SQL Editor di Supabase**, premi Run. Una volta sola, e basta.
 
-| File | Cosa aggiunge | Se non lo lanci |
+È rieseguibile: se l'hai già lanciato, rilanciarlo non rompe niente. **In fondo stampa una tabella di quattro righe**: se dicono tutte *"a posto"*, è andata. Se una dice *"MANCA"*, l'SQL Editor si è fermato prima — correggi e rilancia **tutto da capo**, non solo il pezzo mancante.
+
+Dentro ci sono i quattro file di prima, nell'ordine giusto. È **generato** da `strumenti/unisci-sql.mjs`: se tocchi uno degli originali, rifallo con `npm run sql` invece di modificarlo a mano.
+
+| Pezzo | Cosa aggiunge | Se non arriva |
 |---|---|---|
 | `supabase/dama.sql` | La tabella della Dama, le funzioni, **e l'iscrizione al realtime** | La scheda Dama non si apre. Se l'hai lanciato prima del 7 agosto, **rilancialo**: senza l'iscrizione le mosse dell'altro non arrivano mai, e sembra che il gioco sia rotto |
 | `supabase/testimone.sql` | La colonna `turno_da` | Il testimone dei 30 secondi non blocca nessuno (l'app funziona, il tasto resta libero per tutti) |

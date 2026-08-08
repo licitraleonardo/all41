@@ -3,8 +3,10 @@
 Coda di lavoro decisa, in ordine. Diversa da `IDEE.md`, che è il parcheggio
 delle cose non decise. Aggiornata prima della partenza.
 
-⚠️ **SQL da lanciare**: `supabase/dama.sql` (la Dama, 7 agosto). Senza,
-la scheda Dama lo dice e il resto dell'app va avanti.
+⚠️ **SQL da lanciare**: **`supabase/DA-LANCIARE.sql`**, uno solo, da
+incollare nell'SQL Editor di Supabase. Contiene tutto quello che manca e
+in fondo dice da solo se è andata. È generato: `npm run sql` lo rifà dai
+file originali.
 
 ## ⚠️ Tocca a te, e solo a te (8 agosto)
 

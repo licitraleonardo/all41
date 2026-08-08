@@ -9,6 +9,7 @@
     "dev:http": "vite --port 5174",
     "build": "vite build",
     "lint": "oxlint",
+    "sql": "node strumenti/unisci-sql.mjs",
     "prova": "npm run --silent prova:conti && npm run --silent prova:proposte && npm run --silent prova:caccia && npm run --silent prova:documenti && npm run --silent prova:posizione && npm run --silent prova:audio && npm run --silent prova:scadenza && npm run --silent prova:coda-foto && npm run --silent prova:scadenza-voti && npm run --silent prova:dispositivo && npm run --silent prova:pecora && npm run --silent prova:impostore && npm run --silent prova:dama && npm run --silent prova:mvp && npm run --silent prova:statistiche",
     "prova:proposte": "node prove/proposte.mjs",
     "prova:conti": "node prove/conti.mjs && node prove/conti-casuali.mjs",
