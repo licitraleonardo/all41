@@ -1,6 +1,17 @@
 # Specifiche modifiche — App viaggio
 
-> Documento di lavoro da passare a Claude Code. Ogni punto ha un ID per poterlo richiamare singolarmente (es. "implementa AUTH-1").
+> Documento di lavoro. Ogni punto ha un ID per poterlo richiamare singolarmente (es. "implementa AUTH-1").
+>
+> **Stato all'8 agosto** — legenda in testa a ogni voce:
+> ✅ fatto · ⏸ rimandato con motivo · ❌ scartato con motivo · ⬜ da fare
+>
+> | | |
+> |---|---|
+> | ✅ Fatti | BUG-1, BUG-2, BUG-3, PUNTI-1, PUNTI-2, PUNTI-3, PUNTI-4, SOTTOTAB |
+> | ⬜ Da fare | AUTH-1/2/3, TUT-1/2/3, TEST-1, TEST-2, SFI-1, PWA-1…5 |
+> | ❌ / ⏸ | GAME-1 (impossibile come scritto, vedi `DA-FARE.md`) |
+>
+> I cinque "Punti da chiarire" in fondo hanno tutti una risposta: sono nella sezione **Decisioni prese**.
 
 ---
 
@@ -85,23 +96,29 @@ Per ogni step è indicato se il tutorial **parte dentro il tab** (si entra nella
 
 ## 4. Gioco di ALL
 
-### [GAME-1] Dimensione schermo
-- Ingrandire l'area di gioco fino a occupare **quasi tutta la schermata** disponibile.
+### [GAME-1] Dimensione schermo ⏸ **impossibile come scritto**
+- ~~Ingrandire l'area di gioco fino a occupare **quasi tutta la schermata** disponibile.~~
+- La larghezza sullo schermo è quella del telefono: l'unico modo di alzare il riquadro è **far vedere meno pista**. Per arrivare a ~600px servirebbero 208 unità di mondo contro le 500 di oggi, e a quel punto un ostacolo compare **0,22 s** prima di arrivare addosso mentre un salto ne dura **0,58**. Il limite vero è 460 unità (271px), dove il preavviso coincide col salto e non resta margine.
+- Alzare il cielo non serve: **il 45% del mondo è già cielo irraggiungibile**, e Allan resta 31px comunque.
+- Numeri completi, e cosa costerebbe una versione verticale col doppio salto, in `DA-FARE.md` → *La Pecora in verticale*.
 
 ---
 
 ## 5. Bug e fix UI
 
-### [BUG-1] iPhone 13 Pro — tab in alto non visibili 🔴 priorità alta
-- Su iPhone 13 Pro i tab superiori non si vedono.
-- Probabile problema di **safe area / notch**: verificare `safe-area-inset-top`, `viewport-fit=cover` e altezza dell'header.
-- Testare su viewport 390×844 con notch.
+### [BUG-1] iPhone 13 Pro — tab in alto non visibili ✅ **fatto** (`a84990c`)
+- Causa: `apple-mobile-web-app-status-bar-style=black-translucent` + `viewport-fit=cover`, quindi in PWA installata il contenuto parte da y=0. `Itinerario.css` compensava con `env(safe-area-inset-top)`, le altre quattro schermate no.
+- Rimedio: variabile `--spazio-alto` in `index.css`, gemella di `--altezza-tab`. Da browser vale zero, quindi fuori dalla PWA non cambia niente.
+- ⚠️ **Resta da provare su un iPhone vero, in modalità installata**: da Safari il difetto non si vede.
 
-### [BUG-2] Spese — colore "Devi ricevere"
-- Il colore attuale è **troppo chiaro**, poco leggibile. Aumentare contrasto.
+### [BUG-2] Spese — colore "Devi ricevere" ✅ **fatto** (`56fc163`)
+- Il contrasto era già a norma (5,33:1): il problema era il maiuscoletto spaziato a 12px in peso 400, che le regole non modellano. Ora è grassetto e prende il colore del verso — verde scuro il credito (9,33:1), rosso scuro il debito (7,77:1).
+- Trovati e sistemati nello stesso file due difetti vecchi: `.cronologia-schede` era morta per un `button` orfano, e cinque elementi avevano perso il contorno di messa a fuoco.
 
-### [BUG-3] Spese — "Aggiungi un documento"
-- L'elemento è posizionato **troppo in basso**: risalirlo per renderlo raggiungibile/visibile senza scroll eccessivo.
+### [BUG-3] "Aggiungi un documento" ✅ **fatto** (`cacaaa6`)
+- ⚠️ L'elemento sta in **Documenti**, non in Spese.
+- Non era troppo basso di qualche pixel: a sezione vuota il testo finiva a y=176 e il bottone stava a y=732 — **556px di vuoto**, mezzo schermo. Il "fisso in fondo" serve a raggiungerti mentre scorri; senza niente da scorrere abbandonava il bottone laggiù.
+- Rimedio: `position: sticky`. A elenco lungo resta sopra la barra dei tab esattamente come prima, a sezione vuota sta attaccato al testo.
 
 ---
 
@@ -114,7 +131,11 @@ Per ogni step è indicato se il tutorial **parte dentro il tab** (si entra nella
 
 ---
 
-## 7. Sistema di punteggio
+## 7. Sistema di punteggio ✅ **fatto** (`59a24ff`)
+
+> Tutti e quattro implementati, più undici Leggi nuove dal catalogo. La logica sta in `src/lib/punteggioProposte.js` — pura, senza Supabase — con **116 prove** in `prove/proposte.mjs` (`npm run prova:proposte`). Era l'unico blocco che generava punti senza copertura.
+>
+> Le decisioni sui cinque punti da chiarire sono in fondo, sezione **Decisioni prese**.
 
 ### [PUNTI-1] Malus per voto contrario alla propria proposta
 - Se faccio una proposta e poi **voto NO** sulla mia stessa proposta → **perdo punti**.
@@ -150,6 +171,23 @@ Il tetto massimo di voti verso la stessa persona è **3 al giorno**: il contator
 
 ### Note di bilanciamento (da valutare insieme prima di implementare)
 - **PUNTI-1, PUNTI-3 e PUNTI-4 sono trappole**, quindi *non vanno segnalate in anticipo* nell'interfaccia: la Legge si scopre solo attivandola. Le Leggi non ancora scoperte restano non lette in Testamento (si collega a [TEST-1]).
+
+### Come sono finiti, e cosa è cambiato rispetto a qui sopra
+
+| | Legge | Punti | Nota |
+|---|---|---|---|
+| PUNTI-1 | `contro-te-stesso` | −3 | vale **anche se la proposta passa lo stesso**: hai remato contro, e quello si paga a prescindere dall'esito |
+| PUNTI-2 | `in-difficolta` | +3 | **convive con la Legge XI** invece di sostituirla (vedi sotto) |
+| PUNTI-3 | `vera-amicizia` +2 / `ci-nascondete-qualcosa` −3 | | conta le **proposte**, non i voti |
+| PUNTI-4 | `troppo-giudicante` | −3 | finestra invariata a 60 minuti |
+
+**PUNTI-2 e la Legge XI.** Il pareggio faceva già scattare `poll-tie`, −1 a tutti. Le due regole non sono state fuse: il proponente incassa il −1 come tutti **e** il +3 del trofeo, quindi ci guadagna netto. È voluto — mettere in difficoltà otto amici vale la differenza — e la prova lo verifica esplicitamente.
+
+**PUNTI-4, la scadenza.** Nessuna scadenza assoluta inventata: la finestra resta quella di **un'ora dalla creazione** che c'era già, quindi il caso "nessuno vota e la proposta blocca tutto per sempre" non esiste. Il countdown dal primo voto è stato scartato — richiedeva una colonna nuova e uno stato "non ancora avviato" che `expires_at not null` non sa rappresentare, e risolveva un problema che la finestra fissa non ha.
+
+**Il suggerimento e la trappola.** "Aspetta almeno che finisca la votazione" con due bottoni: *Aspetto* e *Mandala lo stesso*. Il suggerimento non nomina né la Legge né il malus. Chi insiste la fa scattare e la vede solo dopo, col foglio della punizione che c'era già per l'autoelogio.
+
+**Le trappole possono scattare insieme.** Proporsi punti da soli *mentre* si ha già una proposta aperta *e* per la terza volta verso la stessa persona fa scattare tre Leggi in un colpo. Se ne mostra una, le altre restano nello storico — che leggono tutti, ed è il punto.
 
 ---
 
@@ -187,15 +225,28 @@ Il link verrà condiviso quasi certamente **su WhatsApp**, che su iPhone lo apre
 
 ---
 
-## Punti da chiarire prima di implementare
+## Decisioni prese
 
-1. **[PUNTI-1/2/3/4]** I valori esatti di bonus e malus si fissano **dopo** aver scelto il set definitivo di Leggi e Trofei — vedi `idee-leggi-trofei.md`, dove c'è una proposta di fasce (±1 / ±3 / ±5) e il criterio di equilibrio con le proposte votate.
-2. **[PUNTI-3]** Il conteggio riguarda i **voti** dati a una persona o le **proposte** aperte a suo favore? Sono due cose diverse.
-3. **[PUNTI-4]** Se **nessuno vota**, il countdown non parte mai e la proposta resta aperta all'infinito, bloccando tutte le successive. Serve un limite di sicurezza (es. scadenza assoluta a X ore dall'apertura anche senza voti)?
-4. **[PUNTI-4]** Dopo il malus, la seconda proposta viene comunque **creata** o viene **annullata**? Se viene creata, ne restano due aperte contemporaneamente e la regola perde senso.
-5. **[PWA-4]** Se qualcuno apre l'URL dell'app direttamente da browser, cosa deve succedere: reindirizzamento automatico alla pagina di installazione, oppure l'app funziona comunque anche da browser?
+I cinque punti che erano da chiarire, risolti l'8 agosto.
 
+**1. I valori di bonus e malus.** Fasce ±1 / ±2 / ±3 / ±5 come proponeva il catalogo, con un vincolo aggiunto: **nessun malus nuovo supera il −3**, e la prova lo verifica. I −5 restano solo dove c'erano già. Somma dei trofei attivi +60, delle punizioni −34, contro proposte che valgono fino a ±5 l'una e tre al giorno a testa: **le proposte restano il canale dominante**, che era la regola di equilibrio.
 
+**2. PUNTI-3 conta le PROPOSTE, non i voti.** Contare i voti litigava con due cose insieme: il quorum di metà gruppo (con tre voti al giorno verso la stessa persona, le proposte sulla persona più gettonata sarebbero diventate invotabili e si sarebbero annullate da sole) e la Legge dell'Astenuto, che avrebbe punito chi non vota. Contare le proposte non ha nessuno di questi effetti, ed è anche la lettura più naturale di "ti accanisci su qualcuno".
 
+**3. Nessuna scadenza assoluta da inventare.** Il countdown dal primo voto è stato scartato: la finestra resta **un'ora dalla creazione**, com'era già, quindi il caso "nessuno vota e la proposta blocca tutto" non si presenta. Il countdown dal primo voto avrebbe richiesto una colonna nuova, uno stato "non ancora avviato" che `expires_at not null` non rappresenta, e un valore sentinella che avrebbe fatto sparire la proposta dal banner prima che qualcuno potesse votarla.
 
-una cosa aggiuntiva, il ricarica tab e rimane sul tab vale anche per i sotto tab
+**4. La seconda proposta viene creata.** Chi preme "Mandala lo stesso" la manda davvero: ne restano due aperte, e la Legge scatta. Annullarla sarebbe stato il peggio dei due mondi — l'utente paga il malus *e* perde il lavoro fatto, per una regola che non gli era stata annunciata. Il tetto di tre al giorno impedisce comunque che diventi un'abitudine.
+
+**5. [PWA-4] ⬜ ancora aperta**, perché PWA-1…5 non è stato ancora fatto. Quando si affronterà, la raccomandazione è: **l'app da browser funziona normalmente**, e la pagina `/installa` reindirizza a `/` se si accorge di girare già in standalone. Reindirizzare l'app verso la guida all'installazione lascerebbe fuori chi la apre da desktop.
+
+---
+
+## Extra
+
+### [SOTTOTAB] Il ricarica-tab vale anche per i sotto-tab ✅ **fatto** (`3518192`)
+- Ricaricando si resta nella sotto-scheda dov'eri, dentro Gruppo, Foto, Gioco e Altro, più il terzo livello Trofei/Leggi del Testamento.
+- Un hook solo (`useSchedaRicordata`) invece di cinque copie. `sessionStorage` come per il tab principale: domani si riparte dalla prima scheda.
+- Il valore letto si valida contro gli id ammessi: se una scheda cambia nome fra due deploy si ricade sulla prima invece di aprire il nulla.
+
+### [DAMA] Il gioco di coppia ✅ **fatto** (`519d9ea`)
+Non era in questo documento — è arrivato dopo. L'Impostore è di gruppo, la Pecora è da soli: mancava quello che si gioca in due. Motore puro in `src/lib/dama.js`, 29 prove, ⚠️ vuole `supabase/dama.sql` lanciato.

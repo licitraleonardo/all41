@@ -1,6 +1,8 @@
-# Leggi, Trofei e punteggio — catalogo di idee
+# Leggi, Trofei e punteggio — catalogo e decisioni
 
-> Documento **esplorativo**, non ancora specifica. Serve a scegliere: prendi quello che ti piace, scarta il resto, e solo dopo si fissano i numeri e si porta in `specifiche-modifiche.md`.
+> **Chiuso l'8 agosto.** Era un documento esplorativo; adesso le decisioni sono prese e implementate. La Parte 6 in fondo dice cosa è entrato, cosa è stato scartato e perché. Chi cerca lo stato attuale del sistema legga quella; le Parti 1-5 restano perché contengono il ragionamento, che vale più dell'elenco.
+>
+> Fonte di verità del codice: `src/config/leggi.js` (le voci), `src/lib/punteggioProposte.js` (la logica pura), `prove/proposte.mjs` (116 controlli).
 
 ---
 
@@ -166,3 +168,81 @@ Perché una proposta venga respinta serve una maggioranza qualificata, non sempl
 3. **Le Leggi si ripetono?** Una volta scoperta, "Sveglia il gruppo" continua a togliere punti ogni volta o scatta una volta sola?
 4. **Trofei ripetibili o unici** per persona?
 5. Alcune idee richiedono funzionalità che oggi non ci sono: **check-in per tappa** (Ritardatario/Puntuale) e **posizione condivisa** (Esploratore). Vanno tenute o scartate?
+
+---
+
+## Parte 6 — Cosa è stato deciso (8 agosto)
+
+Le cinque domande della Parte 5, risposte.
+
+**1. Quante Leggi.** Trentasette attive su quarantasei scritte. Sopra le trenta il documento temeva il rumore, ma il rumore viene dal *quante ne scattano al giorno*, non da quante esistono: le nuove sono quasi tutte "una volta a testa per viaggio" o "una volta al giorno", quindi in una giornata normale se ne vedono due o tre.
+
+**2. Malus pubblici.** Tutto quello che tocca i punti finisce nello storico della Classifica, che leggono tutti. Non è stata una scelta nuova: era già così per `self-praise`, e mezzo sistema si regge sul fatto che il gruppo veda. Un malus privato sarebbe un rimprovero; pubblico è una gag.
+
+**3 e 4. Ripetibilità: la decide la chiave.** Non serviva un campo `ripetibile`, serviva guardare la `dedupeKey` che c'era già:
+- chiave **senza data né id** (`prima-luce`) → una volta per tutto il viaggio, per tutti;
+- chiave **con l'id della persona** (`telegrafico_${id}`) → una volta a testa, per sempre;
+- chiave **con la data** (`insonne_${id}_${oggi}`) → una volta a testa al giorno;
+- chiave **con la coppia** (`vera-amicizia_${a}_${b}`) → una volta per coppia di persone, come chiedeva PUNTI-3.
+
+**5. Check-in e posizione: scartati.** Il Ritardatario, il Puntuale e l'Esploratore vogliono un check-in per tappa che non esiste e una posizione condivisa in continuo. Quest'ultima ribalta la decisione di prodotto più delicata dell'app — "la posizione non si aggiorna mai da sola" — e non si tocca per tre punti.
+
+### Il catalogo, voce per voce
+
+| Idea | Esito | Perché |
+|---|---|---|
+| Sveglia il gruppo | ✅ `sveglia-il-gruppo` −2 | messaggio fra le 3 e le 6, una volta a notte |
+| Il primo sveglio | ✅ `primo-sveglio` +1 | primo messaggio della giornata, del gruppo |
+| Muro di testo | ❌ | vuole 600 caratteri, la chat ne ammette 200. Abbassare la soglia a 180 punirebbe l'uso normale |
+| Il Monologo | ❌ | vuole "rispondi", che è una colonna nuova e una feature intera |
+| Il Fantasma | ❌ | punisce chi vive la vacanza invece del telefono. Contro il principio 5 |
+| Il Podcast | ✅ `il-podcast` +2 | girato in Trofeo: il limite è 60s, chi ci arriva merita rispetto, non un malus |
+| Telegrafico | ✅ `telegrafico` +1 | sotto i due secondi |
+| Voce del popolo | ❌ | dieci vocali in un giorno è già il ritmo normale del walkie-talkie |
+| Il Paparazzo | ✅ `paparazzo` +2 | riportato sui numeri veri: il tetto è 5, quindi il premio è "rullino finito". Il malus a 30 non ha più senso |
+| L'Invisibile | ❌ | come il Fantasma: punisce chi sta vivendo |
+| Prima luce | ✅ `prima-luce` +3 | la primissima foto del viaggio, una sola in cinque giorni |
+| L'Astenuto | ❌ | serve una chiusura di giornata, e punisce chi non ha rete |
+| Suspense | ✅ `suspense` +1 | voto negli ultimi 60 secondi |
+| Unanimità | ✅ già esisteva | è `unanimous`, +5 |
+| Bastian contrario | ✅ `bastian-contrario` −3 | quattro No consecutivi. Le proposte non votate non spezzano la serie: non votare non è cambiare idea |
+| Il Generoso sospetto | ✅ *fuso* in PUNTI-3 | era la stessa regola scritta due volte |
+| Ritardatario / Puntuale / Esploratore | ❌ | vedi decisione 5 |
+| Bugiardo perfetto / Accusa infondata / Il Segugio | ⏸ rimandate | toccano `schedePerId`, il punto dove l'Impostore si rompe in silenzio. Non a cinque giorni dalla partenza |
+| Metafora riuscita | ⏸ | esiste già come record della Pecora |
+| Non stai vivendo il viaggio | ❌ | vuole una colonna contatore, e punisce l'unico gioco che serve alle attese |
+| Crisi d'identità | ❌ | vuole una colonna sul profilo per una battuta sola |
+| Cerchi qualcosa? | ❌ | o è un contatore locale inaffidabile, o è una scrittura al database a ogni tocco di tab |
+| Avvocato del gruppo | ⏸ | dipende da TEST-1, il letto-per-elemento |
+| Il Curioso | ⏸ | idem |
+| Insonne | ✅ `insonne` −2 | app aperta fra le 4 e le 6 |
+| Non hai ascoltato il tutorial | ✅ `non-hai-ascoltato` +1 | apri la Guida |
+
+### Le fasce, come sono finite
+
+Il documento proponeva ±1 / ±3 / ±5. Rispettata, con una precisazione: **nessun malus nuovo supera il −3**, e la prova lo verifica. I −5 restano solo dove c'erano già.
+
+- **±1** ritmo quotidiano: primo sveglio, telegrafico, suspense
+- **±2** cose che richiedono un minimo di impegno: paparazzo, il podcast, vera amicizia, sveglia il gruppo, insonne
+- **±3** trappole vere e trofei rari: contro te stesso, ci nascondete qualcosa, troppo giudicante, bastian contrario, in difficoltà, prima luce
+- **±5** eventi rari, quelli che c'erano già: unanimità, impostore impunito, record del viaggio
+
+**La regola di equilibrio regge**: somma dei trofei attivi **+60**, delle punizioni **−34**, contro proposte che valgono fino a ±5 l'una e tre al giorno a testa. In una giornata a otto persone le proposte possono muovere fino a 120 punti: restano il canale dominante, come voleva il documento.
+
+### Lo sblocco progressivo: scartato
+
+La Parte 3 proponeva di rilasciare le Leggi a gruppi, un giorno alla volta. Non è stato fatto, e per una ragione precisa: **le nuove Leggi si scoprono già a scaglioni da sole**, perché dipendono da cose che succedono in momenti diversi del viaggio. `prima-luce` scatta il primo giorno, `bastian-contrario` non prima del terzo, `ci-nascondete-qualcosa` solo quando qualcuno si accanisce. Aggiungere un campo `dalGiorno` avrebbe messo un calendario sopra un ritmo che già c'è.
+
+### Il NO sistematico: la combinazione consigliata, applicata
+
+Il documento raccomandava **voti palesi + bonus alla maggioranza + Bastian contrario**. Due su tre sono dentro:
+
+- **Voti palesi** ✅ — chi ha votato cosa si vede, dopo aver votato. Costava zero: il dato c'era già.
+- **Bastian contrario** ✅ — quattro No di fila, −3.
+- **Bonus alla maggioranza** ❌ — scartato. Premia chi indovina l'esito, e con i voti palesi diventa un gioco di attesa: si aspetta di vedere come vota il gruppo e ci si accoda. Il documento stesso lo temeva ("tutti aspettano gli ultimi secondi"). Al suo posto c'è `suspense`, che quell'attesa la premia esplicitamente invece di fingere che sia strategia.
+
+Al loro fianco, la cosa che il documento non aveva previsto: **undici Trofei che si prendono facendo cose da soli**. È la risposta strutturale al NO sistematico — per un competitivo conviene inseguire quelli invece di bloccare le proposte altrui, perché sono l'unico canale che non dipende dal giudizio di nessuno.
+
+### Cosa non si può ancora fare
+
+`contro-te-stesso` e `bastian-contrario` leggono le schede dei voti. Funzionano perché le proposte nascono con `anonymous: false` e il database riempie `ballots` da sempre. **Se un giorno si rendessero anonime le proposte, queste due Leggi smetterebbero di scattare in silenzio** — nessun errore, semplicemente non succede più niente.
