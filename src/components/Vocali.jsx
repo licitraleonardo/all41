@@ -7,6 +7,7 @@ import { registrazioneDisponibile } from '../lib/formatoAudio.js'
 import { LIMITI } from '../config/limiti.js'
 import { coloreNome, urlAvatar } from '../config/avatar.js'
 import { descriviErrore } from '../lib/errori.js'
+import { dopoVocale } from '../lib/regole.js'
 import Rotella from './Rotella.jsx'
 
 // Quanto bisogna salire col dito perche' il vocale parta segnato.
@@ -112,6 +113,9 @@ export default function Vocali({ membro }) {
       inserisci(esito.vocale)
       setImportante(false)
       setAvviso(null)
+      // Le due Leggi della durata: il vocale da due secondi e quello da
+      // un minuto. In silenzio — si scoprono nel Testamento, non qui.
+      dopoVocale(membro.id, registrato.durata).catch(() => {})
     } catch (e) {
       setAvviso(`Non è partito. ${descriviErrore(e)}`)
     } finally {

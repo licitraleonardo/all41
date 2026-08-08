@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { leggiProposteAperte } from '../lib/proposte.js'
 import { vota as votaProposta } from '../lib/voti.js'
+import { faiScattareLegge } from '../lib/punti.js'
+import { finestraSuspense } from '../lib/punteggioProposte.js'
 
 const CHIAVE_RIMANDATE = 'all41.propostiRimandati'
 
@@ -66,10 +68,20 @@ export function useProposteAperte(memberId) {
 
   const vota = useCallback(
     async (votoId, opzione) => {
+      // La scadenza si legge prima di votare: dopo, la proposta può
+      // essersi già chiusa e sparire dall'elenco.
+      const proposta = aperte.find((p) => p.votoId === votoId)
       await votaProposta(votoId, memberId, opzione)
+
+      // Chi vota nell'ultimo minuto si prende il Trofeo: aspettare fino
+      // all'ultimo è una scelta, e va premiata invece che scoraggiata.
+      if (proposta && finestraSuspense(proposta.scadeIl)) {
+        faiScattareLegge('suspense', memberId, `suspense_${votoId}_${memberId}`).catch(() => {})
+      }
+
       await ricarica()
     },
-    [memberId, ricarica]
+    [aperte, memberId, ricarica]
   )
 
   const rimanda = useCallback((votoId) => {

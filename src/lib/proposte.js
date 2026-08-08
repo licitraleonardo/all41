@@ -1,8 +1,15 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
-import { OPZIONI_PROPOSTA, PROPOSTA, quorumRaggiunto } from '../config/proposte.js'
+import { OPZIONI_PROPOSTA, PROPOSTA } from '../config/proposte.js'
 import { assegnaPunti, faiScattareLegge } from './punti.js'
 import { PER_ID, etichetta } from '../config/leggi.js'
+import { dataDiOggi } from './giorni.js'
+import {
+  contaNoConsecutivi,
+  esitoProposta,
+  leggiDellEsito as leggiPure,
+  sogliaCoppia,
+} from './punteggioProposte.js'
 
 // Quante proposte ha già fatto oggi. Si contano dal database e non da
 // localStorage: un contatore locale si azzera cambiando telefono, e
@@ -22,14 +29,49 @@ export async function proposteDiOggi(proponenteId, adesso = new Date()) {
   return count ?? 0
 }
 
+// Quante proposte ha fatto oggi il proponente PER questa persona: serve
+// all'escalation — la seconda premia, la terza presenta il conto.
+async function proposteVerso(proponenteId, destinatarioId, adesso = new Date()) {
+  const inizio = new Date(adesso)
+  inizio.setHours(0, 0, 0, 0)
+
+  const { count, error } = await supabase
+    .from('point_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('trip_id', VIAGGIO.id)
+    .eq('proposed_by', proponenteId)
+    .eq('member_id', destinatarioId)
+    .eq('rule_id', 'poll-proposed')
+    .gte('created_at', inizio.toISOString())
+
+  if (error) throw error
+  return count ?? 0
+}
+
 // Crea la proposta: un voto di un'ora più un evento punti "in attesa",
 // che non muove la classifica finché il gruppo non ha deciso.
 //
-// Restituisce { ok: false, restano } se hai finito quelle di oggi: un
-// limite raggiunto non è un errore, è una risposta.
-export async function creaProposta({ proponenteId, destinatarioId, punti, motivo }) {
+// Restituisce { ok: false, restano } se hai finito quelle di oggi, e
+// { ok: false, motivo: 'in-voto' } se una tua proposta è ancora aperta:
+// un limite raggiunto non è un errore, è una risposta. Chi insiste con
+// `insisto` la crea lo stesso — e paga la Legge che non gli era stata
+// annunciata. È il pattern trappola: il suggerimento invita ad
+// aspettare, non rivela cosa costa non farlo.
+export async function creaProposta({ proponenteId, destinatarioId, punti, motivo, insisto = false }) {
   const fatte = await proposteDiOggi(proponenteId)
-  if (fatte >= PROPOSTA.alGiorno) return { ok: false, restano: 0 }
+  if (fatte >= PROPOSTA.alGiorno) return { ok: false, motivo: 'giorno', restano: 0 }
+
+  const aperte = await leggiProposteAperte()
+  const miaAperta = aperte.some((p) => p.proponenteId === proponenteId)
+  if (miaAperta && !insisto) {
+    return { ok: false, motivo: 'in-voto', restano: PROPOSTA.alGiorno - fatte }
+  }
+
+  // Quante già fatte oggi verso questa persona, PRIMA di questa. Il
+  // conto è sulle proposte, non sui voti: è la risposta al punto da
+  // chiarire n.2 delle Specifiche.
+  const versoLui =
+    destinatarioId === proponenteId ? 0 : await proposteVerso(proponenteId, destinatarioId)
 
   const scade = new Date(Date.now() + PROPOSTA.minutiDiVoto * 60000).toISOString()
 
@@ -65,22 +107,69 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
   //
   // È una trappola vera: niente avvisi prima di premere, altrimenti non
   // ci cascherebbe nessuno.
-  let autoElogio = null
+  // Le trappole che questa proposta fa scattare, da rivelare solo
+  // adesso che l'azione è completa. Possono essere più d'una: la prima
+  // si mostra, le altre restano nello storico, che tanto leggono tutti.
+  const trappole = []
+  const inTrappola = (legge, puntiEspliciti = null) =>
+    trappole.push({
+      punti: puntiEspliciti ?? legge.punti,
+      testo: legge.testo,
+      legge: etichetta(legge),
+    })
+
   if (proponenteId === destinatarioId) {
     const legge = PER_ID['self-praise']
     const costo = punti > 0 ? -punti : -1
+    inTrappola(legge, costo)
+    await faiScattareLegge('self-praise', proponenteId, `self-praise_${voto.id}`, costo).catch(
+      () => {}
+    )
+  }
 
-    autoElogio = { punti: costo, testo: legge.testo, legge: etichetta(legge) }
-
+  // Una proposta mentre la tua era ancora in voto: eri stato invitato ad
+  // aspettare, hai insistito, adesso sai perché.
+  if (miaAperta && insisto) {
+    const legge = PER_ID['troppo-giudicante']
+    inTrappola(legge)
     await faiScattareLegge(
-      'self-praise',
+      'troppo-giudicante',
       proponenteId,
-      `self-praise_${voto.id}`,
-      costo
+      `troppo-giudicante_${voto.id}`
     ).catch(() => {})
   }
 
-  return { ok: true, votoId: voto.id, evento, autoElogio, restano: PROPOSTA.alGiorno - fatte - 1 }
+  // L'escalation verso la stessa persona: la seconda di oggi premia —
+  // una volta per coppia in tutto il viaggio — la terza presenta il
+  // conto, e può ripresentarlo domani.
+  const soglia = sogliaCoppia(versoLui + 1)
+  if (soglia === 'vera-amicizia') {
+    await faiScattareLegge(
+      'vera-amicizia',
+      proponenteId,
+      `vera-amicizia_${proponenteId}_${destinatarioId}`
+    ).catch(() => {})
+  }
+  if (soglia === 'ci-nascondete-qualcosa') {
+    const legge = PER_ID['ci-nascondete-qualcosa']
+    inTrappola(legge)
+    await faiScattareLegge(
+      'ci-nascondete-qualcosa',
+      proponenteId,
+      `ci-nascondete_${proponenteId}_${destinatarioId}_${dataDiOggi()}`
+    ).catch(() => {})
+  }
+
+  return {
+    ok: true,
+    votoId: voto.id,
+    evento,
+    trappole,
+    // Il nome vecchio resta finché tutti i chiamanti non passano a
+    // `trappole`: rompere un chiamante in silenzio è peggio di un alias.
+    autoElogio: trappole[0] ?? null,
+    restano: PROPOSTA.alGiorno - fatte - 1,
+  }
 }
 
 // Le proposte ancora aperte, con dentro tutto quello che serve a
@@ -135,7 +224,9 @@ export async function leggiProposteAperte() {
 export async function risolviProposte(membriIds = []) {
   const { data, error } = await supabase
     .from('votes')
-    .select('id, tally, voted, closed_at, expires_at')
+    // `ballots` serve alle Leggi che guardano i singoli voti: il NO alla
+    // propria proposta si scopre solo lì.
+    .select('id, tally, voted, ballots, closed_at, expires_at')
     .eq('trip_id', VIAGGIO.id)
     // Non solo le scadute: una proposta si chiude anche prima, se hanno
     // votato tutti. Decide la funzione, che vede il conteggio vero.
@@ -151,45 +242,63 @@ export async function risolviProposte(membriIds = []) {
     })
     if (erroreRpc || !evento) continue // già risolta da un altro telefono
 
-    await leggiDellEsito(v, evento, membriIds).catch(() => {})
+    await applicaLeggiDellEsito(v, evento, membriIds).catch(() => {})
     risolte.push(evento)
   }
+
+  // Il NO sistematico si guarda solo quando qualcosa si è chiuso adesso:
+  // la serie cambia solo lì, e la chiave sull'ultimo voto chiuso fa sì
+  // che la stessa serie non paghi due volte.
+  if (risolte.length > 0) await forseBastianContrario(membriIds).catch(() => {})
+
   return risolte
 }
 
-async function leggiDellEsito(voto, evento, membriIds) {
-  const si = voto.tally?.[0] ?? 0
-  const no = voto.tally?.[1] ?? 0
-  const votanti = voto.voted?.length ?? 0
+// La decisione su cosa scatta è in punteggioProposte.js, pura e provata:
+// qui si traduce soltanto in chiamate al database.
+async function applicaLeggiDellEsito(voto, evento, membriIds) {
+  const esito = esitoProposta({
+    si: voto.tally?.[0] ?? 0,
+    no: voto.tally?.[1] ?? 0,
+    votanti: voto.voted?.length ?? 0,
+    totale: membriIds.length,
+  })
 
-  // Proposta annullata per mancanza di quorum: non l'ha giudicata
-  // nessuno, quindi nessuna Legge scatta. Chi ha proposto non merita la
-  // penalità della XIII per il disinteresse degli altri.
-  if (!quorumRaggiunto(votanti, membriIds.length)) return
-  // Il pareggio è una regola di gruppo: colpisce tutti, anche chi non
-  // aveva niente a che fare con la proposta. Va valutato prima, perché
-  // non dipende da chi ha proposto.
-  if (si === no && votanti > 0) {
-    // Legge XI: pareggio, -1 a tutti. Bersaglio "tutti", non il singolo.
-    for (const id of membriIds) {
-      await faiScattareLegge('poll-tie', id, `poll-tie_${voto.id}_${id}`).catch(() => {})
+  const scattano = leggiPure({
+    esito,
+    proponenteId: evento.proposed_by ?? null,
+    membriIds,
+    votoId: voto.id,
+    schede: voto.ballots ?? {},
+  })
+
+  for (const s of scattano) {
+    await faiScattareLegge(s.leggeId, s.memberId, s.dedupeKey).catch(() => {})
+  }
+}
+
+// Quattro NO consecutivi nelle proposte concluse: il veto sistematico
+// diventa una Legge invece che un sospetto. Da quando i voti sono palesi
+// la serie si legge dalle schede, senza colonne nuove.
+async function forseBastianContrario(membriIds) {
+  const { data, error } = await supabase
+    .from('votes')
+    .select('id, ballots')
+    .eq('trip_id', VIAGGIO.id)
+    .eq('category', 'point-proposal')
+    .not('closed_at', 'is', null)
+    .order('closed_at', { ascending: false })
+    .limit(8)
+  if (error) throw error
+  if (!data || data.length === 0) return
+
+  const schedePerVoto = data.map((v) => v.ballots ?? {})
+  const ultimo = data[0].id
+
+  for (const id of membriIds) {
+    if (contaNoConsecutivi(schedePerVoto, id) >= 4) {
+      await faiScattareLegge('bastian-contrario', id, `bastian_${id}_${ultimo}`).catch(() => {})
     }
-    return
-  }
-
-  // Le Leggi XII e XIII colpiscono chi ha proposto, non chi riceve.
-  const proponente = evento.proposed_by
-  if (!proponente) return
-
-  if (si > no && no === 0 && votanti > 1) {
-    await faiScattareLegge('unanimous', proponente, `unanimous_${voto.id}`).catch(() => {})
-    return
-  }
-
-  if (si <= no) {
-    await faiScattareLegge('proposal-rejected', proponente, `rejected_${voto.id}`).catch(
-      () => {}
-    )
   }
 }
 

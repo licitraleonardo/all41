@@ -113,6 +113,59 @@ export const LEGGI = [
   // andare sotto è una cosa che ti sei guadagnato.
   { n: 30, id: 'sotto-zero', punti: -1, attiva: true,
     testo: 'Sei sceso sotto lo zero' },
+
+  // ——— IL SECONDO CODICE (8 agosto) ———
+  // Il criterio è quello di idee-leggi-trofei.md: esca e trappola in
+  // coppia, trappole raggiungibili per caso, malus che non fanno male
+  // sul serio, mai punire l'uso normale. Le fasce sono ±1 per il ritmo
+  // quotidiano, ±2/3 per il resto, ±5 solo per gli eventi rari.
+  // Si aggiungono in coda apposta: l'etichetta romana è posizionale, e
+  // una voce in mezzo rinumererebbe mezzo Testamento.
+
+  // Ritmo quotidiano: piccoli, frequenti, uno al giorno a testa.
+  { n: 32, id: 'primo-sveglio', punti: 1, attiva: true,
+    testo: 'Primo messaggio della giornata in chat' },
+  { n: 33, id: 'sveglia-il-gruppo', punti: -2, attiva: true,
+    testo: 'Messaggio in chat fra le 3:00 e le 6:00. C’era davvero bisogno?' },
+  { n: 34, id: 'insonne', punti: -2, attiva: true,
+    testo: 'App aperta fra le 4:00 e le 6:00. Domani sarà colpa nostra.' },
+
+  // Vocali: il corto e il lungo, tutti e due una volta sola a testa.
+  { n: 35, id: 'telegrafico', punti: 1, attiva: true,
+    testo: 'Un vocale sotto i due secondi. Tutto lì?' },
+  { n: 36, id: 'il-podcast', punti: 2, attiva: true,
+    testo: 'Un vocale da quasi un minuto. Ascoltato per dovere.' },
+
+  // Foto: il primo scatto del viaggio e il rullino finito.
+  { n: 37, id: 'prima-luce', punti: 3, attiva: true,
+    testo: 'La prima foto del viaggio, in assoluto' },
+  { n: 38, id: 'paparazzo', punti: 2, attiva: true,
+    testo: 'Rullino del giorno finito: cinque su cinque' },
+
+  // Proposte e voti: da quando i voti sono palesi, l'esito vede anche i
+  // singoli — ed è qui che il gioco si fa cattivo.
+  { n: 39, id: 'suspense', punti: 1, attiva: true,
+    testo: 'Hai votato negli ultimi sessanta secondi' },
+  { n: 40, id: 'in-difficolta', punti: 3, attiva: true,
+    testo: 'La tua proposta ha spaccato il gruppo a metà' },
+  { n: 41, id: 'contro-te-stesso', punti: -3, attiva: true,
+    testo: 'Hai votato No alla tua stessa proposta' },
+  // L'esca e la trappola dell'escalation: la seconda proposta alla
+  // stessa persona premia, la terza presenta il conto. Il premio è
+  // proprio quello che rende la terza irresistibile.
+  { n: 42, id: 'vera-amicizia', punti: 2, attiva: true,
+    testo: 'Due proposte per la stessa persona in un giorno. Questa è vera amicizia.' },
+  { n: 43, id: 'ci-nascondete-qualcosa', punti: -3, attiva: true,
+    testo: 'Tre proposte per la stessa persona in un giorno. Ci nascondete qualcosa?' },
+  { n: 44, id: 'troppo-giudicante', punti: -3, attiva: true,
+    testo: 'Un’altra proposta mentre la tua era ancora in voto. Troppo giudicante.' },
+  { n: 45, id: 'bastian-contrario', punti: -3, attiva: true,
+    testo: 'Quattro No di fila. Ti piace qualcosa?' },
+
+  // La Guida chiude il cerchio col tutorial: aprirla è ammettere di non
+  // aver ascoltato, e l'ammissione vale un punto.
+  { n: 46, id: 'non-hai-ascoltato', punti: 1, attiva: true,
+    testo: 'Hai aperto la Guida. Classico.' },
 ]
 
 // Il Testamento si legge in due metà: quello che ti fa guadagnare

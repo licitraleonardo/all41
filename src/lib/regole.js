@@ -4,7 +4,7 @@ import { dataDiOggi } from './giorni.js'
 import { faiScattareLegge } from './punti.js'
 import { azzeraInsistenza, registraRifiuto } from './insistenza.js'
 import { parolaProibitaIn } from '../config/paroleProibite.js'
-import { ABUSO_SUONO } from '../config/limiti.js'
+import { ABUSO_SUONO, LIMITI } from '../config/limiti.js'
 
 // Rilevamento delle Leggi che scattano da sole. Ogni chiamata ha una
 // chiave deterministica: senza server è il client di chi sta usando l'app
@@ -63,11 +63,33 @@ export async function dopoFoto(memberId) {
   if (delGruppo === 1) {
     const esito = await faiScattareLegge('first-photo-day', memberId, `first-photo-day_${oggi}`)
     scattate.push({ leggeId: 'first-photo-day', ...esito })
+
+    // La primissima del viaggio, non solo della giornata: si prende una
+    // volta sola e la prende una persona sola, in tutti e cinque i
+    // giorni. La chiave non ha la data apposta.
+    const diSempre = await tutteLeFoto().catch(() => null)
+    if (diSempre === 1) {
+      const esito = await faiScattareLegge('prima-luce', memberId, 'prima-luce').catch(() => null)
+      if (esito) scattate.push({ leggeId: 'prima-luce', ...esito })
+    }
   }
 
   const mie = await conta('photos', (q) =>
     q.is('deleted_at', null).eq('author_id', memberId)
   )
+
+  // Rullino finito: hai usato tutte le foto della giornata. È il premio
+  // per aver documentato davvero, e sta esattamente sul tetto che l'app
+  // impone — non un passo oltre, perché oltre non si può andare.
+  if (mie === LIMITI.photo.giorno) {
+    const esito = await faiScattareLegge(
+      'paparazzo',
+      memberId,
+      `paparazzo_${memberId}_${oggi}`
+    ).catch(() => null)
+    if (esito) scattate.push({ leggeId: 'paparazzo', ...esito })
+  }
+
   if (mie > SOGLIA_FOTO_AL_GIORNO) {
     const esito = await faiScattareLegge('photo-spam', memberId, `photo-spam_${memberId}_${oggi}`)
     scattate.push({ leggeId: 'photo-spam', ...esito })
@@ -76,18 +98,119 @@ export async function dopoFoto(memberId) {
   return scattate
 }
 
+// Tutte le foto del viaggio, senza filtro sulla data: serve solo alla
+// prima luce, quindi si conta e basta.
+async function tutteLeFoto() {
+  const { count, error } = await supabase
+    .from('photos')
+    .select('id', { count: 'exact', head: true })
+    .eq('trip_id', VIAGGIO.id)
+    .is('deleted_at', null)
+  if (error) throw error
+  return count ?? 0
+}
+
 // Legge XXVI: parola proibita in un messaggio. Scatta dopo l'invio, non
 // prima: il messaggio resta lì come prova.
-export async function dopoTesto(memberId, testo, azioneId) {
+//
+// Qui passano anche le due Leggi dell'orologio: il primo messaggio della
+// giornata premia, quello delle quattro di notte no. Sono la coppia che
+// dà ritmo alle giornate senza chiedere niente a nessuno — si inciampa
+// scrivendo, che è quello che si fa comunque.
+export async function dopoTesto(memberId, testo, azioneId, adesso = new Date()) {
+  const scattate = []
+  const oggi = dataDiOggi(adesso)
+  const ora = adesso.getHours()
+
+  // Il primo messaggio della giornata di tutto il gruppo. Si guarda il
+  // conteggio del gruppo, non il proprio: "il primo sveglio" è uno solo.
+  const delGruppo = await conta('quick_actions', (q) =>
+    q.eq('kind', 'free_text').is('deleted_at', null)
+  ).catch(() => null)
+  if (delGruppo === 1) {
+    const esito = await faiScattareLegge(
+      'primo-sveglio',
+      memberId,
+      `primo-sveglio_${oggi}`
+    ).catch(() => null)
+    if (esito) scattate.push({ leggeId: 'primo-sveglio', ...esito })
+  }
+
+  // Fra le 3 e le 6 non si scrive al gruppo. Una volta per notte: la
+  // Legge punisce l'ora, non quanti messaggi hai mandato.
+  if (ora >= 3 && ora < 6) {
+    const esito = await faiScattareLegge(
+      'sveglia-il-gruppo',
+      memberId,
+      `sveglia-il-gruppo_${memberId}_${oggi}`
+    ).catch(() => null)
+    if (esito) scattate.push({ leggeId: 'sveglia-il-gruppo', ...esito })
+  }
+
   const parola = parolaProibitaIn(testo)
-  if (!parola) return { scattata: false }
+  if (!parola) return { scattata: false, scattate }
 
   const esito = await faiScattareLegge(
     'parola-proibita',
     memberId,
     `parola-proibita_${azioneId}`
   )
-  return { scattata: true, parola, ...esito }
+  return { scattata: true, parola, scattate, ...esito }
+}
+
+// Le due Leggi dei vocali: il messaggio da due secondi e quello da un
+// minuto. Una volta a testa per tutto il viaggio, senza data nella
+// chiave: sono due modi di essere insopportabili, e la seconda volta non
+// fa più ridere.
+export async function dopoVocale(memberId, durata) {
+  if (durata < 2) {
+    const esito = await faiScattareLegge(
+      'telegrafico',
+      memberId,
+      `telegrafico_${memberId}`
+    ).catch(() => null)
+    return esito ? [{ leggeId: 'telegrafico', ...esito }] : []
+  }
+
+  // "Quasi un minuto" è il tetto meno cinque secondi: chi ci arriva ha
+  // parlato fino a farsi interrompere dal limite.
+  if (durata >= LIMITI.voice.durataMax - 5) {
+    const esito = await faiScattareLegge(
+      'il-podcast',
+      memberId,
+      `il-podcast_${memberId}`
+    ).catch(() => null)
+    return esito ? [{ leggeId: 'il-podcast', ...esito }] : []
+  }
+
+  return []
+}
+
+// Legge dell'insonne: app aperta fra le 4 e le 6. Si valuta all'avvio,
+// una volta per persona e per notte. Non è punire l'uso dell'app — a
+// quell'ora non la si apre per caso.
+export async function allApertura(memberId, adesso = new Date()) {
+  const ora = adesso.getHours()
+  if (ora < 4 || ora >= 6) return []
+
+  const esito = await faiScattareLegge(
+    'insonne',
+    memberId,
+    `insonne_${memberId}_${dataDiOggi(adesso)}`
+  ).catch(() => null)
+  return esito ? [{ leggeId: 'insonne', ...esito }] : []
+}
+
+// Aprire la Guida è ammettere di non aver ascoltato il tutorial. Chiude
+// il cerchio con la nuvoletta di Allan, e vale un punto: è l'unico
+// Trofeo che si prende leggendo le istruzioni.
+export async function dopoGuida(memberId) {
+  const esito = await faiScattareLegge(
+    'non-hai-ascoltato',
+    memberId,
+    `non-hai-ascoltato_${memberId}`
+  ).catch(() => null)
+  return esito ? [{ leggeId: 'non-hai-ascoltato', ...esito }] : []
 }
 
 // Legge XIX: hai insistito su un bottone già bloccato dal limite. Da

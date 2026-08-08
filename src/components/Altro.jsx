@@ -54,7 +54,7 @@ export default function Altro({ membro }) {
       {vista === 'documenti' && <Documenti membro={membro} />}
       {vista === 'mappa' && <Posizioni membro={membro} />}
       {vista === 'stat' && <Statistiche membro={membro} />}
-      {vista === 'guida' && <Guida />}
+      {vista === 'guida' && <Guida membroId={membro?.id} />}
       {vista === 'info' && <Info />}
     </div>
   )

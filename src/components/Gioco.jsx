@@ -45,8 +45,11 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
     try {
       const esito = await creaProposta({ proponenteId: membro.id, ...dati })
       // Il limite giornaliero non è un errore, è una risposta: si dice e
-      // il foglio resta aperto.
+      // il foglio resta aperto. Il "ne hai già una in voto" invece non è
+      // un rifiuto definitivo — lo gestisce la Classifica col suo
+      // suggerimento — quindi passa di qui senza messaggio d'errore.
       if (!esito.ok) {
+        if (esito.motivo === 'in-voto') return esito
         setErroreProposta(`Tre proposte al giorno. Le hai finite: riprova domani.`)
         return { ok: false }
       }

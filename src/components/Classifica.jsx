@@ -32,6 +32,9 @@ export default function Classifica({
   // qualcosa, quindi è lì che deve stare il gesto.
   const [scelto, setScelto] = useState(null)
   const [punizione, setPunizione] = useState(null)
+  // La proposta trattenuta perché ne hai già una in voto: tenuta da
+  // parte intera, così "Aspetto" non fa riscrivere il motivo.
+  const [aspetta, setAspetta] = useState(null)
   const [sotto, setSotto] = useState('storico')
   const destinatario = classifica.find((m) => m.id === scelto) ?? null
 
@@ -49,11 +52,34 @@ export default function Classifica({
 
   // Se il limite giornaliero l'ha rifiutata, il foglio resta aperto col
   // motivo: chiuderlo lascerebbe senza sapere cos'è successo.
+  //
+  // Se invece una tua proposta è ancora in voto, si chiede di aspettare
+  // e basta: il suggerimento non dice né quale Legge c'è dietro né
+  // quanto costa insistere, perché una trappola annunciata non è una
+  // trappola. Chi preme lo stesso la fa scattare, e solo allora la vede.
   async function crea(dati) {
     const esito = await onCrea(dati)
+    if (esito?.motivo === 'in-voto') {
+      setAspetta(dati)
+      return
+    }
     if (!esito?.ok) return
+    chiudiFoglio(esito)
+  }
+
+  function chiudiFoglio(esito) {
     setScelto(null)
-    if (esito.autoElogio) setPunizione(esito.autoElogio)
+    setAspetta(null)
+    // Possono scattarne più d'una insieme: si mostra la prima, le altre
+    // restano nello storico, che leggono tutti.
+    const prima = esito.trappole?.[0] ?? esito.autoElogio
+    if (prima) setPunizione(prima)
+  }
+
+  async function insisti() {
+    const esito = await onCrea({ ...aspetta, insisto: true })
+    if (!esito?.ok) return
+    chiudiFoglio(esito)
   }
 
   return (
@@ -138,6 +164,26 @@ export default function Classifica({
 
       {/* La trappola è scattata: lo si dice in faccia a chi c'è cascato,
           col conto. Il gruppo lo legge comunque nello storico. */}
+      {aspetta && (
+        <div
+          className="foglio-sfondo"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Hai già una proposta in voto"
+        >
+          <div className="foglio">
+            <p className="punizione-testo">Aspetta almeno che finisca la votazione.</p>
+            <p className="punizione-nota">Ne hai già una aperta.</p>
+            <button type="button" className="primario-spese" onClick={() => setAspetta(null)}>
+              Aspetto
+            </button>
+            <button type="button" className="secondario-foglio" onClick={insisti}>
+              Mandala lo stesso
+            </button>
+          </div>
+        </div>
+      )}
+
       {punizione && (
         <div
           className="foglio-sfondo"

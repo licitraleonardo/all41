@@ -13,7 +13,7 @@ import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/session
 import { descriviErrore } from './lib/errori.js'
 import { chiudiScaduti } from './lib/voti.js'
 import { risolviProposte } from './lib/proposte.js'
-import { forseSottoZero } from './lib/regole.js'
+import { allApertura, forseSottoZero } from './lib/regole.js'
 import { leggiRecordPecora, risolviRecordPecora } from './lib/recordPecora.js'
 import Onboarding from './components/Onboarding.jsx'
 import Recupero from './components/Recupero.jsx'
@@ -168,6 +168,9 @@ export default function App() {
         setMembro(trovato)
         setVista('dentro')
         segnaVisita(trovato.id).catch(() => {})
+
+        // Chi apre l'app alle quattro di notte lo sta facendo apposta.
+        allApertura(trovato.id).catch(() => {})
 
         // Senza un server, un sondaggio scaduto alle 23:59 mentre tutti
         // dormono resterebbe appeso per sempre: lo chiude chi apre l'app.

@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import './Guida.css'
 import { APERTURA, FINALE, VOCI } from '../config/guida.js'
+import { dopoGuida } from '../lib/regole.js'
 
 // La guida intera, e vive solo in Altro.
 //
@@ -7,7 +9,14 @@ import { APERTURA, FINALE, VOCI } from '../config/guida.js'
 // per la schermata più usata di quel tab. Adesso all'ingresso ci pensa
 // Allan con due righe per volta, e qui resta il posto dove si viene
 // apposta quando qualcuno chiede "ma come si fa a...".
-export default function Guida() {
+export default function Guida({ membroId }) {
+  // Chi arriva qui non ha ascoltato il tutorial, e l'ammissione vale un
+  // punto. Una volta a testa, in silenzio: la sorpresa è trovarselo nel
+  // Testamento, non un cartello che dice "bravo, hai letto".
+  useEffect(() => {
+    if (membroId) dopoGuida(membroId).catch(() => {})
+  }, [membroId])
+
   return (
     <section className="guida">
       <header className="guida-testa">
