@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
-import { DURATA_MINUTI } from '../config/sondaggi.js'
+import { CATEGORIE_CHE_SCADONO, DURATA_MINUTI } from '../config/sondaggi.js'
 
 const CAMPI =
   'id, category, question, options, anonymous, tally, voted, ballots, expires_at, closed_at, created_at'
@@ -73,11 +73,18 @@ export async function chiudiVoto(votoId) {
 
 // Senza un server, un sondaggio scaduto alle 23:59 mentre tutti dormono
 // resterebbe appeso per sempre: lo chiude il primo che apre l'app.
+//
+// Ma solo le categorie che hanno una scadenza vera — vedi
+// CATEGORIE_CHE_SCADONO, dove c'è scritto perché l'Impostore non è fra
+// quelle. Chiudergli il voto d'accusa gli piantava la partita, e il
+// filtro sta qui nella lettura anche per non fargli occupare i venti
+// posti della ricerca.
 export async function chiudiScaduti() {
   const { data, error } = await supabase
     .from('votes')
     .select('id')
     .eq('trip_id', VIAGGIO.id)
+    .in('category', CATEGORIE_CHE_SCADONO)
     .is('closed_at', null)
     .lt('expires_at', new Date().toISOString())
     .limit(20)

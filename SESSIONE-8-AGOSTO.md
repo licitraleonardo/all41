@@ -132,7 +132,7 @@ Non sono difetti del codice. Ma vuol dire che **intro, pallini del Testamento e 
 
 Dalla caccia sistematica dell'8 agosto restano **30 segnalazioni non verificate** (gli agenti hanno esaurito il tempo) e alcuni "raro" confermati:
 
-- ⚠️ **`chiudiScaduti` può chiudere il voto dell'Impostore** dopo 30 minuti e piantare la partita. Rimedio: escludere `category = 'impostore'` da `src/lib/voti.js`.
+- ~~`chiudiScaduti` può chiudere il voto dell'Impostore~~ — **fatto.** Le categorie che si chiudono da sole ora sono un elenco in `src/config/sondaggi.js` (`CATEGORIE_CHE_SCADONO`), e l'Impostore non c'è. Il filtro sta nella **lettura**: la ricerca dei voti scaduti si ferma a venti, e venti voti dell'Impostore rimasti aperti dalle sere prima avrebbero occupato tutti i posti impedendo di chiudere il sondaggio di stasera — un secondo difetto dallo stesso errore. `npm run prova:scadenza-voti` controlla anche dentro `schema.sql` i due fatti su cui poggia la decisione: che `vota_impostore` guardi `closed_at` (è quello che rende fatale la chiusura) e che **non** guardi `expires_at` (è il motivo per cui quel voto non ha una scadenza vera).
 - Se l'impostore beccato sparisce, la partita **resta in `colpo`** e non paga nessuno: manca un modo per il gruppo di rinunciare.
 - Con due impostori beccati insieme, **entrambi** possono scrivere la parola ma vale solo la prima: va deciso chi tenta.
 - Gli **indovini dei giri precedenti** non vengono pagati: `paga()` guarda solo l'ultimo voto.
