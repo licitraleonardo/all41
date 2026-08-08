@@ -16,7 +16,6 @@
   margin: 0;
 }
 
-.dama-sfida,
 .dama-indietro {
   font: inherit;
   font-size: 13.5px;
@@ -26,6 +25,24 @@
   border: 0;
   border-radius: 10px;
   padding: 9px 13px;
+  cursor: pointer;
+}
+
+/* L'azione principale, in grande e in cima: sfidare qualcuno e' l'unica
+   cosa che si viene a fare qui quando non hai partite aperte, e stava in
+   un bottoncino grigio di fianco al titolo. */
+.dama-sfida {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sand);
+  background: var(--sea);
+  border: 0;
+  border-radius: 12px;
+  padding: 15px;
   cursor: pointer;
 }
 
@@ -310,5 +327,127 @@
 .dama-rivincita:focus-visible,
 .dama-resa:focus-visible {
   outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
+
+/* --------------------------------------------------------- come finisce */
+
+/* Detto forte. Prima era una riga di testo piccola accanto al tasto
+   indietro, e da li' non si capiva che la partita fosse finita: si
+   restava a fissare una scacchiera che non rispondeva piu'. */
+.dama-esito {
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.dama-esito-titolo {
+  margin: 0;
+  font-family: var(--font-titoli);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.dama-esito-dettaglio {
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.dama-esito.vinta {
+  color: #1f4433;
+  background: #e7f0e9;
+  box-shadow: inset 0 0 0 2px var(--juniper);
+}
+
+.dama-esito.persa {
+  color: #7a2e20;
+  background: #f8e6e1;
+  box-shadow: inset 0 0 0 2px rgba(178, 58, 38, 0.5);
+}
+
+.dama-esito.patta,
+.dama-esito.finita {
+  color: var(--ink);
+  background: #ece7db;
+}
+
+/* Finita: la scacchiera resta leggibile ma smette di invitare al tocco. */
+.dama-tavola.finita {
+  opacity: 0.85;
+  filter: saturate(0.7);
+}
+
+/* ---------------------------------------------------------- classifica */
+
+.dama-classifica {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dama-riga {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  font-size: 14px;
+}
+
+.dama-riga.io {
+  border-color: var(--gold);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.dama-posto {
+  flex: none;
+  width: 18px;
+  font-family: var(--font-titoli);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.dama-chi {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.dama-conti {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.dama-mollate {
+  color: #b23a26;
+}
+
+/* Le partite che aspettano te si vedono da lontano. */
+.dama-carta.tocca {
+  border-color: var(--juniper);
+  box-shadow: inset 3px 0 0 var(--juniper);
+}
+
+.dama-carta-stato.vinta {
+  color: var(--juniper);
+  font-weight: 700;
+}
+
+.dama-carta-stato.persa {
+  color: #b23a26;
+}
+
+.dama-sfida:focus-visible {
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
 }

@@ -1,27 +1,37 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './Dama.css'
 import { useDama } from '../hooks/useDama.js'
 import {
   BIANCO,
   NERO,
   casellaScura,
-  esito,
   mossaInTesto,
   mosseLegali,
   ricostruisci,
 } from '../lib/dama.js'
+import { classificaDama, comeEFinita, inCorsoPerMe } from '../lib/classificaDama.js'
+import { dopoUnAbbandono, dopoUnaVittoria, eLaPrimaVittoria } from '../lib/puntiDama.js'
 import { urlAvatar } from '../config/avatar.js'
 import Rotella from './Rotella.jsx'
 
 // La Dama: si sfida una persona, un telefono per uno. La scacchiera vera
 // è la lista delle mosse sul database; qui si rigioca e si disegna.
-// Chi non gioca può guardare: una partita a dama dopo cena ha sempre
-// il capannello intorno.
-export default function Dama({ membro, membri }) {
+// Chi non gioca può guardare: una partita a dama dopo cena ha sempre il
+// capannello intorno.
+export default function Dama({ membro, membri, apriPartita, onAperta }) {
   const { partite, stato, errore, sfida, muovi, abbandona } = useDama(membro.id)
   const [apertaId, setApertaId] = useState(null)
   const [sfidando, setSfidando] = useState(false)
   const [avviso, setAvviso] = useState(null)
+
+  // Accettando una sfida dal banner si arriva qui con la partita già
+  // scelta: si apre quella e si dice al banner che è stata presa in
+  // carico, o resterebbe acceso.
+  useEffect(() => {
+    if (!apriPartita) return
+    setApertaId(apriPartita)
+    onAperta?.()
+  }, [apriPartita, onAperta])
 
   const nome = (id) => membri[id]?.nome ?? 'Qualcuno'
   const aperta = partite.find((p) => p.id === apertaId) ?? null
@@ -32,8 +42,8 @@ export default function Dama({ membro, membri }) {
       <div className="gioco-corpo">
         <p className="gioco-guasto">{errore}</p>
         <p className="dama-nota">
-          Se è la prima volta: la Dama vuole il suo pezzo di database, si
-          lancia <code>supabase/dama.sql</code> e si riapre.
+          Se è la prima volta: la Dama vuole il suo pezzo di database, si lancia{' '}
+          <code>supabase/dama.sql</code> e si riapre.
         </p>
       </div>
     )
@@ -43,6 +53,7 @@ export default function Dama({ membro, membri }) {
     return (
       <Scacchiera
         partita={aperta}
+        partite={partite}
         membro={membro}
         nome={nome}
         onMuovi={muovi}
@@ -54,20 +65,23 @@ export default function Dama({ membro, membri }) {
     )
   }
 
-  const mie = partite.filter((p) => p.bianco === membro.id || p.nero === membro.id)
+  const mieAperte = inCorsoPerMe(partite, membro.id)
+  const mieFinite = partite.filter(
+    (p) => (p.bianco === membro.id || p.nero === membro.id) && comeEFinita(p).finita
+  )
   const altrui = partite.filter((p) => p.bianco !== membro.id && p.nero !== membro.id)
   const avversari = Object.values(membri).filter((m) => m.id !== membro.id)
+  const classifica = classificaDama(partite, Object.keys(membri)).filter(
+    (r) => r.vinte + r.perse + r.patte > 0
+  )
 
   async function lanciaSfida(avversarioId) {
     setAvviso(null)
     // Una partita aperta con la stessa persona si riapre, non si
-    // raddoppia: due sfide parallele con lo stesso avversario sono
-    // quasi sempre un dito scappato.
-    const giaAperta = mie.find(
-      (p) =>
-        p.stato === 'in-corso' &&
-        !esito(ricostruisci(p.mosse)).finita &&
-        (p.bianco === avversarioId || p.nero === avversarioId)
+    // raddoppia: due sfide parallele con lo stesso avversario sono quasi
+    // sempre un dito scappato.
+    const giaAperta = mieAperte.find(
+      (p) => p.bianco === avversarioId || p.nero === avversarioId
     )
     if (giaAperta) {
       setApertaId(giaAperta.id)
@@ -85,12 +99,14 @@ export default function Dama({ membro, membri }) {
 
   return (
     <div className="gioco-corpo dama">
-      <header className="dama-testata">
-        <h2 className="dama-titolo">Dama</h2>
-        <button type="button" className="dama-sfida" onClick={() => setSfidando((s) => !s)}>
-          {sfidando ? 'Lascia stare' : 'Sfida qualcuno'}
-        </button>
-      </header>
+      <h2 className="dama-titolo">Dama</h2>
+
+      {/* L'azione principale, in grande e in cima: era un bottone
+          grigetto di fianco al titolo, e sfidare qualcuno e' l'unica cosa
+          che si viene a fare qui quando non hai partite aperte. */}
+      <button type="button" className="dama-sfida" onClick={() => setSfidando((s) => !s)}>
+        {sfidando ? 'Lascia stare' : '⚔ Sfida qualcuno'}
+      </button>
 
       {sfidando && (
         <div className="dama-avversari">
@@ -101,16 +117,7 @@ export default function Dama({ membro, membri }) {
               className="dama-avversario"
               onClick={() => lanciaSfida(m.id)}
             >
-              {/* urlAvatar vuole stile e seme, due argomenti. Passandole
-                  il membro intero finiva tutto in `stile`, che non
-                  riconosceva niente e ricadeva sul predefinito col seme
-                  'all41': otto persone, un avatar solo. */}
-              <img
-                src={urlAvatar(m.avatarStyle, m.avatarSeed)}
-                alt=""
-                width="34"
-                height="34"
-              />
+              <img src={urlAvatar(m.avatarStyle, m.avatarSeed)} alt="" width="34" height="34" />
               <span>{m.nome}</span>
             </button>
           ))}
@@ -120,26 +127,61 @@ export default function Dama({ membro, membri }) {
 
       {avviso && <p className="dama-avviso">{avviso}</p>}
 
-      {mie.length === 0 && !sfidando && (
+      {mieAperte.length > 0 && (
+        <>
+          <p className="dama-sezione">In corso</p>
+          <ul className="dama-elenco">
+            {mieAperte.map((p) => (
+              <CartaPartita key={p.id} partita={p} ioId={membro.id} nome={nome} onApri={setApertaId} />
+            ))}
+          </ul>
+        </>
+      )}
+
+      {mieAperte.length === 0 && !sfidando && (
         <p className="dama-vuoto">
-          Nessuna partita. L'Impostore è di gruppo, All gioca da solo: questa si
+          Nessuna partita in corso. L'Impostore è di gruppo, All gioca da solo: questa si
           gioca in due.
         </p>
       )}
 
-      {mie.length > 0 && (
-        <ul className="dama-elenco">
-          {mie.map((p) => (
-            <CartaPartita key={p.id} partita={p} ioId={membro.id} nome={nome} onApri={setApertaId} />
-          ))}
-        </ul>
+      {classifica.length > 0 && (
+        <>
+          <p className="dama-sezione">Come siamo messi</p>
+          <ol className="dama-classifica">
+            {classifica.map((r, i) => (
+              <li key={r.id} className={r.id === membro.id ? 'dama-riga io' : 'dama-riga'}>
+                <span className="dama-posto">{i + 1}</span>
+                <span className="dama-chi">{nome(r.id)}</span>
+                <span className="dama-conti">
+                  <strong>{r.vinte}</strong> {r.vinte === 1 ? 'vinta' : 'vinte'}
+                  {r.perse > 0 && ` · ${r.perse} perse`}
+                  {r.abbandoni > 0 && (
+                    <span className="dama-mollate"> · {r.abbandoni} mollate</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+
+      {mieFinite.length > 0 && (
+        <>
+          <p className="dama-sezione">Finite</p>
+          <ul className="dama-elenco">
+            {mieFinite.slice(0, 5).map((p) => (
+              <CartaPartita key={p.id} partita={p} ioId={membro.id} nome={nome} onApri={setApertaId} />
+            ))}
+          </ul>
+        </>
       )}
 
       {altrui.length > 0 && (
         <>
           <p className="dama-sezione">Le partite degli altri</p>
           <ul className="dama-elenco">
-            {altrui.map((p) => (
+            {altrui.slice(0, 5).map((p) => (
               <CartaPartita key={p.id} partita={p} ioId={membro.id} nome={nome} onApri={setApertaId} />
             ))}
           </ul>
@@ -149,25 +191,43 @@ export default function Dama({ membro, membri }) {
   )
 }
 
-function descriviPartita(partita, ioId, nome) {
-  const stato = ricostruisci(partita.mosse)
-  const fine = esito(stato)
+// Come raccontare una partita a chi la guarda. Sempre dal punto di vista
+// di chi legge: "Hai vinto", non "Ha vinto Leo".
+export function raccontaPartita(partita, ioId, nome) {
+  const fine = comeEFinita(partita)
   const gioco = partita.bianco === ioId || partita.nero === ioId
 
-  if (partita.stato === 'abbandonata') {
-    return partita.abbandonataDa === ioId
-      ? 'Hai abbandonato'
-      : `${nome(partita.abbandonataDa)} ha abbandonato`
+  if (!fine.finita) {
+    const stato = ricostruisci(partita.mosse)
+    const toccaId = stato.turno === BIANCO ? partita.bianco : partita.nero
+    if (!gioco) return { testo: `Tocca a ${nome(toccaId)}`, verso: 'attesa' }
+    return toccaId === ioId
+      ? { testo: 'Tocca a te', verso: 'tua' }
+      : { testo: `Tocca a ${nome(toccaId)}`, verso: 'attesa' }
   }
-  if (fine.finita) {
-    if (fine.vincitore === null) return 'Patta'
-    const vincitoreId = fine.vincitore === BIANCO ? partita.bianco : partita.nero
-    if (!gioco) return `Ha vinto ${nome(vincitoreId)}`
-    return vincitoreId === ioId ? 'Hai vinto' : 'Hai perso'
+
+  if (fine.motivo === 'patta') return { testo: 'Patta', verso: 'patta' }
+
+  const mollata = fine.motivo === 'abbandono'
+  if (!gioco) {
+    return {
+      testo: `${nome(fine.vincitore)} ha battuto ${nome(fine.perdente)}`,
+      dettaglio: mollata ? `${nome(fine.perdente)} ha abbandonato` : null,
+      verso: 'finita',
+    }
   }
-  const toccaId = stato.turno === BIANCO ? partita.bianco : partita.nero
-  if (!gioco) return `Tocca a ${nome(toccaId)}`
-  return toccaId === ioId ? 'Tocca a te' : `Tocca a ${nome(toccaId)}`
+  if (fine.vincitore === ioId) {
+    return {
+      testo: 'Hai vinto',
+      dettaglio: mollata ? `${nome(fine.perdente)} ha abbandonato` : null,
+      verso: 'vinta',
+    }
+  }
+  return {
+    testo: `Ha vinto ${nome(fine.vincitore)}`,
+    dettaglio: mollata ? 'Hai abbandonato' : null,
+    verso: 'persa',
+  }
 }
 
 function CartaPartita({ partita, ioId, nome, onApri }) {
@@ -177,14 +237,17 @@ function CartaPartita({ partita, ioId, nome, onApri }) {
       : partita.nero === ioId
         ? `Tu contro ${nome(partita.bianco)}`
         : `${nome(partita.bianco)} contro ${nome(partita.nero)}`
-  const dove = descriviPartita(partita, ioId, nome)
-  const daMe = dove === 'Tocca a te'
+  const r = raccontaPartita(partita, ioId, nome)
 
   return (
     <li>
-      <button type="button" className="dama-carta" onClick={() => onApri(partita.id)}>
+      <button
+        type="button"
+        className={r.verso === 'tua' ? 'dama-carta tocca' : 'dama-carta'}
+        onClick={() => onApri(partita.id)}
+      >
         <span className="dama-carta-chi">{chi}</span>
-        <span className={daMe ? 'dama-carta-stato tocca' : 'dama-carta-stato'}>{dove}</span>
+        <span className={`dama-carta-stato ${r.verso}`}>{r.testo}</span>
       </button>
     </li>
   )
@@ -192,26 +255,42 @@ function CartaPartita({ partita, ioId, nome, onApri }) {
 
 // Esportata per poterla montare da sola con dati finti, come le altre
 // schermate: la partita vera vuole due telefoni e un database.
-export function Scacchiera({ partita, membro, nome, onMuovi, onAbbandona, onSfida, onApri, onChiudi }) {
+export function Scacchiera({
+  partita,
+  partite,
+  membro,
+  nome,
+  onMuovi,
+  onAbbandona,
+  onSfida,
+  onApri,
+  onChiudi,
+}) {
   const [scelto, setScelto] = useState(null)
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [confermaResa, setConfermaResa] = useState(false)
 
-  // La scacchiera si rigioca dalle mosse a ogni render: è il modo in cui
+  // La scacchiera si rigioca dalle mosse a ogni disegno: è il modo in cui
   // due telefoni restano d'accordo senza fidarsi l'uno dell'altro.
   const stato = useMemo(() => ricostruisci(partita.mosse), [partita.mosse])
-  const fine = esito(stato)
+  const fine = comeEFinita(partita)
 
   const mioColore =
     partita.bianco === membro.id ? BIANCO : partita.nero === membro.id ? NERO : null
-  const chiusa = partita.stato === 'abbandonata' || fine.finita
-  const toccaAMe = !chiusa && mioColore !== null && stato.turno === mioColore
+  const toccaAMe = !fine.finita && mioColore !== null && stato.turno === mioColore
 
-  const legali = useMemo(
-    () => (toccaAMe ? mosseLegali(stato) : []),
-    [toccaAMe, stato]
-  )
+  // I punti si assegnano quando la partita finisce, e li scrive chi la
+  // vede finire: nessun server, come per tutto il resto. La chiave di
+  // deduplica fa il resto se la vedono in due.
+  useEffect(() => {
+    if (!fine.finita || !fine.vincitore) return
+    if (fine.vincitore !== membro.id) return
+    if (!eLaPrimaVittoria(partite ?? [], membro.id, partita)) return
+    dopoUnaVittoria(membro.id).catch(() => {})
+  }, [fine.finita, fine.vincitore, membro.id, partita, partite])
+
+  const legali = useMemo(() => (toccaAMe ? mosseLegali(stato) : []), [toccaAMe, stato])
   const dalScelto = legali.filter((m) => m.da === scelto)
 
   // Il nero vede la scacchiera dal suo lato: i suoi pezzi in basso.
@@ -249,6 +328,9 @@ export function Scacchiera({ partita, membro, nome, onMuovi, onAbbandona, onSfid
     setInCorso(true)
     try {
       await onAbbandona(partita.id)
+      // Mollare costa: è l'unica cosa della Dama che tocca qualcun
+      // altro, che resta davanti a una scacchiera ferma.
+      dopoUnAbbandono(membro.id).catch(() => {})
       setConfermaResa(false)
     } catch (e) {
       setAvviso(e?.message ?? 'Non ha funzionato.')
@@ -274,7 +356,7 @@ export function Scacchiera({ partita, membro, nome, onMuovi, onAbbandona, onSfid
   }
 
   const arriviPossibili = new Set(dalScelto.map((m) => m.passi[m.passi.length - 1]))
-  const titolo = descriviPartita(partita, membro.id, nome)
+  const racconto = raccontaPartita(partita, membro.id, nome)
 
   const conteggio = { bianco: 0, nero: 0 }
   for (const p of stato.caselle) if (p) conteggio[p.colore] += 1
@@ -285,8 +367,23 @@ export function Scacchiera({ partita, membro, nome, onMuovi, onAbbandona, onSfid
         <button type="button" className="dama-indietro" onClick={onChiudi}>
           ‹ Partite
         </button>
-        <p className={titolo === 'Tocca a te' ? 'dama-tocca a-me' : 'dama-tocca'}>{titolo}</p>
+        {!fine.finita && (
+          <p className={racconto.verso === 'tua' ? 'dama-tocca a-me' : 'dama-tocca'}>
+            {racconto.testo}
+          </p>
+        )}
       </header>
+
+      {/* Come finisce una partita, detto forte. Prima era una riga di
+          testo piccola accanto al tasto indietro, e da lì non si capiva
+          che fosse finita: si restava a fissare una scacchiera che non
+          rispondeva più. */}
+      {fine.finita && (
+        <div className={`dama-esito ${racconto.verso}`} role="status">
+          <p className="dama-esito-titolo">{racconto.testo}</p>
+          {racconto.dettaglio && <p className="dama-esito-dettaglio">{racconto.dettaglio}</p>}
+        </div>
+      )}
 
       <p className="dama-giocatori">
         <span className="dama-pallino bianco" /> {nome(partita.bianco)} ({conteggio.bianco})
@@ -294,7 +391,17 @@ export function Scacchiera({ partita, membro, nome, onMuovi, onAbbandona, onSfid
         <span className="dama-pallino nero" /> {nome(partita.nero)} ({conteggio.nero})
       </p>
 
-      <div className={inCorso ? 'dama-tavola in-corso' : 'dama-tavola'}>
+      <div
+        className={
+          [
+            'dama-tavola',
+            inCorso ? 'in-corso' : '',
+            fine.finita ? 'finita' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')
+        }
+      >
         {ordine.map((i) => {
           const pezzo = stato.caselle[i]
           const classi = ['dama-casella']
@@ -324,32 +431,30 @@ export function Scacchiera({ partita, membro, nome, onMuovi, onAbbandona, onSfid
 
       {avviso && <p className="dama-avviso">{avviso}</p>}
 
-      {chiusa ? (
-        mioColore !== null && (
-          <button type="button" className="dama-rivincita" onClick={rivincita} disabled={inCorso}>
-            Rivincita
-          </button>
-        )
-      ) : (
-        mioColore !== null &&
-        (confermaResa ? (
-          <div className="dama-resa-conferma">
-            <p>Abbandoni? L'altro vince.</p>
-            <div>
-              <button type="button" className="dama-resa si" onClick={resa} disabled={inCorso}>
-                Abbandona
-              </button>
-              <button type="button" className="dama-resa" onClick={() => setConfermaResa(false)}>
-                Lascia stare
-              </button>
+      {fine.finita
+        ? mioColore !== null && (
+            <button type="button" className="dama-rivincita" onClick={rivincita} disabled={inCorso}>
+              Rivincita
+            </button>
+          )
+        : mioColore !== null &&
+          (confermaResa ? (
+            <div className="dama-resa-conferma">
+              <p>Abbandoni? Vince l'altro, e ti costa punti.</p>
+              <div>
+                <button type="button" className="dama-resa si" onClick={resa} disabled={inCorso}>
+                  Abbandona
+                </button>
+                <button type="button" className="dama-resa" onClick={() => setConfermaResa(false)}>
+                  Lascia stare
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <button type="button" className="dama-abbandona" onClick={() => setConfermaResa(true)}>
-            Abbandona la partita
-          </button>
-        ))
-      )}
+          ) : (
+            <button type="button" className="dama-abbandona" onClick={() => setConfermaResa(true)}>
+              Abbandona la partita
+            </button>
+          ))}
     </div>
   )
 }

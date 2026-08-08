@@ -22,7 +22,7 @@ const SCHEDE = [
   ['pecora', 'All'],
 ]
 
-export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto, conteggiMvp = {} }) {
+export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto, conteggiMvp = {}, damaDaAprire, onDamaAperta }) {
   const { classifica, eventi, scoperte, stato, errore, ricarica } = useGioco()
   const [vista, setVista] = useSchedaRicordata(
     'scheda.gioco',
@@ -126,7 +126,14 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
         <Impostore membro={membro} membri={membri} />
       )}
 
-      {stato === 'pronto' && vista === 'dama' && <Dama membro={membro} membri={membri} />}
+      {stato === 'pronto' && vista === 'dama' && (
+        <Dama
+          membro={membro}
+          membri={membri}
+          apriPartita={damaDaAprire}
+          onAperta={onDamaAperta}
+        />
+      )}
     </div>
   )
 }

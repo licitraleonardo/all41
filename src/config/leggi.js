@@ -166,6 +166,21 @@ export const LEGGI = [
   // aver ascoltato, e l'ammissione vale un punto.
   { n: 46, id: 'non-hai-ascoltato', punti: 1, attiva: true,
     testo: 'Hai aperto la Guida. Classico.' },
+
+  // ——— LA DAMA ———
+  // Il punteggio della Dama passa quasi tutto dal titolo di giornata,
+  // non dalla singola vittoria: con le partite a raffica dopo cena,
+  // pagare ogni vittoria vorrebbe dire che chi gioca di più vince il
+  // viaggio. Così invece si vince la giornata, una volta al giorno.
+  { n: 47, id: 'dama-campione', punti: 3, attiva: true,
+    testo: 'Hai vinto più partite a dama di tutti, in una giornata' },
+  { n: 48, id: 'dama-prima-vittoria', punti: 2, attiva: true,
+    testo: 'La tua prima partita a dama vinta' },
+  // Mollare a metà lascia l'altro davanti a una scacchiera ferma: è
+  // l'unica cosa della Dama che tocca qualcun altro, ed è per quello che
+  // costa. Una volta al giorno, o una serataccia diventa una voragine.
+  { n: 49, id: 'dama-abbandonata', punti: -2, attiva: true,
+    testo: 'Hai abbandonato una partita a dama' },
 ]
 
 // Il Testamento si legge in due metà: quello che ti fa guadagnare

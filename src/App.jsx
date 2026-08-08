@@ -37,11 +37,14 @@ import { useConnessione } from './hooks/useConnessione.js'
 import { useRinfrescaPosizione } from './hooks/useRinfrescaPosizione.js'
 import { useNonLetto } from './hooks/useNonLetto.js'
 import { useMvp } from './hooks/useMvp.js'
+import { useSfideDama } from './hooks/useSfideDama.js'
+import { risolviDama } from './lib/puntiDama.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import Derisione from './components/Derisione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
 import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
+import BannerSfida from './components/BannerSfida.jsx'
 import Pecora from './components/Pecora.jsx'
 // Quattordici secondi di pixel art su canvas: pesa, e serve solo a chi
 // non e' ancora entrato. Chi apre l'app col profilo gia' salvato non la
@@ -151,6 +154,23 @@ export default function App() {
   // "La tua posizione è ferma lì da tre ore, la aggiorno?" — solo a chi
   // l'ha già condivisa almeno una volta, e solo quando è vecchia davvero.
   const posizione = useRinfrescaPosizione(membro?.id, vista === 'dentro')
+
+  // Le sfide a dama arrivano mentre guardi le foto: il banner deve
+  // raggiungerti dovunque, come le proposte di punti.
+  const sfideDama = useSfideDama(vista === 'dentro' ? membro?.id : null)
+  // La partita da aprire accettando: il tab Gioco la riceve e ci atterra
+  // dentro, cosi' "Vediamo" porta alla scacchiera e non a un elenco.
+  const [damaDaAprire, setDamaDaAprire] = useState(null)
+
+  const accettaSfida = useCallback((partitaId) => {
+    setDamaDaAprire(partitaId)
+    setTab('gioco')
+    try {
+      sessionStorage.setItem('scheda.gioco', 'dama')
+    } catch {
+      // pazienza: si atterra sulla classifica e la partita si apre lo stesso
+    }
+  }, [])
   const [membriPerId, setMembriPerId] = useState({})
 
   useEffect(() => {
@@ -222,6 +242,17 @@ export default function App() {
         // chiudere la giornata: la chiude il primo che apre l'app.
         leggiRecordPecora()
           .then((righe) => risolviRecordPecora(righe))
+          .catch(() => {})
+
+        // Il campione di dama di ieri: stesso schema, lo assegna il
+        // primo che apre l'app il giorno dopo. La tabella puo' non
+        // esserci ancora, e non e' un guasto.
+        Promise.all([leggiMembri(), import('./lib/partiteDama.js')])
+          .then(([elenco, dama]) =>
+            dama.leggiPartite().then((partite) =>
+              risolviDama(partite, elenco.map((m) => m.id))
+            )
+          )
           .catch(() => {})
       } catch (e) {
         if (annullato) return
@@ -400,6 +431,8 @@ export default function App() {
               nonLetto={nonLetto.dettaglio}
               onVisto={nonLetto.segna}
               conteggiMvp={mvp.conteggi}
+              damaDaAprire={damaDaAprire}
+              onDamaAperta={() => setDamaDaAprire(null)}
             />
           )}
           {tab === 'altro' && <Altro membro={membro} />}
@@ -444,6 +477,18 @@ export default function App() {
             onVota={proposte.vota}
             onRimanda={proposte.rimanda}
           />
+
+          {/* Uno solo in cima alla volta, e la precedenza e' delle
+              proposte: quelle scadono in un'ora, una sfida a dama
+              aspetta. */}
+          {inLinea && proposte.daDecidere.length === 0 && (
+            <BannerSfida
+              sfide={sfideDama.daAccettare}
+              membri={membriPerId}
+              onAccetta={accettaSfida}
+              onRimanda={sfideDama.rimanda}
+            />
+          )}
         </Riparo>
 
         <Riparo zitto>

@@ -19,7 +19,7 @@
     "prova:pecora": "node prove/pecora.mjs && node prove/pecora-record.mjs",
     "preview": "vite preview",
     "prova:impostore": "node prove/impostore.mjs",
-    "prova:dama": "node prove/dama.mjs",
+    "prova:dama": "node prove/dama.mjs && node prove/dama-classifica.mjs",
     "prova:mvp": "node prove/mvp.mjs",
     "prova:statistiche": "node prove/statistiche.mjs",
     "prova:dispositivo": "node prove/dispositivo.mjs"

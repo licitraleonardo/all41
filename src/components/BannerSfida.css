@@ -1,0 +1,78 @@
+/* Stesso posto del banner delle proposte, e non ci sono mai tutti e due
+   insieme: chi mostra cosa lo decide App. Il verde lo distingue dal blu
+   delle proposte — non è una cosa da votare, è un invito. */
+
+.banner-sfida {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--juniper);
+  color: var(--sand);
+  box-shadow: 0 6px 18px -10px rgba(11, 53, 80, 0.8);
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+}
+
+.banner-sfida .banner-dentro {
+  max-width: 616px;
+  margin: 0 auto;
+}
+
+.banner-sfida .banner-testo {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.banner-sfida .banner-motivo {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: rgba(247, 244, 236, 0.72);
+}
+
+.banner-sfida .banner-scelte {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.banner-sfida .banner-si,
+.banner-sfida .banner-dopo {
+  flex: 1;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 11px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.banner-sfida .banner-si {
+  color: var(--juniper);
+  background: var(--sand);
+}
+
+.banner-sfida .banner-dopo {
+  flex: 0 0 auto;
+  padding-left: 18px;
+  padding-right: 18px;
+  color: var(--sand);
+  background: transparent;
+  border-color: rgba(247, 244, 236, 0.35);
+  font-weight: 600;
+}
+
+.banner-sfida .banner-piede {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: rgba(247, 244, 236, 0.65);
+}
+
+.banner-sfida .banner-si:focus-visible,
+.banner-sfida .banner-dopo:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
