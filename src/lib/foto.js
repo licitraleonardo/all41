@@ -51,6 +51,14 @@ export async function caricaFoto(file, memberId, { onStato, sfidaId = null } = {
   const esito = await verificaLimite('photo', memberId)
   if (!esito.consentito) return { ok: false, ...esito }
 
+  // "Cambia la tua" deve cambiarla davvero. Prima inseriva e basta: chi
+  // sostituiva un tuffo venuto male si ritrovava DUE foto in gara, cioè
+  // due opzioni nel voto, il doppio delle possibilità degli altri e la
+  // foto brutta lì in mezzo. Si toglie la precedente per questa sfida,
+  // e si toglie prima di caricare: se il caricamento fallisce, resta
+  // quella che c'era.
+  const precedenti = sfidaId ? await mieInSfida(memberId, sfidaId) : []
+
   const { blob, width, height, primaByte, dopoByte } = await comprimi(file, { onStato })
 
   const percorso = `${VIAGGIO.id}/${memberId}/${uuid()}.jpg`
@@ -77,7 +85,30 @@ export async function caricaFoto(file, memberId, { onStato, sfidaId = null } = {
     .single()
 
   if (error) throw error
-  return { ok: true, foto: daRiga(data), primaByte, dopoByte }
+
+  // Adesso che la nuova c'è, la vecchia se ne può andare. In questo
+  // ordine e non prima: se fallisse il caricamento, toglierla lascerebbe
+  // fuori gara chi voleva solo cambiare foto.
+  for (const vecchia of precedenti) {
+    await eliminaFoto(vecchia.id).catch(() => {})
+  }
+
+  return { ok: true, foto: daRiga(data), primaByte, dopoByte, sostituite: precedenti.length }
+}
+
+// Le mie foto ancora in gara per una sfida. Serve solo alla sostituzione,
+// quindi legge il minimo: verifica bloccante n.4, il limit c'è.
+async function mieInSfida(memberId, sfidaId) {
+  const { data, error } = await supabase
+    .from('photos')
+    .select('id')
+    .eq('trip_id', VIAGGIO.id)
+    .eq('author_id', memberId)
+    .eq('challenge_id', sfidaId)
+    .is('deleted_at', null)
+    .limit(10)
+  if (error) throw error
+  return data ?? []
 }
 
 // Morbida come per le azioni: la riga resta, sparisce dalla griglia.

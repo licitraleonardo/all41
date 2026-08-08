@@ -111,7 +111,12 @@ export default function Impostore({ membro, membri }) {
         </>
       )}
 
-      {inCorsoOra && inGioco && eFuori(partita, membro.id) && (
+      {/* Non nello stato 'colpo': lì l'impostore beccato deve indovinare
+          la parola del gruppo, e dopoAccusa l'ha appena messo fra i
+          fuori. La schermata "Sei fuori — vedi le parole di tutti"
+          gliela serviva scritta due centimetri sopra il campo dove
+          doveva scriverla. */}
+      {inCorsoOra && inGioco && partita.stato !== 'colpo' && eFuori(partita, membro.id) && (
         <Fuori partita={partita} membri={membri} nome={nome} />
       )}
 
@@ -130,7 +135,7 @@ export default function Impostore({ membro, membri }) {
         />
       )}
 
-      {partita?.stato === 'in-corso' && !inGioco && (
+      {inCorsoOra && !inGioco && (
         <p className="imp-fuori">
           C’è una partita in corso e tu non ci sei dentro. Goditela da fuori.
         </p>
@@ -149,7 +154,12 @@ export default function Impostore({ membro, membri }) {
         />
       )}
 
-      {partita?.stato === 'preparazione' && (
+      {/* inGioco su tutte e tre: chi guarda dal bancone si ritrovava la
+          schermata "Quanti impostori?" o "Vota l'impostore", e i suoi
+          tocchi contavano davvero — il database non controlla che chi
+          vota sia in partita. Un voto di troppo poteva decidere chi
+          veniva eliminato. */}
+      {partita?.stato === 'preparazione' && inGioco && (
         <Preparazione
           partita={partita}
           voto={voto}
@@ -159,7 +169,7 @@ export default function Impostore({ membro, membri }) {
         />
       )}
 
-      {partita?.stato === 'colpo' && (
+      {partita?.stato === 'colpo' && inGioco && (
         <Colpo
           partita={partita}
           voto={voto}
@@ -170,7 +180,7 @@ export default function Impostore({ membro, membri }) {
         />
       )}
 
-      {partita?.stato === 'voto' && !eFuori(partita, membro.id) && (
+      {partita?.stato === 'voto' && inGioco && !eFuori(partita, membro.id) && (
         <Accusa
           partita={partita}
           voto={voto}

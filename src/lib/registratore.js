@@ -42,7 +42,11 @@ export async function avviaRegistrazione({ onSecondi, onFermato } = {}) {
     // arancione acceso e sembra che l'app stia ascoltando di nascosto.
     flusso.getTracks().forEach((t) => t.stop())
 
-    const durata = Math.max(1, Math.round((Date.now() - inizio) / 1000))
+    // La durata vera, anche quando è zero. Prima il minimo era 1, e
+    // rendeva morto il controllo "sotto il secondo è un tocco per
+    // sbaglio" di chi la riceve: nessun vocale poteva più risultare
+    // troppo corto, e le sfiorate partivano tutte.
+    const durata = Math.round((Date.now() - inizio) / 1000)
     // Il tipo VERO, quello che il browser ha davvero prodotto: non
     // quello che gli avevamo chiesto.
     const tipo = registratore.mimeType || mimeType || pezzi[0]?.type || 'audio/webm'

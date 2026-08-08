@@ -17,8 +17,12 @@ export const DOVE = {
   comune: 'Quartu Sant’Elena (CA)',
   quando: VIAGGIO.etichetta,
   checkIn: 'Check-in mercoledì 12 alle 17:00',
-  // Da riempire: l'indirizzo esatto e il telefono della struttura.
-  indirizzo: null,
+  // Trascritto dallo spec del viaggio, non cercato in rete: è la stessa
+  // riga che sta in sardegna-trip-app-spec.md. Serve a chi arriva in
+  // taxi dall'aeroporto e deve dettarlo al tassista.
+  indirizzo: "Villaggio S'oru 'e Mari, 37 — Quartu Sant'Elena",
+  // ⚠️ Il telefono resta mancante finché qualcuno non lo verifica: un
+  // numero plausibile qui dentro è peggio di nessun numero.
   telefono: null,
 }
 
@@ -37,7 +41,7 @@ export const EMERGENZE = [
 // Quello che manca, scritto come manca. Serve a due cose: non far
 // credere che la sezione sia completa, e ricordare cosa chiedere.
 export const DA_TROVARE = [
-  'Indirizzo esatto e telefono del villaggio',
+  'Telefono del villaggio',
   'Guardia medica di Quartu Sant’Elena',
   'Farmacia più vicina, e quella di turno',
   'Numero del noleggio van, se serve richiamarli',

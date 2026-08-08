@@ -38,11 +38,13 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   // Gli avvisi se ne vanno da soli. Restavano appesi sopra la barra
   // finché non ne arrivava un altro, e dopo dieci secondi non dicono più
   // niente: dicono solo che qualcosa era andato storto, chissà quando.
+  // Tranne quello dell'SOS: lì l'avviso è la prova che la richiesta non
+  // è partita, e deve restare finché il foglio è aperto.
   useEffect(() => {
-    if (!avviso) return
+    if (!avviso || foglio === 'sos') return
     const via = setTimeout(() => setAvviso(null), 5000)
     return () => clearTimeout(via)
-  }, [avviso])
+  }, [avviso, foglio])
 
   // Un suono spento resta spento anche ricaricando: si deduce dalle
   // penalità nel database, non da uno stato in memoria.
@@ -358,8 +360,12 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
       {foglio === 'sos' && (
         <FoglioSOS
           onInvia={(motivo) => manda('sos', { motivo })}
-          onAnnulla={() => setFoglio(null)}
+          onAnnulla={() => {
+            setFoglio(null)
+            setAvviso(null)
+          }}
           inCorso={inCorso}
+          errore={avviso}
         />
       )}
     </div>

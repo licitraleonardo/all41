@@ -69,25 +69,45 @@ export default function Vocali({ membro }) {
     setImportante(partenzaY.current - e.clientY >= TRASCINAMENTO)
   }
 
+  // Il dito è ancora giù? Il permesso del microfono può metterci un
+  // attimo, e in quell'attimo il dito può essersene già andato: senza
+  // questo, la registrazione partiva DOPO il rilascio e restava aperta
+  // da sola, col pallino arancione acceso, finché qualcuno non toccava
+  // di nuovo il tasto — e a quel punto partiva il vocale.
+  const ditoGiu = useRef(false)
+
   async function premi(e) {
     if (registrando || inCorso) return
     setAvviso(null)
     setSecondi(0)
     partenzaY.current = e.clientY
     setImportante(false)
+    ditoGiu.current = true
 
     try {
-      sessione.current = await avviaRegistrazione({
+      const avviata = await avviaRegistrazione({
         onSecondi: setSecondi,
         onFermato: () => setRegistrando(false),
       })
+
+      // Rilasciato mentre chiedevamo il microfono: si spegne subito e
+      // non si manda niente. Un dito che sfiora non è un messaggio.
+      if (!ditoGiu.current) {
+        avviata.annulla()
+        setSecondi(0)
+        return
+      }
+
+      sessione.current = avviata
       setRegistrando(true)
     } catch (e) {
+      ditoGiu.current = false
       setAvviso(spiegaErroreMicrofono(e))
     }
   }
 
   async function lascia() {
+    ditoGiu.current = false
     const corrente = sessione.current
     if (!corrente) return
     sessione.current = null

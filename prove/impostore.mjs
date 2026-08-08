@@ -322,6 +322,38 @@ console.log('\nrivelare prima che abbiano votato tutti')
   prova('e senza nessuna richiesta no', !bastaPerRivelare(partita, []))
 }
 
+console.log('\ndopo un’eliminazione i conti stanno sui vivi')
+{
+  // 'a' e' stato eliminato: restano in sette.
+  const dopo = { giocatori: OTTO, fuori: ['a'] }
+  const sette = OTTO.slice(1)
+
+  // Col conto sugli otto di partenza questa restava falsa per sempre, e
+  // la schermata diceva "manca ancora qualcuno" aspettando il voto di
+  // chi era gia' uscito.
+  prova('votano tutti e sette: e’ tutti', tuttiHannoVotato(dopo, sette))
+  prova('se ne manca uno dei sette, no', !tuttiHannoVotato(dopo, sette.slice(0, 6)))
+  prova(
+    'il voto di chi e’ uscito non completa il conto',
+    !tuttiHannoVotato(dopo, ['a', ...sette.slice(0, 6)])
+  )
+
+  // La soglia scende con i vivi: in sette bastano quattro, non cinque.
+  prova('in sette bastano quattro richieste', bastaPerRivelare(dopo, sette.slice(0, 4)))
+  prova('tre non bastano', !bastaPerRivelare(dopo, sette.slice(0, 3)))
+  prova(
+    'le richieste di chi e’ uscito non contano',
+    !bastaPerRivelare(dopo, ['a', ...sette.slice(0, 3)])
+  )
+
+  // Due eliminati: in sei ne servono quattro.
+  const dueFuori = { giocatori: OTTO, fuori: ['a', 'b'] }
+  const sei = OTTO.slice(2)
+  prova('in sei ne servono quattro', bastaPerRivelare(dueFuori, sei.slice(0, 4)))
+  prova('tre su sei no: e’ meta’', !bastaPerRivelare(dueFuori, sei.slice(0, 3)))
+  prova('e votano tutti e sei', tuttiHannoVotato(dueFuori, sei))
+}
+
 console.log('\nil colpo di coda: la parola indovinata')
 {
   prova('uguale e uguale', stessaParola('Mare', 'Mare'))

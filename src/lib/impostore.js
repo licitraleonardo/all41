@@ -203,8 +203,14 @@ export function premi({ impostori, giocatori, schede, colpoRiuscito = false }) {
 // ------------------------------------------------------ la rivelazione
 
 // Quando tutti hanno votato non serve chiedere niente: si rivela e basta.
+//
+// "Tutti" sono i vivi, non i giocatori di partenza. Con l'elenco intero,
+// dopo la prima eliminazione il conto non tornava mai piu': i sette
+// superstiti votavano tutti e la schermata continuava a dire "manca
+// ancora qualcuno", aspettando il voto di chi era gia' uscito.
 export function tuttiHannoVotato(partita, hannoVotato = []) {
-  return partita.giocatori.length > 0 && hannoVotato.length >= partita.giocatori.length
+  const inGioco = vivi(partita)
+  return inGioco.length > 0 && inGioco.every((id) => hannoVotato.includes(id))
 }
 
 // Piu' della meta'. Non la meta': un gruppo spaccato a meta' non ha
@@ -222,8 +228,14 @@ export function quantiPerRivelare(quantiGiocatori) {
   return maggioranza(quantiGiocatori)
 }
 
+// Anche qui la soglia e' sui vivi: l'interfaccia scrive "devono
+// chiederlo in 4" contando i superstiti, e se la soglia vera restasse
+// sugli otto di partenza il contatore arriverebbe a 4 su 4 senza che
+// succeda niente. Tutti a pigiare un bottone che non fa nulla.
 export function bastaPerRivelare(partita, chiesta = []) {
-  return chiesta.length >= quantiPerRivelare(partita.giocatori.length)
+  const inGioco = vivi(partita)
+  const validi = chiesta.filter((id) => inGioco.includes(id))
+  return validi.length >= quantiPerRivelare(inGioco.length)
 }
 
 // -------------------------------------------------- il colpo di coda

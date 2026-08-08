@@ -192,6 +192,14 @@
   cursor: not-allowed;
 }
 
+/* Armato: il secondo tocco cancella davvero, e si vede. */
+.spesa-elimina.armato {
+  font-weight: 700;
+  color: var(--sand);
+  background: #b23a26;
+  border-color: #b23a26;
+}
+
 /* --------------------------------------------------- tasto sempre lì */
 
 /* È l'azione principale della sezione: deve raggiungerti dove sei, non

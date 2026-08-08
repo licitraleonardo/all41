@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './Spese.css'
 import { urlAvatar } from '../config/avatar.js'
 import { useSpese } from '../hooks/useSpese.js'
@@ -108,6 +108,16 @@ function Cronologia({ conti, ioId }) {
   const { spese, rimborsi, membriPerId, togliSpesa, togliRimborso } = conti
   const [quale, setQuale] = useState('spese')
   const [inCorso, setInCorso] = useState(null)
+  // Quale riga è armata per l'eliminazione. Si disarma da sola dopo tre
+  // secondi, come la × dell'album: un bottone rimasto acceso a metà, in
+  // tasca, sarebbe peggio del problema che risolve.
+  const [armato, setArmato] = useState(null)
+
+  useEffect(() => {
+    if (!armato) return undefined
+    const timer = setTimeout(() => setArmato(null), 3000)
+    return () => clearTimeout(timer)
+  }, [armato])
   const [errore, setErrore] = useState(null)
 
   const totale = spese.reduce((s, x) => s + x.centesimi, 0)
@@ -150,14 +160,20 @@ function Cronologia({ conti, ioId }) {
   const bottoneElimina = (riga) =>
     // Chi ha messo i soldi può togliere la riga: se avete pagato in due,
     // basta che se ne accorga uno.
+    //
+    // Armato in due tempi, come la × dell'album: qui però pesa di più.
+    // Una foto persa è una foto; una spesa da 240 euro che sparisce dai
+    // telefoni di tutti, senza conferma e senza modo di rimetterla, la
+    // si scopre la sera del 16 facendo i conti — e a quel punto nessuno
+    // sa più cosa mancava.
     eliminabile(riga) && (
       <button
         type="button"
-        className="spesa-elimina"
-        onClick={() => togli(riga)}
+        className={armato === riga.id ? 'spesa-elimina armato' : 'spesa-elimina'}
+        onClick={() => (armato === riga.id ? togli(riga) : setArmato(riga.id))}
         disabled={inCorso === riga.id}
       >
-        Elimina
+        {inCorso === riga.id ? 'Elimino…' : armato === riga.id ? 'Sicuro? Tocca ancora' : 'Elimina'}
       </button>
     )
 

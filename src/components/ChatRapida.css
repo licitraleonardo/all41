@@ -558,6 +558,26 @@
   color: #9aa4ab;
 }
 
+/* Il fallimento di una richiesta d'aiuto si vede, e resta. Fondo pieno
+   e non solo testo rosso: deve fermare l'occhio di chi sta per chiudere
+   il foglio convinto di aver chiamato. */
+.sos-errore {
+  margin: 0 0 4px;
+  padding: 11px 12px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: #7a1f12;
+  background: #fdeeeb;
+  border: 1px solid rgba(178, 58, 38, 0.35);
+  border-radius: 10px;
+}
+
+.sos-errore span {
+  display: block;
+  margin-top: 3px;
+  font-weight: 600;
+}
+
 .sos-conferma {
   font: inherit;
   font-size: 16px;
