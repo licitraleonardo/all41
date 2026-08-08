@@ -137,7 +137,27 @@ Dalla caccia sistematica dell'8 agosto restano **30 segnalazioni non verificate*
 - Con due impostori beccati insieme, **entrambi** possono scrivere la parola ma vale solo la prima: va deciso chi tenta.
 - Gli **indovini dei giri precedenti** non vengono pagati: `paga()` guarda solo l'ultimo voto.
 
-Dalla critica funzionale del 7 agosto resta **la foto scattata che sparisce se l'upload fallisce**: chi ha appena scattato deve riscattare, e intanto il momento è passato.
+Dalla critica funzionale del 7 agosto **non resta più niente**: anche la foto che spariva se l'upload falliva è stata chiusa (vedi sotto).
+
+### La coda delle foto, rifatta
+
+La coda su IndexedDB c'era già dal 7 agosto, e copriva il caso per cui era nata: l'upload che **fallisce**. Una caccia sistematica ha trovato che tutto il resto perdeva la foto lo stesso, e in silenzio. Chiusi:
+
+| Dov'era | Cosa succedeva |
+|---|---|
+| `foto.js` | L'upload **appeso** non fallisce, quindi non arrivava mai al `catch` che accoda: la foto restava viva solo in una variabile, e i due bottoni morti per sempre. Ora ha 45 secondi (`SECONDI_UPLOAD`) |
+| `Album.jsx` | **"Riprova" toglieva la voce prima di ritentare.** Bastava che il ritentativo venisse *rifiutato* — il tetto delle cinque al giorno — perché la foto sparisse. Premere Riprova la rendeva meno al sicuro di prima |
+| `Album.jsx` | Il **rifiuto del limite** non accodava niente: scattavi la sesta foto del giorno e veniva buttata, con un messaggio che parlava d'altro |
+| `Album.jsx` | Se `accoda` falliva, la riga compariva **identica alle salvate** e moriva al primo cambio scheda. Ora è tratteggiata e lo dice |
+| `Album.jsx` | La × **distruggeva l'unica copia in un tocco**, mentre le foto già sul server ne chiedono due. Ora usa lo stesso `BottoneElimina` |
+| `Album.jsx` | La voce non conservava lo **sfidaId**: la foto ritentata usciva dalla gara, finiva in album e bruciava una delle cinque |
+| `Album.jsx` | La coda si vedeva **solo nella scheda Album**: chi falliva dalle Sfide non la trovava mai |
+| `Album.jsx` | Nessun **ritentativo automatico**, malgrado due commenti che si citavano a vicenda promettendolo. Ora c'è il listener `online`, come la Pecora |
+| `codaFotoRegole.js` | La coda **non era di nessuno**: chi entrava col codice di un altro se ne ritrovava le foto e le caricava a nome proprio |
+
+Le regole stanno in `src/lib/codaFotoRegole.js`, fuori da IndexedDB e da React, con **37 prove**. La sola che conta: *una voce esce dalla coda solo se è arrivata o se l'hanno scartata*.
+
+⚠️ **Resta da provare su un iPhone vero**: che un `File` da `capture` messo in IndexedDB sopravviva davvero alla chiusura della PWA. Su Chrome desktop i byte ci sono, ma è l'unico anello che non si verifica da qui — ed è quello su cui poggia tutta la frase "al sicuro sul telefono".
 
 **L'SOS non è più in questo elenco.** L'errore era già finito dentro il foglio con `f2d8def`; restava il caso opposto, che è più subdolo: una richiesta che non fallisce ma **resta appesa**. Con una tacca di segnale la fetch non solleva niente, aspetta — quindi nessun `catch` scattava e il bottone restava su *"Invio…"* all'infinito, senza né errore né conferma. Ora l'SOS ha dieci secondi (`SECONDI_ATTESA` in `src/config/azioni.js`, l'unico tipo che ne ha) e allo scadere dice **"Non ha risposto"**, non "non è partita": sono due cose diverse, e la richiesta non viene annullata, quindi può ancora arrivare.
 

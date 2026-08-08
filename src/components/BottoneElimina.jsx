@@ -6,7 +6,13 @@ import { useEffect, useState } from 'react'
 //
 // Si disarma da sola dopo tre secondi: una × rimasta accesa a metà, in
 // tasca, sarebbe peggio del problema che risolve.
-export default function BottoneElimina({ onElimina, etichetta = 'Elimina' }) {
+export default function BottoneElimina({
+  onElimina,
+  etichetta = 'Elimina',
+  // La classe si passa da fuori perché lo stesso bottone serve anche nella
+  // coda delle foto, dove sta in una riga e non nell'angolo di una cella.
+  classe = 'cella-elimina',
+}) {
   const [armato, setArmato] = useState(false)
   const [inCorso, setInCorso] = useState(false)
 
@@ -37,7 +43,7 @@ export default function BottoneElimina({ onElimina, etichetta = 'Elimina' }) {
   return (
     <button
       type="button"
-      className={armato ? 'cella-elimina armato' : 'cella-elimina'}
+      className={armato ? `${classe} armato` : classe}
       onClick={tocca}
       disabled={inCorso}
       aria-label={armato ? 'Tocca di nuovo per eliminare' : etichetta}

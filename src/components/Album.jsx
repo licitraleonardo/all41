@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './Album.css'
 import { useFoto } from '../hooks/useFoto.js'
 import { caricaFoto, eliminaFoto } from '../lib/foto.js'
@@ -8,13 +8,22 @@ import { forseChiudiCollettiva } from '../lib/sfide.js'
 import { useSfide } from '../hooks/useSfide.js'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 import { accoda, etichetta, leggiCoda, togliDallaCoda } from '../lib/codaFoto.js'
+import {
+  conVoce,
+  inOrdine,
+  mie,
+  nuovaVoce,
+  senzaVoce,
+  soloInMemoria,
+} from '../lib/codaFotoRegole.js'
+import { SFIDE_PER_ID } from '../config/sfide.js'
 import NuvolettaAllan from './NuvolettaAllan.jsx'
 import { uuid } from '../lib/id.js'
 import Sfide from './Sfide.jsx'
 import FotoGrande from './FotoGrande.jsx'
 import BottoneElimina from './BottoneElimina.jsx'
 import { urlAvatar } from '../config/avatar.js'
-import { TIPI_ACCETTATI } from '../config/foto.js'
+import { MASSIMO_IN_CODA, TIPI_ACCETTATI } from '../config/foto.js'
 import { LIMITI } from '../config/limiti.js'
 import Rotella from './Rotella.jsx'
 
@@ -38,6 +47,9 @@ export default function Album({ membro }) {
   const [vista, setVista] = useSchedaRicordata('scheda.foto', 'album', ['album', 'sfide'])
   const [grande, setGrande] = useState(null)
   const [bloccato, setBloccato] = useState(false)
+  const codaViva = useRef([])
+  const caricaOra = useRef(null)
+  const drenaggio = useRef(false)
 
   // Quante ne hai già caricate oggi nell'album. Si contano da quelle che
   // sono già a schermo invece di chiederlo al database: la griglia è
@@ -86,7 +98,42 @@ export default function Album({ membro }) {
     [sfide.diOggi, sfide.aperte, sfide.vinte, sfide.voti, sfide.partecipazioni, membro.id]
   )
 
-  async function carica(file, sfidaId = null) {
+  // La foto va SUL TELEFONO ogni volta che non arriva a destinazione, e
+  // "non arriva" comprende il rifiuto del limite: una scattata con
+  // "📷 Scatta" non è nel rullino — è un file temporaneo dato solo alla
+  // pagina — quindi buttarla perché sono le sei di sera e ne hai già fatte
+  // cinque vuol dire distruggerla, e il messaggio parla d'altro.
+  //
+  // `voceEsistente` c'è quando questo è un ritentativo: la sua riga si
+  // aggiorna invece di lasciarne una seconda con un id nuovo.
+  async function tieniDaParte(file, sfidaId, voceEsistente, motivo) {
+    const voce =
+      voceEsistente ??
+      nuovaVoce({
+        id: uuid(),
+        file,
+        nome: file.name,
+        sfidaId,
+        membroId: membro.id,
+        quando: Date.now(),
+      })
+
+    const salvata = await accoda(voce)
+    setInCoda((precedenti) => conVoce(precedenti, { ...voce, salvata }, MASSIMO_IN_CODA).coda)
+
+    setAvviso(
+      salvata
+        ? `Non è partita, ma è al sicuro sul telefono: la ritrovi qui sotto. ${motivo}`
+        : // Il messaggio di prima diceva "non chiudere l'app": non bastava.
+          // Questa schermata si smonta anche solo cambiando tab, e con lei
+          // se ne va l'unica copia rimasta.
+          `Non è partita e non riesco a tenerla da parte: resta qui sotto finché non cambi schermata. ${motivo}`
+    )
+  }
+
+  // Torna true solo se la foto è arrivata a destinazione: è quello che
+  // decide se la voce può uscire dalla coda.
+  async function carica(file, sfidaId = null, voceEsistente = null) {
     setInCorso(true)
     setAvviso(null)
     try {
@@ -94,9 +141,21 @@ export default function Album({ membro }) {
       if (!esito.ok) {
         // Il tetto della giornata non si scavalca aspettando qualche
         // secondo: dirlo con un cronometro sarebbe una presa in giro.
-        setAvviso(esito.motivo === 'giorno' ? TETTO_AL_GIORNO : `Aspetta ${esito.attesa}s.`)
-        return
+        await tieniDaParte(
+          file,
+          sfidaId,
+          voceEsistente,
+          esito.motivo === 'giorno' ? TETTO_AL_GIORNO : `Aspetta ${esito.attesa}s.`
+        )
+        return false
       }
+
+      // Adesso, e solo adesso, la voce può lasciare il telefono.
+      if (voceEsistente) {
+        setInCoda((precedenti) => senzaVoce(precedenti, voceEsistente.id))
+        await togliDallaCoda(voceEsistente.id)
+      }
+
       inserisci(esito.foto)
       setAvviso(`Caricata. ${peso(esito.primaByte)} → ${peso(esito.dopoByte)}.`)
 
@@ -127,33 +186,71 @@ export default function Album({ membro }) {
           .then(() => sfide.ricarica())
           .catch(() => {})
       }
+      return true
     } catch (e) {
-      // La foto va SUL TELEFONO, non in memoria. Quella scattata con
-      // "📷 Scatta" non è nel rullino — è un file temporaneo dato solo
-      // alla pagina — quindi se la PWA viene uccisa mentre lo schermo è
-      // bloccato non esiste più da nessuna parte.
-      const voce = { id: uuid(), file, nome: file.name, quando: Date.now() }
-      const salvata = await accoda(voce)
-      setInCoda((precedenti) => [...precedenti, voce])
-      setAvviso(
-        salvata
-          ? `Non è partita, ma è al sicuro sul telefono. ${descriviErrore(e)}`
-          : `Non è partita, e non riesco a tenerla da parte: non chiudere l'app. ${descriviErrore(e)}`
-      )
+      await tieniDaParte(file, sfidaId, voceEsistente, descriviErrore(e))
+      return false
     } finally {
       setInCorso(false)
     }
   }
 
+  // Si aggiornano a ogni disegno perché `svuota` deve restare la stessa
+  // funzione per tutta la vita del componente — ci si aggancia un listener
+  // — e leggere comunque l'ultima coda e l'ultimo `carica`. Senza il
+  // secondo, una foto di sfida consegnata dal ritentativo automatico
+  // chiamerebbe la `sfide.aggiornaGara` di dieci minuti fa.
+  caricaOra.current = carica
+  codaViva.current = inCoda
+
+  // Adesso si riprova davvero da sola: appena la coda è stata letta, e ogni
+  // volta che il browser dice che la rete è tornata — come fanno già i
+  // punteggi della Pecora in useRecordPecora. Il commento lo prometteva da
+  // giorni e sotto non c'era niente: una foto in coda aspettava un tocco
+  // manuale che nessuno sapeva di dover dare, in una scheda che nessuno
+  // apriva.
+  const svuota = useCallback(async () => {
+    if (drenaggio.current || navigator.onLine === false) return
+    drenaggio.current = true
+    try {
+      // Una per volta e in ordine di scatto. Al primo che non passa ci si
+      // ferma: se è caduto il segnale o è finito il tetto del giorno, le
+      // altre cadrebbero uguale, e ogni tentativo è un file spedito.
+      for (const voce of inOrdine(codaViva.current)) {
+        const fatta = await caricaOra.current?.(voce.file, voce.sfidaId ?? null, voce)
+        if (!fatta) break
+      }
+    } finally {
+      drenaggio.current = false
+    }
+  }, [])
+
   // La coda si ricostruisce all'avvio: è l'unica cosa che rende utile
-  // averla salvata. Si riprova anche da sola quando torna la rete.
+  // averla salvata. Solo le proprie — sta sul dispositivo, e chi entra col
+  // codice di un altro non deve ritrovarsi le sue foto in mano.
   useEffect(() => {
     let vivo = true
-    leggiCoda().then((voci) => vivo && setInCoda(voci))
+    leggiCoda().then((tutte) => {
+      if (!vivo) return
+      const nostre = mie(tutte, membro.id)
+      setInCoda(nostre)
+      // Il ref si scrive a mano invece di aspettare il disegno dopo
+      // `setInCoda`: `svuota` parte subito e leggerebbe la lista vuota.
+      codaViva.current = nostre
+      svuota().catch(() => {})
+    })
     return () => {
       vivo = false
     }
-  }, [])
+  }, [membro.id, svuota])
+
+  useEffect(() => {
+    const alRitorno = () => {
+      svuota().catch(() => {})
+    }
+    window.addEventListener('online', alRitorno)
+    return () => window.removeEventListener('online', alRitorno)
+  }, [svuota])
 
   async function scegli(e) {
     const scelti = [...e.target.files]
@@ -162,16 +259,16 @@ export default function Album({ membro }) {
   }
 
   async function riprova(voce) {
-    // Si toglie dalla coda solo se il caricamento riesce: se fallisce di
-    // nuovo, `carica` la rimette dentro con un id nuovo e quella vecchia
-    // resterebbe lì come doppione.
-    setInCoda((precedenti) => precedenti.filter((v) => v.id !== voce.id))
-    await togliDallaCoda(voce.id)
-    await carica(voce.file)
+    // La voce resta dov'è finché non è arrivata. Prima si toglieva subito,
+    // e bastava che il ritentativo venisse RIFIUTATO invece che fallire —
+    // il tetto delle cinque al giorno, o "Aspetta 47s" — perché la foto
+    // sparisse dal telefono senza che nessuno la stesse cancellando.
+    // Premere "Riprova" rendeva la foto meno al sicuro di prima.
+    await carica(voce.file, voce.sfidaId ?? null, voce)
   }
 
   async function scarta(voce) {
-    setInCoda((precedenti) => precedenti.filter((v) => v.id !== voce.id))
+    setInCoda((precedenti) => senzaVoce(precedenti, voce.id))
     await togliDallaCoda(voce.id)
   }
 
@@ -212,6 +309,41 @@ export default function Album({ membro }) {
       </div>
 
       {avviso && <p className="album-avviso">{avviso}</p>}
+
+      {/* Fuori da `vista === 'album'`, dov'era prima: una foto mandata a
+          una sfida che non parte finisce in coda, e chi l'ha mandata sta
+          guardando la scheda Sfide — dove la coda non compariva. L'unico
+          segnale era l'avviso qui sopra, che sparisce al primo messaggio
+          successivo. La foto restava su IndexedDB per sempre, invisibile,
+          finché qualcuno non toccava "Album" per caso. */}
+      {inCoda.length > 0 && (
+        <ul className="coda">
+          {inCoda.map((voce) => (
+            <li key={voce.id} className={soloInMemoria(voce) ? 'coda-in-aria' : undefined}>
+              <span>
+                {etichetta(voce)}
+                {voce.sfidaId && (
+                  <em> · {SFIDE_PER_ID[voce.sfidaId]?.titolo ?? 'sfida'}</em>
+                )}
+                {soloInMemoria(voce) && <em> · non salvata sul telefono</em>}
+              </span>
+              <button type="button" onClick={() => riprova(voce)} disabled={inCorso}>
+                Riprova
+              </button>
+              {/* Due tocchi, come la × delle foto già sul server. Anzi:
+                  soprattutto qui. Là si toglie una copia di una cosa che
+                  resta, qui si distrugge l'unica che esiste — e le due ×
+                  si somigliano abbastanza da prendere la memoria
+                  muscolare dell'una e usarla sull'altra. */}
+              <BottoneElimina
+                classe="coda-scarta"
+                etichetta="Scarta questa foto"
+                onElimina={() => scarta(voce)}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
 
       {vista === 'sfide' && (
         <Sfide
@@ -293,28 +425,6 @@ export default function Album({ membro }) {
       </div>
 
 
-
-      {inCoda.length > 0 && (
-        <ul className="coda">
-          {inCoda.map((voce) => (
-            <li key={voce.id}>
-              <span>{etichetta(voce)}</span>
-              <button type="button" onClick={() => riprova(voce)} disabled={inCorso}>
-                Riprova
-              </button>
-              <button
-                type="button"
-                className="coda-scarta"
-                onClick={() => scarta(voce)}
-                disabled={inCorso}
-                aria-label="Scarta questa foto"
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
 
       {stato === 'caricamento' && <Rotella />}
       {stato === 'guasto' && <p className="album-guasto">{errore}</p>}

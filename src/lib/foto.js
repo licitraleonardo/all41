@@ -1,9 +1,10 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
-import { PER_PAGINA } from '../config/foto.js'
+import { PER_PAGINA, SECONDI_UPLOAD } from '../config/foto.js'
 import { conCache } from './cache.js'
 import { comprimi } from './compressione.js'
 import { verificaLimite } from './limiti.js'
+import { conScadenza } from './scadenza.js'
 import { uuid } from './id.js'
 
 const BUCKET = 'foto'
@@ -61,28 +62,44 @@ export async function caricaFoto(file, memberId, { onStato, sfidaId = null } = {
 
   const { blob, width, height, primaByte, dopoByte } = await comprimi(file, { onStato })
 
+  // Le due chiamate di rete hanno un tempo massimo, la compressione qui
+  // sopra no. Senza, una fetch che resta appesa non solleva niente: chi
+  // ha chiamato non arriva mai al suo catch, quindi non mette la foto in
+  // coda e non riabilita i bottoni. La foto scattata resta viva solo
+  // dentro una variabile, finché lo schermo non si blocca.
+  //
+  // La scadenza sta qui e non attorno a caricaFoto proprio per lasciarci
+  // fuori la compressione: su un iPhone quella scarica un decodificatore
+  // HEIC da 3 MB, e farebbe scattare l'orologio senza che la rete abbia
+  // colpe.
   const percorso = `${VIAGGIO.id}/${memberId}/${uuid()}.jpg`
-  const { error: erroreUpload } = await supabase.storage
-    .from(BUCKET)
-    .upload(percorso, blob, { contentType: 'image/jpeg', cacheControl: '31536000' })
+  const { error: erroreUpload } = await conScadenza(
+    supabase.storage
+      .from(BUCKET)
+      .upload(percorso, blob, { contentType: 'image/jpeg', cacheControl: '31536000' }),
+    SECONDI_UPLOAD * 1000
+  )
 
   if (erroreUpload) throw erroreUpload
 
   const { data: pubblico } = supabase.storage.from(BUCKET).getPublicUrl(percorso)
 
-  const { data, error } = await supabase
-    .from('photos')
-    .insert({
-      trip_id: VIAGGIO.id,
-      author_id: memberId,
-      path: percorso,
-      url: pubblico.publicUrl,
-      width,
-      height,
-      challenge_id: sfidaId,
-    })
-    .select(CAMPI)
-    .single()
+  const { data, error } = await conScadenza(
+    supabase
+      .from('photos')
+      .insert({
+        trip_id: VIAGGIO.id,
+        author_id: memberId,
+        path: percorso,
+        url: pubblico.publicUrl,
+        width,
+        height,
+        challenge_id: sfidaId,
+      })
+      .select(CAMPI)
+      .single(),
+    SECONDI_UPLOAD * 1000
+  )
 
   if (error) throw error
 

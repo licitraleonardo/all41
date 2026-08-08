@@ -12,12 +12,10 @@
 // localStorage non sa tenere — e trasformarli in base64 li gonfia di un
 // terzo per poi doverli riconvertire.
 
+import { MASSIMO_IN_CODA } from '../config/foto.js'
+
 const DB = 'all41'
 const DEPOSITO = 'foto-in-coda'
-
-// Oltre questo non si accumula: se il viaggio finisce con venti foto mai
-// partite, il problema non è la coda.
-export const MASSIMO_IN_CODA = 20
 
 function apri() {
   return new Promise((risolvi, rifiuta) => {
@@ -64,10 +62,16 @@ export async function leggiCoda() {
 export async function accoda(voce) {
   try {
     const db = await apri()
-    const quante = await attendi(transazione(db, 'readonly').count())
-    if (quante >= MASSIMO_IN_CODA) {
-      db.close()
-      return false
+    // Il tetto vale per le voci nuove. Una che c'è già si riscrive
+    // comunque: è il ritentativo che aggiorna la sua, e rifiutarlo a coda
+    // piena vorrebbe dire togliere dal telefono una foto che c'era.
+    const gia = await attendi(transazione(db, 'readonly').getKey(voce.id))
+    if (gia === undefined) {
+      const quante = await attendi(transazione(db, 'readonly').count())
+      if (quante >= MASSIMO_IN_CODA) {
+        db.close()
+        return false
+      }
     }
     await attendi(transazione(db, 'readwrite').put(voce))
     db.close()
