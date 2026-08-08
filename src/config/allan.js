@@ -60,12 +60,8 @@ export function urlAllan(espressione) {
   return `/allan/${e}.png`
 }
 
-// Che faccia fa entrando in ogni tab. Non e' decorazione: dice come la
-// pensa su quella sezione prima ancora di aprire bocca.
-export const FACCIA_PER_TAB = {
-  oggi: 'rassegnato',
-  gruppo: 'scocciato',
-  foto: 'sarcastico',
-  gioco: 'giudica',
-  altro: 'esausto',
-}
+// Le facce per tab non ci sono piu': nel tutorial Allan ne usa una sola,
+// perche' cambiargliela a ogni sezione faceva sembrare che ce ne fossero
+// cinque diversi invece di uno che ti segue in giro. Le otto espressioni
+// restano tutte in public/allan/ e le sceglie chi le mette in pagina —
+// l'Impostore usa la sarcastica sul retro della carta.

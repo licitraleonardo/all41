@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import './NuvolettaAllan.css'
 import { NUVOLETTE } from '../config/guida.js'
 import FacciaAllan from './FacciaAllan.jsx'
-import { FACCIA_PER_TAB } from '../config/allan.js'
 
 // Allan dice una cosa sola, la prima volta che entri in un tab, e poi non
 // la ripete mai piu'.
@@ -49,15 +48,21 @@ export default function NuvolettaAllan({ membroId, tab }) {
 
   return (
     <div className="nuvoletta-fondo" onClick={via} role="presentation">
-      <div className="nuvoletta" role="alert">
-        <div className="nuvoletta-testa">
-          <FacciaAllan espressione={FACCIA_PER_TAB[tab]} lato={46} />
+      {/* Allan sta FUORI dal fumetto e il fumetto punta a lui, ad altezza
+          faccia: dentro sembrava un avatar accanto a un messaggio, fuori
+          è un personaggio che parla. Una faccia sola per tutti gli step —
+          cambiarla a ogni tab faceva sembrare che ci fossero cinque
+          Allan diversi, invece che uno che ti segue. */}
+      <div className="nuvoletta-riga">
+        <FacciaAllan espressione="giudica" lato={72} className="nuvoletta-allan" />
+
+        <div className="nuvoletta" role="alert">
           <p className="nuvoletta-chi">Allan</p>
+          <p className="nuvoletta-testo">{NUVOLETTE[tab]}</p>
+          <button type="button" className="nuvoletta-ok" onClick={via}>
+            Va bene
+          </button>
         </div>
-        <p className="nuvoletta-testo">{NUVOLETTE[tab]}</p>
-        <button type="button" className="nuvoletta-ok" onClick={via}>
-          Va bene
-        </button>
       </div>
     </div>
   )

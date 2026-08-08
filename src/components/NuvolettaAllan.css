@@ -17,10 +17,33 @@
   animation: nuvoletta-entra 0.22s ease-out;
 }
 
+/* Allan a sinistra, il fumetto a destra, allineati in alto: la coda
+   deve stare ad altezza faccia, e con l'allineamento in alto quel punto
+   e' sempre lo stesso — a meta' della testa di Allan — comunque sia
+   lungo il testo. Centrandoli, un fumetto di quattro righe avrebbe
+   portato la coda sotto il mento. */
+.nuvoletta-riga {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  max-width: 460px;
+}
+
+.nuvoletta-allan {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  /* I ritagli hanno il fondo trasparente e le teste alla stessa altezza:
+     senza sfondo, Allan sta appoggiato sul velo come un personaggio, non
+     dentro un riquadro. */
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+}
+
 .nuvoletta {
   position: relative;
-  width: 100%;
-  max-width: 420px;
+  flex: 1;
+  min-width: 0;
   padding: 15px 17px 14px;
   background: var(--sand, #f7f4ec);
   border: 2px solid var(--sea, #0b3550);
@@ -28,17 +51,18 @@
   box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.6);
 }
 
-/* La codina che punta in giu', verso la barra dei tab. */
+/* La coda punta di lato, verso la faccia: 30px dall'alto e' il centro
+   della testa di un Allan da 72. */
 .nuvoletta::after {
   content: '';
   position: absolute;
-  left: 50%;
-  bottom: -11px;
+  left: -11px;
+  top: 30px;
   width: 18px;
   height: 18px;
-  transform: translateX(-50%) rotate(45deg);
+  transform: rotate(45deg);
   background: var(--sand, #f7f4ec);
-  border-right: 2px solid var(--sea, #0b3550);
+  border-left: 2px solid var(--sea, #0b3550);
   border-bottom: 2px solid var(--sea, #0b3550);
 }
 
@@ -89,13 +113,3 @@
   }
 }
 
-.nuvoletta-testa {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 7px;
-}
-
-.nuvoletta-testa .nuvoletta-chi {
-  margin: 0;
-}

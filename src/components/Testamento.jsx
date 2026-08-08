@@ -1,5 +1,4 @@
 import { LEGGI, PUNIZIONI, TROFEI, etichetta } from '../config/leggi.js'
-import FacciaAllan from './FacciaAllan.jsx'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 
 // Il codice delle Leggi scoperte. Continua di proposito il tono
@@ -24,8 +23,11 @@ export default function Testamento({ scoperte, membri }) {
   return (
     <div className="gioco-corpo">
       <header className="testamento-testata">
+        {/* Senza la faccia accanto al titolo: quella immagine adesso è
+            di Allan che parla nel tutorial, e averla anche qui la
+            trasformava in decorazione. Il Testamento è il posto dove
+            Allan custodisce e sta zitto. */}
         <div className="testamento-custode-riga">
-          <FacciaAllan espressione="giudica" lato={52} />
           <div>
             <h2 className="testamento-titolo">Testamento</h2>
             <p className="testamento-custode">Custodito da Allan</p>
