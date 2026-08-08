@@ -11,7 +11,7 @@ import {
   diTurno,
   puoAvanzare,
   secondiDelTestimone,
-  stessaParola,
+  raccontaFinale,
   esito,
   quantiMancano,
   quantiPerRivelare,
@@ -467,12 +467,17 @@ function Storico({ partite, ioId, onApri }) {
 
       <ul className="imp-storico-elenco">
         {mostrate.map((p) => {
-          const r = esito({
+          // ⚠️ Passa dalla stessa funzione della rivelazione: prima si
+          // calcolava il finale qui dentro ignorando il colpo di coda, e
+          // una partita ribaltata all'ultimo compariva come "Beccato".
+          const f = raccontaFinale({
             impostori: p.impostori,
             giocatori: p.giocatori,
             schede: schedePerId(p.schede, p.giocatori),
+            tentativo: p.tentativo,
+            parolaGruppo: p.parolaGruppo,
+            fuori: p.fuori,
           })
-          const scampati = r.impuniti.length > 0
           const mie = p.impostori.includes(ioId)
 
           return (
@@ -483,8 +488,14 @@ function Storico({ partite, ioId, onApri }) {
                 onClick={() => onApri(p)}
               >
                 <span className="imp-storico-quando">{quando(p.creataIl)}</span>
-                <span className={scampati ? 'imp-storico-esito franca' : 'imp-storico-esito preso'}>
-                  {scampati ? 'L’ha fatta franca' : 'Beccato'}
+                <span
+                  className={
+                    f.vincitore === 'impostori'
+                      ? 'imp-storico-esito franca'
+                      : 'imp-storico-esito preso'
+                  }
+                >
+                  {f.titolo}
                 </span>
                 <span className="imp-storico-parola">
                   {mie ? 'eri tu' : p.parolaGruppo}
@@ -967,17 +978,19 @@ function Fuori({ partita, membri, nome }) {
 function Rivelazione({ partita, voto, nome, membri }) {
   const r = useMemo(
     () =>
-      esito({
+      raccontaFinale({
         impostori: partita.impostori,
         giocatori: partita.giocatori,
         schede: schedePerId(voto?.schede, voto?.opzioni ?? partita.giocatori),
+        tentativo: partita.tentativo,
+        parolaGruppo: partita.parolaGruppo,
+        fuori: partita.fuori,
       }),
     [partita, voto?.schede, voto?.opzioni]
   )
 
-  const colpo = stessaParola(partita.tentativo, partita.parolaGruppo)
-  const scampati = r.impuniti.length > 0
-  const perNumeri = partita.stato === 'finita' && impostoriVivi(partita).length > 0 && !colpo
+  const colpo = r.colpoRiuscito
+  const perNumeri = r.perNumeri
 
   // Chi e' stato eliminato per errore: e' meta' della storia di una
   // partita a eliminazione, e senza non si capisce come si e' arrivati
@@ -987,13 +1000,7 @@ function Rivelazione({ partita, voto, nome, membri }) {
   return (
     <section className={colpo ? 'imp-rivelazione ribaltata' : 'imp-rivelazione'}>
       <h2 className="imp-titolo">
-        {colpo
-          ? 'Ribaltata all’ultimo'
-          : perNumeri
-            ? 'Vi hanno fatti fuori'
-            : scampati
-              ? 'L’ha fatta franca'
-              : 'Beccato'}
+        {r.titolo}
       </h2>
 
       {/* Il finale per numeri va detto, o non si capisce perche' la
@@ -1041,10 +1048,15 @@ function Rivelazione({ partita, voto, nome, membri }) {
               height="34"
             />
             <span>{nome(id)}</span>
+            {/* Scoperto ma vincente: il colpo di coda l'ha ribaltata, e
+                il punto se lo prende lo stesso. Dire solo "scoperto"
+                raccontava la partita sbagliata. */}
             <small>
-              {r.scoperti.includes(id)
-                ? 'scoperto'
-                : `impunito +${PER_ID['impostore-impunito'].punti}`}
+              {colpo
+                ? `ribaltata +${PER_ID['impostore-impunito'].punti}`
+                : r.scoperti.includes(id)
+                  ? 'scoperto'
+                  : `impunito +${PER_ID['impostore-impunito'].punti}`}
             </small>
           </div>
         ))}
@@ -1056,10 +1068,18 @@ function Rivelazione({ partita, voto, nome, membri }) {
         </p>
       )}
 
-      {r.indovini.length > 0 ? (
+      {/* ⚠️ `premiati` e non `indovini`: col colpo di coda riuscito
+          avevano indovinato ma non prendono niente, e annunciare punti
+          che nessuno riceve e' peggio che tacere. */}
+      {r.premiati.length > 0 ? (
         <p className="imp-spiega">
-          {r.indovini.map(nome).join(', ')} {r.indovini.length === 1 ? 'ha' : 'hanno'} indovinato:{' '}
+          {r.premiati.map(nome).join(', ')} {r.premiati.length === 1 ? 'ha' : 'hanno'} indovinato:{' '}
           +{PER_ID['smascheratore'].punti} a testa.
+        </p>
+      ) : colpo && r.indovini.length > 0 ? (
+        <p className="imp-spiega">
+          {r.indovini.map(nome).join(', ')} l’{r.indovini.length === 1 ? 'aveva' : 'avevano'}{' '}
+          riconosciuto, e non è servito a niente: la parola l’ha indovinata lui.
         </p>
       ) : (
         <p className="imp-spiega">Nessuno ha indovinato. Complimenti a nessuno.</p>

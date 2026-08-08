@@ -225,6 +225,61 @@ export function premi({ impostori, giocatori, schede, colpoRiuscito = false }) {
   }
 }
 
+// Come è finita, in una risposta sola.
+//
+// ⚠️ Esiste perché non esisteva: il finale se lo calcolavano per conto
+// loro la schermata della rivelazione, l'elenco delle partite vecchie e
+// chi assegna i punti. Due su tre non sapevano del colpo di coda, e
+// quindi lo storico diceva "Beccato" su una partita ribaltata, e la
+// rivelazione annunciava "+2 a chi ha indovinato" mentre i punti — quelli
+// veri, scritti da premi() — andavano tutti all'impostore.
+//
+// Non era un difetto di calcolo: era la stessa domanda fatta a tre
+// persone diverse, e due non avevano l'ultima notizia.
+export function raccontaFinale({
+  impostori,
+  giocatori,
+  schede,
+  tentativo = null,
+  parolaGruppo = null,
+  fuori = [],
+}) {
+  const r = esito({ impostori, giocatori, schede })
+  const colpoRiuscito = Boolean(tentativo) && stessaParola(tentativo, parolaGruppo)
+
+  // "Vi hanno fatti fuori" e "l'ha fatta franca" non sono la stessa cosa,
+  // e la differenza e' quanti ne restano: nel primo caso il gruppo ha
+  // eliminato tanti innocenti da mettere gli impostori in maggioranza, e
+  // da li' in poi il voto lo decidevano loro. Nel secondo l'impostore e'
+  // semplicemente passato inosservato al voto.
+  const perNumeri =
+    !colpoRiuscito && impostoriInMaggioranza({ impostori, giocatori, fuori })
+
+  return {
+    colpoRiuscito,
+    perNumeri,
+    // Chi ha vinto davvero. Col colpo riuscito vincono gli impostori
+    // anche se erano stati scoperti tutti: è il senso del ribaltamento.
+    vincitore: colpoRiuscito || perNumeri || r.impuniti.length > 0 ? 'impostori' : 'gruppo',
+    scoperti: r.scoperti,
+    // Chi ha indovinato e viene PAGATO. Col colpo riuscito la lista è
+    // vuota: hanno indovinato, ma la partita l'hanno persa lo stesso, e
+    // annunciare punti che nessuno riceve è peggio che tacere.
+    premiati: colpoRiuscito ? [] : r.indovini,
+    // Chi aveva indovinato, a prescindere dai punti: serve a raccontare
+    // il colpo di coda a chi c'era andato vicino.
+    indovini: r.indovini,
+    // Come si chiama questo finale, detto in due parole.
+    titolo: colpoRiuscito
+      ? 'Ribaltata all’ultimo'
+      : perNumeri
+        ? 'Vi hanno fatti fuori'
+        : r.impuniti.length > 0
+          ? 'L’ha fatta franca'
+          : 'Beccato',
+  }
+}
+
 // ------------------------------------------------------ la rivelazione
 
 // Quando tutti hanno votato non serve chiedere niente: si rivela e basta.

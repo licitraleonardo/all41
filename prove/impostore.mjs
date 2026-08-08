@@ -26,6 +26,7 @@ import {
   schedePerId,
   puoAvanzare,
   secondiDelTestimone,
+  raccontaFinale,
 } from '../src/lib/impostore.js'
 import { COPPIE, IMPOSTORE, NESSUNA_PAROLA } from '../src/config/impostore.js'
 import { PER_ID } from '../src/config/leggi.js'
@@ -598,6 +599,74 @@ console.log('Il testimone: trenta secondi in cui il turno lo passa solo chi parl
   // Una data storta non deve rompere la schermata.
   const storta = { ...base, turnoDa: 'non una data' }
   prova('una data illeggibile non blocca', puoAvanzare(storta, 'a', adesso(0)))
+}
+
+
+console.log('Come e finita: una risposta sola per tutta l app')
+{
+  const G = ['a', 'b', 'c', 'd']
+  const IMP = ['a']
+  // b, c e d accusano a: l impostore e beccato
+  const beccato = { b: ['a'], c: ['a'], d: ['a'] }
+  // nessuno lo accusa: l ha fatta franca
+  const franca = { b: ['c'], c: ['b'], d: ['b'] }
+
+  const f = (schede, extra) =>
+    raccontaFinale({ impostori: IMP, giocatori: G, schede, parolaGruppo: 'Scoglio', ...extra })
+
+  const preso = f(beccato, { fuori: ['a'] })
+  prova('beccato: titolo giusto', preso.titolo === 'Beccato')
+  prova('beccato: vince il gruppo', preso.vincitore === 'gruppo')
+  prova('beccato: chi ha indovinato viene pagato', preso.premiati.length === 3)
+
+  const scampato = f(franca, {})
+  prova('franca: titolo giusto', scampato.titolo === 'L’ha fatta franca')
+  prova('franca: vincono gli impostori', scampato.vincitore === 'impostori')
+
+  // ⚠️ il caso che era rotto in due schermate su tre
+  const ribaltata = f(beccato, { fuori: ['a'], tentativo: 'Scoglio' })
+  prova('ribaltata: titolo giusto', ribaltata.titolo === 'Ribaltata all’ultimo')
+  prova('ribaltata: vincono gli impostori', ribaltata.vincitore === 'impostori')
+  prova('ribaltata: NESSUNO viene pagato per aver indovinato', ribaltata.premiati.length === 0)
+  prova('ribaltata: ma si sa chi ci era arrivato', ribaltata.indovini.length === 3)
+  prova('ribaltata: il colpo risulta riuscito', ribaltata.colpoRiuscito === true)
+
+  // il tentativo sbagliato non ribalta niente
+  const fallito = f(beccato, { fuori: ['a'], tentativo: 'Sasso' })
+  prova('tentativo sbagliato: resta beccato', fallito.titolo === 'Beccato')
+  prova('tentativo sbagliato: i punti restano a chi ha indovinato', fallito.premiati.length === 3)
+
+  // accenti e maiuscole non devono far perdere un colpo giusto
+  const conAccento = raccontaFinale({
+    impostori: IMP, giocatori: G, schede: beccato, fuori: ['a'],
+    parolaGruppo: 'Caffè', tentativo: 'caffe',
+  })
+  prova('la parola giusta scritta senza accento vale', conAccento.colpoRiuscito === true)
+
+  // Vittoria per numeri: il gruppo ha eliminato tanti innocenti da
+  // lasciare gli impostori in maggioranza. Uno contro uno basta.
+  const perNumeri = raccontaFinale({
+    impostori: ['a'], giocatori: ['a', 'b', 'c', 'd'], schede: { b: ['c'] },
+    fuori: ['b', 'c'], parolaGruppo: 'Scoglio',
+  })
+  prova('per numeri: titolo giusto', perNumeri.titolo === 'Vi hanno fatti fuori')
+  prova('per numeri: vincono gli impostori', perNumeri.vincitore === 'impostori')
+
+  // ⚠️ Passare inosservati NON e' vincere per numeri: sono due finali
+  // diversi e vanno raccontati diversi.
+  const inosservato = raccontaFinale({
+    impostori: ['a'], giocatori: ['a', 'b', 'c', 'd'], schede: { b: ['c'], c: ['b'] },
+    fuori: [], parolaGruppo: 'Scoglio',
+  })
+  prova('inosservato non e’ per numeri', inosservato.titolo === 'L’ha fatta franca')
+
+  // il risultato deve combaciare con quello che paga premi()
+  const p1 = premi({ impostori: IMP, giocatori: G, schede: beccato, colpoRiuscito: true })
+  prova(
+    'quello che si racconta e quello che si paga coincidono',
+    p1.assegnazioni.every((x) => x.leggeId === 'impostore-impunito') &&
+      ribaltata.premiati.length === 0
+  )
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} prove fallite.\n`)
