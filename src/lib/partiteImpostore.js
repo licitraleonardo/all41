@@ -17,7 +17,7 @@ import { faiScattareLegge } from './punti.js'
 // impostore.js, che non sa cosa sia Supabase e si puo' provare.
 
 const CAMPI =
-  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, setup_vote_id, fuori, tentativo, tentato_da, created_at'
+  'id, parola_gruppo, parola_impostore, impostori, giocatori, assegnazioni, ordine, turno, giro, giri_totali, vote_id, stato, rivela_chiesta, setup_vote_id, fuori, tentativo, tentato_da, turno_da, created_at'
 
 export function daRiga(riga) {
   if (!riga) return null
@@ -39,6 +39,10 @@ export function daRiga(riga) {
     tentativo: riga.tentativo ?? null,
     tentatoDa: riga.tentato_da ?? null,
     stato: riga.stato,
+    // Quando e' cominciato il turno in corso: da qui il testimone.
+    // Le partite aperte prima della colonna non ce l'hanno, e in quel
+    // caso il testimone non blocca nessuno.
+    turnoDa: riga.turno_da ?? null,
     creataIl: riga.created_at,
   }
 }

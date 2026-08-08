@@ -24,6 +24,8 @@ import {
   sceltaVincente,
   tuttiHannoVotato,
   schedePerId,
+  puoAvanzare,
+  secondiDelTestimone,
 } from '../src/lib/impostore.js'
 import { COPPIE, IMPOSTORE, NESSUNA_PAROLA } from '../src/config/impostore.js'
 import { PER_ID } from '../src/config/leggi.js'
@@ -560,6 +562,42 @@ console.log('\nle coppie di parole')
   const doppie = COPPIE.map(([a]) => a.toLowerCase()).filter((a, i, t) => t.indexOf(a) !== i)
   prova('nessuna parola del gruppo ripetuta', doppie.length === 0, doppie)
   prova('i giri di default sono due', IMPOSTORE.giriTotali === 2)
+}
+
+
+console.log('Il testimone: trenta secondi in cui il turno lo passa solo chi parla')
+{
+  const base = {
+    ordine: ['a', 'b', 'c', 'd'],
+    turno: 1,          // parla b
+    giro: 1,
+    giriTotali: 2,
+    stato: 'in-corso',
+  }
+  const t0 = Date.parse('2026-08-14T21:00:00Z')
+  const fra = (secondi) => ({ ...base, turnoDa: new Date(t0).toISOString() })
+  const adesso = (secondi) => t0 + secondi * 1000
+
+  const p = fra()
+  prova('chi parla passa subito', puoAvanzare(p, 'b', adesso(0)))
+  prova('gli altri no, all’istante zero', !puoAvanzare(p, 'a', adesso(0)))
+  prova('gli altri no, a dieci secondi', !puoAvanzare(p, 'c', adesso(10)))
+  prova('gli altri no, a ventinove', !puoAvanzare(p, 'd', adesso(29)))
+  prova('a trenta si sblocca per tutti', puoAvanzare(p, 'a', adesso(30)))
+  prova('e resta sbloccato dopo', puoAvanzare(p, 'a', adesso(300)))
+
+  prova('il conto alla rovescia parte da trenta', secondiDelTestimone(p, adesso(0)) === 30)
+  prova('a dieci secondi ne restano venti', secondiDelTestimone(p, adesso(10)) === 20)
+  prova('non va mai sotto zero', secondiDelTestimone(p, adesso(999)) === 0)
+
+  // Una partita vecchia, senza la colonna: non deve bloccare niente.
+  const senzaColonna = { ...base }
+  prova('senza turnoDa non blocca nessuno', puoAvanzare(senzaColonna, 'a', adesso(0)))
+  prova('e non mostra nessun conto', secondiDelTestimone(senzaColonna, adesso(0)) === 0)
+
+  // Una data storta non deve rompere la schermata.
+  const storta = { ...base, turnoDa: 'non una data' }
+  prova('una data illeggibile non blocca', puoAvanzare(storta, 'a', adesso(0)))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} prove fallite.\n`)

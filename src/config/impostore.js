@@ -30,6 +30,18 @@ export const IMPOSTORE = {
   // Il voto non ha un timer visibile: serve solo a non lasciare un voto
   // appeso per sempre se la partita finisce in una birra.
   minutiVoto: 30,
+
+  // Il testimone. Chiunque puo' far avanzare il turno — se a qualcuno si
+  // scarica il telefono la partita non si blocca — ma per i primi trenta
+  // secondi puo' farlo solo chi sta parlando.
+  //
+  // ⚠️ Non e' il countdown che lo spec vieta, ed e' bene tenere ferma la
+  // differenza: un countdown mette fretta a chi parla, questo protegge
+  // chi parla da chi ha il dito veloce. Alla scadenza non succede niente
+  // — nessun turno saltato, nessun suono — si sblocca soltanto il tasto
+  // per gli altri. Chi sta parlando puo' passare quando vuole, anche
+  // subito.
+  secondiDelTestimone: 30,
 }
 
 // La variante consigliata e' quella con la parola simile: chi non ha

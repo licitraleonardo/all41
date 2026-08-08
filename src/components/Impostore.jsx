@@ -9,6 +9,8 @@ import {
   vivi,
   chiPuoTentare,
   diTurno,
+  puoAvanzare,
+  secondiDelTestimone,
   stessaParola,
   esito,
   quantiMancano,
@@ -525,6 +527,19 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
   const tocca = diTurno(partita)
   const mancano = quantiMancano(partita)
 
+  // Il testimone: per i primi trenta secondi il turno lo passa solo chi
+  // sta parlando. Il conto si aggiorna ogni secondo e riparte da capo a
+  // ogni cambio di turno — `turnoDa` arriva dal database, quindi sei
+  // telefoni con sei orologi diversi vedono lo stesso numero.
+  const [adesso, setAdesso] = useState(() => Date.now())
+  useEffect(() => {
+    const battito = setInterval(() => setAdesso(Date.now()), 1000)
+    return () => clearInterval(battito)
+  }, [partita.turnoDa])
+
+  const restano = secondiDelTestimone(partita, adesso)
+  const possoAvanzare = puoAvanzare(partita, membro.id, adesso)
+
   function hoLetto() {
     localStorage.setItem(chiave, 'si')
     setLetta(true)
@@ -628,10 +643,19 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
         {mancano === 1 ? 'Ultimo, poi si vota.' : `Ancora ${mancano} prima del voto.`}
       </p>
 
-      <button type="button" className="imp-comincia" onClick={fatto} disabled={inCorso}>
-        {inCorso ? '…' : 'Fatto, avanti'}
+      <button
+        type="button"
+        className="imp-comincia"
+        onClick={fatto}
+        disabled={inCorso || !possoAvanzare}
+      >
+        {inCorso ? '…' : possoAvanzare ? 'Fatto, avanti' : `Aspetta ${restano}s`}
       </button>
-      <p className="imp-nota">Può premerlo chiunque, non solo chi è di turno.</p>
+      <p className="imp-nota">
+        {possoAvanzare
+          ? 'Può premerlo chiunque, non solo chi è di turno.'
+          : 'Per mezzo minuto il turno lo passa solo chi parla. Poi anche tu.'}
+      </p>
 
       <button
         type="button"

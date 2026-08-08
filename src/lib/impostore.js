@@ -87,6 +87,31 @@ export function diTurno(partita) {
   return partita.ordine[partita.turno] ?? null
 }
 
+// Il testimone: per i primi trenta secondi il turno lo passa solo chi
+// sta parlando, poi lo puo' passare chiunque.
+//
+// ⚠️ Non e' il countdown che lo spec vieta. Un countdown mette fretta a
+// chi parla; questo protegge chi parla da chi ha il dito veloce — e alla
+// scadenza non succede niente, si sblocca soltanto il tasto per gli
+// altri. Il turno non si perde mai e nessuno viene saltato.
+//
+// La regola vecchia resta intera: chiunque puo' far avanzare, se a
+// qualcuno si scarica il telefono la partita non si blocca. Cambia solo
+// che deve aspettare mezzo minuto prima di poterlo fare.
+export function secondiDelTestimone(partita, adesso = Date.now()) {
+  if (!partita?.turnoDa) return 0
+  const passati = (adesso - Date.parse(partita.turnoDa)) / 1000
+  if (!Number.isFinite(passati)) return 0
+  return Math.max(0, Math.ceil(IMPOSTORE.secondiDelTestimone - passati))
+}
+
+export function puoAvanzare(partita, membroId, adesso = Date.now()) {
+  // Chi parla passa quando vuole, anche subito: il testimone e' suo.
+  if (diTurno(partita) === membroId) return true
+  // Chi guarda aspetta che il testimone scada.
+  return secondiDelTestimone(partita, adesso) === 0
+}
+
 // Quanti "fatto" mancano alla fine dei giri: serve solo a scrivere
 // "ultimo giro" invece di un numero che non dice niente.
 export function quantiMancano({ ordine, turno, giro, giriTotali }) {
