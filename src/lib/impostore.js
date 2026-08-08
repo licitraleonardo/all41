@@ -357,6 +357,20 @@ export function chiPuoTentare({ impostori, giocatori, schede }) {
 // consigliata, e se non e' in ballo la prima: serve una regola qualunque
 // purche' sia sempre la stessa, o due telefoni che chiudono il voto nello
 // stesso istante farebbero partire due partite diverse.
+// Il conteggio è arrivato, o siamo indietro?
+//
+// ⚠️ Serve perché la partita parte da sola sul primo telefono che vede
+// la maggioranza, e quel telefono può avere l'elenco di chi ha votato
+// già aggiornato e i numeri ancora fermi. In quel buco sceltaVincente
+// non trova nessun massimo e ripiega sul valore consigliato: il gruppo
+// vota due impostori, ne parte uno, e nessuno capisce perché.
+//
+// È successo davvero, con sei persone che votavano nello stesso secondo.
+export function conteggioAffidabile(conteggi, quantiHannoVotato) {
+  const contati = (conteggi ?? []).reduce((somma, n) => somma + (n ?? 0), 0)
+  return contati > 0 && contati >= quantiHannoVotato
+}
+
 export function sceltaVincente(conteggi, scelte, consigliata) {
   const voti = scelte.map((_, i) => conteggi?.[i] ?? 0)
   const massimo = Math.max(...voti)

@@ -27,6 +27,7 @@ import {
   puoAvanzare,
   secondiDelTestimone,
   raccontaFinale,
+  conteggioAffidabile,
 } from '../src/lib/impostore.js'
 import { COPPIE, IMPOSTORE, NESSUNA_PAROLA } from '../src/config/impostore.js'
 import { PER_ID } from '../src/config/leggi.js'
@@ -666,6 +667,31 @@ console.log('Come e finita: una risposta sola per tutta l app')
     'quello che si racconta e quello che si paga coincidono',
     p1.assegnazioni.every((x) => x.leggeId === 'impostore-impunito') &&
       ribaltata.premiati.length === 0
+  )
+}
+
+
+console.log('Il conteggio deve aver raggiunto i votanti prima di partire')
+{
+  prova('sei voti contati, sei votanti: si parte', conteggioAffidabile([0, 6], 6))
+  prova('quattro e quattro: si parte', conteggioAffidabile([1, 3], 4))
+
+  // ⚠️ Il buco vero: questo telefono sa che hanno votato in quattro ma
+  // i numeri non gli sono ancora arrivati.
+  prova('quattro votanti, conteggi a zero: si aspetta', !conteggioAffidabile([0, 0], 4))
+  prova('quattro votanti, ne risultano due: si aspetta', !conteggioAffidabile([1, 1], 4))
+  prova('conteggi mancanti: si aspetta', !conteggioAffidabile(undefined, 4))
+  prova('nessuno ha votato: si aspetta', !conteggioAffidabile([0, 0], 0))
+
+  // E questo e' il danno che evita: senza massimo, si ripiega sul
+  // consigliato e la scelta del gruppo sparisce.
+  prova(
+    'con i conteggi a zero sceltaVincente ripiega sul consigliato',
+    sceltaVincente([0, 0], [1, 2], 1) === 1
+  )
+  prova(
+    'coi conteggi veri vince quello che ha votato il gruppo',
+    sceltaVincente([0, 6], [1, 2], 1) === 2
   )
 }
 

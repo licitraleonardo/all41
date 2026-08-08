@@ -17,6 +17,7 @@ import {
   quantiPerRivelare,
   maggioranza,
   sceltaVincente,
+  conteggioAffidabile,
   schedePerId,
   tuttiHannoVotato,
 } from '../lib/impostore.js'
@@ -224,6 +225,13 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
   useEffect(() => {
     if (!voto || partito.current) return
     if (!bastaPerCominciare(quanti, tutti)) return
+    // ⚠️ E aspetta che i numeri abbiano raggiunto i votanti. Questo
+    // telefono puo' sapere che hanno votato in quattro e avere ancora i
+    // conteggi a zero: partendo li', sceltaVincente non trova nessun
+    // massimo e ripiega sul consigliato, buttando via la scelta del
+    // gruppo. E' successo davvero — sei voti per "due impostori" e una
+    // partita partita con uno solo.
+    if (!conteggioAffidabile(conteggi, quanti)) return
     partito.current = true
     onAvvia(sceltaVincente(conteggi, scelte, consigliata))
   }, [voto, quanti, tutti, conteggi, scelte, consigliata, onAvvia])
