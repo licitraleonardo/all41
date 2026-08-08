@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './Gioco.css'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
+import NuvolettaAllan from './NuvolettaAllan.jsx'
 import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
 import Pecora from './Pecora.jsx'
@@ -65,6 +66,11 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
 
   return (
     <div className="gioco-schermo">
+      {/* Una per sotto-scheda: qui dentro ce ne sono cinque, e ognuna è
+          una cosa diversa. Un solo messaggio per tutto il tab non
+          spiegava né la Dama né l'Impostore. */}
+      <NuvolettaAllan membroId={membro?.id} passo={`gioco.${vista}`} />
+
       {/* La guida non sta più qui. Una card in cima alla schermata più
           usata del tab era troppo invadente: adesso Allan dice due righe
           la prima volta che entri, e la guida intera vive in Altro. */}

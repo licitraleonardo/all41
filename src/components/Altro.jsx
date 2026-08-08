@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import './Altro.css'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
+import NuvolettaAllan, { SequenzaAllan, nuvolettaGiaVista } from './NuvolettaAllan.jsx'
 import Spese from './Spese.jsx'
 import Documenti from './Documenti.jsx'
 import Posizioni from './Posizioni.jsx'
@@ -33,8 +35,29 @@ export default function Altro({ membro }) {
     SCHEDE.map(([id]) => id)
   )
 
+  // La sequenza parte solo dopo che si è chiuso il messaggio del tab: due
+  // fumetti sovrapposti al primo ingresso sono un muro, non una guida.
+  const [altroGiaVisto, setAltroGiaVisto] = useState(false)
+  useEffect(() => {
+    if (!membro?.id) return undefined
+    const guarda = () => setAltroGiaVisto(nuvolettaGiaVista(membro.id, 'altro'))
+    guarda()
+    // Il messaggio del tab si chiude con un tocco dentro la nuvoletta, e
+    // da fuori non arriva nessun evento: si ricontrolla a intervalli
+    // finché non è chiuso. Costa una lettura di localStorage.
+    const battito = setInterval(guarda, 400)
+    return () => clearInterval(battito)
+  }, [membro?.id])
+
   return (
     <div className="altro-schermo">
+      {/* Prima il messaggio del tab, poi i cinque delle sotto-voci in
+          fila: qui dentro nessuno entra per curiosità, e con l'innesco
+          "la prima volta che apri questa scheda" tre su cinque non si
+          sarebbero mai visti. */}
+      <NuvolettaAllan membroId={membro?.id} passo="altro" />
+      {altroGiaVisto && <SequenzaAllan membroId={membro?.id} />}
+
       <div className="segmenti" role="tablist">
         {SCHEDE.map(([id, etichetta]) => (
           <button

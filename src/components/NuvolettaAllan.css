@@ -17,6 +17,19 @@
   animation: nuvoletta-entra 0.22s ease-out;
 }
 
+/* I due step che lo spec vuole "solo spostamento del fumetto": non si
+   entra in una sezione nuova, si indica una scheda che sta in cima, e il
+   fumetto va a stare vicino a lei invece che in fondo allo schermo. */
+.nuvoletta-fondo.in-alto {
+  align-items: flex-start;
+  padding-top: calc(var(--spazio-alto) + 62px);
+  padding-bottom: 16px;
+}
+
+body.con-banner .nuvoletta-fondo.in-alto {
+  padding-top: calc(var(--altezza-banner) + 62px);
+}
+
 /* Allan a sinistra, il fumetto a destra, allineati in alto: la coda
    deve stare ad altezza faccia, e con l'allineamento in alto quel punto
    e' sempre lo stesso — a meta' della testa di Allan — comunque sia
@@ -82,9 +95,34 @@
   color: var(--ink, #16323f);
 }
 
+.nuvoletta-azioni {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Sobrio di proposito: saltare il tutorial è una scelta legittima, non
+   una via di fuga da nascondere — ma nemmeno la cosa da premere per
+   prima. */
+.nuvoletta-salta {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft, #55636b);
+  background: transparent;
+  border: 0;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.nuvoletta-salta:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
+
 .nuvoletta-ok {
-  display: block;
-  margin: 12px 0 0 auto;
   padding: 8px 18px;
   font: inherit;
   font-size: 13.5px;

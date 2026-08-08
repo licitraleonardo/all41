@@ -63,13 +63,86 @@ export const APERTURA = 'Cinque tab, qualche gesto che non si vede, e un mucchio
 // po' svogliata, mai entusiasta. Allan non fa il cicerone contento —
 // custodisce il Testamento e lo sa. Se diventasse una mascotte allegra
 // il personaggio si consumerebbe alla prima schermata.
+// Ogni voce ha un id che dice dove si trova: `gruppo` è il tab,
+// `gruppo.vocali` la sua sotto-scheda. Il segnalibro usa questo id,
+// quindi ogni pezzo dell'app si spiega una volta sola nella vita.
+//
+// `posizione: 'alto'` per i due step che lo spec vuole "solo spostamento
+// del fumetto": lì non si entra in una sezione nuova, si indica una
+// scheda che sta in cima, e il fumetto va a stare vicino a lei.
 export const NUVOLETTE = {
-  oggi: 'Il programma dei cinque giorni. Non l’ho scritto io. Ogni tappa ha il suo indirizzo: si tocca e vi porta.',
-  gruppo:
-    'Qui si scrive. Se avete le mani occupate si parla: il tasto grande si tiene premuto e registra. Io ascolto tutto, per dovere.',
-  foto: 'Caricate pure. Cinque al giorno a testa, poi basta. C’è chi ci prova a farne una più bella delle altre: si nota.',
-  gioco:
-    'La classifica. Toccate qualcuno per proporgli dei punti, in su o in giù, e poi decide il gruppo. Il Testamento sta lì sotto: dategli un’occhiata, ma non troppo lunga.',
-  altro:
-    'Spese, documenti, la mappa e la guida. Roba noiosa finché non serve, e poi serve tutta insieme.',
+  oggi: {
+    testo:
+      'Qui c’è il programma del viaggio. Così almeno sapete dove dovreste essere... anche se arriverete in ritardo lo stesso.',
+  },
+
+  gruppo: {
+    testo:
+      'Questa è la chat. Parlate, litigate, prendetevi in giro. Cercate solo di non infrangere le Leggi...',
+  },
+  'gruppo.vocali': {
+    posizione: 'alto',
+    testo:
+      'Se scrivere vi stanca, lasciate un vocale. Sarà comunque troppo lungo per essere ascoltato.',
+  },
+
+  foto: {
+    testo: 'Qui finiscono le foto del viaggio.. Che c’è?? Non c’è nient’altro da dire',
+  },
+  'foto.sfide': {
+    posizione: 'alto',
+    testo: 'Dai un’occhiata alle sfide, ce ne sono di nuove ogni giorno, yuppy...',
+  },
+
+  'gioco.classifica': {
+    testo:
+      'Qui vedete chi sta vincendo il viaggio. Puoi proporre dei punti per ribaltare o confermare la situazione.',
+  },
+  'gioco.testamento': {
+    testo:
+      'Le Leggi decidono cosa vale punti e cosa vi farà pentire delle vostre azioni. I Trofei? Gloria eterna.',
+  },
+  'gioco.impostore': {
+    testo: 'Uno mente. Gli altri provano a scoprirlo. Claudio non fare il babbo maligno',
+  },
+  // Non era nell'elenco dei quindici perché quando l'hai scritto la Dama
+  // non c'era. Senza, sarebbe l'unica scheda muta di tutta l'app.
+  'gioco.dama': {
+    testo: 'Due persone, una scacchiera, e un’amicizia che regge fino alla terza partita.',
+  },
+  'gioco.pecora': {
+    testo: 'Provo a evitare gli ostacoli, che bella metafora della vita',
+  },
+
+  altro: {
+    testo: 'Le cose utili che nessuno cerca finché non servono davvero.',
+  },
 }
+
+// Gli ultimi cinque step: non aspettano che si apra ogni sotto-sezione,
+// scorrono uno dietro l'altro appena si entra in Altro.
+//
+// Sono le voci che si guardano una volta e poi mai più — nessuno ci
+// entra per curiosità, quindi con l'innesco "la prima volta che apri
+// questa scheda" tre su cinque non si sarebbero mai visti.
+export const SEQUENZA_ALTRO = [
+  {
+    id: 'altro.spese',
+    testo:
+      'Segnate chi ha pagato. Così a fine viaggio smettete di dire “non mi ricordo quanto ti devo”.',
+  },
+  { id: 'altro.mappa', testo: 'Per chi si perde anche seguendo il gruppo.' },
+  {
+    id: 'altro.stat',
+    testo: 'Numeri, record e altre prove oggettive delle vostre pessime decisioni.',
+  },
+  {
+    id: 'altro.guida',
+    testo: 'Se siete arrivati qui significa che non avete ascoltato il tutorial. Classico.',
+  },
+  {
+    id: 'altro.info',
+    testo:
+      'Versione dell’app, crediti e altre cose che leggerete per circa quattro secondi.',
+  },
+]

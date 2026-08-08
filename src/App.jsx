@@ -313,10 +313,11 @@ export default function App() {
             tab resta fuori, perche' senza quella non si va da nessuna
             parte. */}
         <Riparo zitto>
-          {/* Allan dice la sua la prima volta che entri in un tab, e mai
-              più. Sta qui e non dentro le schermate perché è la stessa
-              cosa per tutte e cinque, e perché deve stare sopra a tutto. */}
-          <NuvolettaAllan membroId={membro?.id} tab={tab} />
+          {/* Qui resta solo Oggi, che non ha sotto-schede. Gli altri
+              quattro tab montano la nuvoletta al loro interno: lo stato
+              della sotto-scheda vive lì, e i quindici step dello spec
+              parlano di sotto-schede, non di tab. */}
+          {tab === 'oggi' && <NuvolettaAllan membroId={membro?.id} passo="oggi" />}
         </Riparo>
 
         <StrisciaOffline attiva={!inLinea} />
