@@ -1027,6 +1027,92 @@ console.log('\nUn impostore non indovina mai, nemmeno nei giri vecchi')
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// La via d'uscita dal colpo di coda
+//
+// Se chi e' stato beccato se n'e' andato, o ha il telefono morto, o
+// semplicemente non ha voglia di scrivere, la partita resta ferma nello
+// stato 'colpo' per sempre: nessuno prende punti — nemmeno chi aveva
+// indovinato — e finche' ce n'e' una aperta non se ne comincia un'altra.
+//
+// Il gruppo puo' chiudere senza, con la stessa soglia del "rivela in
+// anticipo". La proprieta' che rende la cosa possibile e' una sola, ed e'
+// quella che va provata: chi si sta aspettando e' stato beccato, quindi
+// e' in `fuori`, quindi NON conta nella maggioranza. Se un giorno la
+// soglia tornasse a contare tutti i giocatori, il contatore arriverebbe a
+// "4 su 4" senza che succeda niente — e' gia' successo una volta, ed e'
+// scritto sopra bastaPerRivelare.
+console.log('\nSi puo chiudere il colpo senza chi non risponde')
+{
+  const OTTO = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  // 'a' e' l'impostore, beccato: e' fuori, e non risponde piu'.
+  const partita = { giocatori: OTTO, impostori: ['a'], fuori: ['a'] }
+
+  const superstiti = vivi(partita)
+  prova('chi e stato beccato non e piu in gioco', !superstiti.includes('a'))
+  prova('restano in sette', superstiti.length === 7)
+  prova('e ne servono quattro', quantiPerRivelare(superstiti.length) === 4)
+
+  prova('in tre non basta', !bastaPerRivelare(partita, ['b', 'c', 'd']))
+  prova('in quattro si', bastaPerRivelare(partita, ['b', 'c', 'd', 'e']))
+  prova(
+    'la richiesta di chi e stato beccato non conta',
+    !bastaPerRivelare(partita, ['a', 'b', 'c', 'd']),
+    { aiuto: 'sono quattro nomi, ma uno e fuori' }
+  )
+  prova(
+    'e nemmeno quella di un innocente eliminato prima',
+    !bastaPerRivelare({ ...partita, fuori: ['a', 'h'] }, ['h', 'b', 'c'])
+  )
+}
+{
+  // Due impostori beccati insieme: si aspetta in due, e sono fuori tutti
+  // e due.
+  const OTTO = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  const partita = { giocatori: OTTO, impostori: ['a', 'b'], fuori: ['a', 'b'] }
+  prova('restano in sei', vivi(partita).length === 6)
+  prova('e ne servono quattro', quantiPerRivelare(6) === 4)
+  prova('quattro superstiti bastano', bastaPerRivelare(partita, ['c', 'd', 'e', 'f']))
+  prova(
+    'tre superstiti piu i due beccati non bastano',
+    !bastaPerRivelare(partita, ['a', 'b', 'c', 'd', 'e'])
+  )
+}
+{
+  // La proprieta' che conta: la via d'uscita deve essere SEMPRE
+  // raggiungibile da chi e' rimasto al tavolo. Una soglia piu' alta del
+  // numero dei presenti sarebbe un tasto che non funziona mai.
+  let sempreRaggiungibile = true
+  let peggiore = null
+  for (let quanti = 4; quanti <= 10; quanti += 1) {
+    const giocatori = Array.from({ length: quanti }, (_, i) => `p${i}`)
+    for (const beccati of [1, 2]) {
+      if (quanti - beccati < 1) continue
+      const partita = {
+        giocatori,
+        impostori: giocatori.slice(0, beccati),
+        fuori: giocatori.slice(0, beccati),
+      }
+      const superstiti = vivi(partita)
+      const serve = quantiPerRivelare(superstiti.length)
+      if (serve > superstiti.length) {
+        sempreRaggiungibile = false
+        peggiore = { quanti, beccati, serve, superstiti: superstiti.length }
+      }
+      // E chiedendolo tutti, deve bastare per davvero.
+      if (!bastaPerRivelare(partita, superstiti)) {
+        sempreRaggiungibile = false
+        peggiore = { quanti, beccati, nota: 'nemmeno tutti insieme bastano' }
+      }
+    }
+  }
+  prova(
+    'da quattro a dieci persone, con uno o due beccati, chi resta ce la fa sempre',
+    sempreRaggiungibile,
+    peggiore
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // La lettura dei giri ha DUE estremi
 //
 // leggiSchedeDeiGiri lega i voti alla partita per tempo e non per chiave

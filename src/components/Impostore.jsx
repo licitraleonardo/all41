@@ -198,6 +198,7 @@ export default function Impostore({ membro, membri }) {
           membro={membro}
           nome={nome}
           onTenta={tenta}
+          onChiedi={chiedi}
           onChiudi={chiudi}
         />
       )}
@@ -944,9 +945,28 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
 // se la indovina, ribalta tutto. Per tutti gli altri e' un'attesa — ed e'
 // giusto che sia un'attesa, perche' e' il momento in cui si trattiene il
 // fiato.
-function Colpo({ partita, voto, membro, nome, onTenta, onChiudi }) {
+function Colpo({ partita, voto, membro, nome, onTenta, onChiedi, onChiudi }) {
   const [scritto, setScritto] = useState('')
   const [inCorso, setInCorso] = useState(false)
+
+  // La via d'uscita. Se chi e' stato beccato se n'e' andato, o ha il
+  // telefono morto, o semplicemente non ha voglia di scrivere, la partita
+  // resta appesa qui per sempre: nessuno prende punti — nemmeno chi aveva
+  // indovinato — e finche' ce n'e' una aperta non se ne comincia un'altra.
+  // C'era gia' "Abbandona", ma abbandonare butta via anche la vittoria
+  // che il gruppo si era guadagnato.
+  //
+  // Stessa soglia del "rivela in anticipo", e per la stessa ragione: e' un
+  // gesto che decide come finisce, quindi non puo' essere di chi tocca il
+  // tasto per primo. Qui pero' funziona meglio, perche' chi si sta
+  // aspettando e' stato beccato — quindi e' in `fuori`, quindi non conta
+  // nella maggioranza. La persona che manca non puo' bloccare il conto che
+  // serve a smettere di aspettarla.
+  const chiesta = partita.rivelaChiesta ?? []
+  const inGioco = vivi(partita)
+  const serve = quantiPerRivelare(inGioco.length)
+  const bastano = bastaPerRivelare(partita, chiesta)
+  const hoChiesto = chiesta.includes(membro.id)
 
   const puo = useMemo(
     () =>
@@ -1017,6 +1037,28 @@ function Colpo({ partita, voto, membro, nome, onTenta, onChiudi }) {
             avevate voi. Se la indovina, avete perso lo stesso.
           </p>
           <Rotella testo="Un attimo di silenzio" />
+
+          {/* Sotto la rotella e non accanto al titolo: l'attesa è il
+              momento del gioco, e un tasto per saltarla messo in vista
+              inviterebbe a saltarla sempre. Serve quando l'attesa non
+              finisce, e allora si scorre. */}
+          <button
+            type="button"
+            className="imp-rivela"
+            onClick={bastano ? onChiudi : onChiedi}
+            disabled={!bastano && hoChiesto}
+          >
+            {bastano
+              ? 'Il gruppo ha deciso: chiudete senza'
+              : hoChiesto
+                ? `Hai chiesto di chiudere — ${chiesta.length} su ${serve}`
+                : `Non risponde: chiudete (${chiesta.length} su ${serve})`}
+          </button>
+          <p className="imp-nota">
+            Se se n’è andato o ha il telefono morto la partita non deve restare
+            appesa. Chiudendo, la sua ultima carta salta e la vittoria resta
+            vostra. Devono chiederlo in {serve}.
+          </p>
         </>
       )}
     </section>
