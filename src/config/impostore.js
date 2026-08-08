@@ -4,9 +4,14 @@
 // nella stanza, e l'app deve starne fuori.
 
 export const IMPOSTORE = {
-  // Due giri prima del voto. Con un giro solo si finisce quasi sempre in
-  // un'accusa a caso: non c'e' abbastanza in tavola per ragionare.
-  giriTotali: 2,
+  // Quanti giri si fanno non lo decide piu' un numero: dopo ogni giro il
+  // gruppo vota se ne serve un altro, insieme all'accusa. "Ne sappiamo
+  // abbastanza?" e' una domanda che ha senso dopo aver sentito, non
+  // prima — a partita non ancora cominciata nessuno puo' saperlo.
+  //
+  // Resta come valore di partenza della colonna sul database, che non
+  // ammette nulli.
+  giriTotali: 1,
 
   // Sotto i quattro non e' un gioco, e' un interrogatorio.
   minimoGiocatori: 4,
@@ -18,47 +23,12 @@ export const IMPOSTORE = {
   // diversamente e sono affari suoi.
   quantiImpostori: (quanti) => (quanti >= 7 ? 2 : 1),
 
-  // Le scelte del voto d'apertura.
+  // L'unica cosa che si vota prima di cominciare.
   sceltePerImpostori: [1, 2],
-  // Quanti giri prima del voto. Anche questo lo sceglie il gruppo:
-  // due bastano per farsi un'idea, tre servono quando si e' in tanti e
-  // con due non fa in tempo a emergere niente.
-  // ⚠️ Un giro solo c'e' sempre: e' il ritmo di chi vuole una partita
-  // veloce, ed e' anche quello che il gioco usa gia' da solo dopo
-  // un'eliminazione. Non offrirlo all'inizio voleva dire avere una
-  // durata possibile nel gioco e non nel menu.
-  scelteGiri: [1, 2, 3],
-
-  // Dopo un'accusa sbagliata si riparte, ma con un giro solo: due giri
-  // servivano a farsi un'idea da zero, e adesso l'idea ce l'avete gia' —
-  // ripartire da capo ogni volta allungherebbe la partita senza
-  // aggiungerci niente.
-  giriDopoEliminazione: 1,
 
   // Il voto non ha un timer visibile: serve solo a non lasciare un voto
   // appeso per sempre se la partita finisce in una birra.
   minutiVoto: 30,
-
-  // Le combinazioni votabili all'apertura: impostori e giri insieme, in
-  // una scelta sola.
-  //
-  // Due votazioni di fila sarebbero due momenti morti prima di
-  // cominciare, e il secondo lo salterebbe meta' gruppo. Quattro
-  // bottoni si leggono in un colpo d'occhio e si vota una volta.
-  // Generate dalle due liste invece che scritte a mano: aggiungere una
-  // risposta a una delle due domande non deve costringere a ricordarsi
-  // di aggiornare anche questo elenco.
-  get aperture() {
-    return this.sceltePerImpostori.flatMap((impostori) =>
-      this.scelteGiri.map((giri) => ({ id: `${impostori}x${giri}`, impostori, giri }))
-    )
-  },
-
-  // Quale combinazione proporre, cioe' quale evidenziare. Piu' si e' in
-  // tanti piu' servono giri: con otto persone e due giri non fa in tempo
-  // a emergere niente.
-  aperturaConsigliata: (quanti) =>
-    quanti >= 7 ? '2x3' : quanti >= 6 ? '1x3' : '1x2',
 
   // Il testimone. Chiunque puo' far avanzare il turno — se a qualcuno si
   // scarica il telefono la partita non si blocca — ma per i primi trenta

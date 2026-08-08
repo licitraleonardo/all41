@@ -15,8 +15,9 @@ import {
   esito,
   quantiMancano,
   quantiPerRivelare,
+  ALTRO_GIRO,
   maggioranza,
-  aperturaVincente,
+  sceltaVincente,
   conteggioAffidabile,
   schedePerId,
   tuttiHannoVotato,
@@ -209,8 +210,8 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
   const [avviso, setAvviso] = useState(null)
   const partito = useRef(false)
 
-  const scelte = IMPOSTORE.aperture
-  const consigliata = IMPOSTORE.aperturaConsigliata(partita.giocatori.length)
+  const scelte = IMPOSTORE.sceltePerImpostori
+  const consigliata = IMPOSTORE.quantiImpostori(partita.giocatori.length)
   const hoVotato = voto?.hannoVotato?.includes(membro.id)
   const quanti = voto?.hannoVotato?.length ?? 0
   const tutti = partita.giocatori.length
@@ -233,36 +234,15 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
     // partita partita con uno solo.
     if (!conteggioAffidabile(conteggi, quanti)) return
     partito.current = true
-    onAvvia(aperturaVincente(conteggi, consigliata, voto.opzioni))
+    onAvvia(sceltaVincente(conteggi, scelte, consigliata))
   }, [voto, quanti, tutti, conteggi, scelte, consigliata, onAvvia])
 
-  // Due domande, un voto solo. Combinate in quattro bottoni erano un
-  // rebus da leggere: "1 · 2 giri" accanto a "2 · 2 giri" costringe a
-  // decifrare quale numero e' cosa. Separate si leggono, e restano sulla
-  // stessa pagina — due votazioni di fila sarebbero due momenti morti.
-  const proposta = IMPOSTORE.aperture.find((a) => a.id === consigliata) ?? IMPOSTORE.aperture[0]
-  const [quantiImp, setQuantiImp] = useState(proposta.impostori)
-  const [quantiGiri, setQuantiGiri] = useState(proposta.giri)
-
-  // Quanti voti ha preso ogni risposta, sommando le combinazioni che la
-  // contengono: il voto sul database resta uno solo, ma a schermo si
-  // vedono i due conti separati come le due domande.
-  // Anche qui si parte dalle opzioni del voto: un voto aperto prima di
-  // un aggiornamento ne ha meno, e sommare sull'elenco nuovo darebbe
-  // numeri presi dalla riga sbagliata.
-  const votiPer = (campo, valore) =>
-    (voto?.opzioni ?? []).reduce((somma, id, i) => {
-      const a = IMPOSTORE.aperture.find((x) => x.id === id)
-      return somma + (a && a[campo] === valore ? (conteggi[i] ?? 0) : 0)
-    }, 0)
+  const proposta = IMPOSTORE.quantiImpostori(partita.giocatori.length)
+  const [quantiImp, setQuantiImp] = useState(proposta)
 
   async function vota() {
-    // L'indice e' quello delle opzioni DI QUESTO voto.
-    const i = (voto?.opzioni ?? []).indexOf(`${quantiImp}x${quantiGiri}`)
-    if (i < 0) {
-      setAvviso('Questa combinazione non e’ fra le scelte di questa partita.')
-      return
-    }
+    const i = IMPOSTORE.sceltePerImpostori.indexOf(quantiImp)
+    if (i < 0) return
     setInCorso(true)
     setAvviso(null)
     try {
@@ -276,48 +256,40 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
 
   if (!voto) return <Rotella testo="Preparo il voto" />
 
-  const domanda = (titolo, campo, valori, scelto, scegli, etichetta) => (
-    <div className="imp-domanda">
-      <p className="imp-domanda-testa">{titolo}</p>
-      <div className="imp-risposte">
-        {valori.map((n) => (
-          <button
-            key={n}
-            type="button"
-            className={n === scelto ? 'imp-risposta scelta' : 'imp-risposta'}
-            onClick={() => scegli(n)}
-            disabled={hoVotato || inCorso}
-            aria-pressed={n === scelto}
-          >
-            <span className="imp-risposta-numero">{n}</span>
-            <span className="imp-risposta-nome">{etichetta(n)}</span>
-            {quanti > 0 && <span className="imp-risposta-voti">{votiPer(campo, n)}</span>}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-
   return (
     <section className="imp-preparazione">
-      <h2 className="imp-titolo">Come giochiamo?</h2>
+      <h2 className="imp-titolo">Quanti impostori?</h2>
       <p className="imp-spiega">
         Hanno votato {quanti} su {tutti} — si parte a {serve}.
       </p>
 
       {avviso && <p className="imp-guasto">{avviso}</p>}
 
-      {domanda('Quanti impostori?', 'impostori', IMPOSTORE.sceltePerImpostori, quantiImp, setQuantiImp,
-        (n) => (n === 1 ? 'impostore' : 'impostori'))}
-
-      {domanda('Quanti giri prima del voto?', 'giri', IMPOSTORE.scelteGiri, quantiGiri, setQuantiGiri,
-        () => 'giri')}
+      {/* I giri non si votano piu' qui: dopo ogni giro il gruppo decide
+          se ne serve un altro, insieme all'accusa. "Ne sappiamo
+          abbastanza?" e' una domanda che ha senso dopo aver sentito. */}
+      <div className="imp-risposte">
+        {IMPOSTORE.sceltePerImpostori.map((n, i) => (
+          <button
+            key={n}
+            type="button"
+            className={n === quantiImp ? 'imp-risposta scelta' : 'imp-risposta'}
+            onClick={() => setQuantiImp(n)}
+            disabled={hoVotato || inCorso}
+            aria-pressed={n === quantiImp}
+          >
+            <span className="imp-risposta-numero">{n}</span>
+            <span className="imp-risposta-nome">{n === 1 ? 'impostore' : 'impostori'}</span>
+            {quanti > 0 && <span className="imp-risposta-voti">{conteggi[i] ?? 0}</span>}
+          </button>
+        ))}
+      </div>
 
       {hoVotato ? (
         <p className="imp-nota">Si parte al {serve}º voto: non si aspetta chi manca.</p>
       ) : (
         <button type="button" className="imp-comincia" onClick={vota} disabled={inCorso}>
-          {inCorso ? '…' : `Vota ${quantiImp} e ${quantiGiri} giri`}
+          {inCorso ? '…' : 'Vota'}
         </button>
       )}
     </section>
@@ -740,7 +712,12 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
   // in poi ce ne puo' essere uno solo, e chiederne due sarebbe chiedere
   // di accusare per forza un innocente.
   const opzioni = voto?.opzioni ?? partita.giocatori
+  // Fra le opzioni c'e' anche "un altro giro": non e' una persona e non
+  // va nella griglia delle facce.
+  const persone = opzioni.filter((x) => x !== ALTRO_GIRO)
+  const indiceAltroGiro = opzioni.indexOf(ALTRO_GIRO)
   const quanti = impostoriVivi(partita).length
+  const chiedoAncora = scelti.includes(indiceAltroGiro)
 
   const gia = useRef(null)
   useEffect(() => {
@@ -750,7 +727,7 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
   }, [partita.id, partita.votoId, onApri])
 
   const chiesta = partita.rivelaChiesta ?? []
-  const serve = quantiPerRivelare(opzioni.length)
+  const serve = quantiPerRivelare(persone.length)
   const bastano = bastaPerRivelare(partita, chiesta)
   const hoChiesto = chiesta.includes(membro.id)
   const tuttiDentro = tuttiHannoVotato(partita, voto?.hannoVotato ?? [])
@@ -758,7 +735,7 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
   const hoVotato = voto?.hannoVotato?.includes(membro.id)
   const mieScelte = voto?.schede?.[membro.id]
   const quantiHannoVotato = voto?.hannoVotato?.length ?? 0
-  const tutti = opzioni.length
+  const tutti = persone.length
 
   function alterna(id) {
     const i = opzioni.indexOf(id)
@@ -769,6 +746,12 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
       if (prima.length >= quanti) return prima
       return [...prima, i]
     })
+  }
+
+  // O accusi, o chiedi di sentire ancora: sono due risposte alla stessa
+  // domanda, e mescolarle vorrebbe dire votare due cose in una volta.
+  function chiediUnAltroGiro() {
+    setScelti((prima) => (prima.includes(indiceAltroGiro) ? [] : [indiceAltroGiro]))
   }
 
   async function conferma() {
@@ -806,7 +789,7 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
       {avviso && <p className="imp-guasto">{avviso}</p>}
 
       <div className="imp-gente">
-        {opzioni
+        {persone
           .filter((id) => id !== membro.id)
           .map((id) => {
             const i = opzioni.indexOf(id)
@@ -832,6 +815,26 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
           })}
       </div>
 
+      {/* L'alternativa all'accusa: non ne sappiamo abbastanza, si
+          ascolta un altro giro. Vince se la chiedono piu' persone di
+          quante ne ha il piu' accusato — a parita' si accusa, perche' in
+          caso di dubbio il gioco deve andare avanti. */}
+      {indiceAltroGiro >= 0 && !hoVotato && (
+        <button
+          type="button"
+          className={chiedoAncora ? 'imp-altro-giro scelto' : 'imp-altro-giro'}
+          onClick={chiediUnAltroGiro}
+          disabled={inCorso}
+          aria-pressed={chiedoAncora}
+        >
+          Non ne so abbastanza — un altro giro
+        </button>
+      )}
+
+      {hoVotato && Array.isArray(mieScelte) && mieScelte.includes(indiceAltroGiro) && (
+        <p className="imp-nota">Hai chiesto un altro giro.</p>
+      )}
+
       {/* Finche' non ne hai indicati quanti servono non si conferma: con
           due impostori votarne uno solo vuol dire buttare mezzo voto. */}
       {!hoVotato && (
@@ -839,13 +842,15 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
           type="button"
           className="imp-comincia"
           onClick={conferma}
-          disabled={scelti.length !== quanti || inCorso}
+          disabled={(chiedoAncora ? false : scelti.length !== quanti) || inCorso}
         >
           {inCorso
             ? '…'
-            : scelti.length !== quanti
-              ? `Indicane ${quanti - scelti.length} ancora`
-              : 'Conferma il voto'}
+            : chiedoAncora
+              ? 'Vota'
+              : scelti.length !== quanti
+                ? `Indicane ${quanti - scelti.length} ancora`
+                : 'Vota'}
         </button>
       )}
 

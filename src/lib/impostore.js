@@ -62,25 +62,51 @@ export function preparaPartita({
 // Restituisce sempre uno stato completo, `giriTotali` compreso: se lo
 // omettesse, incatenare due avanza() di fila perderebbe per strada
 // quanti giri mancano e la partita non arriverebbe mai al voto.
+// Finito il giro si vota, sempre. Quanti giri fare non lo decide piu' un
+// numero scelto a partita non ancora cominciata: lo decide il gruppo nel
+// voto, dove "un altro giro" e' una delle risposte.
 export function avanza({ ordine, turno, giro, giriTotali, casuale = Math.random }) {
   if (turno + 1 < ordine.length) {
     return { ordine, turno: turno + 1, giro, giriTotali, stato: 'in-corso' }
   }
+  return { ordine, turno, giro, giriTotali, stato: 'voto' }
+}
 
-  if (giro >= giriTotali) {
-    return { ordine, turno, giro, giriTotali, stato: 'voto' }
-  }
+// Un altro giro invece di accusare. Sta fra le opzioni del voto e non in
+// un bottone a parte perche' e' la stessa decisione: o ne sappiamo
+// abbastanza per accusare, o non ne sappiamo abbastanza — e nel secondo
+// caso si ascolta ancora.
+export const ALTRO_GIRO = 'altro-giro'
 
-  // Rimescolato a ogni giro: senza, chi parla per ultimo ha sentito tutti
-  // gli altri e bara senza volerlo. E' il difetto principale del gioco
-  // giocato a voce.
-  return {
-    ordine: mescola(ordine, casuale),
-    turno: 0,
-    giro: giro + 1,
-    giriTotali,
-    stato: 'in-corso',
+// Le opzioni del voto d'accusa: chi e' ancora in gioco, piu' "un altro
+// giro". Chi e' uscito non c'e': dal secondo giro in poi accusare un
+// fantasma non ha senso.
+export function opzioniDelVoto(partita) {
+  return [...vivi(partita), ALTRO_GIRO]
+}
+
+// Quanti hanno chiesto un altro giro. `schede` e' gia' passato da
+// schedePerId, quindi qui dentro ci sono id di persone e la costante.
+export function quantiVoglionoUnAltroGiro(schede) {
+  return Object.values(schede ?? {}).filter((accusati) =>
+    (Array.isArray(accusati) ? accusati : [accusati]).includes(ALTRO_GIRO)
+  ).length
+}
+
+// Il giro riparte se "un altro giro" ha preso piu' voti di chiunque
+// altro. A parita' si accusa: restare fermi e' la scelta che allunga, e
+// in caso di dubbio il gioco deve andare avanti.
+export function siRiparte(partita, schede) {
+  const voglionoAncora = quantiVoglionoUnAltroGiro(schede)
+  if (voglionoAncora === 0) return false
+
+  const conteggi = Object.fromEntries(vivi(partita).map((id) => [id, 0]))
+  for (const accusati of Object.values(schede ?? {})) {
+    for (const a of Array.isArray(accusati) ? accusati : [accusati]) {
+      if (a in conteggi) conteggi[a] += 1
+    }
   }
+  return voglionoAncora > Math.max(0, ...Object.values(conteggi))
 }
 
 export function diTurno(partita) {
@@ -375,22 +401,6 @@ export function conteggioAffidabile(conteggi, quantiHannoVotato) {
 // quella consigliata, e se non e' in ballo la prima — serve una regola
 // qualunque purche' sia sempre la stessa, o due telefoni che chiudono il
 // voto nello stesso istante farebbero partire due partite diverse.
-// ⚠️ `opzioni` va preso dal VOTO, non dalla configurazione. Aggiungendo
-// una risposta — e' successo col giro singolo — le partite gia' aperte
-// restano con le opzioni di prima, e leggere i conteggi con l'elenco
-// nuovo li sposterebbe tutti di un posto: il gruppo vota "due impostori"
-// e ne esce un'altra cosa, senza nessun errore. E' la stessa trappola
-// delle schede del voto d'accusa, che sono numeri di posizione.
-export function aperturaVincente(conteggi, consigliata, opzioni) {
-  const scelte = opzioni?.length ? opzioni : IMPOSTORE.aperture.map((a) => a.id)
-  const vinta = sceltaVincente(conteggi, scelte, consigliata)
-  return (
-    IMPOSTORE.aperture.find((a) => a.id === vinta) ??
-    IMPOSTORE.aperture.find((a) => a.id === consigliata) ??
-    IMPOSTORE.aperture[0]
-  )
-}
-
 export function sceltaVincente(conteggi, scelte, consigliata) {
   const voti = scelte.map((_, i) => conteggi?.[i] ?? 0)
   const massimo = Math.max(...voti)
@@ -450,6 +460,23 @@ export function impostoriInMaggioranza(partita) {
 // chi era votabile in quel giro — che dal secondo in poi non e' piu'
 // tutto il gruppo.
 export function dopoAccusa(partita, schede, casuale = Math.random) {
+  // Il gruppo ha chiesto di sentire ancora: nessuno esce, si rimescola e
+  // si ricomincia a parlare.
+  if (siRiparte(partita, schede)) {
+    return {
+      fuori: partita.fuori ?? [],
+      scopertiOra: [],
+      eliminatiOra: [],
+      vincitore: null,
+      stato: 'in-corso',
+      ordine: mescola(vivi(partita), casuale),
+      turno: 0,
+      giro: (partita.giro ?? 1) + 1,
+      giriTotali: (partita.giro ?? 1) + 1,
+      unAltroGiro: true,
+    }
+  }
+
   const inGioco = vivi(partita)
   const impostoriOra = impostoriVivi(partita)
   const r = esito({ impostori: impostoriOra, giocatori: inGioco, schede })
@@ -487,7 +514,7 @@ export function dopoAccusa(partita, schede, casuale = Math.random) {
     stato: 'in-corso',
     ordine: mescola(vivi(dopo), casuale),
     turno: 0,
-    giro: 1,
-    giriTotali: IMPOSTORE.giriDopoEliminazione,
+    giro: (partita.giro ?? 1) + 1,
+    giriTotali: (partita.giro ?? 1) + 1,
   }
 }

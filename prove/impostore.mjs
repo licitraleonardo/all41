@@ -28,7 +28,10 @@ import {
   secondiDelTestimone,
   raccontaFinale,
   conteggioAffidabile,
-  aperturaVincente,
+  ALTRO_GIRO,
+  opzioniDelVoto,
+  siRiparte,
+  quantiVoglionoUnAltroGiro,
 } from '../src/lib/impostore.js'
 import { COPPIE, IMPOSTORE, NESSUNA_PAROLA } from '../src/config/impostore.js'
 import { PER_ID } from '../src/config/leggi.js'
@@ -151,19 +154,12 @@ console.log('\nil giro di parole')
   prova('dopo sette "fatto" siamo all’ultimo', s.turno === 7 && s.giro === 1)
   prova('e la partita non e’ ancora al voto', s.stato === 'in-corso')
 
+  // ⚠️ Finito il giro si vota, sempre. Quanti giri fare non lo decide
+  // piu' un numero scelto a partita non ancora cominciata: lo decide il
+  // gruppo nel voto, dove "un altro giro" e' una delle risposte.
   s = avanza({ ...s, casuale: dado(2) })
-  prova('l’ottavo apre il secondo giro', s.giro === 2 && s.turno === 0, s)
-  prova(
-    'e rimescola l’ordine',
-    s.ordine.join() !== OTTO.join() && [...s.ordine].sort().join() === OTTO.join(),
-    s.ordine
-  )
-
-  for (let i = 0; i < 7; i++) s = avanza({ ...s, casuale: dado(2) })
-  prova('il secondo giro non finisce prima', s.stato === 'in-corso' && s.giro === 2)
-
-  s = avanza({ ...s, casuale: dado(2) })
-  prova('finiti i due giri si vota', s.stato === 'voto', s)
+  prova('l’ottavo manda al voto', s.stato === 'voto', s)
+  prova('e il giro resta quello', s.giro === 1)
 
   prova(
     'nessuno parla due volte nello stesso giro',
@@ -511,7 +507,8 @@ console.log('\ncosa succede dopo un\u2019accusa')
     prova('escono i due innocenti accusati', r.eliminatiOra.sort().join() === 'd,e')
     prova('nessuno scoperto', r.scopertiOra.length === 0)
     prova('nessun vincitore ancora', r.vincitore === null)
-    prova('si riparte da un giro solo', r.giriTotali === 1 && r.giro === 1 && r.turno === 0)
+    prova('si riparte dal primo di turno', r.turno === 0)
+    prova('e il giro sale invece di azzerarsi', r.giro === (base.giro ?? 1) + 1)
     prova('e i morti non sono nell\u2019ordine', !r.ordine.includes('d') && !r.ordine.includes('e'))
     prova('ma i vivi ci sono tutti', r.ordine.length === 6)
   }
@@ -564,7 +561,10 @@ console.log('\nle coppie di parole')
   )
   const doppie = COPPIE.map(([a]) => a.toLowerCase()).filter((a, i, t) => t.indexOf(a) !== i)
   prova('nessuna parola del gruppo ripetuta', doppie.length === 0, doppie)
-  prova('i giri di default sono due', IMPOSTORE.giriTotali === 2)
+  // Non c'e' piu' un numero di giri deciso prima: si parte da uno e il
+  // gruppo decide a ogni fine giro se ne serve un altro.
+  prova('si parte da un giro', IMPOSTORE.giriTotali === 1)
+  prova('e i giri non si votano piu’ all’apertura', IMPOSTORE.scelteGiri === undefined)
 }
 
 
@@ -697,52 +697,78 @@ console.log('Il conteggio deve aver raggiunto i votanti prima di partire')
 }
 
 
-console.log('L apertura: impostori e giri in una scelta sola')
+console.log('Il conteggio deve aver raggiunto i votanti prima di partire')
 {
-  const ids = IMPOSTORE.aperture.map((a) => a.id)
-  prova(
-    'una combinazione per ogni incrocio',
-    IMPOSTORE.aperture.length ===
-      IMPOSTORE.sceltePerImpostori.length * IMPOSTORE.scelteGiri.length
-  )
-  prova('tutte diverse', new Set(ids).size === IMPOSTORE.aperture.length)
-  prova('il giro singolo si puo sempre votare', IMPOSTORE.scelteGiri.includes(1))
-  prova(
-    'e ha la sua combinazione per ogni numero di impostori',
-    IMPOSTORE.sceltePerImpostori.every((n) => ids.includes(`${n}x1`))
-  )
-  prova(
-    'ogni combinazione ha impostori e giri',
-    IMPOSTORE.aperture.every((a) => a.impostori > 0 && a.giri > 0)
-  )
-  prova(
-    'la consigliata esiste sempre fra le scelte',
-    [4, 5, 6, 7, 8, 12].every((n) => ids.includes(IMPOSTORE.aperturaConsigliata(n)))
-  )
-  prova('in tanti si consigliano piu giri', IMPOSTORE.aperturaConsigliata(8).endsWith('3'))
+  prova('sei voti contati, sei votanti: si parte', conteggioAffidabile([0, 6], 6))
+  prova('quattro e quattro: si parte', conteggioAffidabile([1, 3], 4))
 
-  const tutte = ids
-  prova('vince quella votata', aperturaVincente([0, 0, 0, 0, 0, 5], '1x2', tutte).id === '2x3')
-  prova('e ne escono impostori e giri', aperturaVincente([0, 0, 4, 0, 0, 0], '1x2', tutte).giri === 3)
-  // ⚠️ Coi conteggi a zero si ripiega sulla consigliata: e il caso che
-  // conteggioAffidabile deve impedire prima che si arrivi qui.
-  prova('senza voti si ripiega sulla consigliata',
-    aperturaVincente([0, 0, 0, 0, 0, 0], '2x3', tutte).id === '2x3')
-  prova('restituisce sempre una combinazione vera',
-    Boolean(aperturaVincente([], '1x2', tutte)?.impostori))
+  // ⚠️ Il buco vero: questo telefono sa che hanno votato in quattro ma
+  // i numeri non gli sono ancora arrivati.
+  prova('quattro votanti, conteggi a zero: si aspetta', !conteggioAffidabile([0, 0], 4))
+  prova('quattro votanti, ne risultano due: si aspetta', !conteggioAffidabile([1, 1], 4))
+  prova('conteggi mancanti: si aspetta', !conteggioAffidabile(undefined, 4))
+  prova('nessuno ha votato: si aspetta', !conteggioAffidabile([0, 0], 0))
 
-  // ⚠️ Il caso vero: una partita aperta PRIMA che si aggiungesse il giro
-  // singolo. Il suo voto ha quattro opzioni, la configurazione ne ha sei.
-  // Leggere i conteggi con l'elenco nuovo li sposterebbe tutti di posto.
-  const vecchie = ['1x2', '1x3', '2x2', '2x3']
+  // E questo e' il danno che evita: senza massimo, si ripiega sul
+  // consigliato e la scelta del gruppo sparisce.
   prova(
-    'un voto vecchio si legge con le SUE opzioni',
-    aperturaVincente([0, 0, 0, 4], '1x2', vecchie).id === '2x3'
+    'con i conteggi a zero sceltaVincente ripiega sul consigliato',
+    sceltaVincente([0, 0], [1, 2], 1) === 1
   )
   prova(
-    'e non con quelle nuove, che darebbero un altro risultato',
-    aperturaVincente([0, 0, 0, 4], '1x2', tutte).id === '2x1'
+    'coi conteggi veri vince quello che ha votato il gruppo',
+    sceltaVincente([0, 6], [1, 2], 1) === 2
   )
+}
+
+
+
+
+console.log('Un altro giro: si vota insieme all accusa')
+{
+  const P = {
+    impostori: ['a'],
+    giocatori: ['a', 'b', 'c', 'd'],
+    fuori: [],
+    ordine: ['a', 'b', 'c', 'd'],
+    turno: 3,
+    giro: 1,
+    giriTotali: 1,
+  }
+
+  prova('fra le opzioni c e anche un altro giro', opzioniDelVoto(P).includes(ALTRO_GIRO))
+  prova('e le persone sono quelle vive', opzioniDelVoto(P).length === 5)
+
+  // Tre su quattro non ne sanno abbastanza: si riparte.
+  const ancora = { b: [ALTRO_GIRO], c: [ALTRO_GIRO], d: ['a'] }
+  prova('tre chiedono ancora, uno accusa: si riparte', siRiparte(P, ancora))
+  const r1 = dopoAccusa(P, ancora, () => 0.5)
+  prova('nessuno esce', r1.fuori.length === 0)
+  prova('si torna a parlare', r1.stato === 'in-corso')
+  prova('e il giro sale', r1.giro === 2)
+  prova('con l ordine rimescolato', r1.ordine.length === 4)
+
+  // Due accusano lo stesso e due chiedono ancora: a parita si accusa,
+  // perche in caso di dubbio il gioco deve andare avanti.
+  const pari = { b: ['a'], c: ['a'], d: [ALTRO_GIRO], a: [ALTRO_GIRO] }
+  prova('a parita si accusa', !siRiparte(P, pari))
+  prova('e infatti qualcuno esce', dopoAccusa(P, pari, () => 0.5).fuori.length > 0)
+
+  // Nessuno lo chiede: il voto e un accusa normale.
+  const normale = { b: ['a'], c: ['a'], d: ['a'] }
+  prova('senza richieste si accusa', !siRiparte(P, normale))
+  prova('e l impostore viene scoperto', dopoAccusa(P, normale, () => 0.5).scopertiOra.length === 1)
+
+  // Uno solo lo chiede contro due accuse: non basta.
+  const uno = { b: ['a'], c: ['a'], d: [ALTRO_GIRO] }
+  prova('uno solo non ferma il gruppo', !siRiparte(P, uno))
+
+  prova('quanti lo chiedono si contano', quantiVoglionoUnAltroGiro(ancora) === 2)
+  prova('e senza schede sono zero', quantiVoglionoUnAltroGiro(undefined) === 0)
+
+  // Finito il giro si va sempre al voto: non c e piu un numero di giri.
+  prova('il giro finisce sempre col voto', avanza({ ...P }).stato === 'voto')
+  prova('a meta giro no', avanza({ ...P, turno: 1 }).stato === 'in-corso')
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} prove fallite.\n`)

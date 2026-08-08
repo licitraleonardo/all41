@@ -4,6 +4,7 @@ import { IMPOSTORE } from '../config/impostore.js'
 import {
   avanza,
   dopoAccusa,
+  opzioniDelVoto,
   premi,
   preparaPartita,
   schedePerId,
@@ -102,10 +103,10 @@ export async function creaPartita({ giocatori, variante = 'parola-simile', casua
     .insert({
       trip_id: VIAGGIO.id,
       category: 'impostore',
-      question: 'Come giochiamo?',
-      options: IMPOSTORE.aperture.map((a) => a.id),
+      question: 'Quanti impostori?',
+      options: IMPOSTORE.sceltePerImpostori.map(String),
       anonymous: false,
-      tally: IMPOSTORE.aperture.map(() => 0),
+      tally: IMPOSTORE.sceltePerImpostori.map(() => 0),
       expires_at: scade,
     })
     .select('id')
@@ -138,12 +139,15 @@ export async function creaPartita({ giocatori, variante = 'parola-simile', casua
 // Finito il voto d'apertura si sorteggia chi e' impostore e si parte.
 // Passa da una funzione: due telefoni che assegnano insieme darebbero
 // due partite diverse alla stessa gente.
-export async function avviaPartita(partita, apertura, casuale) {
-  // Regge sia { impostori, giri } sia il numero secco di prima: le
-  // partite aperte con la versione vecchia dell'app passano ancora di
-  // qui, e farle esplodere a meta' serata non serve a niente.
-  const quanti = typeof apertura === 'number' ? apertura : apertura?.impostori
-  const giri = typeof apertura === 'number' ? null : (apertura?.giri ?? null)
+export async function avviaPartita(partita, quantiImpostori, casuale) {
+  // Regge anche la forma { impostori } della versione che votava pure i
+  // giri: una partita aperta con quella non deve esplodere a meta'
+  // serata.
+  const quanti =
+    typeof quantiImpostori === 'number' ? quantiImpostori : quantiImpostori?.impostori
+  // I giri non si votano piu' all'inizio: si parte da uno e il gruppo
+  // decide a ogni fine giro se ne serve un altro.
+  const giri = 1
 
   const preparata = preparaPartita({
     giocatori: partita.giocatori,
@@ -186,7 +190,10 @@ export async function avanzaTurno(partita) {
 // ancora in gioco: dal secondo giro in poi votare chi e' gia' uscito non
 // avrebbe senso, e lascerebbe accusare un fantasma.
 export async function apriVoto(partita) {
-  const inGioco = vivi(partita)
+  // Chi e' ancora in gioco, piu' "un altro giro": e' la stessa
+  // decisione, o ne sappiamo abbastanza per accusare o si ascolta
+  // ancora, quindi sta nello stesso voto e non in un bottone a parte.
+  const inGioco = opzioniDelVoto(partita)
   const scade = new Date(Date.now() + IMPOSTORE.minutiVoto * 60000).toISOString()
 
   const { data: voto, error: erroreVoto } = await supabase
