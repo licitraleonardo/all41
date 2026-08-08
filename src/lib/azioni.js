@@ -58,6 +58,34 @@ export async function inviaAzione({ tipo, payload = {}, memberId, importante = f
 // Cancellazione morbida: il feed di chi era offline non deve avere buchi,
 // e l'autore deve poter rimediare a una foto sbagliata o a un messaggio
 // partito per errore.
+// Da quante ore in qua un SOS conta ancora come aperto. Oltre, o è
+// rientrato e nessuno l'ha detto, o non è più una cosa di adesso.
+export const ORE_SOS = 8
+
+// Gli SOS ancora aperti, letti a parte dal feed.
+//
+// Il feed tiene trenta righe: un SOS delle 18 cadeva fuori dal limite
+// entro un'ora di chiacchiere sulla cena, e chi apriva l'app alle 19 non
+// lo vedeva proprio. Non c'era nessun "carica precedenti" e niente lo
+// teneva in vista. È l'unica funzione di sicurezza dell'app: non può
+// dipendere da quanti messaggi sono arrivati dopo.
+export async function leggiSosAperti() {
+  const da = new Date(Date.now() - ORE_SOS * 3600 * 1000).toISOString()
+
+  const { data, error } = await supabase
+    .from('quick_actions')
+    .select(CAMPI)
+    .eq('trip_id', VIAGGIO.id)
+    .eq('kind', 'sos')
+    .is('deleted_at', null)
+    .gte('created_at', da)
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  if (error) throw error
+  return data.map(daRiga)
+}
+
 export async function eliminaAzione(id) {
   const { error } = await supabase
     .from('quick_actions')

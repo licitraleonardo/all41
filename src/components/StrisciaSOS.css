@@ -1,0 +1,66 @@
+/* Gli SOS aperti, appiccicati in cima alla conversazione. Corallo pieno
+   e non un bordino: qui il colore deve interrompere quello che stavi
+   facendo, che è l'unica volta in tutta l'app in cui è giusto. */
+
+.sos-aperti {
+  position: sticky;
+  top: var(--spazio-alto);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 616px;
+  margin: 0 auto;
+  padding: 8px 14px 0;
+}
+
+body.con-banner .sos-aperti {
+  top: var(--altezza-banner);
+}
+
+.sos-aperto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: #fff;
+  background: var(--coral);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px -10px rgba(232, 96, 74, 0.9);
+}
+
+.sos-aperto-testo {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+
+.sos-aperto-testo span {
+  display: block;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.sos-rientrato {
+  flex: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--coral);
+  background: #fff;
+  border: 0;
+  border-radius: 9px;
+  padding: 8px 11px;
+  cursor: pointer;
+}
+
+.sos-rientrato:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sos-rientrato:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
