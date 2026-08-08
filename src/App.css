@@ -376,3 +376,15 @@
   font-size: 10.5px;
   opacity: 0.3;
 }
+
+/* Il velo che copre mentre l'intro si scarica. E' caricata pigra, quindi
+   fra "decido di mostrarla" e "c'e'" passa qualche centinaio di
+   millisecondi: senza questo si vedeva lampeggiare la schermata del
+   codice prima della copertina. Stesso fondo dell'intro, cosi' il
+   passaggio non si nota. */
+.intro-attesa {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #071f30;
+}

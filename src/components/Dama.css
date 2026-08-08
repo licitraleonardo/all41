@@ -177,9 +177,12 @@
   border: 2px solid #b9b2a0;
 }
 
+/* Il verde di Allan invece del nero. Su una scacchiera blu scuro il nero
+   spariva: due colori scuri che si somigliano, e da lontano non si
+   capiva dove fossero i pezzi. */
 .dama-pallino.nero {
-  background: #253038;
-  border: 2px solid #0e161c;
+  background: #3fd16a;
+  border: 2px solid #1f7a3c;
 }
 
 .dama-tavola {
@@ -220,8 +223,14 @@
   background: var(--sea);
 }
 
+/* Un anello, non un riempimento. Riempiendola d'oro la casella scelta
+   nascondeva il pezzo che ci stava sopra: verde su oro da' contrasto
+   1.0, cioe' la stessa identica luminosita' — e si selezionava un pezzo
+   per vederlo sparire. Cosi' la casella resta scura, il pezzo resta
+   leggibile e l'oro dice lo stesso quale hai preso. */
 .dama-casella.scelta {
-  background: var(--gold);
+  background: var(--sea);
+  box-shadow: inset 0 0 0 4px var(--gold);
 }
 
 /* Dove si può atterrare: il pallino piccolo, come nei giochi veri. */
@@ -245,9 +254,13 @@
   border: 2px solid #b9b2a0;
 }
 
+/* Verde elettrico, il colore di Allan. Il nero su fondo blu scuro non si
+   distingueva: adesso i pezzi si contano da tre metri, che e' la
+   distanza da cui si guarda una scacchiera appoggiata sul tavolo. */
 .dama-pezzo.nero {
-  background: #253038;
-  border: 2px solid #0e161c;
+  background: #3fd16a;
+  border: 2px solid #1f7a3c;
+  box-shadow: inset 0 -3px 0 rgba(20, 80, 40, 0.45);
 }
 
 /* La dama porta la corona: un anello dorato, leggibile anche piccolo. */

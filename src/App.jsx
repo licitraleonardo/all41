@@ -594,7 +594,12 @@ export default function App() {
       {/* Il codice si inserisce dentro l'onboarding e non in una
           schermata a parte: `onRecupera` entra davvero invece di
           navigare da qualche altra parte. */}
-      {vista === 'onboarding' && (
+      {/* ⚠️ Non si monta finche' l'intro non e' finita. Prima l'ingresso
+          si disegnava sotto e l'intro gli arrivava sopra mezzo secondo
+          dopo — il tempo di scaricare il componente, che e' caricato
+          pigro — e si vedeva lampeggiare la schermata del codice prima
+          della copertina. */}
+      {vista === 'onboarding' && introFinita && (
         <Onboarding
           onEntra={entra}
           onRecupera={recupera}
@@ -626,7 +631,7 @@ export default function App() {
           Copre da sola con position:fixed, quindi puo' stare qui in
           fondo senza spostare niente. */}
       {vista === 'onboarding' && !introFinita && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="intro-attesa" />}>
           <Intro onFine={chiudiIntro} />
         </Suspense>
       )}
