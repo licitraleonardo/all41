@@ -239,8 +239,13 @@ export function normalizzaParola(testo) {
     // Toglie gli accenti scomponendo le lettere e buttando i segni.
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    // Apostrofi tipografici e dritti sono la stessa cosa per chi scrive.
-    .replace(/[\u2018\u2019\u02bc]/g, "'")
+    // Gli apostrofi si buttano via del tutto, non si uniformano. Prima si
+    // normalizzavano al dritto, e bastava che la parola sul mazzo fosse
+    // scritta "Caffe'" invece di "Caff\u00e8" perch\u00e9 la risposta giusta \u2014
+    // "caff\u00e8", che perde l'accento due righe sopra e diventa "caffe" \u2014
+    // non combaciasse pi\u00f9. Il colpo di coda veniva rifiutato a chi aveva
+    // indovinato, senza nessun errore visibile.
+    .replace(/['\u2018\u2019\u02bc]/g, '')
     // Spazi doppi da copia-incolla o da pollice incerto.
     .replace(/\s+/g, ' ')
 }

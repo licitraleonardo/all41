@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
-import { leggiProposteAperte } from '../lib/proposte.js'
+import { leggiProposteAperte, risolviProposte } from '../lib/proposte.js'
+import { leggiMembri } from '../lib/membri.js'
 import { vota as votaProposta } from '../lib/voti.js'
 import { faiScattareLegge } from '../lib/punti.js'
 import { finestraSuspense } from '../lib/punteggioProposte.js'
@@ -78,6 +79,19 @@ export function useProposteAperte(memberId) {
       if (proposta && finestraSuspense(proposta.scadeIl)) {
         faiScattareLegge('suspense', memberId, `suspense_${votoId}_${memberId}`).catch(() => {})
       }
+
+      // Il tuo voto può essere quello che chiude la proposta: se non si
+      // risolve adesso, i punti restano "in attesa" finché qualcuno non
+      // riavvia l'app. Con otto persone che votano a cena e nessuno che
+      // chiude e riapre, la classifica resta ferma per ore proprio nel
+      // momento in cui la stanno guardando tutti.
+      //
+      // Costa una lettura dei membri, che è in cache, e la funzione del
+      // database rifiuta da sola le proposte già risolte da un altro
+      // telefono.
+      await leggiMembri()
+        .then((elenco) => risolviProposte(elenco.map((m) => m.id)))
+        .catch(() => {})
 
       await ricarica()
     },

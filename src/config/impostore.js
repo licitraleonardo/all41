@@ -116,7 +116,7 @@ export const COPPIE = [
   ['Cartolina', 'Lettera'],
 
   ['Colazione', 'Merenda'],
-  ['Caffe’', 'Te’'],
+  ['Caffè', 'Tè'],
   ['Cornetto', 'Ciambella'],
   ['Pizza', 'Focaccia'],
   ['Gelato', 'Granita'],
@@ -131,7 +131,7 @@ export const COPPIE = [
   ['Forchetta', 'Rastrello'],
   ['Padella', 'Racchetta'],
   ['Frigorifero', 'Cassaforte'],
-  ['Barbecue', 'Falo’'],
+  ['Barbecue', 'Falò'],
   ['Spesa', 'Bottino'],
 
   ['Sveglia', 'Allarme'],
@@ -165,7 +165,7 @@ export const COPPIE = [
   ['Tramonto', 'Alba'],
   ['Luna', 'Lampione'],
   ['Stella', 'Scintilla'],
-  ['Falo’', 'Incendio'],
+  ['Falò', 'Incendio'],
   ['Temporale', 'Litigata'],
   ['Vento', 'Sospiro'],
   ['Ombra', 'Fantasma'],
