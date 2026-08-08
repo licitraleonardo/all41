@@ -33,6 +33,7 @@ import {
   siRiparte,
   quantiVoglionoUnAltroGiro,
 } from '../src/lib/impostore.js'
+import { readFileSync } from 'node:fs'
 import { COPPIE, IMPOSTORE, NESSUNA_PAROLA } from '../src/config/impostore.js'
 import { PER_ID } from '../src/config/leggi.js'
 
@@ -854,6 +855,239 @@ console.log('I difetti trovati dalla caccia, uno per uno')
     prova('senza pareggi sospetti', r.troppiPari === false)
     prova('ed e scoperto', r.scoperti.join() === 'a')
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Chi ha indovinato in un giro precedente viene pagato lo stesso
+//
+// La Legge XXIV dice "hai votato l'impostore giusto", non "eri dalla
+// parte giusta all'ultimo giro". Guardando solo le schede dell'ultimo
+// voto, chi aveva riconosciuto l'impostore al primo giro non prendeva
+// niente: quel voto non compare piu' da nessuna parte in quel conto. Con
+// due impostori, beccarli in due giri diversi e' il modo normale in cui
+// il gruppo vince, quindi non era un caso limite.
+console.log('\nGli indovini dei giri precedenti')
+{
+  const OTTO = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  const IMPOSTORI = ['a', 'b']
+
+  // Giro 1: c e d riconoscono a, che esce. e guarda altrove.
+  const giro1 = { c: ['a'], d: ['a'], e: ['f'], g: ['f'] }
+  // Giro 3: a e' gia' fuori, si vota fra i superstiti. Adesso e' g a
+  // beccare b, e c vota male.
+  const giro3 = { c: ['h'], d: ['b'], g: ['b'] }
+
+  const soloUltimo = esito({
+    impostori: IMPOSTORI,
+    giocatori: OTTO,
+    schede: giro3,
+    fuori: ['a'],
+  })
+  prova(
+    'col solo ultimo giro, chi aveva beccato al primo non risulta',
+    !soloUltimo.indovini.includes('c'),
+    { indovini: soloUltimo.indovini }
+  )
+
+  const tutti = esito({
+    impostori: IMPOSTORI,
+    giocatori: OTTO,
+    schede: giro3,
+    fuori: ['a'],
+    schedeDeiGiri: [giro1, giro3],
+  })
+  prova('con tutti i giri, c c e', tutti.indovini.includes('c'))
+  prova('e anche d, che ne ha beccati due', tutti.indovini.includes('d'))
+  prova('e g, che ha beccato solo al terzo', tutti.indovini.includes('g'))
+  prova('chi non ne ha mai beccato uno resta fuori', !tutti.indovini.includes('e'))
+  prova('sono tre in tutto', tutti.indovini.length === 3, { indovini: tutti.indovini })
+  prova(
+    'nessuno compare due volte anche se ha indovinato in due giri',
+    new Set(tutti.indovini).size === tutti.indovini.length
+  )
+
+  prova(
+    "l'ordine non dipende da come arrivano i giri",
+    esito({
+      impostori: IMPOSTORI,
+      giocatori: OTTO,
+      schede: giro3,
+      fuori: ['a'],
+      schedeDeiGiri: [giro3, giro1],
+    }).indovini.join() === tutti.indovini.join()
+  )
+  prova(
+    "passare l'ultimo giro anche dentro l'elenco non cambia niente",
+    esito({
+      impostori: IMPOSTORI,
+      giocatori: OTTO,
+      schede: giro3,
+      fuori: ['a'],
+      schedeDeiGiri: [giro1],
+    }).indovini.join() === tutti.indovini.join()
+  )
+
+  // Il conto delle accuse resta quello dell'ULTIMO giro: i giri
+  // precedenti dicono chi aveva capito, non chi esce adesso.
+  prova('i conteggi restano quelli dell ultimo giro', tutti.conteggi.b === 2, {
+    conteggi: tutti.conteggi,
+  })
+  prova('e chi era gia uscito non torna in ballo', tutti.conteggi.a === 0)
+
+  // I punti.
+  const p = premi({
+    impostori: IMPOSTORI,
+    giocatori: OTTO,
+    schede: giro3,
+    fuori: ['a'],
+    schedeDeiGiri: [giro1, giro3],
+  })
+  const smascheratore = PER_ID['smascheratore']
+  const pagati = p.assegnazioni.filter((x) => x.leggeId === smascheratore.id).map((x) => x.membroId)
+  prova('vengono pagati tutti e tre gli indovini', pagati.length === 3, { pagati })
+  prova('c compreso, che aveva beccato al primo giro', pagati.includes('c'))
+  prova(
+    'una assegnazione a testa: la Legge non si prende due volte',
+    new Set(pagati).size === pagati.length
+  )
+  prova(
+    'e nessun impostore risulta impunito, visto che sono usciti tutti e due',
+    p.assegnazioni.every((x) => x.leggeId !== PER_ID['impostore-impunito'].id),
+    { assegnazioni: p.assegnazioni }
+  )
+
+  // Il colpo di coda continua a cancellare tutto, giri vecchi compresi:
+  // era il rischio vero di pagare piu' gente.
+  const ribaltata = premi({
+    impostori: IMPOSTORI,
+    giocatori: OTTO,
+    schede: giro3,
+    fuori: ['a'],
+    schedeDeiGiri: [giro1, giro3],
+    colpoRiuscito: true,
+  })
+  prova(
+    'col colpo riuscito non viene pagato nessun indovino, nemmeno dei giri vecchi',
+    ribaltata.assegnazioni.every((x) => x.leggeId !== smascheratore.id),
+    { assegnazioni: ribaltata.assegnazioni }
+  )
+  prova(
+    'e pagano invece tutti e due gli impostori',
+    ribaltata.assegnazioni.filter((x) => x.leggeId === PER_ID['impostore-impunito'].id).length === 2
+  )
+
+  // ⚠️ Quello che si racconta e quello che si paga devono coincidere: e'
+  // il motivo per cui raccontaFinale esiste.
+  const f = raccontaFinale({
+    impostori: IMPOSTORI,
+    giocatori: OTTO,
+    schede: giro3,
+    fuori: ['a'],
+    schedeDeiGiri: [giro1, giro3],
+  })
+  prova('il finale annuncia gli stessi tre', f.premiati.join() === pagati.sort().join(), {
+    premiati: f.premiati,
+    pagati,
+  })
+  prova('ha vinto il gruppo', f.vincitore === 'gruppo')
+  prova('e li dichiara beccati tutti e due', f.scoperti.length === 2)
+
+  const fRibaltata = raccontaFinale({
+    impostori: IMPOSTORI,
+    giocatori: OTTO,
+    schede: giro3,
+    fuori: ['a'],
+    schedeDeiGiri: [giro1, giro3],
+    tentativo: 'la parola',
+    parolaGruppo: 'La Parola',
+  })
+  prova('ribaltata: non annuncia nessun premiato', fRibaltata.premiati.length === 0)
+  prova(
+    'ma dice lo stesso chi ci era arrivato, tutti e tre',
+    fRibaltata.indovini.length === 3,
+    { indovini: fRibaltata.indovini }
+  )
+}
+
+console.log('\nUn impostore non indovina mai, nemmeno nei giri vecchi')
+{
+  const OTTO = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  // b e' impostore e al primo giro ha indicato a, l'altro impostore: e'
+  // il bluff piu' vecchio del mondo e non deve pagare.
+  const giro1 = { b: ['a'], c: ['a'] }
+  const r = esito({
+    impostori: ['a', 'b'],
+    giocatori: OTTO,
+    schede: { c: ['b'] },
+    fuori: ['a'],
+    schedeDeiGiri: [giro1],
+  })
+  prova("l'impostore che accusa il suo complice non e un indovino", !r.indovini.includes('b'))
+  prova("ma l'innocente che l'ha beccato si", r.indovini.includes('c'))
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// La lettura dei giri ha DUE estremi
+//
+// leggiSchedeDeiGiri lega i voti alla partita per tempo e non per chiave
+// esterna, perche' la riga della partita ha una sola colonna vote_id.
+// Col solo pavimento pescava anche i voti delle partite giocate DOPO:
+// un telefono rimasto indietro che tocca "Rivela" mezz'ora dopo faceva
+// girare paga() su una partita chiusa, leggeva i giri di quella nuova, e
+// pagava +2 a chi in quella nuova aveva votato uno che nella vecchia era
+// impostore. Schede tradotte con le opzioni giuste, quindi id di persone
+// veri: nessun errore, nessuna riga rossa, solo la classifica che si
+// sposta.
+//
+// Non e' provabile da riga di comando — e' una query — quindi si guarda
+// il codice. Una rete grossolana, ma il difetto era invisibile e toglierlo
+// di nuovo non romperebbe nient'altro.
+console.log('\nLa lettura dei giri e chiusa da tutte e due le parti')
+{
+  const sorgente = readFileSync(
+    new URL('../src/lib/partiteImpostore.js', import.meta.url),
+    'utf8'
+  )
+  const inizio = sorgente.indexOf('export async function leggiSchedeDeiGiri')
+  const corpo = sorgente.slice(inizio, sorgente.indexOf('\n}', inizio))
+
+  prova('la funzione esiste', inizio > 0)
+  prova("c'e' il pavimento: dai voti nati con questa partita in poi", /\.gte\('created_at'/.test(corpo))
+  prova(
+    "c'e' il soffitto: si taglia prima della partita successiva",
+    /\.lt\('created_at'/.test(corpo),
+    { aiuto: 'senza, paga() di una partita vecchia legge i giri di quella nuova' }
+  )
+  prova(
+    'il soffitto viene dalla partita dopo, non da una data inventata',
+    /from\('impostore_games'\)/.test(corpo) && /\.gt\('created_at', partita\.creataIl\)/.test(corpo)
+  )
+  prova('il voto d apertura resta fuori', /votoAperturaId/.test(corpo))
+  prova('e la lettura ha il suo limit', /\.limit\(/.test(corpo))
+
+  // paga() non deve tornare a leggersela da sola: dentro chiudiAccusa la
+  // RPC gira per prima, quindi una lettura che fallisce li' lascerebbe una
+  // partita gia' 'finita' e mai pagata, senza nessuno che riprova.
+  const corpoPaga = sorgente.slice(
+    sorgente.indexOf('export async function paga('),
+    sorgente.indexOf('export async function chiudiAccusa')
+  )
+  prova(
+    'paga riceve i giri da fuori invece di leggerseli',
+    /export async function paga\(partita, voto, schedeDeiGiri/.test(corpoPaga) &&
+      !/leggiSchedeDeiGiri/.test(corpoPaga),
+    { aiuto: 'la lettura deve stare prima di tutto cio che cambia lo stato della partita' }
+  )
+
+  const corpoChiudi = sorgente.slice(
+    sorgente.indexOf('export async function chiudiAccusa'),
+    sorgente.indexOf('export async function tentaColpo')
+  )
+  prova(
+    'chiudiAccusa legge i giri PRIMA della RPC che chiude',
+    corpoChiudi.indexOf('leggiSchedeDeiGiri') < corpoChiudi.indexOf("rpc('chiudi_accusa'"),
+    { aiuto: 'chiudi_accusa non solleva quando la guardia non passa: dopo e troppo tardi' }
+  )
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} prove fallite.\n`)

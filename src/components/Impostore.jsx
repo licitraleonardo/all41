@@ -45,6 +45,7 @@ export default function Impostore({ membro, membri }) {
   const {
     partita,
     voto,
+    schedeDeiGiri,
     storico,
     stato,
     errore,
@@ -105,6 +106,11 @@ export default function Impostore({ membro, membri }) {
             <FinestraFinale
               partita={partita}
               voto={voto}
+              schedeDeiGiri={schedeDeiGiri}
+              // Con un giro solo l'ultimo voto E' tutta la partita. Con
+              // piu' giri lo si sa solo quando la lettura e' tornata:
+              // prima di allora il finale non deve dire "nessuno".
+              giriNoti={schedeDeiGiri.length > 0 || partita.giro <= 1}
               nome={nome}
               membri={membri}
               onChiudi={() => chiudiRivelazione(partita.id)}
@@ -149,9 +155,21 @@ export default function Impostore({ membro, membri }) {
           finale, perché è la stessa cosa — un resoconto che si legge e si
           chiude. */}
       {daStorico && (
+        // ⚠️ `opzioni` e non solo `schede`. Senza, la finestra ricadeva
+        // sull'elenco intero dei giocatori mentre la riga dello storico
+        // usava quelle vere: la stessa partita raccontata in due modi, e
+        // dal secondo giro d'accusa in poi con ogni numero spostato di un
+        // posto. Quarta volta che questo progetto inciampa sulle
+        // posizioni.
         <FinestraFinale
           partita={daStorico}
-          voto={{ schede: daStorico.schede }}
+          voto={{ schede: daStorico.schede, opzioni: daStorico.opzioniVoto }}
+          // Lo storico tiene un voto solo per partita: di una finita in
+          // piu' giri conosce l'ultimo e basta. Prima diceva lo stesso
+          // "Nessuno ha indovinato" su una partita in cui qualcuno aveva
+          // preso +2 — la stessa serata raccontata in due modi, che e'
+          // il difetto per cui raccontaFinale esiste.
+          giriNoti={daStorico.giro <= 1}
           nome={nome}
           membri={membri}
           onChiudi={() => setDaStorico(null)}
@@ -446,7 +464,19 @@ function Apparecchia({ membro, membri, onCrea }) {
 // La finestra del resoconto. La stessa a fine partita e riaprendo una
 // partita vecchia: e' la stessa cosa, e due finestre diverse per dire lo
 // stesso finale sarebbero due posti dove sbagliare.
-function FinestraFinale({ partita, voto, nome, membri, onChiudi }) {
+// `schedeDeiGiri` arriva solo dalla partita appena finita: lo storico non
+// li ha, e non e' una svista. Chi non li ha racconta l'ultimo giro, cioe'
+// meno della verita' — mai il contrario, che sarebbe promettere punti a
+// chi non li ha presi.
+function FinestraFinale({
+  partita,
+  voto,
+  schedeDeiGiri = [],
+  giriNoti = true,
+  nome,
+  membri,
+  onChiudi,
+}) {
   return (
     <div
       className="imp-sfondo"
@@ -456,7 +486,14 @@ function FinestraFinale({ partita, voto, nome, membri, onChiudi }) {
       onClick={onChiudi}
     >
       <div className="imp-finestra" onClick={(e) => e.stopPropagation()}>
-        <Rivelazione partita={partita} voto={voto} nome={nome} membri={membri} />
+        <Rivelazione
+          partita={partita}
+          voto={voto}
+          schedeDeiGiri={schedeDeiGiri}
+          giriNoti={giriNoti}
+          nome={nome}
+          membri={membri}
+        />
         <button type="button" className="imp-chiudi-finestra" onClick={onChiudi}>
           Chiudi
         </button>
@@ -1043,18 +1080,28 @@ function Fuori({ partita, membri, nome }) {
 
 // ---------------------------------------------------------- rivelazione
 
-function Rivelazione({ partita, voto, nome, membri }) {
+// `giriNoti` dice se questo racconto ha in mano tutti i giri d'accusa o
+// solo l'ultimo. Serve a una cosa sola: non affermare quello che non si
+// sa. "Nessuno ha indovinato" e' una frase che dice qualcosa, e su una
+// partita finita in piu' giri, senza le schede dei giri vecchi, e' falsa
+// — mentre in classifica quel +2 c'e'. Tacere e' peggio che dirlo male
+// solo quando si sa.
+function Rivelazione({ partita, voto, schedeDeiGiri = [], giriNoti = true, nome, membri }) {
   const r = useMemo(
     () =>
       raccontaFinale({
         impostori: partita.impostori,
         giocatori: partita.giocatori,
         schede: schedePerId(voto?.schede, voto?.opzioni ?? partita.giocatori),
+        // Gli stessi nomi che `paga` sta accreditando: chi aveva
+        // riconosciuto l'impostore al primo giro viene pagato, quindi
+        // deve anche comparire qui.
+        schedeDeiGiri,
         tentativo: partita.tentativo,
         parolaGruppo: partita.parolaGruppo,
         fuori: partita.fuori,
       }),
-    [partita, voto?.schede, voto?.opzioni]
+    [partita, voto?.schede, voto?.opzioni, schedeDeiGiri]
   )
 
   const colpo = r.colpoRiuscito
@@ -1149,8 +1196,13 @@ function Rivelazione({ partita, voto, nome, membri }) {
           {r.indovini.map(nome).join(', ')} l’{r.indovini.length === 1 ? 'aveva' : 'avevano'}{' '}
           riconosciuto, e non è servito a niente: la parola l’ha indovinata lui.
         </p>
-      ) : (
+      ) : giriNoti ? (
         <p className="imp-spiega">Nessuno ha indovinato. Complimenti a nessuno.</p>
+      ) : (
+        <p className="imp-spiega">
+          Chi aveva indovinato non si vede più da qui: i giri sono stati più d’uno. I
+          punti però sono andati, guarda la classifica.
+        </p>
       )}
 
     </section>

@@ -135,9 +135,24 @@ Dalla caccia sistematica dell'8 agosto restano **30 segnalazioni non verificate*
 - ~~`chiudiScaduti` può chiudere il voto dell'Impostore~~ — **fatto.** Le categorie che si chiudono da sole ora sono un elenco in `src/config/sondaggi.js` (`CATEGORIE_CHE_SCADONO`), e l'Impostore non c'è. Il filtro sta nella **lettura**: la ricerca dei voti scaduti si ferma a venti, e venti voti dell'Impostore rimasti aperti dalle sere prima avrebbero occupato tutti i posti impedendo di chiudere il sondaggio di stasera — un secondo difetto dallo stesso errore. `npm run prova:scadenza-voti` controlla anche dentro `schema.sql` i due fatti su cui poggia la decisione: che `vota_impostore` guardi `closed_at` (è quello che rende fatale la chiusura) e che **non** guardi `expires_at` (è il motivo per cui quel voto non ha una scadenza vera).
 - Se l'impostore beccato sparisce, la partita **resta in `colpo`** e non paga nessuno: manca un modo per il gruppo di rinunciare.
 - Con due impostori beccati insieme, **entrambi** possono scrivere la parola ma vale solo la prima: va deciso chi tenta.
-- Gli **indovini dei giri precedenti** non vengono pagati: `paga()` guarda solo l'ultimo voto.
+- ~~Gli **indovini dei giri precedenti** non vengono pagati~~ — **fatto**, ma è la modifica che merita più attenzione di tutte. Vedi sotto.
 
 Dalla critica funzionale del 7 agosto **non resta più niente**: anche la foto che spariva se l'upload falliva è stata chiusa (vedi sotto).
+
+### Gli indovini di tutti i giri — e la finestra che va guardata
+
+La Legge XXIV dice *"hai votato l'impostore giusto"*, non "eri dalla parte giusta all'ultimo giro". `paga()` guardava solo l'ultimo voto: con due impostori beccati in giri diversi — il modo normale in cui il gruppo vince — chi aveva riconosciuto l'impostore al primo giro non prendeva niente, in silenzio.
+
+⚠️ **I giri passati non sono raggiungibili dalla riga della partita**: `vote_id` è una colonna sola e ripartendo `chiudi_accusa` la azzera. La strada pulita sarebbe una colonna nuova, cioè un quinto SQL. Si è scelto invece di ritrovarli **per finestra temporale** — i voti di categoria `impostore` nati fra questa partita e la successiva — perché regge sulla stessa invariante su cui poggia già `leggiPartita`: di partita aperta ce n'è una sola.
+
+**È un legame per tempo, non per chiave esterna.** Chi ci mette le mani deve sapere due cose:
+
+1. **La finestra ha due estremi.** Con il solo pavimento, `paga()` di una partita vecchia si mangiava i giri di quella nuova: un telefono che perde un messaggio del realtime resta sulla schermata d'accusa col tasto "Rivela" acceso, e `chiudi_accusa` **non solleva** quando la guardia non passa — restituisce la riga già `finita`. Mezz'ora e una partita dopo, quel tocco pagava +2 a chi nella partita nuova aveva votato uno che nella vecchia era impostore. Chiave nuova, quindi il dedupe non lo ferma; punti non revocabili; nessun errore.
+2. **La lettura sta prima di tutto ciò che cambia lo stato.** Dentro `chiudiAccusa` la RPC gira per prima: leggendo dopo, un guasto di rete lasciava una partita `finita` e mai pagata, impostori impuniti compresi, senza nessuno che riprova. Per questo `paga(partita, voto, schedeDeiGiri)` riceve i giri da fuori e non se li legge da sola.
+
+Tutte e due le cose le ha trovate una caccia avversariale sulla modifica appena scritta, non il lavoro che l'ha prodotta. Ci sono **otto controlli sul codice sorgente** in `prove/impostore.mjs` apposta, perché il soffitto è invisibile e toglierlo non romperebbe nient'altro.
+
+**Cosa resta qui:** lo storico tiene un voto solo per partita, quindi di una finita in più giri conosce l'ultimo. Prima diceva *"Nessuno ha indovinato"* su una partita in cui qualcuno aveva preso +2 — un'affermazione falsa, non un'omissione. Adesso, quando non può sapere (`giro > 1`), lo dice invece di inventare. La versione giusta — lo storico che ricostruisce le finestre di tutte le partite — è un pezzo a sé.
 
 ### La coda delle foto, rifatta
 

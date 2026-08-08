@@ -182,7 +182,26 @@ export function schedePerId(schede, giocatori) {
 //    fatta franca e il finale diceva che era scappato. Con due impostori
 //    beccarli in due giri diversi non e' un caso limite: e' il modo
 //    normale in cui il gruppo vince.
-export function esito({ impostori, giocatori, schede, fuori = [] }) {
+// Chi, in UNA scheda, ha indicato almeno un impostore vero. Gli impostori
+// non indovinano mai: sanno gia'.
+function indoviniDi(schede, impostori) {
+  return Object.entries(schede ?? {})
+    .filter(
+      ([chi, indicati]) =>
+        !impostori.includes(chi) &&
+        (Array.isArray(indicati) ? indicati : [indicati]).some((a) => impostori.includes(a))
+    )
+    .map(([chi]) => chi)
+}
+
+// 3. chi ha indovinato — la Legge XXIV dice "hai votato l'impostore
+//    giusto", non "eri dalla parte giusta all'ultimo giro". Guardando solo
+//    le schede dell'ultimo voto, chi aveva riconosciuto l'impostore al
+//    primo giro non prendeva niente: il suo voto non esiste piu' da
+//    nessuna parte in quel conto. Per questo `schedeDeiGiri` accetta le
+//    schede di TUTTI i giri d'accusa — l'ultimo compreso o meno, i
+//    doppioni non contano perche' si passa da un insieme.
+export function esito({ impostori, giocatori, schede, fuori = [], schedeDeiGiri = [] }) {
   const conteggi = Object.fromEntries(giocatori.map((id) => [id, 0]))
   for (const accusati of Object.values(schede ?? {})) {
     // Ogni scheda puo' portare piu' accuse, e ognuna vale un voto.
@@ -223,22 +242,35 @@ export function esito({ impostori, giocatori, schede, fuori = [] }) {
   const usciti = [...new Set([...fuori, ...accusati])]
   const scoperti = impostori.filter((id) => usciti.includes(id))
   const impuniti = impostori.filter((id) => !usciti.includes(id))
-  // Indovina chi ha indicato almeno un impostore vero.
-  const indovini = Object.entries(schede ?? {})
-    .filter(
-      ([chi, accusati_]) =>
-        !impostori.includes(chi) &&
-        (Array.isArray(accusati_) ? accusati_ : [accusati_]).some((a) => impostori.includes(a))
-    )
-    .map(([chi]) => chi)
+  // Chi ha indovinato, in tutta la partita e non solo nell'ultimo giro.
+  // Ordinati, perche' l'ordine di `Object.entries` viene da come il
+  // database ha scritto il jsonb: due telefoni potrebbero elencarli
+  // diversamente, e in questo progetto la stessa domanda deve dare la
+  // stessa risposta ovunque.
+  const indovini = [
+    ...new Set([schede, ...schedeDeiGiri].flatMap((s) => indoviniDi(s, impostori))),
+  ].sort()
 
   return { conteggi, accusati, scoperti, impuniti, indovini, troppiPari: aSoglia.length > quantiVivi }
 }
 
 // I punti non si scrivono qui: si prendono dalle Leggi, cosi' cambiare
 // una Legge cambia il gioco e non restano due numeri da tenere allineati.
-export function premi({ impostori, giocatori, schede, fuori = [], colpoRiuscito = false }) {
-  const { impuniti, indovini, ...resto } = esito({ impostori, giocatori, schede, fuori })
+export function premi({
+  impostori,
+  giocatori,
+  schede,
+  fuori = [],
+  colpoRiuscito = false,
+  schedeDeiGiri = [],
+}) {
+  const { impuniti, indovini, ...resto } = esito({
+    impostori,
+    giocatori,
+    schede,
+    fuori,
+    schedeDeiGiri,
+  })
 
   const impunito = PER_ID['impostore-impunito']
   const smascheratore = PER_ID['smascheratore']
@@ -299,12 +331,18 @@ export function raccontaFinale({
   tentativo = null,
   parolaGruppo = null,
   fuori = [],
+  // ⚠️ Va passato dovunque si racconti una partita, o si torna al difetto
+  // che questa funzione esiste per non avere piu': la rivelazione
+  // direbbe "hanno indovinato in due" mentre `paga` ne sta pagando
+  // quattro. Chi non ce l'ha racconta solo l'ultimo giro — meno della
+  // verita', mai il contrario.
+  schedeDeiGiri = [],
 }) {
   // ⚠️ `fuori` va passato: senza, un impostore beccato in un giro
   // precedente risultava impunito — nelle schede dell'ultimo voto non
   // compare nemmeno fra le opzioni — e il finale diceva "L'ha fatta
   // franca" su una partita che il gruppo aveva vinto.
-  const r = esito({ impostori, giocatori, schede, fuori })
+  const r = esito({ impostori, giocatori, schede, fuori, schedeDeiGiri })
   const colpoRiuscito = Boolean(tentativo) && stessaParola(tentativo, parolaGruppo)
 
   // "Vi hanno fatti fuori" e "l'ha fatta franca" non sono la stessa cosa,

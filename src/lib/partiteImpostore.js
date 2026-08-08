@@ -240,6 +240,83 @@ export async function apriVoto(partita) {
   return data ? daRiga(data) : leggiPartita()
 }
 
+// Quanti giri d'accusa si va a ripescare. Un tetto ci vuole (verifica
+// bloccante n.4) e trenta e' molto piu' di quanti giri regge un gruppo
+// prima di stufarsi.
+const GIRI_DA_RIPESCARE = 30
+
+// Le schede di TUTTI i giri d'accusa di questa partita, non solo
+// dell'ultimo.
+//
+// I giri passati non sono raggiungibili dalla riga della partita:
+// `vote_id` e' una colonna sola, e ripartendo `chiudi_accusa` la azzera.
+// Si ritrovano per finestra temporale — i voti di categoria `impostore`
+// nati dopo questa partita — e regge perche' di partita aperta ce n'e'
+// sempre una sola: finche' non e' finita o annullata, l'app non fa
+// cominciare la successiva.
+//
+// ⚠️ E' un legame per tempo e non per chiave esterna, quindi vale quanto
+// vale quell'invariante. La stessa su cui poggia gia' `leggiPartita`, che
+// di partite ne restituisce una: se un giorno se ne potessero aprire due
+// insieme, questa non sarebbe la prima cosa a rompersi.
+//
+// ⚠️⚠️ E LA FINESTRA HA DUE ESTREMI, non uno. Con il solo pavimento,
+// "i voti di questa partita" diventava "i voti di questa piu' quelli di
+// ogni partita giocata dopo": l'invariante "una per volta" garantisce
+// che nessun altro voto nasca PRIMA, non che non ne nascano DOPO.
+//
+// E succede davvero. Un telefono che perde il messaggio del realtime
+// resta sulla schermata d'accusa col tasto "Rivela" acceso — non c'e'
+// nessun risincronizzo al ritorno in primo piano — mentre il gruppo ne
+// gioca un'altra. Venti minuti dopo quello tocca "Rivela": `chiudi_accusa`
+// non solleva niente quando la guardia non passa, restituisce la riga
+// gia' 'finita', e da li' `paga` gira su una partita chiusa leggendo i
+// giri di quella nuova. Le schede sono tradotte con le opzioni giuste,
+// quindi sono id di persone veri: chi in B ha votato uno che in A era
+// impostore si prende +2 su una partita che magari non ha giocato, con
+// una dedupeKey mai usata — quindi il punto passa — e i punti non si
+// revocano.
+//
+// Il soffitto e' la partita successiva, cioe' la stessa invariante presa
+// dall'altro capo. Prima di questa lettura `paga` era una funzione della
+// riga piu' il voto in mano: rigiocata dieci minuti dopo dava la stessa
+// risposta. Il soffitto le restituisce quella proprieta'.
+//
+// Il voto d'apertura resta fuori due volte: nasce prima della riga della
+// partita, quindi il pavimento non lo prende, e comunque lo si esclude
+// per id. Le sue opzioni sono numeri ("1", "2") e non persone.
+export async function leggiSchedeDeiGiri(partita) {
+  const { data: successive, error: erroreSuccessiva } = await supabase
+    .from('impostore_games')
+    .select('created_at')
+    .eq('trip_id', VIAGGIO.id)
+    .gt('created_at', partita.creataIl)
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  if (erroreSuccessiva) throw erroreSuccessiva
+
+  let richiesta = supabase
+    .from('votes')
+    .select('id, ballots, options, created_at')
+    .eq('trip_id', VIAGGIO.id)
+    .eq('category', 'impostore')
+    .gte('created_at', partita.creataIl)
+
+  const dopo = successive?.[0]?.created_at
+  if (dopo) richiesta = richiesta.lt('created_at', dopo)
+
+  const { data, error } = await richiesta
+    .order('created_at', { ascending: true })
+    .limit(GIRI_DA_RIPESCARE)
+
+  if (error) throw error
+
+  return (data ?? [])
+    .filter((v) => v.id !== partita.votoAperturaId)
+    .map((v) => schedePerId(v.ballots, v.options))
+}
+
 // La rivelazione paga: gli impostori che l'hanno fatta franca e chi ha
 // indovinato. La dedupeKey e' obbligatoria perche' la rivelazione la puo'
 // far scattare chiunque, e otto telefoni che rivelano insieme
@@ -249,7 +326,20 @@ export async function apriVoto(partita) {
 // giocatori: dal secondo giro d'accusa in poi si vota solo fra i
 // superstiti, e usare l'elenco intero sposterebbe ogni numero di un posto
 // — cioe' darebbe i punti alle persone sbagliate, in silenzio.
-export async function paga(partita, voto) {
+// ⚠️ `schedeDeiGiri` si passa da fuori e non si legge qui dentro. Sono
+// tutti i giri d'accusa, non solo l'ultimo: la Legge XXIV paga chi ha
+// votato l'impostore giusto, e con due impostori beccarli in giri diversi
+// e' il modo normale in cui il gruppo vince — chi lo aveva riconosciuto al
+// primo giro non prendeva niente, perche' quel voto non compare piu' da
+// nessuna parte nell'ultimo.
+//
+// Che a leggerli sia il chiamante non e' un dettaglio di stile: la lettura
+// deve stare PRIMA di qualunque cosa cambi lo stato della partita. Dentro
+// `chiudiAccusa` la RPC gira per prima, quindi una lettura che fallisce
+// qui lascerebbe una partita gia' 'finita' e mai pagata, senza nessuno che
+// riprova. Leggendo prima, un guasto ferma tutto quando fermarsi non costa
+// niente.
+export async function paga(partita, voto, schedeDeiGiri = []) {
   const opzioni = voto?.opzioni ?? partita.giocatori
   // ⚠️ `fuori` e' obbligatorio. Senza, un impostore beccato in un giro
   // precedente non compare nelle schede dell'ultimo voto — non e'
@@ -261,6 +351,7 @@ export async function paga(partita, voto) {
     impostori: partita.impostori,
     giocatori: partita.giocatori,
     schede: schedePerId(voto?.schede, opzioni),
+    schedeDeiGiri,
     fuori: partita.fuori ?? [],
     colpoRiuscito: stessaParola(partita.tentativo, partita.parolaGruppo),
   })
@@ -288,6 +379,15 @@ export async function chiudiAccusa(partita, voto, casuale) {
 
   const esitoGiro = dopoAccusa(partita, schedePerId(voto.schede, voto.opzioni), casuale)
 
+  // ⚠️ Prima della RPC. Se la partita finisce qui, i punti si assegnano
+  // subito dopo: leggendo i giri dopo aver chiuso, un guasto di rete
+  // lascerebbe una partita 'finita' che non paga nessuno — impostori
+  // impuniti compresi — e nessuno riproverebbe, perche' `chiudi_accusa`
+  // dalla seconda volta in poi non fa piu' niente. Qui invece un guasto
+  // ferma tutto prima che sia cambiato qualcosa, e il tocco dopo rifa'
+  // tutto da capo.
+  const schedeDeiGiri = await leggiSchedeDeiGiri(partita)
+
   const { data, error } = await supabase.rpc('chiudi_accusa', {
     p_partita: partita.id,
     p_fuori: esitoGiro.fuori,
@@ -308,7 +408,7 @@ export async function chiudiAccusa(partita, voto, casuale) {
 
   // Se e' gia' finita — hanno vinto gli impostori per numeri — i punti si
   // assegnano adesso. Se si va al colpo, si aspetta quello.
-  if (dopo.stato === 'finita') await paga(dopo, voto)
+  if (dopo.stato === 'finita') await paga(dopo, voto, schedeDeiGiri)
 
   return dopo
 }
@@ -364,8 +464,9 @@ export async function chiediRivelazione(partita, membroId) {
 export async function chiudiPartita(partita, schede) {
   // Prima i punti, poi la chiusura: se paga fallisce a meta', la partita
   // resta da rivelare e il prossimo tocco riprova. Le chiavi doppie
-  // vengono rifiutate, quindi ripetere non raddoppia niente.
-  await paga(partita, schede)
+  // vengono rifiutate, quindi ripetere non raddoppia niente. Vale anche
+  // per la lettura dei giri, che sta dentro lo stesso "prima".
+  await paga(partita, schede, await leggiSchedeDeiGiri(partita))
 
   const { data, error } = await supabase
     .from('impostore_games')

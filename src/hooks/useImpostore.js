@@ -12,6 +12,7 @@ import {
   creaPartita,
   daRiga,
   leggiPartita,
+  leggiSchedeDeiGiri,
   leggiStorico,
 } from '../lib/partiteImpostore.js'
 import { leggiVoti } from '../lib/voti.js'
@@ -24,6 +25,13 @@ export function useImpostore(membroId) {
   const [partita, setPartita] = useState(null)
   const [voto, setVoto] = useState(null)
   const [storico, setStorico] = useState([])
+  // Le schede di tutti i giri d'accusa. Servono solo al finale, e solo
+  // per una ragione: la rivelazione deve annunciare gli stessi nomi che
+  // `paga` sta accreditando. Senza, chi aveva indovinato al primo giro
+  // prenderebbe i punti senza comparire fra i premiati — e la volta
+  // prima e' successo il contrario, che e' quello che ha fatto nascere
+  // `raccontaFinale`.
+  const [schedeDeiGiri, setSchedeDeiGiri] = useState([])
   const [stato, setStato] = useState('caricamento')
   const [errore, setErrore] = useState(null)
   const vivo = useRef(true)
@@ -229,6 +237,33 @@ export function useImpostore(membroId) {
     }
   }, [partita, voto])
 
+  // I giri passati si leggono quando la partita arriva al finale, non a
+  // ogni turno: e' l'unico momento in cui servono. I campi si estraggono
+  // prima perche' l'oggetto `partita` cambia identita' a ogni messaggio
+  // del realtime, e rileggerli a ogni battito sarebbe una query di
+  // troppo ogni volta che qualcuno preme "fatto".
+  const partitaId = partita?.id
+  const statoPartita = partita?.stato
+  const creataIl = partita?.creataIl
+  const votoAperturaId = partita?.votoAperturaId
+
+  useEffect(() => {
+    if (statoPartita !== 'colpo' && statoPartita !== 'finita') {
+      setSchedeDeiGiri([])
+      return undefined
+    }
+    let vivo2 = true
+    leggiSchedeDeiGiri({ id: partitaId, creataIl, votoAperturaId })
+      .then((s) => vivo2 && setSchedeDeiGiri(s))
+      // Se non si riesce a leggerli, il finale racconta solo l'ultimo
+      // giro: meno della verita', mai il contrario. I punti invece li
+      // conta `paga`, che se fallisce non chiude la partita.
+      .catch(() => {})
+    return () => {
+      vivo2 = false
+    }
+  }, [partitaId, statoPartita, creataIl, votoAperturaId])
+
   // Lo storico si rilegge quando una partita finisce: e' l'unico momento
   // in cui puo' essere cambiato.
   useEffect(() => {
@@ -244,6 +279,7 @@ export function useImpostore(membroId) {
   return {
     partita,
     voto,
+    schedeDeiGiri,
     storico,
     stato,
     errore,
