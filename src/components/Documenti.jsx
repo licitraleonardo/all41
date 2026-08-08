@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './Documenti.css'
 import { useDocumenti } from '../hooks/useDocumenti.js'
 import { caricaDocumento, eUnPdf } from '../lib/documenti.js'
@@ -59,12 +59,57 @@ export default function Documenti({ membro }) {
     }
   }
 
-  function apri(d) {
+  async function apri(d) {
     // I PDF li apre il browser, che ha già un lettore fatto bene. Le
     // immagini restano dentro l'app, dove si possono anche scaricare.
-    if (eUnPdf(d)) window.open(d.url, '_blank', 'noopener')
-    else setGrande(d)
+    if (!eUnPdf(d)) {
+      setGrande(d)
+      return
+    }
+
+    // Con la rete, la strada di sempre.
+    if (navigator.onLine !== false) {
+      window.open(d.url, '_blank', 'noopener')
+      return
+    }
+
+    // Senza rete window.open è una navigazione verso il dominio dello
+    // storage, e quella il service worker non la può intercettare: il
+    // browser mostra la sua pagina d'errore proprio davanti a chi
+    // controlla i biglietti. Il file però può essere già in cache, e
+    // fetch ci passa: si tira fuori da lì e si apre come blob.
+    try {
+      const risposta = await fetch(d.url)
+      if (!risposta.ok) throw new Error('non in cache')
+      const indirizzo = URL.createObjectURL(await risposta.blob())
+      const finestra = window.open(indirizzo, '_blank', 'noopener')
+      if (!finestra) throw new Error('finestra bloccata')
+      // Non subito: la finestra deve avere il tempo di leggerlo.
+      setTimeout(() => URL.revokeObjectURL(indirizzo), 60000)
+    } catch {
+      setAvviso(
+        'Senza rete questo PDF non si apre. Se ti serve all’imbarco, aprilo una volta adesso che hai campo: dopo resta sul telefono.'
+      )
+    }
   }
+
+  // Si scaricano appena si guarda l'elenco, non quando si tocca il
+  // biglietto: alle 7 in fila all'imbarco è troppo tardi per accorgersi
+  // che non c'era. Uno alla volta e in silenzio — il service worker li
+  // mette in cache passando, e se fallisce non è successo niente.
+  useEffect(() => {
+    if (documenti.length === 0 || navigator.onLine === false) return
+    let vivo = true
+    ;(async () => {
+      for (const d of documenti.slice(0, 20)) {
+        if (!vivo) return
+        await fetch(d.url, { mode: 'cors' }).catch(() => {})
+      }
+    })()
+    return () => {
+      vivo = false
+    }
+  }, [documenti])
 
   return (
     <div className="documenti">

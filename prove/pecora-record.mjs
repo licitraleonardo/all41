@@ -2,6 +2,7 @@
 // dipendono due Leggi, quindi vale la stessa attenzione dei conti delle
 // Spese: qui un errore regala o toglie punti a qualcuno per davvero.
 
+import { accoda, togli } from '../src/lib/codaPecora.js'
 import {
   migliore,
   classificaDelGiorno,
@@ -131,6 +132,38 @@ prova(
     fine
   ) === null
 )
+
+console.log('\nla coda dei punteggi fatti senza rete')
+{
+  const una = accoda([], { membroId: 'a', giorno: '2026-08-13', punti: 500 })
+  prova('la prima entra', una.length === 1 && una[0].punti === 500)
+
+  // Tre partite nella stessa giornata diventano una riga sola col
+  // meglio: al database interessa quello, e la coda non cresce mai oltre
+  // il numero di giorni del viaggio.
+  let coda = accoda(una, { membroId: 'a', giorno: '2026-08-13', punti: 870 })
+  coda = accoda(coda, { membroId: 'a', giorno: '2026-08-13', punti: 300 })
+  prova('resta una riga per giornata', coda.length === 1)
+  prova('e tiene il meglio, non l’ultimo', coda[0].punti === 870)
+
+  coda = accoda(coda, { membroId: 'a', giorno: '2026-08-14', punti: 200 })
+  prova('due giornate, due righe', coda.length === 2)
+
+  coda = accoda(coda, { membroId: 'b', giorno: '2026-08-13', punti: 100 })
+  prova('due persone nello stesso giorno non si sovrascrivono', coda.length === 3)
+  prova(
+    'il record di a non si e’ mosso',
+    coda.find((v) => v.membroId === 'a' && v.giorno === '2026-08-13').punti === 870
+  )
+
+  const dopo = togli(coda, [{ membroId: 'a', giorno: '2026-08-13' }])
+  prova('la consegnata sparisce', dopo.length === 2)
+  prova(
+    'e le altre restano',
+    dopo.some((v) => v.membroId === 'b') && dopo.some((v) => v.giorno === '2026-08-14')
+  )
+  prova('togliere niente non toglie niente', togli(coda, []).length === 3)
+}
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
 process.exit(falliti === 0 ? 0 : 1)

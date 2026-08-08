@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { conCache } from './cache.js'
-import { CACCIA, SFIDE, SFIDE_PER_ID } from '../config/sfide.js'
+import { CACCIA, SFIDE, SFIDE_PER_ID, scadenzaDelVoto } from '../config/sfide.js'
 import {
   cacciaChiusa,
   chiusureDaFare,
@@ -58,14 +58,9 @@ export const leggiPartecipazioni = conCache(
   }
 )
 
-// La gara dura un giorno intero da quando si apre, non fino a mezzanotte:
-// una seconda foto caricata alle 23:50 lasciava dieci minuti per votare,
-// cioè nessuno.
-function scadenzaDellaGara() {
-  return new Date(Date.now() + ORE_DI_GARA * 3600 * 1000).toISOString()
-}
-
-const ORE_DI_GARA = 24
+// La scadenza la decide la configurazione della caccia: si vota fino
+// alla fine della finestra, come promette CACCIA.chiude. Vive in
+// config/sfide.js perché è una regola, e perché lì si può provare.
 
 // I voti aperti delle sfide, per mostrarli e per votarci.
 export const leggiVotiSfide = conCache('votiSfide', async function leggiVotiSfide() {
@@ -99,7 +94,7 @@ export async function assicuraVotoSfida(sfidaId, fotoIds, memberId) {
   const { data, error } = await supabase.rpc('assicura_voto_sfida', {
     p_sfida: sfidaId,
     p_foto: fotoIds,
-    p_scadenza: scadenzaDellaGara(),
+    p_scadenza: scadenzaDelVoto(new Date()),
     p_membro: memberId,
   })
   if (error) throw error

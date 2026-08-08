@@ -10,7 +10,7 @@ import {
   sfideVintePerPersona,
   vincitoreDellaCaccia,
 } from '../src/lib/cacciaFinale.js'
-import { CACCIA, SFIDE } from '../src/config/sfide.js'
+import { CACCIA, SFIDE, scadenzaDelVoto } from '../src/config/sfide.js'
 
 let falliti = 0
 function prova(nome, condizione, dettaglio) {
@@ -143,6 +143,44 @@ console.log(`  premio finale ${CACCIA.premioPrimo}`)
 console.log(`  piu' al massimo ${competitive.length} × ${CACCIA.puntiUnico} se nessuno gareggia`)
 console.log(`  totale peggiore: ${massimo} punti (prima erano 190)`)
 prova('molto meno di prima', massimo < 190 / 2, { massimo })
+
+console.log('\nsi vota per tutta la finestra, non per 24 ore')
+{
+  // Il difetto vecchio: la gara aperta il 17 scadeva il 18, mentre la
+  // configurazione promette di poter votare fino al 20.
+  const apertaIl17 = scadenzaDelVoto(new Date('2026-08-17T10:00:00'))
+  prova('una gara aperta il 17 arriva al 20', apertaIl17.startsWith('2026-08-20'), { apertaIl17 })
+  prova(
+    'e non muore il 18',
+    Date.parse(apertaIl17) > Date.parse('2026-08-18T23:59:59'),
+    { apertaIl17 }
+  )
+
+  // Aperte in giorni diversi, stessa scadenza: la finestra è del gruppo,
+  // non della singola gara.
+  const apertaIl19 = scadenzaDelVoto(new Date('2026-08-19T22:00:00'))
+  prova('chi apre il 19 scade insieme agli altri', apertaIl19 === apertaIl17, {
+    apertaIl17,
+    apertaIl19,
+  })
+
+  // Si vota tutto il giorno di chiusura, non fino alla sua mezzanotte
+  // iniziale.
+  prova(
+    'il giorno di chiusura si vota fino a sera',
+    Date.parse(apertaIl17) > Date.parse(`${CACCIA.chiude}T20:00:00`)
+  )
+
+  // Una gara che nasce dopo la finestra non nasce morta: senza questo,
+  // chiudiScaduti la chiuderebbe prima che qualcuno possa votarla.
+  const tardi = new Date('2026-08-25T12:00:00')
+  const dopoLaFine = scadenzaDelVoto(tardi)
+  prova('aperta in ritardo, ha comunque un giorno', Date.parse(dopoLaFine) > tardi.getTime(), {
+    dopoLaFine,
+  })
+
+  prova('la finestra si apre prima di chiudersi', CACCIA.apreIlVoto < CACCIA.chiude)
+}
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
 process.exit(falliti === 0 ? 0 : 1)

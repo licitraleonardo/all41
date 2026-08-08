@@ -9,6 +9,7 @@ import {
   tuoRecord,
 } from '../lib/classificaPecora.js'
 import { dataDiOggi } from '../lib/giorni.js'
+import { accoda, leggiCoda, salvaCoda, togli } from '../lib/codaPecora.js'
 
 // I record di tutti. Senza membroId — la schermata senza rete, dove non
 // si sa nemmeno chi sei — non tocca il database e il gioco funziona
@@ -48,6 +49,31 @@ export function useRecordPecora(membroId) {
     }
   }, [membroId, ricarica])
 
+  // Consegna quello che è rimasto indietro. Si chiama all'avvio e al
+  // ritorno della rete: senza, la coda sarebbe solo un posto dove i
+  // punteggi vanno a morire ordinatamente.
+  const svuotaCoda = useCallback(async () => {
+    const coda = leggiCoda()
+    if (coda.length === 0) return
+
+    const consegnate = []
+    for (const voce of coda) {
+      try {
+        await segnaPunteggio(voce.membroId, voce.punti, voce.giorno)
+        consegnate.push(voce)
+      } catch {
+        // Ancora niente rete: si riprova al prossimo giro, e le voci
+        // rimaste restano in coda.
+        break
+      }
+    }
+
+    if (consegnate.length > 0) {
+      salvaCoda(togli(leggiCoda(), consegnate))
+      await ricarica().catch(() => {})
+    }
+  }, [ricarica])
+
   // Senza rete la partita non si perde: si tiene da parte e riparte al
   // primo momento buono, come gli upload delle foto.
   const segna = useCallback(
@@ -56,12 +82,26 @@ export function useRecordPecora(membroId) {
       try {
         await segnaPunteggio(membroId, punti, oggi)
         await ricarica()
+        // Se questa è passata, è tornata la rete: si prova a consegnare
+        // anche quelle di prima.
+        await svuotaCoda()
       } catch {
-        // Il punteggio resta nell'elenco locale finché non torna la rete.
+        // Adesso l'elenco locale esiste per davvero.
+        salvaCoda(accoda(leggiCoda(), { membroId, giorno: oggi, punti }))
       }
     },
-    [membroId, oggi, ricarica]
+    [membroId, oggi, ricarica, svuotaCoda]
   )
+
+  // All'avvio e ogni volta che il browser dice che la rete è tornata.
+  useEffect(() => {
+    if (!membroId) return undefined
+    svuotaCoda().catch(() => {})
+
+    const alRitorno = () => svuotaCoda().catch(() => {})
+    window.addEventListener('online', alRitorno)
+    return () => window.removeEventListener('online', alRitorno)
+  }, [membroId, svuotaCoda])
 
   const classifica = useMemo(() => classificaDelGiorno(righe, oggi), [righe, oggi])
   const delGiorno = useMemo(() => recordDelGiorno(righe, oggi), [righe, oggi])

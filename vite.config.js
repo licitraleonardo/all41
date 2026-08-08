@@ -101,6 +101,25 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          // I documenti sono l'unica cosa che serve davvero senza rete:
+          // il QR del traghetto alle 7 del mattino, in fila all'imbarco,
+          // con una tacca di segnale. Restano più a lungo delle foto e
+          // non scadono durante il viaggio.
+          //
+          // ⚠️ Vale per le immagini, che l'app apre da sola. Un PDF
+          // aperto con window.open è una navigazione verso un altro
+          // dominio, e quella il service worker non la intercetta: per
+          // quelli l'unica difesa è averli guardati prima, o salvarli
+          // sul telefono.
+          {
+            urlPattern: /\/storage\/v1\/object\/public\/documenti\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'documenti-visti',
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
       },
     }),

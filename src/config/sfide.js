@@ -45,6 +45,32 @@ export const CACCIA = {
   puntiUnico: 2,
 }
 
+// Fino a quando si può votare una gara. È la fine della finestra della
+// caccia, non ventiquattr'ore da quando la gara si apre.
+//
+// Prima era `adesso + 24h`, un residuo di quando le gare erano
+// giornaliere: una gara aperta il 17 moriva il 18, mentre la
+// configurazione qui sopra promette di poter votare fino al 20. Chi
+// apriva l'app il 19 convinto di avere tempo trovava i bottoni spariti,
+// e nessuno gli diceva perché.
+//
+// Funzione pura, provata da riga di comando: da qui dipende chi vince.
+export function scadenzaDelVoto(oggi, chiude = CACCIA.chiude) {
+  // Fine della giornata di chiusura, non il suo inizio: il 20 si vota
+  // tutto il giorno.
+  const fine = new Date(`${chiude}T23:59:59`)
+
+  // Se la finestra è già passata — una gara che si apre in ritardo per
+  // una foto arrivata all'ultimo — non nasce morta: si dà comunque un
+  // giorno, altrimenti `chiudiScaduti` la chiuderebbe prima che qualcuno
+  // possa votarla.
+  const adesso = oggi instanceof Date ? oggi : new Date(oggi)
+  if (fine.getTime() <= adesso.getTime()) {
+    return new Date(adesso.getTime() + 24 * 3600 * 1000).toISOString()
+  }
+  return fine.toISOString()
+}
+
 export const SFIDE = [
   // ——— 12 agosto: arrivo, Poetto, Molentargius ———
   {
