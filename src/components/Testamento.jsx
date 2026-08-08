@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { LEGGI, PUNIZIONI, TROFEI, etichetta } from '../config/leggi.js'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
+import { daLeggere, useLetteTestamento } from '../hooks/useLetteTestamento.js'
 
 // Il codice delle Leggi scoperte. Continua di proposito il tono
 // legislativo: qui Allan non parla, custodisce e basta.
@@ -10,10 +12,12 @@ import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 //
 // Niente parte rivelato: sapere in partenza cosa fa guadagnare punti
 // trasformerebbe il gioco in un elenco di compiti.
-export default function Testamento({ scoperte, membri }) {
+export default function Testamento({ scoperte, membri, ioId }) {
   // Terzo livello, stessa regola dei sotto-tab: ricaricare non deve
   // riportarti sui Trofei se stavi leggendo le Leggi.
   const [meta, setMeta] = useSchedaRicordata('scheda.testamento', 'trofei', ['trofei', 'leggi'])
+  const { lette, segnaLetta } = useLetteTestamento(ioId)
+  const [aperta, setAperta] = useState(null)
   const rivelata = (l) => Boolean(scoperte[l.id])
   const quante = LEGGI.filter(rivelata).length
   const quota = Math.round((quante / LEGGI.length) * 100)
@@ -59,6 +63,11 @@ export default function Testamento({ scoperte, membri }) {
             <span className="segmento-conto">
               {gruppo.filter(rivelata).length}/{gruppo.length}
             </span>
+            {/* Quante ne hai scoperte senza averle ancora aperte: è il
+                numero che ti fa toccare la scheda. */}
+            {daLeggere(gruppo, scoperte, lette) > 0 && (
+              <span className="segmento-pallino">{daLeggere(gruppo, scoperte, lette)}</span>
+            )}
           </button>
         ))}
       </div>
@@ -81,15 +90,41 @@ export default function Testamento({ scoperte, membri }) {
             )
           }
 
+          // Il pallino sta sulla singola voce, e ci sta finché non la
+          // apri. Le non scoperte non ce l'hanno mai: prese alla lettera
+          // resterebbero venti pallini accesi per sempre sulle voci
+          // oscurate, che è il contrario di una notifica.
+          const daAprire = !lette.has(l.id)
+          const apertaOra = aperta === l.id
+
           return (
-            <li key={l.id} className="legge">
-              <span className="legge-numero">{etichetta(l)}</span>
-              <p className="legge-testo">{l.testo}</p>
-              <span className="legge-punti">{punti(l.punti)}</span>
-              <span className="legge-scoperta">
-                scoperta da {membri[scoperta.chi]?.nome ?? 'qualcuno'},{' '}
-                {giorno(scoperta.quando)}
-              </span>
+            <li key={l.id} className={daAprire ? 'legge nuova' : 'legge'}>
+              <button
+                type="button"
+                className="legge-riga"
+                aria-expanded={apertaOra}
+                onClick={() => {
+                  setAperta(apertaOra ? null : l.id)
+                  segnaLetta(l.id)
+                }}
+              >
+                <span className="legge-numero">
+                  {etichetta(l)}
+                  {daAprire && <span className="legge-punto" aria-label="non ancora letta" />}
+                </span>
+                <p className="legge-testo">{l.testo}</p>
+                <span className="legge-punti">{punti(l.punti)}</span>
+              </button>
+
+              {/* Chi l'ha fatta scattare e quando: è la parte che vale la
+                  pena andare a vedere, ed è la ragione per cui aprire una
+                  voce significa qualcosa invece di spegnere un pallino. */}
+              {apertaOra && (
+                <span className="legge-scoperta">
+                  scoperta da {membri[scoperta.chi]?.nome ?? 'qualcuno'},{' '}
+                  {giorno(scoperta.quando)}
+                </span>
+              )}
             </li>
           )
         })}

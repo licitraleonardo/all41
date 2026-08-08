@@ -776,6 +776,45 @@
   gap: 10px;
 }
 
+/* Una voce scoperta si tocca e si apre: dentro c'è chi l'ha fatta
+   scattare. È l'apertura che TEST-1 chiedeva e che qui non esisteva —
+   erano righe di elenco già tutte aperte, e senza un gesto il pallino
+   non avrebbe avuto modo di spegnersi. */
+.legge-riga {
+  display: block;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.legge-riga:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* Non ancora letta: il bordo si accende, così si vede scorrendo senza
+   dover cercare il pallino. */
+.legge.nuova {
+  border-color: var(--gold);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.legge-punto {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  vertical-align: 1px;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
 .legge-numero {
   font-family: var(--font-titoli);
   font-size: 11.5px;

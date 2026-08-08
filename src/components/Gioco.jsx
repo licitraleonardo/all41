@@ -119,7 +119,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
       )}
 
       {stato === 'pronto' && vista === 'testamento' && (
-        <Testamento scoperte={scoperte} membri={membri} />
+        <Testamento scoperte={scoperte} membri={membri} ioId={membro.id} />
       )}
 
       {stato === 'pronto' && vista === 'impostore' && (
