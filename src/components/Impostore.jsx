@@ -380,10 +380,17 @@ function Abbandona({ onAbbandona }) {
     return () => clearTimeout(via)
   }, [sicuro])
 
+  // ⚠️ `finally` e non una riga dopo l'await. Senza, il tasto resta spento
+  // per sempre a ogni singolo intoppo — non serve nemmeno una rete appesa,
+  // basta un rifiuto normale del database. Erano quattro punti così in
+  // questo file, tutti sulla stessa forma.
   async function davvero() {
     setInCorso(true)
-    await onAbbandona()
-    setInCorso(false)
+    try {
+      await onAbbandona()
+    } finally {
+      setInCorso(false)
+    }
   }
 
   return (
@@ -434,8 +441,11 @@ function Apparecchia({ membro, membri, onCrea }) {
 
   async function comincia() {
     setInCorso(true)
-    await onCrea(giocatori, variante)
-    setInCorso(false)
+    try {
+      await onCrea(giocatori, variante)
+    } finally {
+      setInCorso(false)
+    }
   }
 
   return (
@@ -671,8 +681,11 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
 
   async function fatto() {
     setInCorso(true)
-    await onAvanti()
-    setInCorso(false)
+    try {
+      await onAvanti()
+    } finally {
+      setInCorso(false)
+    }
   }
 
   // Prima di tutto la parola, a schermo pieno: e' l'unico momento in cui
@@ -1038,8 +1051,11 @@ function Colpo({ partita, puo, membro, nome, onTenta, onChiedi, onChiudi }) {
     e.preventDefault()
     if (!scritto.trim() || inCorso) return
     setInCorso(true)
-    await onTenta(scritto.trim())
-    setInCorso(false)
+    try {
+      await onTenta(scritto.trim())
+    } finally {
+      setInCorso(false)
+    }
   }
 
   return (

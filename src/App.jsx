@@ -12,6 +12,8 @@ import {
 import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/sessione.js'
 import { negliAppunti, negliAppuntiQuandoPronto } from './lib/appunti.js'
 import { descriviErrore } from './lib/errori.js'
+import { sembraRete } from './lib/cache.js'
+import { eScaduta } from './lib/scadenza.js'
 import { chiudiScaduti } from './lib/voti.js'
 import { risolviProposte } from './lib/proposte.js'
 import { allApertura, forseSottoZero } from './lib/regole.js'
@@ -215,10 +217,24 @@ export default function App() {
         // Senza rete la sessione anonima non si può creare, e non è un
         // motivo per restare fuori: se il profilo è già stato letto una
         // volta, da qui in poi si va avanti con le copie locali.
+        //
+        // ⚠️ Vale anche quando la rete c'è ma non risponde. Prima la
+        // condizione era solo `navigator.onLine !== false`, che con una
+        // tacca di segnale dice "sono online": la sessione scadeva, l'errore
+        // veniva rilanciato, e la schermata restava su «Un attimo.» —
+        // mentre profilo, programma e documenti erano già in `localStorage`
+        // due righe più sotto. Chi arriva qui in quello stato non ha
+        // nemmeno un tasto da toccare, e riaprire l'app rifà la stessa
+        // attesa.
+        //
+        // Una sessione che non arriva non impedisce di guardare quello che
+        // si è già scaricato: impedisce di scrivere, e lo si scopre quando
+        // si prova a scrivere.
         try {
           await assicuraSessione()
         } catch (e) {
-          if (navigator.onLine !== false) throw e
+          const senzaRisposta = eScaduta(e) || sembraRete(e, navigator.onLine !== false)
+          if (!senzaRisposta) throw e
         }
 
         const id = memberIdSalvato()
