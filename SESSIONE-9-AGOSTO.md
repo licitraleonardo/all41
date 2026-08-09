@@ -159,6 +159,10 @@ punti si prendono **solo vincendo**, abbandonare non ne toglie.
       l'ora d'imbarco né il molo né il link Maps. L'orario vive in un
       messaggio WhatsApp su un telefono solo. **Due righe, ma i dati li
       hai solo tu.**
+- [ ] **Il numero di chi ci affitta la casa**, in `src/config/info.js`. Un
+      «centralino del villaggio» da cercare **non esiste** — vedi il punto
+      2 qui sotto. Il solo numero che ha senso lì è quello dell'host, e ce
+      l'hai tu.
 - [ ] **Rigenerare la password del database.** È finita in una
       trascrizione per colpa mia. Supabase → Settings → Database → Reset
       password, e poi rimetti la riga nuova in `.env.local`.
@@ -177,23 +181,39 @@ punti si prendono **solo vincendo**, abbandonare non ne toglie.
 - [ ] **Audio su iPhone** — registrare e riascoltare. Verifica bloccante
       n.3 dello spec, mai chiusa: in casa c'era solo un Android.
 
-## 2. I numeri utili — mi serve il tuo ok, uno per uno
+## 2. I numeri utili — ✅ fatti, ma **ricontrollali**
 
-I due che mi hai dato sono pronti da mettere:
+Cercati uno per uno su fonti ufficiali il 9 agosto, e **la fonte di ognuno
+è scritta nel commento sopra al numero** in `src/config/info.js`: chi
+arriva fra un anno lo ricontrolla in trenta secondi.
 
-- Escursioni in barca a vela — **327 739 9331**
-- Ichnusa Rent a Van — **389 685 1106**
+**Emergenze (rosse, gratuite, sempre):** 112 · **1530** emergenza in mare
+(Guardia Costiera — dormiamo sulla spiaggia e il 14 si va in barca) ·
+**1515** incendi e emergenze ambientali (Corpo forestale della Regione —
+è metà agosto in Sardegna).
 
-Mancano **guardia costiera, forestale** e gli altri della zona. Li cerco
-e te li porto **con la fonte di ognuno**, e li metto solo dopo il tuo ok.
+**Numeri utili (lista a parte, si legge con calma):** guardia medica di
+Quartu 070 826494 coi suoi orari · farmacia di Flumini 070 891155, la più
+vicina al villaggio · casa di cura Sant'Elena 070 86051 · centralino
+capitaneria 070 60517303 · i tuoi due, barca a vela e Ichnusa Rent a Van.
 
-⚠️ La regola resta quella scritta in `DA-FARE.md`: **i numeri di emergenza
-si verificano, non si inventano.** Il 112 è unico e vale ovunque; guardia
-medica, farmacia di turno e capitaneria **cambiano per comune**. Un numero
-plausibile in una sezione che si chiama emergenze è peggio di nessun
-numero.
+**Due cose che la ricerca ha corretto:**
 
-Vanno **nel codice, non sul database**, o offline non ci sono.
+- **Il «telefono del villaggio» non esiste.** S'oru 'e Mari non è un
+  residence con la reception: è una **località residenziale** dove
+  l'indirizzo è *«Villaggio S'oru 'e Mari, ‹civico›»* — al 13 c'è una casa
+  di riposo, all'83/B un B&B, al 37 stiamo noi. Quello che serve è il
+  numero di **chi ci affitta la casa**, e ce l'hai solo tu.
+- **La farmacia di turno non è un numero fisso**: cambia ogni settimana ed
+  è affissa sulla porta di ogni farmacia. Nell'app c'è la più vicina, con
+  l'avvertenza.
+
+⚠️ Regola che resta valida: **i numeri di emergenza si verificano, non si
+inventano.** Le tre emergenze sono numeri brevi nazionali o regionali,
+quindi non cambiano; i quattro locali li ho presi dalle fonti ufficiali
+(ASL 8, Regione Sardegna, Guardia Costiera, il sito della farmacia), **ma
+un numero locale può essere cambiato ieri.** Se ne provi uno e non
+risponde, dimmelo e lo tolgo.
 
 ## 3. Comportamenti da cambiare — i tuoi appunti N2, tutti aperti
 
