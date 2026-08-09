@@ -26,6 +26,29 @@ export function statoNotifiche() {
   return Notification.permission // 'default' | 'granted' | 'denied'
 }
 
+// ⚠️ Il permesso NON e' l'iscrizione, e confonderli blocca tutto.
+//
+// Il permesso si concede una volta sola e resta per sempre; l'iscrizione
+// e' un'altra cosa, e puo' non esserci — perche' non e' mai stata
+// scritta, perche' e' stata tolta, o perche' il telefono l'ha buttata da
+// solo (succede: iOS le scarta se l'app non si apre per settimane).
+//
+// Guardando solo il permesso, il tasto diceva «Spegni» a chi non era
+// iscritto per niente, e non c'era piu' modo di iscriversi: e' successo
+// davvero, e questa funzione esiste per quello.
+export async function statoIscrizione() {
+  if (!notifichePossibili()) return 'impossibile'
+  if (Notification.permission === 'denied') return 'bloccate'
+
+  try {
+    const registrazione = await navigator.serviceWorker.ready
+    const iscrizione = await registrazione.pushManager.getSubscription()
+    return iscrizione ? 'accese' : 'spente'
+  } catch {
+    return 'spente'
+  }
+}
+
 // ⚠️ L'app e' aperta dalla schermata home, o dal browser?
 //
 // Su iPhone e' la differenza fra «funziona» e «non puo' funzionare»: da

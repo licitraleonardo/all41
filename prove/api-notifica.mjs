@@ -95,6 +95,19 @@ console.log('\nl iscrizione non tocca la tabella a mano')
     .join('\n')
 
   prova('niente scrittura diretta sulla tabella', !lib.includes("from('push_subscriptions')"))
+
+  // ⚠️ Il permesso NON e' l'iscrizione. Guardando solo il permesso il
+  // tasto diceva «Spegni» a chi non era iscritto per niente, e non
+  // restava nessun modo di iscriversi: il permesso resta concesso per
+  // sempre, quindi premere Spegni non cambiava niente. Un vicolo cieco
+  // senza nemmeno un messaggio che lo dicesse.
+  const vista = readFileSync('src/components/ChiediNotifiche.jsx', 'utf8')
+    .split('\n')
+    .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+    .join('\n')
+  prova('il tasto guarda l iscrizione', vista.includes('statoIscrizione'))
+  prova('e non il permesso', !vista.includes('statoNotifiche'))
+  prova('e chiede se c e davvero un iscrizione', lib.includes('getSubscription'))
   prova('si iscrive con la funzione', lib.includes("rpc('iscrivi_push'"))
   prova('e si disiscrive con la funzione', lib.includes("rpc('disiscrivi_push'"))
 

@@ -5,7 +5,7 @@ import {
   installataSullaHome,
   iscriviti,
   notifichePossibili,
-  statoNotifiche,
+  statoIscrizione,
   suIPhone,
 } from '../lib/notifiche.js'
 
@@ -41,11 +41,21 @@ const MOTIVI = {
 // Per lo stesso motivo qui sotto c'è scritto **cosa arriva**: un permesso
 // concesso senza sapere cosa aspettarsi si revoca alla terza notifica.
 export default function ChiediNotifiche({ membroId }) {
-  const [stato, setStato] = useState('impossibile')
+  // ⚠️ Lo stato e' «sono iscritto?», non «ho dato il permesso?».
+  //
+  // Confonderli aveva bloccato tutto: il permesso resta concesso per
+  // sempre, quindi il tasto diceva «Spegni» anche a chi non era iscritto
+  // per niente — e non c'era piu' nessun modo di iscriversi. Premere
+  // Spegni non cambiava niente, perche' il permesso restava. Un vicolo
+  // cieco, e senza nemmeno un messaggio che lo dicesse.
+  const [stato, setStato] = useState('spente')
   const [inCorso, setInCorso] = useState(false)
   const [esito, setEsito] = useState(null)
 
-  useEffect(() => setStato(statoNotifiche()), [])
+  const rileggi = () => statoIscrizione().then(setStato)
+  useEffect(() => {
+    rileggi()
+  }, [])
 
   if (!notifichePossibili()) {
     return (
@@ -61,7 +71,7 @@ export default function ChiediNotifiche({ membroId }) {
     setEsito(null)
     try {
       const r = await iscriviti(membroId)
-      setStato(statoNotifiche())
+      await rileggi()
       if (r.ok) {
         setEsito(null)
       } else if (r.motivo === 'database') {
@@ -85,7 +95,8 @@ export default function ChiediNotifiche({ membroId }) {
     setInCorso(true)
     try {
       await disiscriviti()
-      setEsito('Spente. Il permesso resta, si riaccendono da qui.')
+      await rileggi()
+      setEsito('Spente. Puoi riaccenderle da qui quando vuoi.')
     } catch {
       setEsito('Non è andata. Riprova.')
     } finally {
@@ -105,7 +116,7 @@ export default function ChiediNotifiche({ membroId }) {
         </small>
       </div>
 
-      {stato === 'granted' ? (
+      {stato === 'accese' ? (
         <button type="button" className="notifiche-tasto spento" onClick={spegni} disabled={inCorso}>
           {inCorso ? '…' : 'Spegni'}
         </button>
@@ -114,6 +125,17 @@ export default function ChiediNotifiche({ membroId }) {
           {inCorso ? '…' : 'Accendi'}
         </button>
       )}
+
+      {/* Come sta messo adesso, detto in due parole. Un tasto da solo non
+          basta: «Accendi» non dice se sei spento o se non hai mai
+          provato. */}
+      <p className="notifiche-stato">
+        {stato === 'accese'
+          ? '✓ Accese su questo telefono'
+          : stato === 'bloccate'
+            ? '✕ Bloccate dal telefono'
+            : '○ Spente su questo telefono'}
+      </p>
 
       {esito && <p className="notifiche-esito">{esito}</p>}
 
