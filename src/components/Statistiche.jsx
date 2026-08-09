@@ -90,6 +90,13 @@ export default function Statistiche({ membro }) {
         ))}
       </div>
 
+      {/* Il titolo di quello che si sta guardando. La pillola accesa serve
+          a scegliere, non a dire cosa c'è sotto: chi arriva a metà
+          schermata vedeva otto barre e nessuna frase. */}
+      <p className="stat-barre-titolo">
+        {VOCI.find((v) => v.id === aperta)?.titolo ?? 'Uno per volta'}
+      </p>
+
       <ol className="stat-barre">
         {classifica.map((r, i) => (
           <li

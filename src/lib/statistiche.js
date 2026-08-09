@@ -5,14 +5,19 @@
 // qui si conta soltanto. Una sezione che aggiunge una tabella per dire
 // cose che si sapevano gia' sarebbe uno spreco.
 
+// `titolo` è quello che si legge sopra la classifica quando la categoria è
+// aperta: il nome sulla pillola serve a sceglierla, ma da solo non dice
+// cosa si sta guardando — «Vocali» sopra otto barre non è una frase, e chi
+// arriva a metà schermata non sa se sono quelli mandati o quelli
+// ascoltati.
 export const VOCI = [
-  { id: 'punti', nome: 'Punti', icona: '🏆' },
-  { id: 'messaggi', nome: 'Messaggi', icona: '💬' },
-  { id: 'vocali', nome: 'Vocali', icona: '🎤' },
-  { id: 'foto', nome: 'Foto', icona: '📷' },
-  { id: 'suoni', nome: 'Suoni', icona: '🔊' },
-  { id: 'leggi', nome: 'Leggi scattate', icona: '📜' },
-  { id: 'pecora', nome: 'Record All', icona: '🐉' },
+  { id: 'punti', nome: 'Punti', icona: '🏆', titolo: 'Chi ha più punti' },
+  { id: 'messaggi', nome: 'Messaggi', icona: '💬', titolo: 'Chi scrive di più' },
+  { id: 'vocali', nome: 'Vocali', icona: '🎤', titolo: 'Chi manda più vocali' },
+  { id: 'foto', nome: 'Foto', icona: '📷', titolo: 'Chi carica più foto' },
+  { id: 'suoni', nome: 'Suoni', icona: '🔊', titolo: 'Chi pesta di più la soundboard' },
+  { id: 'leggi', nome: 'Leggi scattate', icona: '📜', titolo: 'A chi scattano più Leggi' },
+  { id: 'pecora', nome: 'Record All', icona: '🐉', titolo: 'Il record più alto ad All' },
 ]
 
 // I titoli: a chi sta in cima in ciascuna categoria. Servono a leggere la

@@ -24,6 +24,16 @@
   margin-top: 4px;
 }
 
+/* Dice cosa si sta guardando, e va letto come una frase e non come
+   un'etichetta: le pillole qui sopra servono a scegliere, questo serve a
+   capire. Piu' grande e piu' scuro dell'etichetta, apposta. */
+.stat-barre-titolo {
+  margin: 14px 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sea, #0b3550);
+}
+
 /* ------------------------------------------------------------- i titoli */
 
 .stat-premi {
