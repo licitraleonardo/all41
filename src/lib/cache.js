@@ -15,6 +15,58 @@ import { conScadenza, eScaduta } from './scadenza.js'
 
 const PREFISSO = 'all41.cache.'
 
+// ------------------------------------------------- dirlo a chi guarda
+//
+// ⚠️ Il campo `quando` di ogni copia esisteva gia', si rileggeva a ogni
+// ripiego, e finiva **solo in un `console.info`**. Cioe': l'app serviva
+// dati di due ore prima e non lo diceva da nessuna parte.
+//
+// La striscia «Niente rete» non bastava, e il motivo e' preciso: guarda
+// `navigator.onLine`, che con una tacca di segnale dice *sono online*.
+// Proprio nel caso piu' comune — la rete che c'e' ma non risponde — la
+// striscia non compariva e la copia vecchia passava per roba di adesso.
+//
+// Questo e' un canale laterale: nessuna firma cambia, chi legge non deve
+// sapere niente, e chi vuole dirlo a schermo si iscrive.
+const ascoltatori = new Set()
+
+// La copia piu' VECCHIA servita da quando l'ultima lettura e' andata a
+// buon fine. La piu' vecchia e non l'ultima: e' quella che dice la verita'
+// peggiore su cosa c'e' a schermo.
+let copiaServita = null
+
+export function quandoSiRipiega(ascoltatore) {
+  ascoltatori.add(ascoltatore)
+  ascoltatore(copiaServita)
+  return () => ascoltatori.delete(ascoltatore)
+}
+
+function avvisa() {
+  for (const a of ascoltatori) {
+    try {
+      a(copiaServita)
+    } catch {
+      // Un ascoltatore rotto non deve impedire una lettura.
+    }
+  }
+}
+
+// Una lettura riuscita vuol dire che la rete e' tornata a rispondere: da
+// qui in poi quello che c'e' a schermo si sta rinfrescando, e la striscia
+// deve andarsene da sola senza che nessuno tocchi niente.
+function segnaFresco() {
+  if (!copiaServita) return
+  copiaServita = null
+  avvisa()
+}
+
+function segnaCopia(quando) {
+  if (!quando) return
+  if (copiaServita && copiaServita.quando <= quando) return
+  copiaServita = { quando }
+  avvisa()
+}
+
 // Da alzare ogni volta che cambia la forma di quello che si legge, o le
 // copie vecchie tornano indietro come dati buoni. È già servito: le
 // spese sono passate da un pagante solo a un elenco di paganti, e una
@@ -118,6 +170,7 @@ export function conCache(chiave, lettura) {
       // d'errore **con i dati buoni in tasca**.
       const dati = await conScadenza(lettura(...argomenti), SECONDI_LETTURA * 1000)
       inCache(k, dati)
+      segnaFresco()
       return dati
     } catch (e) {
       // ⚠️ `eScaduta` prima di `sembraRete`, e non è ridondante: una
@@ -137,6 +190,7 @@ export function conCache(chiave, lettura) {
       console.info(
         `[all41] ${eScaduta(e) ? 'troppo lenta' : 'senza rete'}: "${k}" dalla copia del ${copia.quando}`
       )
+      segnaCopia(copia.quando)
       return copia.dati
     }
   }

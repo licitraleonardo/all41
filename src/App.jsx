@@ -47,6 +47,7 @@ import Derisione from './components/Derisione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
 import { useSosAperti } from './hooks/useSosAperti.js'
 import { useAvvisoRapido } from './hooks/useAvvisoRapido.js'
+import { useDatiVecchi } from './hooks/useDatiVecchi.js'
 import { vaMostrato } from './lib/avvisiRapidi.js'
 import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaSOS from './components/StrisciaSOS.jsx'
@@ -133,6 +134,10 @@ export default function App() {
   // Quando torna il segnale si riprova da soli: chi era offline non deve
   // accorgersi del momento giusto per premere un bottone.
   const inLinea = useConnessione()
+  // ⚠️ L'altra meta' del «sto guardando roba vecchia»: la rete c'e' ma non
+  // risponde, quindi `inLinea` dice di si' e sotto sotto si sta servendo
+  // la copia. Vedi il commento in StrisciaOffline.
+  const datiVecchi = useDatiVecchi()
   const eraOffline = useRef(false)
 
   useEffect(() => {
@@ -574,7 +579,7 @@ export default function App() {
           {tab === 'oggi' && <NuvolettaAllan membroId={membro?.id} passo="oggi" />}
         </Riparo>
 
-        <StrisciaOffline attiva={!inLinea} />
+        <StrisciaOffline attiva={!inLinea} copia={datiVecchi} />
 
         {/* ⚠️ Fuori dal `Riparo` degli altri e prima di tutti: se si
             rompesse qualcosa nel banner delle proposte, l'SOS deve
