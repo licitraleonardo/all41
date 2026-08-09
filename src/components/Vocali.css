@@ -167,6 +167,20 @@
   cursor: pointer;
 }
 
+/* Armato: il secondo tocco cancella per tutti. Si vede che è cambiato,
+   perché la differenza fra "elimina" e "Sicuro?" dev'essere leggibile con
+   la coda dell'occhio mentre si scorre. */
+.voc-elimina.armato {
+  font-weight: 700;
+  color: var(--coral, #e8604a);
+  text-decoration: none;
+}
+
+.voc-elimina:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .voc-fine {
   height: 1px;
 }

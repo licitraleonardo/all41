@@ -57,6 +57,24 @@ export function useVocali() {
             creatoIl: riga.created_at,
           })
       )
+      // ⚠️ Anche gli UPDATE, che qui vuol dire le eliminazioni:
+      // `eliminaVocale` è una cancellazione morbida, cioè scrive
+      // `deleted_at`.
+      //
+      // Senza questo, un vocale cancellato dal suo autore restava
+      // ascoltabile su tutti i telefoni che avevano l'app aperta, per
+      // tutta la sera, finché qualcuno non ricaricava: la cancellazione
+      // funzionava solo per chi apriva l'app DOPO, cioè proprio per chi
+      // non stava guardando. Chi lo aveva cancellato credeva di averlo
+      // ritirato, e gli altri sette continuavano a poterlo riascoltare.
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'voice_messages' },
+        ({ new: riga }) => {
+          if (!riga?.deleted_at) return
+          setVocali((precedenti) => precedenti.filter((v) => v.id !== riga.id))
+        }
+      )
       .subscribe()
 
     return () => {
@@ -65,9 +83,36 @@ export function useVocali() {
     }
   }, [inserisci, ricaricaMembri])
 
+  // ⚠️ Se la cancellazione non riesce, il vocale TORNA a schermo.
+  //
+  // Prima spariva dal proprio elenco e l'errore finiva in un `catch`
+  // vuoto: credevi di aver ritirato il vocale imbarazzante, e agli altri
+  // sette restava. E ricaricando l'app ti ricompariva, senza che niente
+  // avesse mai detto che non era andata. Un'interfaccia che afferma il
+  // falso su un gesto che non si può disfare.
   const togli = useCallback(async (id) => {
-    setVocali((precedenti) => precedenti.filter((v) => v.id !== id))
-    await eliminaVocale(id).catch(() => {})
+    let tolto = null
+    setVocali((precedenti) => {
+      tolto = precedenti.find((v) => v.id === id) ?? null
+      return precedenti.filter((v) => v.id !== id)
+    })
+
+    try {
+      await eliminaVocale(id)
+      return true
+    } catch (e) {
+      if (tolto) {
+        setVocali((precedenti) =>
+          precedenti.some((v) => v.id === id)
+            ? precedenti
+            : [...precedenti, tolto].sort(
+                (a, b) => Date.parse(a.creatoIl) - Date.parse(b.creatoIl)
+              )
+        )
+      }
+      console.warn('[all41] il vocale non si è tolto:', e?.message ?? e)
+      return false
+    }
   }, [])
 
   return { vocali, membri, stato, errore, inserisci, togli }

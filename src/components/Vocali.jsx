@@ -5,6 +5,7 @@ import { mandaVocale } from '../lib/vocali.js'
 import { avviaRegistrazione, spiegaErroreMicrofono } from '../lib/registratore.js'
 import { registrazioneDisponibile } from '../lib/formatoAudio.js'
 import { tieniOccupato } from '../lib/aggiornamento.js'
+import BottoneElimina from './BottoneElimina.jsx'
 import { LIMITI } from '../config/limiti.js'
 import { coloreNome, urlAvatar } from '../config/avatar.js'
 import { descriviErrore } from '../lib/errori.js'
@@ -83,9 +84,19 @@ export default function Vocali({ membro }) {
   // da sola, col pallino arancione acceso, finché qualcuno non toccava
   // di nuovo il tasto — e a quel punto partiva il vocale.
   const ditoGiu = useRef(false)
+  const staPartendo = useRef(false)
 
   async function premi(e) {
-    if (registrando || inCorso) return
+    // ⚠️ `staPartendo` è un ref e non uno stato, e serve proprio per
+    // quello: fra il tocco e `setRegistrando(true)` c'è un await — il
+    // permesso del microfono — e in quel buco `registrando` è ancora
+    // falso. Due tocchi ravvicinati passavano tutti e due il controllo, e
+    // partivano due registrazioni: la seconda sovrascriveva `sessione`, e
+    // la prima restava aperta e orfana **col microfono acceso**. Su iPhone
+    // è il pallino arancione che il commento qui sopra dice esplicitamente
+    // di voler evitare, e si spegneva da solo solo allo scadere del minuto.
+    if (registrando || inCorso || staPartendo.current) return
+    staPartendo.current = true
     setAvviso(null)
     setSecondi(0)
     partenzaY.current = e.clientY
@@ -111,6 +122,10 @@ export default function Vocali({ membro }) {
     } catch (e) {
       ditoGiu.current = false
       setAvviso(spiegaErroreMicrofono(e))
+    } finally {
+      // Solo l'avvio è finito, non la registrazione: da qui in poi a
+      // fermare un secondo tocco basta `registrando`.
+      staPartendo.current = false
     }
   }
 
@@ -308,10 +323,17 @@ function Vocale({ vocale, autore, mio, inAscolto, onAscolta, onElimina }) {
         <span className="voc-piede">
           {vocale.importante && <span className="voc-bollino">❗ importante</span>}
           {quando(vocale.creatoIl)}
+          {/* ⚠️ Due tocchi, come per le foto e per la coda. Era l'unico
+              contenuto dell'app che si distruggeva con un gesto solo: uno
+              sfioramento mentre si scorre la conversazione cancellava un
+              vocale per tutto il gruppo, senza chiedere niente e senza
+              modo di tornare indietro. */}
           {mio && (
-            <button type="button" className="voc-elimina" onClick={onElimina}>
-              elimina
-            </button>
+            <BottoneElimina
+              classe="voc-elimina"
+              etichetta="Elimina questo vocale"
+              onElimina={onElimina}
+            />
           )}
         </span>
       </div>
