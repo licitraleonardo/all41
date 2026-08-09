@@ -160,9 +160,11 @@ export async function creaPartita({ giocatori, variante = 'parola-simile', casua
       trip_id: VIAGGIO.id,
       category: 'impostore',
       question: 'Quanti impostori?',
-      options: IMPOSTORE.sceltePerImpostori.map(String),
+      // Le scelte dipendono da quanti sono: in quattro, due impostori
+      // vorrebbe dire far partire una partita gia' vinta da loro.
+      options: IMPOSTORE.sceltePerImpostori(giocatori.length).map(String),
       anonymous: false,
-      tally: IMPOSTORE.sceltePerImpostori.map(() => 0),
+      tally: IMPOSTORE.sceltePerImpostori(giocatori.length).map(() => 0),
       expires_at: scade,
     })
     .select('id')
@@ -372,7 +374,22 @@ export async function leggiSchedeDeiGiri(partita) {
 // riprova. Leggendo prima, un guasto ferma tutto quando fermarsi non costa
 // niente.
 export async function paga(partita, voto, schedeDeiGiri = []) {
-  const opzioni = voto?.opzioni ?? partita.giocatori
+  // ⚠️ Senza il voto in mano non si paga: ci si ferma. Prima ripiegava su
+  // `partita.giocatori`, e con le schede vuote gli indovini risultavano
+  // ZERO — chi aveva riconosciuto l'impostore non prendeva niente. E la
+  // dedupeKey rende quella mancanza definitiva: nessuno ripassa a
+  // rimediare, perche' la chiave dice che quel punto e' gia' stato
+  // trattato.
+  //
+  // Succedeva davvero: chi ricaricava l'app durante il colpo di coda
+  // arrivava qui con `voto` non ancora caricato. Meglio fermarsi e far
+  // riprovare al tocco dopo — la partita resta da rivelare, che e' una
+  // cosa che si vede — che pagare meta' delle persone e dichiararlo fatto.
+  if (!voto?.opzioni) {
+    throw new Error('paga vuole il voto del giro, con le sue opzioni.')
+  }
+
+  const opzioni = voto.opzioni
   // ⚠️ `fuori` e' obbligatorio. Senza, un impostore beccato in un giro
   // precedente non compare nelle schede dell'ultimo voto — non e'
   // nemmeno fra le opzioni — quindi risultava "impunito" e si prendeva i

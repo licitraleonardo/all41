@@ -219,7 +219,10 @@ export function useImpostore(membroId) {
 
   const tenta = useCallback(
     async (parola) => {
-      if (!partita) return
+      // Stesso motivo di `chiudi`: senza il voto, `paga` si ferma — e qui
+      // fermarsi vuol dire buttare via la parola che uno ha appena
+      // scritto. Meglio non partire.
+      if (!partita || !voto?.opzioni) return
       setErrore(null)
       try {
         const dopo = await tentaColpo(partita, membroId, parola)
@@ -247,8 +250,13 @@ export function useImpostore(membroId) {
   // Se il tentativo arriva da un altro telefono, la partita si chiude
   // comunque: chi la vede passare a 'colpo' con il tentativo dentro
   // sistema il finale per tutti.
+  // ⚠️ Non si chiude senza il voto in mano: `paga` adesso si ferma, e
+  // chiudere con un errore in faccia sarebbe peggio che aspettare mezzo
+  // secondo. Chi ricarica l'app durante il colpo di coda arriva qui col
+  // voto ancora in volo — la schermata si rimonta quando arriva, e
+  // riprova da sola.
   const chiudi = useCallback(async () => {
-    if (!partita) return
+    if (!partita || !voto?.opzioni) return
     try {
       setPartita(await chiudiPartita(partita, voto))
     } catch (e) {

@@ -266,7 +266,17 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
   const [avviso, setAvviso] = useState(null)
   const partito = useRef(false)
 
-  const scelte = IMPOSTORE.sceltePerImpostori
+  // ⚠️ Dalla RIGA DEL VOTO, non dalla configurazione. Le schede sul
+  // database sono numeri di posizione dentro `voto.opzioni`: se le
+  // opzioni cambiano — ed è appena successo, perché in quattro non si
+  // possono più scegliere due impostori — una partita aperta con
+  // l'elenco vecchio verrebbe letta con quello nuovo, e ogni numero si
+  // sposterebbe di un posto. È la trappola che questo progetto ha già
+  // pagato quattro volte. La configurazione serve solo finché il voto
+  // non è arrivato, e lì non c'è niente da tradurre.
+  const scelte = voto?.opzioni?.length
+    ? voto.opzioni.map(Number)
+    : IMPOSTORE.sceltePerImpostori(partita.giocatori.length)
   const consigliata = IMPOSTORE.quantiImpostori(partita.giocatori.length)
   const hoVotato = voto?.hannoVotato?.includes(membro.id)
   const quanti = voto?.hannoVotato?.length ?? 0
@@ -297,7 +307,7 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
   const [quantiImp, setQuantiImp] = useState(proposta)
 
   async function vota() {
-    const i = IMPOSTORE.sceltePerImpostori.indexOf(quantiImp)
+    const i = scelte.indexOf(quantiImp)
     if (i < 0) return
     setInCorso(true)
     setAvviso(null)
@@ -325,7 +335,7 @@ function Preparazione({ partita, voto, membro, onVotato, onAvvia }) {
           se ne serve un altro, insieme all'accusa. "Ne sappiamo
           abbastanza?" e' una domanda che ha senso dopo aver sentito. */}
       <div className="imp-risposte">
-        {IMPOSTORE.sceltePerImpostori.map((n, i) => (
+        {scelte.map((n, i) => (
           <button
             key={n}
             type="button"

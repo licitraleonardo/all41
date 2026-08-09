@@ -24,7 +24,19 @@ export const IMPOSTORE = {
   quantiImpostori: (quanti) => (quanti >= 7 ? 2 : 1),
 
   // L'unica cosa che si vota prima di cominciare.
-  sceltePerImpostori: [1, 2],
+  //
+  // ⚠️ Dipende da quanti sono, e non e' pignoleria. Era fisso a [1, 2], e
+  // in quattro — il minimo — un gruppo che sceglieva 2 faceva partire una
+  // partita GIA' PERSA: due impostori contro due innocenti vuol dire che
+  // gli impostori non sono in minoranza, cioe' la condizione con cui
+  // vincono. Il controllo pero' gira solo dentro `dopoAccusa`, quindi il
+  // gruppo giocava un giro intero e un voto prima di scoprirlo.
+  //
+  // La soglia e' cinque perche' e' la prima in cui due impostori restano
+  // in minoranza (2 contro 3). Sotto, si vota solo fra un'opzione: il
+  // voto compare lo stesso, perche' il gruppo deve vedere che la scelta
+  // esiste e che stasera non c'e'.
+  sceltePerImpostori: (quanti) => (quanti >= 5 ? [1, 2] : [1]),
 
   // Il voto non ha un timer visibile: serve solo a non lasciare un voto
   // appeso per sempre se la partita finisce in una birra.

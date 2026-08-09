@@ -1027,6 +1027,55 @@ console.log('\nUn impostore non indovina mai, nemmeno nei giri vecchi')
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Non si puo' far partire una partita gia' persa
+//
+// `sceltePerImpostori` era fisso a [1, 2] e non guardava quanti fossero.
+// In quattro — il minimo — un gruppo che sceglieva 2 faceva partire una
+// partita in cui gli impostori erano GIA' in maggioranza, cioe' la
+// condizione con cui vincono. Ma il controllo gira dentro `dopoAccusa`,
+// quindi il gruppo giocava un giro intero e un voto prima di scoprirlo.
+console.log('\nQuanti impostori si possono scegliere')
+{
+  const gente = (n) => Array.from({ length: n }, (_, i) => `p${i}`)
+
+  prova('in quattro si puo scegliere solo uno', IMPOSTORE.sceltePerImpostori(4).join() === '1')
+  prova('in cinque si torna a poter scegliere', IMPOSTORE.sceltePerImpostori(5).join() === '1,2')
+  prova('in otto pure', IMPOSTORE.sceltePerImpostori(8).join() === '1,2')
+
+  // La proprieta' vera: nessuna scelta offerta deve poter far nascere una
+  // partita in cui gli impostori sono gia' in maggioranza.
+  let sempreGiocabile = true
+  let rotta = null
+  for (let quanti = IMPOSTORE.minimoGiocatori; quanti <= 12; quanti += 1) {
+    const giocatori = gente(quanti)
+    for (const impostori of IMPOSTORE.sceltePerImpostori(quanti)) {
+      const chiMente = giocatori.slice(0, impostori)
+      if (impostoriInMaggioranza({ impostori: chiMente, giocatori, fuori: [] })) {
+        sempreGiocabile = false
+        rotta = { quanti, impostori }
+      }
+    }
+  }
+  prova(
+    'da quattro a dodici, nessuna scelta offerta fa nascere una partita gia vinta',
+    sempreGiocabile,
+    rotta
+  )
+
+  prova('e almeno una scelta c e sempre', IMPOSTORE.sceltePerImpostori(4).length > 0)
+  prova(
+    'la consigliata e sempre fra quelle che si possono scegliere',
+    [4, 5, 6, 7, 8, 9, 10].every((n) =>
+      IMPOSTORE.sceltePerImpostori(n).includes(IMPOSTORE.quantiImpostori(n))
+    ),
+    {
+      aiuto:
+        'se la consigliata non fosse fra le scelte, sceltaVincente ripiegherebbe su un valore che il gruppo non puo votare',
+    }
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Chi puo' tentare il colpo, e chi no
 //
 // Con due impostori beccati NELLO STESSO giro tentano tutti e due, e vale
