@@ -288,24 +288,36 @@ risponde, dimmelo e lo tolgo.
       ⚠️ Quindi dal 12 comparirà, e non l'ha ancora visto nessuno sul
       campo. Se dà fastidio, il numero da girare è `VECCHIA_DOPO_MINUTI`
       in `lib/rinfrescaPosizione.js` (adesso 120).
-- [ ] **Numero di telefono quando ci si registra**, skippabile: prefisso,
-      numero validato, e la frase che spiega dove finisce — *«verrà
-      salvato fra le info utili e resta raggiungibile dal gruppo anche
-      offline»*. Vuole una colonna nuova su `members`.
+- [x] ✅ **Numero di telefono quando ci si registra**, saltabile: prefisso
+      da scegliere, numero controllato, e la frase che dice dove va a
+      finire **scritta prima di chiederlo**. I numeri del gruppo compaiono
+      nelle Info, sotto le emergenze. Colonna `phone` già applicata al
+      database.
 
-## 4. Due cose piccole rimaste aperte
+      Il metro: **sbagliato di poco è peggio di mancante.** Vuoto va bene,
+      storto no — lo zero iniziale se ne va (`+41 079…` va composto `+41
+      79…`, ed è il numero che sembra a posto e non squilla), e un fisso
+      italiano si accetta facendolo notare invece di rifiutarlo.
 
-- [ ] **Lo spazietto nella chat** fra i segmenti delle sezioni e la barra
-      di invio. **Mi serve uno screenshot**: ho misurato gli elementi e mi
-      risultano attaccati, quindi o è un telefono specifico o sto
-      guardando il punto sbagliato — e non volevo spostare a caso il
-      layout della chat tre giorni prima di partire.
-- [ ] **Dire a schermo quanto sono vecchi i dati** (*«Dati delle 18:04»*).
-      Adesso chi **decide** legge sempre fresco, quindi il danno grosso
-      non c'è più — ma quando l'app **mostra** una copia vecchia non lo
-      dice da nessuna parte, perché la striscia guarda `navigator.onLine`,
-      che con una tacca dice *sono online*. L'ora è già salvata a ogni
-      copia e oggi finisce solo nella console.
+## 4. Due cose piccole — ✅ fatte tutte e due
+
+- [x] ✅ **Lo spazietto nella chat.** Erano **i due angoli arrotondati in
+      basso** della barra delle schede: il fondo è pieno apposta, ma il
+      `border-radius` lascia scoperti due spicchi, e lì i messaggi si
+      vedevano passare scorrendo. Invisibili da fermi — ed è esattamente
+      così che li avevi notati.
+
+      La prima volta l'avevo cercato a occhio e mi ero fermato a chiederti
+      uno screenshot. Trovato sondando cosa c'è sotto il dito in ogni
+      punto del bordo, scorrendo a piccoli passi: **44 volte** la
+      conversazione compariva dove non doveva.
+- [x] ✅ **Dire a schermo quanto sono vecchi i dati** (*«Dati delle
+      18:55»*). Due strisce invece di una, perché sono due situazioni:
+      aereo mode (rosso, riprovare non ha senso) e **la rete che c'è ma
+      non risponde** (ambra, si riprova da sola). Il secondo caso è quello
+      comune in Sardegna, ed è quello che prima non diceva niente: la
+      striscia guardava `navigator.onLine`, che con una tacca dice *sono
+      online*.
 
 ## 5. Dopo il viaggio
 
