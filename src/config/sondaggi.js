@@ -20,10 +20,26 @@ export const DURATA_MINUTI = 15
 //
 //   logistics      "si mangia qui?" dopo un quarto d'ora non vuol dire più
 //                  niente, e restare aperto è peggio che chiudersi
-//   point-proposal la proposta scaduta va chiusa E applicata: i punti in
-//                  attesa devono entrare in classifica o essere respinti
 //   photo-of-day   la finestra della caccia si chiude, ed è quello che
 //                  decide chi ha vinto la sfida
+//
+// ⚠️ `point-proposal` è uscito da qui il 9 agosto, ed è lo stesso difetto
+// dell'Impostore per un'altra porta.
+//
+// Una proposta di punti non va solo chiusa: va chiusa **e applicata**. Se
+// ne occupa `risolvi_proposta`, che fa tutte e due le cose insieme — e per
+// farle ha bisogno di trovare il voto ancora aperto (`closed_at is null`,
+// vedi `risolviProposte`). `chiudiScaduti` gli arrivava davanti, chiudeva
+// il voto e basta: da lì `risolviProposte` non lo trovava più.
+//
+// Il risultato è il peggiore possibile per un sistema a punti. Una
+// proposta votata e **approvata dal gruppo** non pagava mai: il punto
+// restava `pending`, non entrava in classifica, spariva dal banner e dallo
+// storico, e non scattavano nemmeno le Leggi della chiusura. Nessun
+// errore, e i punti non si recuperano dopo.
+//
+// All'avvio partivano insieme (`App.jsx`), e a vincere la corsa era quasi
+// sempre `chiudiScaduti`, che è una query semplice.
 //
 // L'Impostore no, e non è un dettaglio: il suo voto **non ha una
 // scadenza vera**. `vota_impostore` nel database controlla `closed_at` ma
@@ -41,4 +57,4 @@ export const DURATA_MINUTI = 15
 // rimasti aperti dalle sere prima riempirebbero tutti i posti, e il
 // sondaggio di stasera non verrebbe chiuso mai — un difetto diverso, dallo
 // stesso errore.
-export const CATEGORIE_CHE_SCADONO = ['logistics', 'point-proposal', 'photo-of-day']
+export const CATEGORIE_CHE_SCADONO = ['logistics', 'photo-of-day']

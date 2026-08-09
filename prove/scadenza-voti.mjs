@@ -39,7 +39,7 @@ const ammesse = vincolo
 // configurazione perche' e' la prova a dover sapere cosa e' stato deciso:
 // se domani ne nasce una nuova, questo file deve rompersi finche' qualcuno
 // non scrive da che parte va.
-const DECISE_A_NON_SCADERE = ['impostore']
+const DECISE_A_NON_SCADERE = ['impostore', 'point-proposal']
 
 console.log('\nil vincolo del database si legge')
 prova('la tabella votes dichiara le sue categorie', ammesse.length > 0, { ammesse })
@@ -52,6 +52,42 @@ prova(
   { elenco: CATEGORIE_CHE_SCADONO }
 )
 prova("ma il database la conosce, quindi non e' un refuso", ammesse.includes('impostore'))
+
+console.log('\nnemmeno le proposte di punti')
+{
+  // Una proposta non va solo chiusa: va chiusa E applicata, e se ne occupa
+  // risolvi_proposta -- che per farlo ha bisogno di trovarla ancora aperta.
+  // chiudiScaduti gli arrivava davanti e i punti restavano 'pending' per
+  // sempre, su una proposta che il gruppo aveva approvato.
+  prova(
+    "'point-proposal' NON e' fra quelle che scadono",
+    !CATEGORIE_CHE_SCADONO.includes('point-proposal'),
+    { elenco: CATEGORIE_CHE_SCADONO }
+  )
+  prova('e il database la conosce', ammesse.includes('point-proposal'))
+
+  const rp = schema.slice(schema.indexOf('function risolvi_proposta'))
+  const corpo = rp.slice(0, rp.indexOf('end $$;'))
+  prova(
+    'risolvi_proposta chiude il voto da sola: per questo non serve chiudiScaduti',
+    /update votes set closed_at/.test(corpo)
+  )
+  prova(
+    'e si ferma se non e ancora ora',
+    /if v\.closed_at is null then return null/.test(corpo)
+  )
+
+  const proposte = readFileSync(new URL('../src/lib/proposte.js', import.meta.url), 'utf8')
+  const risolvi = proposte.slice(proposte.indexOf('export async function risolviProposte'))
+  prova(
+    'e risolviProposte cerca solo quelle ANCORA APERTE, che e il motivo del difetto',
+    /\.is\('closed_at', null\)/.test(risolvi.slice(0, 900)),
+    {
+      aiuto:
+        'se un giorno cercasse anche le chiuse, chiudiScaduti tornerebbe innocuo -- ma finche e cosi, chiudere una proposta vuol dire buttare via i suoi punti',
+    }
+  )
+}
 
 console.log('\nnessuna categoria resta senza una decisione')
 for (const c of ammesse) {

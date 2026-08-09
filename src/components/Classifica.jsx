@@ -8,6 +8,7 @@ import PropostaInAttesa from './PropostaInAttesa.jsx'
 export default function Classifica({
   classifica,
   eventi,
+  diOggi = [],
   ioId,
   proposteAperte = [],
   onVotaProposta,
@@ -17,7 +18,16 @@ export default function Classifica({
   conteggiMvp = {},
 }) {
   const oggi = dataDiOggi()
-  const saldi = saldiDelGiorno(eventi, oggi)
+  // ⚠️ `diOggi` e non `eventi`. `eventi` sono gli ultimi quaranta del
+  // VIAGGIO: dopo una serata piena, chi aveva preso i punti in mattinata
+  // usciva dalla finestra e spariva dal conto, e la corona andava a chi
+  // aveva fatto qualcosa nell'ultima ora. La mattina dopo `chiudiGiornate`
+  // — che legge la giornata intera — ne scriveva un altro, e le due
+  // schermate raccontavano due vincitori diversi per lo stesso giorno.
+  //
+  // Il ripiego su `eventi` serve solo finché la lettura di oggi non è
+  // tornata: meglio un conto parziale per un istante che una card vuota.
+  const saldi = saldiDelGiorno(diOggi.length > 0 ? diOggi : eventi, oggi)
   const mvp = mvpDelGiorno(saldi)
 
   // Chi ha gia' vinto una giornata, dal piu' titolato in giu'.
@@ -48,7 +58,21 @@ export default function Classifica({
   // toccare la propria riga. Con il tasto spento dall'inizio non ci
   // sarebbe cascato nessuno, con il tasto sempre acceso diventa una
   // penalità che si ripete e smette di essere una sorpresa.
-  const giaCascato = eventi.some((e) => e.leggeId === 'self-praise' && e.membroId === ioId)
+  // ⚠️ Su TUTTI gli eventi noti, non solo sugli ultimi quaranta.
+  //
+  // Il commento qui sopra dice che la trappola scatta una volta sola, ed è
+  // la decisione giusta: una trappola che si ripete smette di essere una
+  // sorpresa e diventa una tassa. Ma il controllo guardava la stessa
+  // finestra di quaranta eventi, quindi dopo una giornata piena il fatto
+  // di esserci già cascati usciva dalla finestra — e il tasto tornava
+  // acceso. Chi ci ricascava pagava di nuovo, e i punti non si revocano.
+  //
+  // `diOggi` e `eventi` insieme allargano la finestra quanto basta; e la
+  // Legge è per persona e per viaggio, quindi qualunque riga sua che
+  // compaia in una delle due liste è sufficiente a tenerla spenta.
+  const giaCascato = [...eventi, ...diOggi].some(
+    (e) => e.leggeId === 'self-praise' && e.membroId === ioId
+  )
 
   // Se il limite giornaliero l'ha rifiutata, il foglio resta aperto col
   // motivo: chiuderlo lascerebbe senza sapere cos'è successo.

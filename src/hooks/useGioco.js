@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { leggiClassifica, leggiEventi, leggiScoperte } from '../lib/punti.js'
+import { eventiDelGiorno } from '../lib/mvpStorico.js'
+import { dataDiOggi } from '../lib/giorni.js'
 import { leggiVoti, vota as votaSulDatabase } from '../lib/voti.js'
 import { descriviErrore } from '../lib/errori.js'
 
 export function useGioco() {
   const [classifica, setClassifica] = useState([])
   const [eventi, setEventi] = useState([])
+  // Gli eventi della giornata in corso, interi: servono all'MVP e alla
+  // Maglia Nera, che sono decisioni sul giorno e non sulle ultime righe.
+  const [diOggi, setDiOggi] = useState([])
   const [scoperte, setScoperte] = useState({})
   const [stato, setStato] = useState('caricamento')
   const [errore, setErrore] = useState(null)
@@ -14,10 +19,23 @@ export function useGioco() {
   const [voti, setVoti] = useState({})
 
   const ricarica = useCallback(async () => {
-    const [c, e, s] = await Promise.all([leggiClassifica(), leggiEventi(), leggiScoperte()])
+    const [c, e, s, g] = await Promise.all([
+      leggiClassifica(),
+      leggiEventi(),
+      leggiScoperte(),
+      // ⚠️ Gli eventi di OGGI, letti a parte. `leggiEventi` si ferma ai
+      // quaranta più recenti del viaggio: dopo una serata piena, quello
+      // che si era guadagnato in mattinata esce dalla finestra. L'MVP di
+      // giornata calcolato lì incoronava chi aveva fatto qualcosa
+      // nell'ultima ora, e la mattina dopo `chiudiGiornate` — che legge
+      // la giornata intera — ne scriveva un altro. Due schermate della
+      // stessa app con due vincitori diversi.
+      eventiDelGiorno(dataDiOggi()).catch(() => []),
+    ])
     setClassifica(c)
     setEventi(e)
     setScoperte(s)
+    setDiOggi(g)
 
     // I voti delle proposte in attesa: si vota direttamente dalla
     // classifica, dove la proposta è già in bella vista.
@@ -70,5 +88,5 @@ export function useGioco() {
     }
   }, [ricarica])
 
-  return { classifica, eventi, scoperte, voti, vota, stato, errore, ricarica }
+  return { classifica, eventi, diOggi, scoperte, voti, vota, stato, errore, ricarica }
 }

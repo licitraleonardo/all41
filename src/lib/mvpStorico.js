@@ -2,7 +2,7 @@ import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { giorniDaChiudere, mvpDelGiorno, saldiDelGiorno } from './classifica.js'
 import { faiScattareLegge } from './punti.js'
-import { dataDiOggi } from './giorni.js'
+import { dataDiOggi, estremiDelGiorno } from './giorni.js'
 import { PER_ID } from '../config/leggi.js'
 
 // Chi e' stato MVP e quante volte. Le giornate finite si chiudono alla
@@ -25,13 +25,27 @@ export async function leggiStorico() {
 // Gli eventi di una giornata sola. Non si riusa la finestra della
 // classifica: quella tiene gli ultimi quaranta eventi, e dopo una
 // giornata movimentata ieri e' gia' fuori.
-async function eventiDelGiorno(giorno) {
+// ⚠️ Gli estremi passano da `estremiDelGiorno`, che li calcola a
+// mezzanotte DEL TELEFONO. Prima erano due stringhe senza fuso, che
+// Postgres legge come UTC: in Italia d'estate due ore di scarto, e cadevano
+// proprio fra mezzanotte e le due — le partite dopo cena. Quei punti non
+// finivano in nessun MVP: troppo tardi per ieri, non abbastanza per oggi.
+//
+// ⚠️ Ed è esportata apposta. La classifica calcolava l'MVP di oggi sugli
+// ultimi 40 eventi del VIAGGIO, non della giornata: dopo una serata piena,
+// chi aveva preso i punti in mattinata usciva dalla finestra e spariva, e
+// la corona andava a chi aveva fatto qualcosa nell'ultima ora. Due
+// schermate della stessa app che incoronavano due persone diverse.
+export async function eventiDelGiorno(giorno) {
+  const { da, a } = estremiDelGiorno(giorno)
   const { data, error } = await supabase
     .from('point_events')
-    .select('member_id, points, status, created_at')
+    // `rule_id` serve alla classifica, che da qui capisce anche se una
+    // Legge una-volta-sola è già scattata per qualcuno oggi.
+    .select('member_id, points, status, created_at, rule_id')
     .eq('trip_id', VIAGGIO.id)
-    .gte('created_at', `${giorno}T00:00:00`)
-    .lt('created_at', `${giorno}T23:59:59.999`)
+    .gte('created_at', da)
+    .lt('created_at', a)
     .limit(500)
 
   if (error) throw error
@@ -40,6 +54,7 @@ async function eventiDelGiorno(giorno) {
     punti: r.points,
     stato: r.status,
     creatoIl: r.created_at,
+    leggeId: r.rule_id,
   }))
 }
 

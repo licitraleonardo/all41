@@ -23,7 +23,7 @@ const SCHEDE = [
 ]
 
 export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto, conteggiMvp = {}, damaDaAprire, onDamaAperta, leggeDaAprire, onLeggeAperta }) {
-  const { classifica, eventi, scoperte, stato, errore, ricarica } = useGioco()
+  const { classifica, eventi, diOggi, scoperte, stato, errore, ricarica } = useGioco()
   const [vista, setVista] = useSchedaRicordata(
     'scheda.gioco',
     'classifica',
@@ -108,6 +108,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
         <Classifica
           classifica={classifica}
           eventi={eventi}
+          diOggi={diOggi}
           ioId={membro.id}
           proposteAperte={proposteAperte}
           onVotaProposta={onVotaProposta}
