@@ -1,5 +1,5 @@
 import './Info.css'
-import { DA_TROVARE, DOVE, EMERGENZE } from '../config/info.js'
+import { DA_TROVARE, DOVE, EMERGENZE, UTILI } from '../config/info.js'
 
 // Dove si dorme e chi si chiama. Sta nel codice, non sul database: è
 // l'unico pezzo dell'app che potrebbe servire col telefono che non prende
@@ -44,6 +44,10 @@ export default function Info() {
         </a>
       </section>
 
+      {/* Le emergenze stanno da sole, in rosso e grandi. Sono tre, e sono
+          tre apposta: questa lista si scorre con gli occhi mentre succede
+          qualcosa, e ogni riga in più è tempo. I numeri che si leggono con
+          calma stanno nella lista sotto. */}
       <p className="info-etichetta">Se serve aiuto</p>
       <ul className="info-numeri">
         {EMERGENZE.map((e) => (
@@ -55,6 +59,25 @@ export default function Info() {
               <span className="info-numero-cosa">
                 <strong>{e.cosa}</strong>
                 <small>{e.dettaglio}</small>
+                {e.quando && <small className="info-quando">{e.quando}</small>}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <p className="info-etichetta">Numeri utili</p>
+      <ul className="info-numeri info-numeri-calmi">
+        {UTILI.map((u) => (
+          <li key={u.numero}>
+            <a className="info-numero info-utile" href={`tel:${u.numero.replace(/\s/g, '')}`}>
+              <span className="info-numero-cosa">
+                <strong>{u.cosa}</strong>
+                <span className="info-utile-cifre">{u.numero}</span>
+                <small>{u.dettaglio}</small>
+                {/* Gli orari contano quanto il numero: uno che non risponde
+                    alle tre di notte è peggio di uno che dice "chiuso". */}
+                {u.quando && <small className="info-quando">{u.quando}</small>}
               </span>
             </a>
           </li>
