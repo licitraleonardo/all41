@@ -49,6 +49,7 @@ export default function Impostore({ membro, membri }) {
     storico,
     stato,
     errore,
+    arrivatoSecondo,
     nuova,
     avanti,
     avviaVoto,
@@ -92,6 +93,16 @@ export default function Impostore({ membro, membri }) {
   return (
     <div className="impostore">
       {errore && <p className="imp-guasto">{errore}</p>}
+
+      {/* Non se ne va da sola: è l'unica spiegazione del perché il finale
+          parla di una parola che non hai scritto tu. Resta finché non
+          comincia la partita dopo. */}
+      {arrivatoSecondo && (
+        <p className="imp-avviso" role="status">
+          Ha risposto prima {nome(arrivatoSecondo.chi)}, con «{arrivatoSecondo.parola}»:
+          vale la sua. La tua non è partita.
+        </p>
+      )}
 
       {inCorsoOra && <Abbandona onAbbandona={abbandona} />}
 
@@ -1005,6 +1016,15 @@ function Colpo({ partita, voto, membro, nome, onTenta, onChiedi, onChiudi }) {
             Scrivi la parola che aveva il gruppo. Se la indovini vinci lo stesso, e
             tutta la loro indagine non è servita a niente.
           </p>
+
+          {/* Detto PRIMA della casella, non dopo: se lo scopri quando hai
+              già premuto, l'hai scoperto tardi. */}
+          {puo.length > 1 && (
+            <p className="imp-nota">
+              Vi hanno beccati in due: vale la prima parola che parte, e vale per
+              tutti e due. Mettetevi d’accordo prima di scrivere.
+            </p>
+          )}
 
           <form onSubmit={manda}>
             <input

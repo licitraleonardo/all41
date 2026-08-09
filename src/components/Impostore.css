@@ -21,6 +21,21 @@
   font-size: 13.5px;
 }
 
+/* Non e' un guasto: nel colpo di coda a due, dice a chi e' arrivato
+   secondo perche' il finale parla di una parola che non ha scritto lui.
+   Colore neutro apposta — non e' andato storto niente, e tingerlo di
+   rosso lo farebbe leggere come un errore suo. */
+.imp-avviso {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--sand, #f7f4ec);
+  border: 1px solid var(--line, #e4dfd2);
+  color: var(--ink-soft, #55636b);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
 .imp-titolo {
   margin: 0 0 6px;
   font-size: 20px;

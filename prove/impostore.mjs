@@ -1027,6 +1027,55 @@ console.log('\nUn impostore non indovina mai, nemmeno nei giri vecchi')
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Chi puo' tentare il colpo, e chi no
+//
+// Con due impostori beccati NELLO STESSO giro tentano tutti e due, e vale
+// la prima parola che arriva. Beccati in giri DIVERSI no: chi e' caduto
+// prima e' rimasto a guardare dalla schermata "Sei fuori", che gli mostra
+// le parole di tutti — la parola del gruppo la sa gia', e dargli il colpo
+// vorrebbe dire regalargli la partita.
+console.log('\nChi puo tentare il colpo di coda')
+{
+  const OTTO = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+  // Tutti e due beccati nello stesso giro: si accusano in due.
+  const insieme = { c: ['a', 'b'], d: ['a', 'b'], e: ['a', 'b'], f: ['g', 'h'] }
+  const dueInsieme = chiPuoTentare({ impostori: ['a', 'b'], giocatori: OTTO, schede: insieme })
+  prova('beccati insieme: possono tentare in due', dueInsieme.length === 2, { dueInsieme })
+  prova('e sono proprio loro', dueInsieme.includes('a') && dueInsieme.includes('b'))
+
+  // Un impostore solo, beccato: tenta lui.
+  const uno = chiPuoTentare({
+    impostori: ['a'],
+    giocatori: OTTO,
+    schede: { c: ['a'], d: ['a'], e: ['a'] },
+  })
+  prova('un impostore solo: tenta lui', uno.join() === 'a')
+
+  // Chi l'ha fatta franca non tenta: ha gia' vinto.
+  const franca = chiPuoTentare({
+    impostori: ['a'],
+    giocatori: OTTO,
+    schede: { c: ['d'], e: ['d'], f: ['d'] },
+  })
+  prova('chi non e stato beccato non tenta', franca.length === 0)
+
+  // ⚠️ Il giro precedente. 'a' era gia' fuori e in questo giro si accusa
+  // 'b': tenta solo 'b', perche' 'a' da fuori ha visto le parole di tutti.
+  const soloUltimo = chiPuoTentare({
+    impostori: ['a', 'b'],
+    giocatori: ['b', 'c', 'd', 'e', 'f', 'g', 'h'],
+    schede: { c: ['b'], d: ['b'], e: ['b'] },
+  })
+  prova(
+    'chi era caduto in un giro prima non tenta: ha gia visto le parole',
+    !soloUltimo.includes('a'),
+    { soloUltimo }
+  )
+  prova('tenta solo chi e appena caduto', soloUltimo.join() === 'b')
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // La via d'uscita dal colpo di coda
 //
 // Se chi e' stato beccato se n'e' andato, o ha il telefono morto, o

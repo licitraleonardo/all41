@@ -34,6 +34,11 @@ export function useImpostore(membroId) {
   const [schedeDeiGiri, setSchedeDeiGiri] = useState([])
   const [stato, setStato] = useState('caricamento')
   const [errore, setErrore] = useState(null)
+  // Quando il colpo di coda l'ha scritto un altro prima di te. Non e' un
+  // errore — non e' andato storto niente — ma va detto, e non puo'
+  // sparire da solo: e' l'unica spiegazione del perche' il finale parla
+  // di una parola che non hai scritto tu.
+  const [arrivatoSecondo, setArrivatoSecondo] = useState(null)
   const vivo = useRef(true)
 
   const caricaVoto = useCallback(async (votoId) => {
@@ -130,6 +135,7 @@ export function useImpostore(membroId) {
 
   const nuova = useCallback(async (giocatori, variante) => {
     setErrore(null)
+    setArrivatoSecondo(null)
     try {
       const p = await creaPartita({ giocatori, variante })
       setPartita(p)
@@ -217,6 +223,19 @@ export function useImpostore(membroId) {
       setErrore(null)
       try {
         const dopo = await tentaColpo(partita, membroId, parola)
+
+        // ⚠️ Con due impostori beccati nello stesso giro tentano in due, e
+        // vale la prima parola che arriva. La funzione del database, se il
+        // tentativo c'e' gia', restituisce la riga com'e' senza sollevare
+        // niente: chi arrivava secondo scriveva la sua parola, premeva "È
+        // questa", e si ritrovava il finale calcolato su quella di un
+        // altro senza che nessuno gli dicesse perche'. La corsa va bene —
+        // sono una squadra e il primo decide per tutti e due — il silenzio
+        // no.
+        if (dopo.tentatoDa && dopo.tentatoDa !== membroId) {
+          setArrivatoSecondo({ chi: dopo.tentatoDa, parola: dopo.tentativo })
+        }
+
         setPartita(await chiudiPartita(dopo, voto))
       } catch (e) {
         setErrore(descriviErrore(e))
@@ -283,6 +302,7 @@ export function useImpostore(membroId) {
     storico,
     stato,
     errore,
+    arrivatoSecondo,
     nuova,
     avanti,
     avviaVoto,

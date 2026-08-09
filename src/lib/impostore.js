@@ -445,8 +445,22 @@ export function stessaParola(a, b) {
   return x.length > 0 && x === normalizzaParola(b)
 }
 
-// Chi puo' tentare il colpo: gli impostori che sono stati scoperti. Chi
+// Chi puo' tentare il colpo: gli impostori scoperti IN QUESTO GIRO. Chi
 // l'ha fatta franca ha gia' vinto e non ha niente da tentare.
+//
+// ⚠️ `fuori` non si passa, ed e' voluto: chi era stato beccato in un giro
+// precedente e' rimasto a guardare dalla schermata "Sei fuori", che gli
+// mostra le parole di tutti. La parola del gruppo la sa gia'. Dargli il
+// colpo di coda vorrebbe dire regalargli la partita, non offrirgli
+// un'ultima carta.
+//
+// Vince lo stesso se il colpo riesce — sono una squadra, e `premi` paga
+// tutti gli impostori — ma a scrivere e' chi e' appena caduto.
+//
+// Quando invece cadono INSIEME nello stesso giro, qui ne escono due, e
+// tentare possono tutti e due: la prima parola che arriva vale per
+// entrambi. Vedi `tenta` in useImpostore, che dice all'altro che e'
+// arrivato secondo — prima non glielo diceva nessuno.
 export function chiPuoTentare({ impostori, giocatori, schede }) {
   return esito({ impostori, giocatori, schede }).scoperti
 }
