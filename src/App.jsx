@@ -41,6 +41,8 @@ import { useRinfrescaPosizione } from './hooks/useRinfrescaPosizione.js'
 import { useNonLetto } from './hooks/useNonLetto.js'
 import { useMvp } from './hooks/useMvp.js'
 import { useSfideDama } from './hooks/useSfideDama.js'
+import { useSchedaRicordata } from './hooks/useSchedaRicordata.js'
+import { CHIAVE_TAB } from './lib/navigazione.js'
 import { useLeggiDaLeggere } from './hooks/useLeggiDaLeggere.js'
 import { risolviDama } from './lib/puntiDama.js'
 import Celebrazione from './components/Celebrazione.jsx'
@@ -83,11 +85,17 @@ export default function App() {
   // sta guardando un tab preciso e vuole quello, aggiornato. Il tab vive
   // in sessionStorage e non in localStorage: dura il tempo della scheda,
   // cosi' riaprire l'app domani riparte comunque dal programma del giorno.
-  const [tab, setTab] = useState(() => sessionStorage.getItem('tab') || 'oggi')
-
-  useEffect(() => {
-    sessionStorage.setItem('tab', tab)
-  }, [tab])
+  // ⚠️ Anche il tab passa dallo stesso posto delle sotto-schede: e' quello
+  // che permette al tasto indietro di rifare la strada Oggi -> Gioco ->
+  // Dama al contrario. Prima era uno `useState` con sessionStorage a
+  // mano, e la cronologia non lo vedeva.
+  const [tab, setTab] = useSchedaRicordata(CHIAVE_TAB, 'oggi', [
+    'oggi',
+    'gruppo',
+    'foto',
+    'gioco',
+    'altro',
+  ])
 
   const [membro, setMembro] = useState(null)
   const [errore, setErrore] = useState(null)

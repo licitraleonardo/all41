@@ -118,18 +118,32 @@ console.log('\nchi ci fa scrivere dentro avvisa prima di buttare via')
   }
 }
 
-console.log('\nil componente non chiama mai history.back()')
+console.log('\nla cronologia la tocca un posto solo')
 {
-  // La ragione lunga sta scritta dentro `Foglio.jsx`, e vale la pena
-  // tenerla ferma: `back()` mette in coda un `popstate` che arriva
-  // quando il foglio che l'ha chiesto non c'e' piu', e a raccoglierlo e'
-  // il foglio aperto nel frattempo — che si chiude appena nato. E'
-  // successo davvero, ed e' costato mezz'ora di caccia.
-  const chiamate = ((codice['Foglio.jsx'] ?? '').match(/history\.back\(\)/g) ?? []).length
-  prova('nessun history.back()', chiamate === 0, chiamate)
-  // La ragione invece sta proprio nei commenti, quindi qui si legge il
-  // file intero.
-  prova('e la ragione e scritta li dentro', testo['Foglio.jsx'].includes('non si chiama mai'))
+  // ⚠️ `back()` mette in coda un evento che arriva quando il foglio che
+  // l'ha chiesto non c'e' piu', e a raccoglierlo e' il foglio aperto nel
+  // frattempo — che si chiude appena nato. E' successo davvero, ed e'
+  // costato mezz'ora di caccia.
+  //
+  // La correzione buona non e' «non chiamare mai back()»: e' «chiamalo
+  // da un posto che non se ne va». Quel posto e' il controllore della
+  // navigazione, che ha un ascoltatore solo e sempre vivo — ed e' per
+  // questo che il compromesso della pressione a vuoto si e' potuto
+  // togliere.
+  const nelFoglio = (codice['Foglio.jsx'] ?? '').match(/history\.(back|pushState|replaceState)/g)
+  prova('il foglio non tocca la cronologia da solo', (nelFoglio ?? []).length === 0, nelFoglio)
+  prova('la chiede al controllore', /apriLivello|chiudiLivello/.test(codice['Foglio.jsx'] ?? ''))
+
+  const nav = readFileSync('src/lib/navigazione.js', 'utf8')
+  const senzaCommenti = nav
+    .split('\n')
+    .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+    .join('\n')
+  prova(
+    'e il controllore ha un ascoltatore solo',
+    (senzaCommenti.match(/addEventListener\('popstate'/g) ?? []).length === 1
+  )
+  prova('e la ragione e scritta li dentro', nav.includes('non regge'))
 }
 
 console.log('\nniente CSS che deborda dallo schermo')

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import './Foglio.css'
+import { apriLivello, chiudiLivello, quandoTornaIndietroDaUnFoglio } from '../lib/navigazione.js'
 
 // Il foglio che si alza dal basso, e i tre modi di uscirne.
 //
@@ -65,60 +66,49 @@ export default function Foglio({
     return () => clearTimeout(t)
   }, [avvisato])
 
-  // Il tasto indietro del telefono. All'apertura si mette una voce finta
-  // nella cronologia, così «indietro» ha qualcosa da togliere che non è
-  // l'app.
+  // Il tasto indietro del telefono.
   //
-  // ⚠️ **Qui dentro non si chiama mai `history.back()`, ed è una scelta.**
+  // ⚠️ La cronologia non la tocca piu' questo componente: la tiene
+  // `lib/navigazione.js`, che ha un ascoltatore solo e sempre vivo.
   //
-  // La versione ovvia era: apri → `pushState`, chiudi col bottone →
-  // `back()` per rimettere a posto. Non regge, e il motivo è che `back()`
-  // non fa niente sul momento: mette in coda un `popstate` che arriva
-  // dopo, quando il foglio che l'ha chiesto non c'è già più. A
-  // raccoglierlo è chi capita — il foglio che si è aperto nel frattempo,
-  // che crede sia il tasto indietro e si chiude appena nato. Provata, e
-  // in sviluppo il foglio si apriva e spariva **ogni volta**.
+  // Prima ci provava da solo, e non reggeva. `history.back()` non fa
+  // niente sul momento: mette in coda un evento che arriva dopo, quando
+  // il foglio che l'ha chiesto non c'e' piu'. A raccoglierlo era chi
+  // capitava — il foglio aperto nel frattempo, che credeva fosse il tasto
+  // indietro e si chiudeva appena nato. Un contatore dentro il componente
+  // era peggio ancora: finiva per ingoiare la prima pressione VERA.
   //
-  // Ho provato a distinguerli con un contatore dei riordini: peggio.
-  // Quando un foglio si chiude col bottone il riordino parte dalla sua
-  // pulizia, cioè quando non c'è più nessuno ad aspettarsi quel
-  // `popstate`; il conto restava alto e finiva per ingoiare la **prima
-  // pressione vera** del tasto indietro. Il telefono sembrava impuntato
-  // esattamente come nel difetto che stavo correggendo.
-  //
-  // Quindi: la voce non si toglie mai. Alla riapertura, se ce n'è già una
-  // nostra si **riusa** invece di impilarne un'altra. Il prezzo è una
-  // pressione a vuoto, una sola, e solo per chi chiude un foglio col
-  // bottone e subito dopo preme indietro — e da lì in poi tutto torna
-  // normale. Il prezzo dell'altra strada era un foglio che si chiude da
-  // solo mentre ci scrivi dentro.
+  // La conseguenza era un compromesso scritto e accettato: la voce non si
+  // toglieva mai, e chi chiudeva un foglio col bottone si pagava una
+  // pressione a vuoto. **Adesso quel compromesso non c'e' piu'**, perche'
+  // il conto sta in un posto che non se ne va.
   useEffect(() => {
-    if (window.history.state?.all41Foglio) {
-      window.history.replaceState({ all41Foglio: true }, '')
-    } else {
-      window.history.pushState({ all41Foglio: true }, '')
-    }
+    apriLivello()
 
-    const indietro = () => {
+    // Premuto indietro mentre questo foglio era aperto.
+    const stacca = quandoTornaIndietroDaUnFoglio(() => {
       if (!tenta()) {
-        // Rifiutato perché c'è roba scritta: la voce l'ha già consumata
-        // il telefono, quindi se ne rimette una, o il secondo «indietro»
-        // chiuderebbe l'app invece del foglio.
-        window.history.pushState({ all41Foglio: true }, '')
+        // Rifiutato perche' c'e' roba scritta: la voce l'ha gia'
+        // consumata il telefono, quindi se ne rimette una, o il secondo
+        // «indietro» uscirebbe dalla schermata invece di chiudere il
+        // foglio.
+        apriLivello()
       }
-    }
+    })
 
     const daTastiera = (e) => {
       if (e.key !== 'Escape') return
-      tenta()
+      if (tenta()) chiudiLivello()
     }
-
-    window.addEventListener('popstate', indietro)
     document.addEventListener('keydown', daTastiera)
 
     return () => {
-      window.removeEventListener('popstate', indietro)
+      stacca()
       document.removeEventListener('keydown', daTastiera)
+      // Chiuso in un modo che non passa dalla cronologia (il bottone, il
+      // tocco fuori, o il foglio smontato da chi lo conteneva): si
+      // rimette a posto.
+      chiudiLivello()
     }
     // Apposta vuoto: si entra e si esce una volta sola per foglio. Vedi
     // il commento sul `ref` qui sopra.
