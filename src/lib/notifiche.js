@@ -26,6 +26,25 @@ export function statoNotifiche() {
   return Notification.permission // 'default' | 'granted' | 'denied'
 }
 
+// ⚠️ L'app e' aperta dalla schermata home, o dal browser?
+//
+// Su iPhone e' la differenza fra «funziona» e «non puo' funzionare»: da
+// Safari il permesso non si puo' nemmeno chiedere. Saperlo PRIMA di
+// premere evita a qualcuno di concludere che l'app e' rotta.
+export function installataSullaHome() {
+  if (typeof window === 'undefined') return false
+  return (
+    window.matchMedia?.('(display-mode: standalone)').matches === true ||
+    window.navigator.standalone === true
+  )
+}
+
+export function suIPhone() {
+  if (typeof navigator === 'undefined') return false
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
+
 // Il formato che vuole `pushManager.subscribe`: la chiave in byte, non in
 // testo.
 function chiaveInByte(base64) {
@@ -42,6 +61,13 @@ function chiaveInByte(base64) {
 export async function iscriviti(membroId) {
   if (!notifichePossibili()) return { ok: false, motivo: 'impossibile' }
   if (!CHIAVE_PUBBLICA_PUSH) return { ok: false, motivo: 'non configurato' }
+
+  // ⚠️ Su iPhone fuori dall'app installata il permesso non si puo'
+  // chiedere: il cartello non compare proprio, e sembra che il tasto sia
+  // rotto. Meglio dirlo che lasciar credere.
+  if (suIPhone() && !installataSullaHome()) {
+    return { ok: false, motivo: 'non-installata' }
+  }
 
   const permesso = await Notification.requestPermission()
   if (permesso !== 'granted') return { ok: false, motivo: permesso }
@@ -60,6 +86,7 @@ export async function iscriviti(membroId) {
     }))
 
   const grezza = iscrizione.toJSON()
+  if (!grezza?.endpoint || !grezza?.keys) return { ok: false, motivo: 'iscrizione-vuota' }
 
   // ⚠️ Passa da una funzione del database, non dalla tabella.
   //
@@ -79,7 +106,11 @@ export async function iscriviti(membroId) {
     p_membro: membroId,
     p_chiavi: grezza.keys,
   })
-  if (error) throw error
+  // ⚠️ Il motivo vero torna a chi chiama, invece di finire in un `catch`
+  // generico. Un tasto che dice solo «non e' andata» costringe chi lo
+  // preme a indovinare — e a chi lo ha scritto tocca chiedere «cosa dice
+  // esattamente?» invece di leggerlo.
+  if (error) return { ok: false, motivo: 'database', dettaglio: error.message }
 
   return { ok: true }
 }

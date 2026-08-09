@@ -1,6 +1,30 @@
 import { useEffect, useState } from 'react'
 import './ChiediNotifiche.css'
-import { disiscriviti, iscriviti, notifichePossibili, statoNotifiche } from '../lib/notifiche.js'
+import {
+  disiscriviti,
+  installataSullaHome,
+  iscriviti,
+  notifichePossibili,
+  statoNotifiche,
+  suIPhone,
+} from '../lib/notifiche.js'
+
+// ⚠️ Ogni motivo ha la sua frase, e ognuna dice cosa fare.
+//
+// Prima c'era un «Non è andata. Riprova.» per tutto. Sembrava gentile ed
+// era inutile: chi lo leggeva non sapeva se fosse colpa sua, del telefono
+// o dell'app, e chi l'ha scritta ha dovuto chiedere «cosa dice
+// esattamente?» invece di leggerlo da qui.
+const MOTIVI = {
+  'non-installata':
+    'Su iPhone devi prima mettere l’app sulla schermata home: tasto condividi, «Aggiungi a Home». Da Safari non si può proprio.',
+  denied:
+    'Le hai bloccate. Si riaccendono dalle impostazioni del telefono, alla voce di questo sito.',
+  default: 'Hai chiuso il cartello senza rispondere. Riprova e premi «Consenti».',
+  impossibile: 'Questo browser non sa mandare notifiche.',
+  'non configurato': 'Manca la chiave delle notifiche. È una cosa da sistemare qui, non sul tuo telefono.',
+  'iscrizione-vuota': 'Il telefono non ha dato un indirizzo valido. Prova a chiudere e riaprire l’app.',
+}
 
 // «Fatti avvisare»: il permesso per le notifiche.
 //
@@ -38,15 +62,20 @@ export default function ChiediNotifiche({ membroId }) {
     try {
       const r = await iscriviti(membroId)
       setStato(statoNotifiche())
-      if (!r.ok && r.motivo === 'denied') {
-        // Detto com'è: il tasto non può più fare niente, e insistere
-        // sarebbe una bugia.
-        setEsito('Le hai bloccate. Si riaccendono dalle impostazioni del telefono.')
-      } else if (!r.ok) {
-        setEsito('Non è andata. Riprova.')
+      if (r.ok) {
+        setEsito(null)
+      } else if (r.motivo === 'database') {
+        // Il messaggio del database per esteso: e' l'unico caso in cui il
+        // problema sta da questa parte, e serve leggerlo.
+        setEsito('Il database ha rifiutato: ' + (r.dettaglio ?? 'motivo sconosciuto'))
+      } else {
+        setEsito(MOTIVI[r.motivo] ?? `Non è andata (${r.motivo}).`)
       }
-    } catch {
-      setEsito('Non è andata. Riprova.')
+    } catch (e) {
+      // ⚠️ Anche qui il motivo vero. Su iPhone `subscribe` fallisce con
+      // messaggi precisi, e nasconderli vuol dire non poter capire niente
+      // a distanza.
+      setEsito(`Non è andata: ${e?.name ?? 'errore'} — ${e?.message ?? ''}`)
     } finally {
       setInCorso(false)
     }
@@ -88,12 +117,20 @@ export default function ChiediNotifiche({ membroId }) {
 
       {esito && <p className="notifiche-esito">{esito}</p>}
 
-      {/* ⚠️ Detto qui e non solo nel resoconto: su iPhone senza l'app
-          sulla home non arriva niente, e chi non lo sa crede che sia
-          rotta. */}
-      <p className="notifiche-nota">
-        Su iPhone arrivano solo se hai messo l’app sulla schermata home.
-      </p>
+      {/* ⚠️ Detto PRIMA di premere, e non dopo aver fallito: su iPhone
+          fuori dall'app installata il permesso non si puo' nemmeno
+          chiedere, il cartello non compare, e sembra che il tasto sia
+          rotto. */}
+      {suIPhone() && !installataSullaHome() ? (
+        <p className="notifiche-esito">
+          Sei nel browser, non nell’app. Su iPhone le notifiche funzionano solo dall’app
+          messa sulla schermata home: tasto condividi, «Aggiungi a Home».
+        </p>
+      ) : (
+        <p className="notifiche-nota">
+          Su iPhone arrivano solo se hai messo l’app sulla schermata home.
+        </p>
+      )}
     </div>
   )
 }
