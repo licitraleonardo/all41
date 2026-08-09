@@ -90,20 +90,23 @@ function SaldoMio({ conti, ioId, onApri }) {
       onClick={onApri}
       disabled={quanti === 0}
     >
-      <span className="saldo-etichetta">
-        {mio === 0 ? 'Sei in pari' : mio > 0 ? 'Devi ricevere' : 'Devi dare'}
+      {/* Il verso e la cifra da una parte, l'azione dall'altra: sono due
+          cose diverse — quanto sei messo, e cosa puoi farci. */}
+      <span className="saldo-quanto">
+        <span className="saldo-etichetta">
+          {mio === 0 ? 'Sei in pari' : mio > 0 ? 'Devi ricevere' : 'Devi dare'}
+        </span>
+        {/* ⚠️ Niente «−» davanti alla cifra. C'era stato messo perché il
+            verso viveva solo nel colore, e il colore non si legge ad alta
+            voce. Ma sopra la cifra c'è già scritto «Devi dare» a lettere
+            piene: il meno ripeteva una cosa già detta, e su un numero da
+            28px sembrava piuttosto un errore di battitura. */}
+        {mio !== 0 && <strong className="saldo-cifra">{formattaEuro(Math.abs(mio))}</strong>}
       </span>
-      {/* Il segno «−» c'era solo nel colore, e il colore non si legge ad
-          alta voce: «devi dare 30» e «devi ricevere 30» erano due numeri
-          identici distinti da una sfumatura. Adesso il meno si vede. */}
-      {mio !== 0 && (
-        <strong className="saldo-cifra">
-          {mio < 0 ? '−' : ''}
-          {formattaEuro(Math.abs(mio))}
-        </strong>
-      )}
+
       {/* «Conti aperti» descriveva uno stato; «Salda» dice cosa si può
-          fare toccando. È l'azione, ed è l'unica cosa che si fa da qui. */}
+          fare toccando. Sta a destra, dove va a finire il pollice e dove
+          l'occhio cerca l'azione. */}
       {quanti > 0 && <span className="saldo-apri">Salda ›</span>}
     </button>
   )

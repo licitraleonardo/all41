@@ -54,9 +54,14 @@
    l'elenco di tutti col saldo di ciascuno, che sembrava una classifica
    di chi sta bene e chi sta male. */
 .saldo-mio {
+  /* La cifra a sinistra e l'azione a destra, sulla stessa riga: sono due
+     cose diverse — quanto sei messo, e cosa puoi farci. Prima erano
+     impilate, e «Salda» finiva sotto la cifra dove sembrava una didascalia
+     invece di un tasto. */
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
   font: inherit;
   text-align: left;
@@ -341,10 +346,19 @@
 
 /* Dice l'azione, quindi si legge come un'azione: prima era grigio chiaro
    su fondo pallido e spariva insieme al resto. */
+/* La colonna di sinistra: verso sopra, cifra sotto. */
+.saldo-quanto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* A destra, e non deve stringersi: «Salda ›» su due righe non lo legge
+   nessuno. */
 .saldo-apri {
-  display: block;
-  margin-top: 4px;
-  font-size: 13px;
+  flex: none;
+  font-size: 14px;
   font-weight: 700;
   color: #1f4433;
 }
