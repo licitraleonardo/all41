@@ -44,7 +44,7 @@ vedono lo stesso).
 | **A** | I nove punti aperti di `CACCIA-IMPOSTORE.md` — **in attesa di conferma da Leonardo**, vedi Conflitti #1 | `src/lib/impostore.js`, `src/lib/partiteImpostore.js`, `src/hooks/useImpostore.js`, `src/components/Impostore.jsx`, `supabase/schema.sql`, `prove/impostore.mjs` | 9/8 |
 | **A** | Caccia automatica in corso su sei sezioni non ancora battute (soldi, chat e vocali, punti, caccia al tesoro e Pecora, senza rete, ingresso). **Solo lettura** finché non porta risultati | nessuno preso in scrittura | 9/8 |
 
-| **B** | Fonde in un solo documento quello che sanno le cinque chat di questo progetto e che non sta nel codice: perché una scelta è fatta così, dove Leonardo ha cambiato idea, cosa è già stato provato e non funziona. Lo scrive un workflow in sottofondo (cinque lettori, una fusione, due controlli) | `CONTESTO.md` (nuovo), `CANTIERE.md` | 9/8 |
+| **B** | ~~Fonde quello che sanno le cinque chat in `CONTESTO.md`~~ **fatto.** Ricavato dalle trascrizioni delle cinque sessioni: come lavora Leonardo, dove ha cambiato idea, 96 trappole già pagate, cosa è scartato di proposito, cosa aspetta una risposta. **Da leggere all'apertura, insieme a questo file.** ⚠️ La fase di verifica del workflow è morta sul limite di sessione: il documento **non** è stato ricontrollato contro il repo | nessuno | 9/8 |
 
 Sessione **A** è quella che ha fatto i commit da `e104479` a `af70748`.
 Sessione **B** è quella di `a6c6a52` (`CACCIA-IMPOSTORE.md`).
@@ -82,6 +82,25 @@ armata dentro il file che a Leonardo è stato detto di lanciare.
 
 *In attesa della parola di Leonardo. Finché non arriva, A non tocca niente
 di quei file.*
+
+---
+
+### 2. Dodici commit sono solo su questo disco — **aperto**
+
+`main` è **avanti di 12 commit su `origin/main`**. Nessuno dei due ha mai spinto:
+tutto il lavoro del 9 agosto — di A e di B — esiste in un posto solo.
+
+La regola 4 qui sopra dice *«un commit invece si recupera sempre»*. È vero solo
+se è stato spinto. Finché non lo è, `git commit` protegge dall'altra sessione ma
+non da niente altro.
+
+Dalle trascrizioni risulta una decisione di Leonardo — il push lo fa Claude in
+automatico a ogni pezzo funzionante, perché lui lavora spesso dal telefono e da
+lì non riesce a spingere. Ma quella decisione viene da una sessione vecchia,
+nessuno l'ha riconfermata, e con due sessioni sullo stesso branch conviene che lo
+dica lui.
+
+*In attesa della parola di Leonardo. Chi la riceve, spinga.*
 
 ---
 
