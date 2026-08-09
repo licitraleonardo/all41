@@ -1,62 +1,37 @@
--- All For One — l'eliminazione nell'Impostore.
+-- All For One — questo file NON SERVE PIÙ. Non lanciarlo.
 --
--- Da incollare nell'SQL Editor di Supabase ed eseguire.
--- Rieseguibile: se lo rilanci non rompe niente.
+-- È rimasto qui apposta invece di essere cancellato: era citato in
+-- `SESSIONE-5-6-AGOSTO.md` come "da lanciare", e un file che sparisce
+-- lascia un'istruzione che punta nel vuoto. Così invece chi ci arriva
+-- legge perché non serve, e se lo esegue non succede niente.
 --
--- Contiene solo quello che manca al database: le altre colonne e le
--- altre funzioni dell'Impostore ci sono gia'.
+-- Conteneva due cose, e tutte e due hanno trovato una casa migliore:
+--
+--   * la colonna `fuori` → sta negli adeguamenti di `schema.sql`
+--   * la funzione `chiudi_accusa` → sta in `giro.sql`, nella versione
+--     nuova che sa anche il numero del giro
+--
+-- ⚠️ E la seconda era una trappola. Qui dentro `chiudi_accusa` aveva sei
+-- argomenti, quella di `giro.sql` ne ha sette. Postgres distingue le
+-- funzioni per firma, quindi rilanciando questo file la versione vecchia
+-- **tornava in vita accanto a quella nuova**. Con due funzioni dello
+-- stesso nome, una chiamata a sei argomenti diventa ambigua e fallisce; e
+-- nel frattempo resta in giro codice morto che sembra vivo.
+--
+-- La regola che ne è uscita, e che `npm run prova:sql` fa rispettare:
+-- **una funzione, un file.** Se una funzione è definita in due posti,
+-- vince chi esegue per ultimo — e quale sia "l'ultimo" dipende da in che
+-- ordine qualcuno ha aperto dei file sei mesi fa.
+--
+-- Per mettere in piedi un database da zero servono due file, in
+-- quest'ordine:
+--
+--   1. supabase/schema.sql
+--   2. supabase/DA-LANCIARE.sql
+--
+-- Il secondo, in fondo, dice da solo se è andata.
 
--- Chi e' uscito: innocenti eliminati per errore e impostori scoperti.
--- Uno solo perche' la differenza si sa gia' — basta guardare se e' fra
--- gli impostori — e due elenchi da tenere d'accordo sono due elenchi che
--- prima o poi non lo sono.
-alter table impostore_games add column if not exists fuori uuid[] not null default '{}';
-
--- Chiude un giro d'accusa: chi esce, e cosa succede dopo. Tutto in una
--- transazione perche' sono la stessa decisione — chi e' fuori, se si
--- riparte e con che ordine — e applicarle a pezzi lascerebbe partite a
--- meta' se qualcosa fallisce nel mezzo.
---
--- Vale solo dallo stato 'voto': due telefoni che chiudono la stessa
--- accusa insieme eliminerebbero due volte, e il secondo trova la partita
--- gia' andata avanti.
-create or replace function chiudi_accusa(
-  p_partita uuid,
-  p_fuori uuid[],
-  p_stato text,
-  p_ordine uuid[],
-  p_giri int,
-  p_voto uuid
-)
-returns impostore_games
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  g impostore_games;
+do $$
 begin
-  select * into g from impostore_games where id = p_partita for update;
-  if not found then raise exception 'Questa partita non esiste.'; end if;
-
-  if g.stato = 'voto' then
-    update impostore_games
-       set fuori = p_fuori,
-           stato = p_stato,
-           ordine = coalesce(p_ordine, ordine),
-           giri_totali = coalesce(p_giri, giri_totali),
-           turno = case when p_stato = 'in-corso' then 0 else turno end,
-           giro = case when p_stato = 'in-corso' then 1 else giro end,
-           vote_id = p_voto,
-           rivela_chiesta = '{}'
-     where id = p_partita
-    returning * into g;
-  end if;
-
-  return g;
+  raise notice 'eliminazione.sql non serve piu'': tutto quello che conteneva sta in schema.sql e in DA-LANCIARE.sql. Non ha fatto niente, ed e'' giusto cosi''.';
 end $$;
-
-revoke execute on function chiudi_accusa(uuid, uuid[], text, uuid[], int, uuid) from public;
-grant execute on function chiudi_accusa(uuid, uuid[], text, uuid[], int, uuid) to authenticated;
-
-notify pgrst, 'reload schema';

@@ -1,5 +1,16 @@
 -- All For One — schema del punto 2 (onboarding + codice di accesso)
 -- Da incollare nell'SQL Editor di Supabase ed eseguire. È rieseguibile senza danni.
+--
+-- ⚠️ DA SOLO NON BASTA. Tre funzioni dell'Impostore — avanza_impostore,
+--    avvia_impostore, chiudi_accusa — NON stanno qui dentro: vivono in
+--    DA-LANCIARE.sql. Dopo questo file, lancia anche quello.
+--
+--    Ci stavano, e "rieseguibile senza danni" era falso proprio per colpa
+--    loro: rilanciare questo file riportava indietro il testimone dei
+--    trenta secondi, senza un errore e senza che nessuno se ne accorgesse.
+--    Adesso è vero — ma il prezzo è che questo file lascia il database
+--    incompleto, e il controllo in fondo te lo dice invece di lasciartelo
+--    scoprire durante una partita.
 
 -- ---------------------------------------------------------------- tabelle
 
@@ -948,40 +959,19 @@ begin
   return v;
 end $$;
 
--- Chiunque puo' far avanzare il turno dell'Impostore, non solo chi e' di
--- turno. Il rischio e' che due premano "fatto" nello stesso istante e il
--- giro salti una persona: si scrive solo se il turno e' ancora quello che
--- il telefono aveva in mano quando ha premuto. Chi arriva secondo non
--- combina niente e si ritrova lo stato vero.
-create or replace function avanza_impostore(
-  p_partita uuid,
-  p_turno_atteso int,
-  p_ordine uuid[],
-  p_turno int,
-  p_giro int,
-  p_stato text
-)
-returns impostore_games
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  g impostore_games;
-begin
-  select * into g from impostore_games where id = p_partita for update;
-
-  if not found then raise exception 'Questa partita non esiste.'; end if;
-
-  if g.stato = 'in-corso' and g.turno = p_turno_atteso then
-    update impostore_games
-       set ordine = p_ordine, turno = p_turno, giro = p_giro, stato = p_stato
-     where id = p_partita
-    returning * into g;
-  end if;
-
-  return g;
-end $$;
+-- ⚠️ `avanza_impostore` NON sta piu' qui: vive in `testimone.sql`, che e'
+-- dentro `DA-LANCIARE.sql`.
+--
+-- Ci stava, ed era una trappola armata. La versione di qui aveva la
+-- STESSA FIRMA di quella nuova, quindi `create or replace` la
+-- sovrascriveva: bastava rilanciare questo file — cosa che l'intestazione
+-- dichiara sicura — e il testimone dei trenta secondi smetteva di
+-- funzionare. Nessun errore, nessun messaggio: `turno_da` non veniva piu'
+-- aggiornato e il conto scadeva sempre.
+--
+-- Chi arriva a questa riga su un database nuovo: dopo `schema.sql` va
+-- lanciato `DA-LANCIARE.sql`, che porta questa funzione e le altre due.
+-- Lo dice anche il controllo in fondo a questo file.
 
 -- Il voto dell'Impostore accetta piu' di una accusa: con due impostori
 -- se ne indicano due, altrimenti tocca sceglierne uno e sperare. La
@@ -1031,89 +1021,21 @@ end $$;
 -- L'impostore beccato scrive la sua parola. Una volta sola: la prima
 -- che arriva vale, perche' due che tentano insieme non possono avere due
 -- finali diversi per la stessa partita.
--- Finito il voto d'apertura si distribuiscono le parole e si parte. In
--- una funzione perche' devono farlo in uno solo: due telefoni che
--- assegnano gli impostori insieme darebbero due partite diverse alla
--- stessa gente.
-create or replace function avvia_impostore(
-  p_partita uuid,
-  p_impostori uuid[],
-  p_assegnazioni jsonb,
-  p_ordine uuid[]
-)
-returns impostore_games
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  g impostore_games;
-begin
-  select * into g from impostore_games where id = p_partita for update;
-  if not found then raise exception 'Questa partita non esiste.'; end if;
-
-  if g.stato = 'preparazione' then
-    update impostore_games
-       set impostori = p_impostori,
-           assegnazioni = p_assegnazioni,
-           ordine = p_ordine,
-           stato = 'in-corso'
-     where id = p_partita
-    returning * into g;
-  end if;
-
-  return g;
-end $$;
-
-revoke execute on function avvia_impostore(uuid, uuid[], jsonb, uuid[]) from public;
-grant execute on function avvia_impostore(uuid, uuid[], jsonb, uuid[]) to authenticated;
-
--- Chiude un giro d'accusa: chi esce, e cosa succede dopo. Tutto in una
--- transazione perche' sono la stessa decisione — chi e' fuori, se si
--- riparte e con che ordine — e applicarle a pezzi lascerebbe partite a
--- meta' se qualcosa fallisce nel mezzo.
+-- ⚠️ `avvia_impostore` e `chiudi_accusa` NON stanno piu' qui: vivono in
+-- `apertura.sql` e `giro.sql`, dentro `DA-LANCIARE.sql`.
 --
--- Vale solo dallo stato 'voto': due telefoni che chiudono la stessa
--- accusa insieme eliminerebbero due volte, e il secondo trova la partita
--- gia' andata avanti.
-create or replace function chiudi_accusa(
-  p_partita uuid,
-  p_fuori uuid[],
-  p_stato text,
-  p_ordine uuid[],
-  p_giri int,
-  p_voto uuid
-)
-returns impostore_games
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  g impostore_games;
-begin
-  select * into g from impostore_games where id = p_partita for update;
-  if not found then raise exception 'Questa partita non esiste.'; end if;
-
-  if g.stato = 'voto' then
-    update impostore_games
-       set fuori = p_fuori,
-           stato = p_stato,
-           ordine = coalesce(p_ordine, ordine),
-           giri_totali = coalesce(p_giri, giri_totali),
-           turno = case when p_stato = 'in-corso' then 0 else turno end,
-           giro = case when p_stato = 'in-corso' then 1 else giro end,
-           vote_id = p_voto,
-           rivela_chiesta = '{}'
-     where id = p_partita
-    returning * into g;
-  end if;
-
-  return g;
-end $$;
-
-revoke execute on function chiudi_accusa(uuid, uuid[], text, uuid[], int, uuid) from public;
-grant execute on function chiudi_accusa(uuid, uuid[], text, uuid[], int, uuid) to authenticated;
+-- Le versioni di qui avevano un argomento in meno (quattro invece di
+-- cinque, sei invece di sette). Postgres distingue le funzioni per firma,
+-- quindi non venivano sovrascritte: rilanciando questo file **tornavano
+-- in vita accanto a quelle nuove**, come doppioni. L'app passa sempre
+-- l'elenco intero e finiva su quella giusta, quindi non si rompeva —
+-- restava pero' una funzione morta con lo stesso nome, e per
+-- `chiudi_accusa` bastava una chiamata con sei argomenti per rendere la
+-- scelta ambigua e farla fallire.
+--
+-- Una definizione per funzione, in un file solo. Se qui manca qualcosa,
+-- il posto giusto e' `DA-LANCIARE.sql`, non un secondo `create` aggiunto
+-- qua sotto.
 
 create or replace function tenta_colpo(p_partita uuid, p_membro uuid, p_parola text)
 returns impostore_games
@@ -1172,10 +1094,14 @@ grant execute on function vota_impostore(uuid, uuid, int[]) to authenticated;
 
 revoke execute on function vota(uuid, uuid, int) from public;
 revoke execute on function chiudi_voto(uuid) from public;
-revoke execute on function avanza_impostore(uuid, int, uuid[], int, int, text) from public;
 grant execute on function vota(uuid, uuid, int) to authenticated;
 grant execute on function chiudi_voto(uuid) to authenticated;
-grant execute on function avanza_impostore(uuid, int, uuid[], int, int, text) to authenticated;
+
+-- I permessi di `avanza_impostore` stanno in `testimone.sql`, insieme alla
+-- funzione. Lasciarli qui voleva dire che questo file, su un database
+-- nuovo, sarebbe fallito proprio qui — l'SQL Editor si ferma alla prima
+-- riga che non passa, e tutto quello che viene dopo (compreso il realtime)
+-- non sarebbe stato creato.
 
 -- ------------------------------------------------------------- realtime
 -- Senza questo il feed non si aggiorna da solo sugli altri telefoni.
@@ -1381,3 +1307,17 @@ end $$;
 -- cambiate va avvisato, altrimenti continua a cercare quella vecchia e
 -- risponde "function does not exist" anche se la nuova esiste.
 notify pgrst, 'reload schema';
+
+-- ============================================================
+-- E ADESSO? Questo file da solo lascia fuori tre funzioni.
+-- ============================================================
+select
+  'Dopo questo file' as cosa,
+  case
+    when exists (select 1 from pg_proc where proname = 'avanza_impostore' and pronargs = 6)
+     and exists (select 1 from pg_proc where proname = 'avvia_impostore'  and pronargs = 5)
+     and exists (select 1 from pg_proc where proname = 'chiudi_accusa'    and pronargs = 7)
+    then 'niente, ci sono già tutte: il database è completo'
+    else 'MANCA ANCORA supabase/DA-LANCIARE.sql — lancialo adesso, o l’Impostore non parte'
+  end as devi_fare
+;

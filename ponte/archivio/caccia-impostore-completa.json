@@ -1,0 +1,1193 @@
+{
+  "summary": "Caccia esaustiva ai difetti nell'Impostore: regole, stati, concorrenza, punteggio",
+  "agentCount": 12,
+  "logs": [
+    "Caccia ai difetti dell'Impostore su 6 famiglie"
+  ],
+  "result": {
+    "famiglie": [
+      {
+        "famiglia": "impostore",
+        "difetti": [
+          {
+            "titolo": "L'impostore beccato in un giro precedente viene pagato come impunito, e il finale dice che l'ha fatta franca",
+            "dove": [
+              "src/lib/partiteImpostore.js:241-248 (paga)",
+              "src/lib/impostore.js:194-195 (scoperti/impuniti in esito)",
+              "src/lib/impostore.js:289-305 (vincitore e titolo in raccontaFinale)",
+              "src/components/Impostore.jsx:1031-1040 (Rivelazione)"
+            ],
+            "sequenza": "Otto giocatori, il gruppo vota 2 impostori: A e B. Primo giro, voto d'accusa: tutti indicano A e un innocente D. dopoAccusa manda fuori A (scoperto) e D (eliminato per errore), la partita riparte in-corso e il vote_id torna null. Secondo giro, nuovo voto: i superstiti beccano anche B. dopoAccusa vede restano=0 e scopertiOra=[B], stato 'colpo'. B tenta la parola e sbaglia, si chiude la partita.",
+            "cosaSbaglia": "paga() e raccontaFinale() ricostruiscono chi e' stato beccato SOLO dalle schede dell'ultimo voto (voto.schede), non da partita.fuori. A, che e' stato scoperto nel primo giro, in quelle schede non compare nemmeno fra le opzioni: conteggi[A]=0, quindi non e' fra gli accusati, quindi finisce in `impuniti`. Risultato: ad A vengono accreditati i 5 punti della Legge 'impostore-impunito' pur essendo stato beccato; raccontaFinale, vedendo impuniti.length>0, titola 'L'ha fatta franca' e mette vincitore='impostori' mentre dopoAccusa aveva appena scritto vincitore='gruppo'. La stessa riga sbagliata finisce nello storico. Con due impostori questo NON e' un caso limite: beccarli in due giri diversi e' il modo normale in cui il gruppo vince.",
+            "gravita": "rompe",
+            "rimedio": "Chi e' stato scoperto e' gia' scritto: sono gli impostori che stanno in partita.fuori. Far calcolare scoperti/impuniti a esito() (e a raccontaFinale) su `fuori` invece che sulle accuse dell'ultimo voto, e passare `fuori` anche a premi()/paga(). Per gli indovini, o si accumulano le schede di tutti i giri, o si dichiara che il premio vale solo per l'ultimo voto — ma va deciso, non lasciato al caso.",
+            "verdetto": "reale",
+            "prova": "Confermato riga per riga. `paga` (src/lib/partiteImpostore.js:242-248) costruisce le schede SOLO dall'ultimo voto — `schedePerId(voto?.schede, opzioni)` — ma passa `impostori: partita.impostori` (tutti e due) e `giocatori: partita.giocatori` (tutti e otto). In esito (src/lib/impostore.js:192-195) A ha conteggi[A]=0 perche' nelle schede del secondo giro non compare nemmeno fra le opzioni: `accusati` lo esclude e la riga 195 `impuniti = impostori.filter((id) => !accusati.includes(id))` lo mette fra gli impuniti. Da li' src/lib/impostore.js:240-244 gli accredita `PER_ID['impostore-impunito'].punti` (5, src/config/leggi.js:36). Stessa cosa nel racconto: `raccontaFinale` non guarda `fuori` se non per `impostoriInMaggioranza` (riga 282), quindi riga 289 `r.impuniti.length > 0 ? 'impostori'` e riga 303-304 titolo 'L’ha fatta franca', mentre dopoAccusa aveva calcolato vincitore 'gruppo' (riga 495). Nessuna guardia: `premi()` (riga 210) non riceve nemmeno `fuori`, e la dedupeKey di paga (partiteImpostore.js:251) impedisce il doppio pagamento, non quello sbagliato. Nessuna prova in prove/impostore.mjs copre una partita a piu' giri d'accusa: la sezione 'i punti' (riga 273-303) e 'Come e finita' (riga 607-672) usano un giro solo. Unica imprecisione della segnalazione: dopoAccusa il vincitore 'gruppo' non viene scritto sul database (chiudi_accusa non ha una colonna vincitore), quindi il contrasto e' fra due calcoli, non fra due righe salvate."
+          },
+          {
+            "titolo": "Un voto sparpagliato manda fuori mezza tavolata in un colpo solo",
+            "dove": [
+              "src/lib/impostore.js:185-192 (ordinati, soglia, accusati)",
+              "src/lib/impostore.js:480-499 (dopoAccusa)"
+            ],
+            "sequenza": "Sei giocatori (a…f), due impostori vivi: il voto chiede due nomi a testa. Schede plausibili di un primo giro in cui nessuno sa niente: a→[c,d], b→[c,d], c→[a,e], d→[a,e], e→[a,f], f→[a,b]. Conteggi: a=4, c=2, d=2, e=2, b=1, f=1.",
+            "cosaSbaglia": "soglia viene presa dal k-esimo classificato (k = quanti impostori vivi) e poi accusati = TUTTI quelli che arrivano a quella soglia. Qui il secondo classificato ha 2 voti e con 2 voti ci sono in tre: escono a, c, d, e — quattro persone per due impostori. Restano vivi un impostore e un innocente, impostoriInMaggioranza scatta e la partita finisce li'. Il caso estremo e' peggio: in quattro vivi con un impostore, se i voti girano in cerchio (a→b, b→c, c→d, d→a) tutti hanno 1 voto, la soglia e' 1 e ESCONO TUTTI E QUATTRO — la partita salta al colpo di coda con zero giocatori vivi. Con quattro persone e' circa una prima votazione su nove. Il pareggio a due era una scelta dichiarata ('a parita' si accusa'), ma qui non c'e' nessun tetto: puo' uscire piu' gente di quanti impostori ci sono, fino a tutti.",
+            "gravita": "rompe",
+            "rimedio": "Mettere un tetto: se il pareggio sulla soglia porta accusati.length oltre il numero di impostori vivi, decidere una regola sola e scriverla (non esce nessuno e si fa un altro giro, oppure escono solo quelli strettamente sopra la soglia). In ogni caso non permettere mai che accusati contenga tutti i vivi. Vale la pena aggiungere una prova con i voti in cerchio: oggi in prove/impostore.mjs non c'e'.",
+            "verdetto": "reale",
+            "prova": "La soglia e' presa dal k-esimo classificato e poi applicata come `>=` a tutti: src/lib/impostore.js:189-192, `soglia = conteggi[ordinati[Math.min(impostori.length, ordinati.length) - 1]]` e `accusati = giocatori.filter((id) => conteggi[id] >= soglia && conteggi[id] > 0)`. Nessun tetto sul numero di accusati. Rifatto il conto sull'esempio: con a→4, c→2, d→2, e→2, b→1, f→1 gli ordinati sono a,c,d,e,b,f, Math.min(2,6)-1=1 → ordinati[1]='c' → soglia=2 → accusati = a,c,d,e, quattro persone per due impostori. Il caso circolare in quattro e' peggio: tutti a 1 voto, ordinati[0] ha 1, soglia=1, escono tutti e quattro; dopoAccusa (riga 486-499) mette `fuori` = tutti, `restano.length === 0` e stato 'colpo' con zero vivi. siRiparte non interviene (riga 101: senza richieste di un altro giro torna subito false). Nessuna prova lo copre: prove/impostore.mjs:213-231 verifica solo un caso in cui i due piu' votati sono esattamente due."
+          },
+          {
+            "titolo": "Il voto vecchio resta in mano: il tasto \"Rivela\" chiude il giro con le schede di prima",
+            "dove": [
+              "src/hooks/useImpostore.js:102-105 (l'effetto non azzera mai `voto`)",
+              "src/hooks/useImpostore.js:180-188 (rivela passa `voto` a chiudiAccusa)",
+              "src/components/Impostore.jsx:714-733 (opzioni e tuttiDentro presi dal voto in memoria)",
+              "src/components/Impostore.jsx:861-864 (il tasto Rivela)"
+            ],
+            "sequenza": "Primo giro d'accusa, tutti votano, qualcuno preme Rivela. chiudiAccusa manda vote_id a null e la partita torna 'in-corso'. Sul telefono di chiunque, `voto` resta l'oggetto del giro appena chiuso. Si gioca il secondo giro, l'ultimo 'Fatto' porta lo stato a 'voto' con vote_id ancora null. Accusa si rimonta e, nel tempo che apriVoto crea il voto nuovo e caricaVoto lo scarica (due chiamate di rete: su una linea lenta anche qualche secondo), la schermata mostra il voto VECCHIO: hoVotato=true ('Hai votato'), e siccome tutti i vivi di adesso stanno gia' in hannoVotato di prima, tuttiDentro e' true e compare 'Rivela'. Chi lo tocca chiama chiudiAccusa(partita, votoVecchio).",
+            "cosaSbaglia": "Il giro nuovo viene chiuso con le schede del giro precedente: la guardia `if (!voto?.opzioni)` passa, il database accetta perche' lo stato e' 'voto', e qualcuno viene eliminato in base a un voto che in questo giro nessuno ha espresso. Nel primissimo giro d'accusa la stessa falla mostra addirittura il voto d'apertura: opzioni ['1','2'], due tessere intestate a 'Qualcuno', nessun tasto 'un altro giro', e se al setup avevano votato tutti compare 'Rivela' — che chiude il giro senza accusare nessuno e lo fa ricominciare da capo.",
+            "gravita": "rompe",
+            "rimedio": "In useImpostore, quando partita.votoId (o votoAperturaId, secondo lo stato) e' null o diverso da voto.id, azzerare `voto` invece di tenerlo. E in Accusa non renderizzare niente finche' voto?.id !== partita.votoId — la Rotella 'Apro il voto' c'e' gia', basta che copra anche questo caso.",
+            "verdetto": "reale",
+            "prova": "L'effetto in src/hooks/useImpostore.js:102-105 chiama `caricaVoto` solo `if (quale && quale !== voto?.id)`: quando `partita.votoId` torna null (chiudiAccusa, src/lib/partiteImpostore.js:281 manda `p_voto: null` ripartendo) `quale` e' null e `voto` resta l'oggetto del giro chiuso. Accusa si rimonta con quello: `opzioni = voto?.opzioni ?? partita.giocatori` (Impostore.jsx:714), `hoVotato` dalle hannoVotato vecchie (735) e `tuttiDentro = tuttiHannoVotato(partita, voto?.hannoVotato)` (733) — vero, perche' i vivi di adesso sono un sottoinsieme di chi aveva votato prima — quindi compare 'Rivela' (861-864). `rivela` passa quel voto (useImpostore.js:184) e la guardia di chiudiAccusa `if (!voto?.opzioni)` (partiteImpostore.js:267) passa: schede vecchie, stato 'voto' sul database, qualcuno esce. Nessun confronto fra `voto.id` e `partita.votoId` da nessuna parte. Confermato anche il caso del primo giro: dopo `avvia` lo stato e' 'in-corso' con votoId null, quindi `quale` resta null e in memoria c'e' ancora il voto d'apertura con opzioni ['1','2'] — indiceAltroGiro = -1 (nessun tasto 'un altro giro', 822) e schedePerId mappa su '1'/'2' che non sono giocatori, quindi massimo=0, accusati=[] e il giro riparte senza accusare nessuno."
+          },
+          {
+            "titolo": "Nello storico le schede vengono lette con l'elenco sbagliato, e i numeri si sfasano",
+            "dove": [
+              "src/lib/partiteImpostore.js:83-91 (leggiStorico prende ballots ma non options)",
+              "src/components/Impostore.jsx:487-494 (schedePerId(p.schede, p.giocatori))",
+              "src/components/Impostore.jsx:151-159 (FinestraFinale dallo storico: voto senza opzioni)",
+              "src/components/Impostore.jsx:1034 (Rivelazione: voto?.opzioni ?? partita.giocatori)"
+            ],
+            "sequenza": "Partita in sei [a,b,c,d,e,f]. Primo giro: esce b. Secondo giro: il voto viene aperto con opzioni [a,c,d,e,f,'altro-giro']. c vota la posizione 3, che in quel voto e' 'e'. La partita finisce. Il giorno dopo si apre la sezione Impostore e si guarda 'Le partite di prima'.",
+            "cosaSbaglia": "leggiStorico scarica solo `ballots` e lo storico rimappa le posizioni su `p.giocatori`, cioe' sull'elenco INTERO: la posizione 3 diventa 'd' invece di 'e'. Dal secondo giro in poi ogni indice e' spostato di quanti sono usciti prima di lui, e raccontaFinale viene ricalcolato su schede fasulle — quindi lo storico puo' mostrare il titolo sbagliato (Beccato / L'ha fatta franca invertiti) e la finestra riaperta attribuisce l'accusa alla persona sbagliata. E' esattamente la trappola 'le schede sono numeri di posizione' gia' costata due volte: qui e' rimasta in piedi nel percorso dello storico, dove nessuno la guarda.",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere `options` alla select di leggiStorico, portarselo dietro in ogni partita (p.opzioniVoto) e usarlo in schedePerId sia nell'elenco sia nella FinestraFinale. Finche' non c'e', meglio non ricalcolare niente e mostrare solo la parola e chi era l'impostore.",
+            "verdetto": "reale",
+            "prova": "`leggiStorico` scarica `.select('id, ballots')` (src/lib/partiteImpostore.js:84-85): le options di quel voto non le prende. Lo Storico rimappa gli indici sull'elenco intero — `schedePerId(p.schede, p.giocatori)` (src/components/Impostore.jsx:490) — e la finestra riaperta passa `voto={{ schede: daStorico.schede }}` senza opzioni (153), cosi' Rivelazione ripiega su `voto?.opzioni ?? partita.giocatori` (1034). Dal secondo giro in poi le opzioni sono `opzioniDelVoto` = vivi + 'altro-giro' (src/lib/impostore.js:84-86), quindi ogni indice slitta di quanti sono usciti prima: con [a,b,c,d,e,f] e b fuori, l'indice 3 vale 'e' nel voto e 'd' nello storico. Confermato che il primo giro invece combacia (vivi = giocatori nello stesso ordine), quindi il difetto compare solo nelle partite a piu' giri — esattamente quelle nuove. E' la stessa trappola gia' evitata in paga (commento a partiteImpostore.js:238-240), rimasta aperta sul percorso dello storico. Nessuna prova la copre: prove/impostore.mjs:182-199 verifica schedePerId con l'elenco giusto."
+          },
+          {
+            "titolo": "Il contatore dei giri e' bloccato: dopo il primo dice \"Giro 1 di 2\" per sempre",
+            "dove": [
+              "supabase/eliminazione.sql:48-49 (turno e giro azzerati)",
+              "supabase/schema.sql:1104-1105",
+              "src/lib/impostore.js:474-476 e 516-518 (dopoAccusa calcola giro+1)",
+              "src/lib/partiteImpostore.js:273-282 (chiudiAccusa non manda mai il giro)",
+              "src/components/Impostore.jsx:640 e 654-655"
+            ],
+            "sequenza": "Si gioca il primo giro (l'intestazione dice 'Giro 1 di 1'). Al voto tre persone chiedono un altro giro e vincono: chiudi_accusa scrive stato 'in-corso'. Si gioca il secondo giro: l'intestazione dice 'Giro 1 di 2'. Terzo, quarto, quinto giro: sempre 'Giro 1 di 2'.",
+            "cosaSbaglia": "dopoAccusa calcola giro=(giro??1)+1, ma chiudiAccusa quel numero non lo manda: la funzione del database ha solo p_giri (i giri totali) e riscrive `giro = 1` a ogni riapertura. Cosi' partita.giro resta 1 per sempre e giri_totali resta inchiodato a 2, perche' viene ricalcolato ogni volta da un giro che vale sempre 1. L'intestazione e l'aria-label raccontano una partita al secondo giro mentre il gruppo e' al quinto, e 'di 2' promette una fine che non arrivera' mai — i giri li decide il voto, non un totale. quantiMancano() lavora sugli stessi numeri e infatti non e' piu' usato da nessuno.",
+            "gravita": "confonde",
+            "rimedio": "O si manda il giro vero (aggiungere p_giro a chiudi_accusa e scrivere quello che ritorna dopoAccusa), o si smette di far finta che ci sia un totale: mostrare solo 'Giro N' e togliere giri_totali dalla schermata. La seconda e' piu' onesta con le regole nuove.",
+            "verdetto": "reale",
+            "prova": "chiudi_accusa riscrive `giro = case when p_stato = 'in-corso' then 1 else giro end` (supabase/eliminazione.sql:49, identica in supabase/schema.sql:1105) e nella firma non c'e' nessun p_giro: solo p_giri, i totali. chiudiAccusa infatti manda solo `p_giri: esitoGiro.giriTotali` (src/lib/partiteImpostore.js:278) e butta via `esitoGiro.giro`. Siccome dopoAccusa calcola `giro: (partita.giro ?? 1) + 1` (src/lib/impostore.js:474-475 e 517-518) partendo sempre da 1, giri_totali vale 2 a ogni riapertura e giro torna 1: l'intestazione (Impostore.jsx:640 aria-label e 654-655) dice 'Giro 1 di 2' dal secondo giro in avanti, per sempre. Verificato anche il primo giro: creaPartita mette giri_totali = IMPOSTORE.giriTotali = 1 e avvia_impostore lo conferma (supabase/apertura.sql:45), quindi si parte davvero da 'Giro 1 di 1'. Unica imprecisione: `quantiMancano` e' ancora chiamata a Impostore.jsx:553, ma il risultato finisce in una variabile `mancano` che non compare da nessun'altra parte — codice morto, non funzione morta."
+          },
+          {
+            "titolo": "Con due impostori vivi si puo' chiedere un altro giro E accusare nella stessa scheda",
+            "dove": [
+              "src/components/Impostore.jsx:740-749 (alterna)",
+              "src/components/Impostore.jsx:753-755 (chiediUnAltroGiro)",
+              "src/components/Impostore.jsx:845 (il tasto Vota resta acceso)",
+              "src/lib/impostore.js:99-110 (siRiparte conta la stessa scheda due volte)"
+            ],
+            "sequenza": "Sei vivi, due impostori ancora in gioco, quindi quanti=2. Nel voto d'accusa tocco 'Non ne so abbastanza — un altro giro' (scelti diventa [indiceAltroGiro], lunghezza 1). Poi tocco anche la faccia di A: alterna vede prima.length=1 < quanti=2 e la aggiunge. Il tasto Vota e' acceso perche' chiedoAncora e' true. Mando la scheda [altro-giro, A].",
+            "cosaSbaglia": "La stessa scheda entra nel conteggio di chi vuole un altro giro E nel conteggio delle accuse contro A. siRiparte confronta i due numeri come se venissero da persone diverse, quindi tre schede miste di questo tipo alzano A a un livello che il 'un altro giro' non riesce piu' a superare — cioe' chi ha detto 'non ne so abbastanza' contribuisce a far uscire qualcuno. Il commento del codice dice il contrario ('mescolarle vorrebbe dire votare due cose in una volta'), e con un impostore solo la guardia regge per caso: e' solo perche' prima.length >= quanti blocca al primo tocco.",
+            "gravita": "confonde",
+            "rimedio": "Rendere l'esclusione esplicita invece di lasciarla al conto: in alterna, se scelti contiene indiceAltroGiro, ripartire da [] prima di aggiungere la persona. E per sicurezza scartare in siRiparte/esito le accuse che arrivano da una scheda che contiene ALTRO_GIRO.",
+            "verdetto": "reale",
+            "prova": "`chiediUnAltroGiro` azzera e mette solo [indiceAltroGiro] (src/components/Impostore.jsx:753-755), ma `alterna` non sa niente di ALTRO_GIRO: controlla solo `if (prima.length >= quanti) return prima` (746), quindi con quanti=2 e prima=[indiceAltroGiro] (lunghezza 1) aggiunge la faccia. Il tasto Vota resta acceso perche' `disabled={(chiedoAncora ? false : scelti.length !== quanti) || inCorso}` (845). La scheda [altro-giro, A] entra due volte in siRiparte: riga 100/90-93 di src/lib/impostore.js la conta in `voglionoAncora`, e il ciclo delle righe 104-108 la conta anche in conteggi[A], che poi vengono confrontati come se venissero da persone diverse (riga 109). Confermata anche la parte sulla guardia per caso: con un impostore solo `quanti` vale 1 e `prima.length >= quanti` blocca al primo tocco. Il commento alle righe 751-752 dichiara il contrario di quello che il codice permette. Nessuna prova lo copre: prove/impostore.mjs:727-772 usa solo schede pure (o accusa o altro giro), mai miste."
+          },
+          {
+            "titolo": "Il testimone non riparte all'inizio di un giro nuovo: il primo che parla non e' protetto",
+            "dove": [
+              "supabase/eliminazione.sql:43-51 (chiudi_accusa non tocca turno_da)",
+              "supabase/schema.sql:1099-1107",
+              "src/lib/impostore.js:127-139 (secondiDelTestimone / puoAvanzare)"
+            ],
+            "sequenza": "Finisce il primo giro, si vota, qualcuno rivela. chiudi_accusa scrive ordine nuovo, turno 0 e stato 'in-corso', ma lascia turno_da all'ultimo avanza_impostore — cioe' a prima del voto, che sono passati minuti fa. Il secondo giro si apre e il primo della fila non ha ancora aperto bocca: chiunque puo' gia' premere 'Fatto, avanti'.",
+            "cosaSbaglia": "secondiDelTestimone calcola 30 - (adesso - turnoDa), che qui e' gia' abbondantemente scaduto: il tasto nasce acceso per tutti e nessuno vede il conto alla rovescia. Il testimone protegge quindi ogni turno tranne il primo di ogni giro dopo il primo — e il primo di un giro nuovo, appena rimescolato, e' proprio quello che rischia di piu' di essere saltato da chi ha il dito veloce.",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere turno_da = now() all'update di chiudi_accusa quando p_stato = 'in-corso', come gia' fanno avvia_impostore e avanza_impostore.",
+            "verdetto": "reale",
+            "prova": "chiudi_accusa aggiorna fuori, stato, ordine, giri_totali, turno, giro, vote_id e rivela_chiesta, e non tocca turno_da (supabase/eliminazione.sql:43-51, identica in supabase/schema.sql:1099-1107). L'unico posto che lo scrive e' avanza_impostore (`turno_da = now()`, supabase/testimone.sql:52) e avvia_impostore (supabase/apertura.sql:47). Quindi ripartendo dopo un voto il turno_da e' quello dell'ultimo 'Fatto' del giro precedente, e `secondiDelTestimone` (src/lib/impostore.js:127-131) restituisce 0: `puoAvanzare` (134-139) lascia passare chiunque e il tasto nasce acceso senza conto alla rovescia (Impostore.jsx:677-686). Confermato per differenza: il primo turno della PRIMA partita e' protetto, perche' avvia_impostore il turno_da lo mette. Il buco e' solo sul primo turno dei giri successivi."
+          },
+          {
+            "titolo": "Durante il giro lo schermo dice \"2 impostori\" anche quando ne resta vivo uno",
+            "dove": [
+              "src/components/Impostore.jsx:656-658 (partita.impostori.length)",
+              "src/components/Impostore.jsx:711-714 e 777-778 (Accusa usa impostoriVivi)"
+            ],
+            "sequenza": "Due impostori, primo voto: il gruppo becca A. Si riparte con i superstiti. Durante il secondo giro l'intestazione mostra '2 impostori'. Finito il giro, la schermata del voto si intitola 'Vota l'impostore' e accetta un nome solo.",
+            "cosaSbaglia": "La riga sotto i pallini conta gli impostori della partita, non quelli ancora in gioco, mentre tutto il resto del gioco (quante accuse servono, il titolo del voto, la fine per numeri) ragiona sui vivi. Il commento accanto dice che quel numero sta li' 'per ragionare': ragionandoci sopra il gruppo conta un impostore che e' seduto fuori da mezz'ora, e poi al voto scopre di doverne indicare uno solo.",
+            "gravita": "confonde",
+            "rimedio": "Mostrare impostoriVivi(partita).length, e semmai scrivere accanto quanti erano all'inizio ('1 impostore, su 2').",
+            "verdetto": "reale",
+            "prova": "Confermata l'incoerenza: Impostore.jsx:657 conta `partita.impostori.length`, mentre Accusa usa `impostoriVivi(partita).length` per quante accuse servono (719), per il titolo (777-778) e per il tasto (845), e dopoAccusa ragiona su `impostoriVivi` (src/lib/impostore.js:481). Nessuna prova e nessuna guardia. Va pero' detto che la riga 657 non dice il falso in senso stretto — gli impostori della partita SONO due, e il commento alle righe 651-653 dichiara di volere proprio quel numero — e che il vero problema informativo sta dall'altro lato: `quanti = impostoriVivi(partita).length` fa scoprire ai vivi che un impostore e' gia' uscito, cosa che durante la partita non sanno da nessun'altra parte (la schermata Fuori, che rivela tutto, la vedono solo gli usciti, Impostore.jsx:123). Difetto vero, ma la direzione della correzione e' l'opposto di quella suggerita."
+          },
+          {
+            "titolo": "La schermata d'apertura racconta ancora le regole vecchie",
+            "dove": [
+              "src/components/Impostore.jsx:378-381 (\"Dopo due giri si vota\")",
+              "src/components/Impostore.jsx:433-440 (\"Ci sarà un impostore\")"
+            ],
+            "sequenza": "Si apre la sezione Impostore, si scelgono i giocatori. Sotto il tasto 'Comincia in 8' compare 'Ci saranno due impostori. Nessuno saprà chi.' Si tocca Comincia e la schermata dopo chiede al gruppo quanti impostori vuole, con 1 e 2 in ballo.",
+            "cosaSbaglia": "Due frasi descrivono regole che non esistono piu'. 'Dopo due giri si vota chi sembra fuori posto' e' falso: si vota alla fine di ogni giro, e quanti giri farne lo decide il voto stesso. E la nota sul numero di impostori annuncia come deciso quello che e' solo la proposta evidenziata nel voto successivo: se il gruppo vota diversamente, l'app aveva appena detto un'altra cosa.",
+            "gravita": "confonde",
+            "rimedio": "Riscrivere le due frasi sulle regole nuove: 'Alla fine di ogni giro si vota: si accusa, oppure si chiede un altro giro' e 'Quanti impostori lo decidete voi al voto — la proposta e' due'.",
+            "verdetto": "reale",
+            "prova": "Verificate tutte e due le frasi. Impostore.jsx:380: 'Dopo due giri si vota chi sembra fuori posto' — falso, `avanza` manda al voto alla fine di ogni giro (src/lib/impostore.js:68-73) e quanti giri fare lo decide siRiparte, come dice anche il commento a src/config/impostore.js:7-14 e la prova 'il giro finisce sempre col voto' (prove/impostore.mjs:770). Impostore.jsx:433-440 annuncia 'Ci saranno due impostori' leggendo `IMPOSTORE.quantiImpostori(giocatori.length)`, che e' solo la proposta evidenziata nel voto successivo (config/impostore.js:20-24, e la schermata Preparazione la usa come `consigliata`, Impostore.jsx:214): se il gruppo vota diversamente, sceltaVincente cambia il numero e l'app aveva appena detto un'altra cosa. Non e' un difetto stilistico: sono due regole dichiarate che il motore non applica."
+          },
+          {
+            "titolo": "Il voto d'accusa scade dopo mezz'ora e chi non ha ancora votato resta chiuso fuori",
+            "dove": [
+              "src/config/impostore.js:31 (minutiVoto: 30)",
+              "src/lib/partiteImpostore.js:197 e 210 (expires_at sul voto d'accusa)",
+              "src/lib/voti.js:76-88 (chiudiScaduti)",
+              "supabase/schema.sql:1008 (vota_impostore rifiuta i voti chiusi)"
+            ],
+            "sequenza": "Il voto d'accusa si apre, il gruppo si mette a discutere (o esce a fumare) e passa piu' di mezz'ora con il voto aperto. Nel frattempo qualcuno riapre l'app da zero: all'avvio App.jsx chiama chiudiScaduti, che trova il voto dell'Impostore fra quelli con expires_at passato e lo chiude. Chi prova a votare adesso riceve l'errore 'Il voto e'' chiuso'.",
+            "cosaSbaglia": "Il voto d'accusa viene chiuso da una manutenzione pensata per i sondaggi logistici, e nessuno puo' piu' votare quel giro; l'app non lo spiega, mostra solo l'errore sotto il titolo. La partita si sblocca solo passando da 'Chiedi di rivelare' (chiudendo il giro con le schede parziali) o annullando tutto: nessuna delle due e' scritta da nessuna parte, e chi non aveva ancora votato ha perso il turno senza colpa.",
+            "gravita": "raro",
+            "rimedio": "Escludere la categoria 'impostore' da chiudiScaduti (li' la scadenza serve solo a non lasciare righe appese, e ci pensa gia' l'abbandono), oppure riaprire/rifare il voto quando risulta chiuso mentre la partita e' ancora nello stato 'voto'.",
+            "verdetto": "reale",
+            "prova": "La catena regge tutta: il voto d'accusa nasce con `expires_at` a IMPOSTORE.minutiVoto = 30 minuti (src/lib/partiteImpostore.js:197 e 210, src/config/impostore.js:31); `chiudiScaduti` seleziona per trip_id, closed_at null e expires_at passato SENZA filtrare la categoria (src/lib/voti.js:79-84), quindi prende anche category 'impostore'; chiudi_voto lo chiude perche' `now() >= v.expires_at` (supabase/schema.sql:944); e vota_impostore poi rifiuta con 'Il voto e'' chiuso.' (supabase/schema.sql:1008), che finisce nell'`avviso` sotto il titolo (Impostore.jsx:762 e 789). Confermato che parte all'avvio dell'app: src/App.jsx:249. Confermato anche che la partita non e' morta — chiudiAccusa non guarda closed_at e chiude con le schede parziali — ma nessuna schermata lo spiega. 'raro' e' la severita' giusta: servono trenta minuti sullo stesso voto, qualcuno che riapre l'app in quella finestra e qualcuno che non aveva ancora votato."
+          }
+        ]
+      },
+      {
+        "famiglia": "Impostore — transizioni di stato, chiusura della partita e pagamento dei punti",
+        "difetti": [
+          {
+            "titolo": "Chi paga guarda solo l'ultimo voto: un impostore beccato al primo giro viene pagato come «impunito» e il finale dice che ha vinto lui",
+            "dove": [
+              "src/lib/partiteImpostore.js:241-255 (paga)",
+              "src/lib/impostore.js:194-195 (scoperti/impuniti in esito)",
+              "src/lib/impostore.js:281-305 (raccontaFinale: perNumeri e vincitore)",
+              "src/components/Impostore.jsx:1104-1110 (il cartellino «impunito +2»)"
+            ],
+            "sequenza": "Otto giocatori, il gruppo vota 2 impostori (a e b). Giro 1: si parla, si va al voto, tutti accusano a (impostore) e d (innocente). Rivela → chiudiAccusa → dopoAccusa mette fuori a e d, resta vivo b, stato torna 'in-corso' e vote_id torna null. Giro 2: si parla coi sei superstiti, si va al voto, si apre V2 con opzioni [b,c,e,f,g,h,ALTRO_GIRO], tutti accusano b. Rivela → dopoAccusa: scopertiOra=['b'], restano=0 → stato 'colpo'. b tenta il colpo di coda e sbaglia la parola → chiudiPartita → paga(partita, V2).",
+            "cosaSbaglia": "paga() chiama premi() con impostori = partita.impostori (TUTTI, a e b) e con le schede del SOLO ultimo voto. esito() calcola impuniti = impostori che non compaiono negli accusati di quel voto: 'a' non era fra le opzioni di V2, quindi ha zero voti e risulta impunito. Risultato: (1) all'impostore 'a', beccato al primo giro, viene accreditata la Legge 'impostore-impunito'; (2) chi aveva indovinato 'a' al primo giro non prende niente, perché indovini si legge solo su V2; (3) raccontaFinale, che usa lo stesso esito, vede impuniti.length > 0 e conclude vincitore='impostori', titolo «L'ha fatta franca» — su una partita in cui il gruppo li ha beccati tutti e due; (4) nella rivelazione accanto ad 'a' compare «impunito +2» invece di «scoperto». Il campo `fuori`, che è l'unico posto dove è scritto chi era già stato beccato, non lo guarda né esito() né premi(). Nessuna prova in prove/impostore.mjs copre una partita su più giri d'accusa: le prove su esito/premi/raccontaFinale sono tutte a giro singolo.",
+            "gravita": "rompe",
+            "rimedio": "premi()/raccontaFinale devono ricevere anche `fuori` e considerare scoperto ogni impostore che è in `fuori`, non solo quelli accusati nell'ultimo voto; gli impuniti sono gli impostori ancora vivi a fine partita. Per gli indovini serve accumulare le schede di tutti i giri (o segnare su impostore_games chi ha indovinato a ogni chiusura d'accusa), altrimenti il primo giro resta non pagato.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Quando vote_id torna null il telefono tiene in mano il voto vecchio, e la schermata d'accusa si costruisce su quello: il tasto «Rivela» annulla il giro senza che nessuno abbia votato",
+            "dove": [
+              "src/hooks/useImpostore.js:102-105 (l'effetto ricarica solo se `quale` è truthy: non azzera mai `voto`)",
+              "src/components/Impostore.jsx:714-738 (opzioni, hoVotato, tuttiDentro presi dal voto in mano)",
+              "src/components/Impostore.jsx:861-864 (il tasto «Rivela» quando tuttiDentro)",
+              "src/lib/partiteImpostore.js:261-292 (chiudiAccusa controlla solo che il voto abbia `opzioni`, non che sia quello del giro)"
+            ],
+            "sequenza": "Caso A, capita a ogni partita. Si crea la partita → stato 'preparazione', il telefono carica il voto d'apertura S (opzioni ['1','2']). Si vota, la partita parte, stato 'in-corso' e votoId resta null: l'effetto dell'hook vede `quale = null` e non tocca niente, quindi `voto` è ancora S. Finito il giro, avanza() porta a 'voto'. Accusa monta e riceve S: nella griglia compaiono due finti giocatori «Qualcuno» (le opzioni '1' e '2'), «Hai votato» è acceso per chi aveva votato all'apertura, e serve = quantiPerRivelare(2) = 2 invece di 5. Se all'apertura avevano votato tutti, tuttiHannoVotato(partita, S.hannoVotato) è vero e compare il tasto «Rivela». Chi lo tocca chiama chiudiAccusa(partita, S): il controllo `if (!voto?.opzioni)` passa, schedePerId mappa le schede su ['1','2'] e restituisce nomi che non sono giocatori, esito conta zero per tutti, accusati = [] → dopoAccusa rimanda a 'in-corso' con giro+1. Il giro appena finito è buttato e si ricomincia a parlare, senza un errore.\nCaso B, peggiore. Giro 1 chiuso con un'eliminazione: chiudi_accusa mette vote_id a null, ma `voto` sul telefono resta V1. Giro 2, si torna a 'voto': Accusa monta di nuovo con V1 (opzioni = tutti gli otto), tuttiDentro è vero perché i sei superstiti avevano tutti votato al giro 1, e «Rivela» è acceso subito. Chi lo tocca fa rigiocare le schede del giro 1 sui vivi di adesso: se al giro 1 un superstite aveva preso dei voti (per esempio 'f' con 2 voti, sotto la soglia di allora), adesso con un impostore vivo solo la soglia scende e 'f' viene eliminato per voti dati un giro prima, senza che al giro 2 abbia votato nessuno.",
+            "cosaSbaglia": "L'hook non ha modo di dire «il voto che avevo non vale più»: l'effetto che ricarica parte solo quando c'è un id nuovo, e nel buco fra 'voto' e apriVoto (due-tre andate e ritorni sulla rete, di più su un telefono lento o su chi riceve la transizione dal realtime) la schermata d'accusa lavora sul voto sbagliato. Non è solo estetica: opzioni, hoVotato, il conteggio «Hanno votato N su M», la soglia per chiedere la rivelazione e soprattutto il tasto «Rivela» escono tutti da lì, e rivela() passa quello stesso oggetto a chiudiAccusa, che lo accetta perché controlla solo che abbia un campo `opzioni`. Lo stato sul database è 'voto', quindi chiudi_accusa applica davvero. Il commento in chiudiAccusa mette in guardia dall'oggetto di tipo sbagliato, non dal voto del giro sbagliato.",
+            "gravita": "rompe",
+            "rimedio": "Nell'hook, azzerare `voto` quando `quale` è null (o quando partita.votoId cambia), e in Accusa non renderizzare niente finché `voto.id !== partita.votoId`. In chiudiAccusa aggiungere il controllo forte: rifiutare se il voto passato non è quello con cui la partita è arrivata a 'voto' (confronto fra voto.id e partita.votoId), come già si fa per `opzioni`.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Lo storico rilegge le schede con l'elenco dei giocatori invece delle opzioni del voto: ogni partita durata più di un giro d'accusa viene raccontata al contrario",
+            "dove": [
+              "src/lib/partiteImpostore.js:83-91 (legge dai votes solo `id, ballots`: le `options` non vengono nemmeno chieste)",
+              "src/components/Impostore.jsx:487-494 (schedePerId(p.schede, p.giocatori))",
+              "src/components/Impostore.jsx:151-158 (la finestra riaperta passa voto={{ schede }}, senza opzioni)",
+              "src/components/Impostore.jsx:1034 (voto?.opzioni ?? partita.giocatori)"
+            ],
+            "sequenza": "Otto giocatori [a..h], impostori a e b. Giro 1: fuori 'a' (impostore) e 'd' (innocente). Giro 2: apriVoto crea V2 con opzioni [b,c,e,f,g,h,ALTRO_GIRO]; 'c' accusa 'b' e la sua scheda sul database è {c: [0]}. La partita finisce. Sulla schermata di fine partita il finale è giusto, perché lì il telefono ha V2 con le sue opzioni. Poi si chiude la finestra e si guarda la stessa partita nell'elenco «Le partite di prima» — o la si riapre toccandola.",
+            "cosaSbaglia": "leggiStorico recupera le schede ma non le opzioni del voto, e Storico le mappa con p.giocatori. L'indice 0 di V2 vale 'b', ma su p.giocatori vale 'a': la scheda «c ha accusato b» diventa «c ha accusato a». Da lì raccontaFinale calcola accusati, scoperti, impuniti e indovini tutti sbagliati, e la stessa partita compare col titolo opposto a quello che aveva appena mostrato la rivelazione — tipicamente «L'ha fatta franca» su una partita vinta dal gruppo. Vale anche per la finestra riaperta dallo storico, che passa un voto senza `opzioni` e finisce sul ripiego `?? partita.giocatori`. Nelle partite a giro d'accusa singolo il difetto non si vede, perché opzioniDelVoto restituisce i giocatori nello stesso ordine più ALTRO_GIRO in coda: è esattamente il caso che le prove esistenti coprono, e per questo non è mai saltato fuori.",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere `options` alla select dei votes in leggiStorico, portarlo nell'oggetto partita e usare quello in schedePerId sia in Storico sia nella finestra riaperta. In alternativa togliere il ripiego `?? partita.giocatori` e non raccontare niente quando le opzioni mancano: quel ripiego è la stessa trappola che è già costata due volte.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "chiudi_accusa riazzera `giro` a 1 e mette `giri_totali` a 2: l'intestazione dice «Giro 1 di 2» per sempre, anche al quinto giro",
+            "dove": [
+              "supabase/eliminazione.sql:49 e supabase/schema.sql:1105 (giro = case when p_stato = 'in-corso' then 1 else giro end)",
+              "src/lib/impostore.js:473-475 e 516-518 (dopoAccusa restituisce giro e giriTotali = giro+1)",
+              "src/lib/partiteImpostore.js:273-282 (manda solo p_giri, il `giro` calcolato non viene mai spedito)",
+              "src/components/Impostore.jsx:640 e 654-659 (i pallini e la riga «Giro N di M»)",
+              "src/components/Impostore.jsx:378-381 («Dopo due giri si vota chi sembra fuori posto»)"
+            ],
+            "sequenza": "Partita normale. Primo giro: la riga dice «Giro 1 di 1». Al voto la maggioranza chiede «Non ne so abbastanza — un altro giro». chiudiAccusa manda p_giri = 2 e stato 'in-corso'. Secondo giro: la riga dice «Giro 1 di 2». Al voto chiedono di nuovo un altro giro: dopoAccusa legge partita.giro (che il database ha rimesso a 1) e ricalcola p_giri = 2. Terzo giro: «Giro 1 di 2». Quarto, quinto: sempre «Giro 1 di 2».",
+            "cosaSbaglia": "Il motore e il database si contraddicono: dopoAccusa fa salire il giro, la funzione SQL lo riporta a 1 a ogni ripartenza, e partiteImpostore non spedisce nemmeno il valore calcolato. Siccome giri_totali viene ricavato da partita.giro — che è sempre 1 — resta inchiodato a 2. Il gruppo non ha nessun modo di sapere a che giro è, e in più l'app annuncia un totale di due giri che le regole nuove hanno abolito (i giri non si votano più, si decide a ogni fine giro). Anche la spiegazione nella schermata di apparecchiatura dice ancora «Dopo due giri si vota», mentre adesso si vota dopo ogni giro. La prova «e il giro sale invece di azzerarsi» in prove/impostore.mjs:511 verifica la funzione pura e passa, quindi il disallineamento col database non viene visto da nessuno.",
+            "gravita": "confonde",
+            "rimedio": "Passare il `giro` calcolato da dopoAccusa come parametro alla funzione SQL e scriverlo, invece di forzare 1; e togliere il «di M» dall'intestazione, che con le regole nuove non ha più un totale da mostrare (basta «Giro N»). Correggere anche il testo dell'apparecchiatura.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Lo stato 'colpo' non ha via d'uscita: se chi deve tentare sparisce, la partita resta appesa e l'unico modo di chiuderla butta via i punti di tutti",
+            "dove": [
+              "src/components/Impostore.jsx:955-966 (il ramo di chi non tenta: nessun bottone, solo la rotella «Un attimo di silenzio»)",
+              "src/lib/partiteImpostore.js:297-305 (tentaColpo)",
+              "supabase/schema.sql:1130-1132 (solo un impostore può chiamare tenta_colpo)",
+              "src/lib/partiteImpostore.js:316-328 (abbandonaPartita: l'unica altra uscita, e non paga niente)"
+            ],
+            "sequenza": "Il gruppo becca tutti gli impostori all'ultimo voto. dopoAccusa restituisce stato 'colpo' e la partita ci si ferma. All'unico impostore scoperto si scarica il telefono (o chiude l'app, o semplicemente non gli va di tentare e mette via il telefono). Tutti gli altri restano sulla schermata «Ci prova Marco — Un attimo di silenzio» con la rotella che gira. Non c'è nessun bottone. L'unica cosa che si può toccare è «Annulla la partita», che porta a 'annullata': niente rivelazione, niente punti agli smascheratori, niente riga nello storico.",
+            "cosaSbaglia": "La sola transizione che esce da 'colpo' è tenta_colpo, e il database la concede solo a chi è fra gli impostori — quindi la persona che ha tutto l'interesse a non premere niente è l'unica che può far finire la partita. È esattamente il caso che il resto del gioco è costruito per evitare («chiunque può far avanzare il turno: se a qualcuno si scarica il telefono la partita non si blocca»), e qui la regola salta. Peggio: dopo 'colpo' non si può nemmeno cominciarne un'altra finché non si annulla, quindi il tavolo resta fermo, e chi annulla toglie a tutti i punti che avevano già guadagnato beccando gli impostori.",
+            "gravita": "rompe",
+            "rimedio": "Dare al gruppo un modo di chiudere il colpo senza il tentativo — un «Rinuncia / il tempo è scaduto» a maggioranza, come per la rivelazione, oppure una scadenza sul tentativo che chiuda la partita come colpo fallito. In entrambi i casi si passa da chiudiPartita, quindi i punti vengono pagati.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Una partita annullata può tornare 'finita' e pagare i punti: chiudiPartita non rispetta 'annullata' e tenta_colpo non guarda lo stato",
+            "dove": [
+              "src/lib/partiteImpostore.js:348-357 (chiudiPartita: il filtro è solo .neq('stato','finita'))",
+              "src/lib/partiteImpostore.js:318-321 (abbandonaPartita invece esclude sia 'finita' sia 'annullata')",
+              "supabase/schema.sql:1118-1140 (tenta_colpo: nessun controllo sullo stato, scrive il tentativo da qualunque stato)",
+              "src/hooks/useImpostore.js:190-214 (tenta e chiudi)"
+            ],
+            "sequenza": "Partita in stato 'colpo'. L'impostore beccato ha il telefono in tasca con l'app aperta sulla schermata «Ultima carta». Il gruppo si stufa di aspettare e uno tocca «Annulla la partita»: il database va a 'annullata'. Il telefono dell'impostore era in standby, quindi il canale realtime ha perso l'aggiornamento e la sua schermata è ancora quella di prima (l'hook non rilegge la partita quando la pagina torna visibile). Lui scrive la parola e preme «È questa». tenta_colpo, che non controlla lo stato, scrive tentativo e tentato_da sulla riga annullata e la restituisce; l'hook chiama subito chiudiPartita, che chiama paga() — i punti vengono accreditati — e poi fa l'update con il solo filtro .neq('stato','finita'), quindi 'annullata' passa e diventa 'finita'.",
+            "cosaSbaglia": "La partita annullata risorge: compare nello storico come partita finita, mostra una rivelazione, e distribuisce punti per una partita che il gruppo aveva deciso di buttare. L'asimmetria è netta — abbandonaPartita si guarda bene dal toccare una partita 'finita' o 'annullata', chiudiPartita no — e tenta_colpo è l'unica funzione SQL dell'Impostore senza controllo di stato, mentre avvia_impostore, avanza_impostore e chiudi_accusa ce l'hanno tutte.",
+            "gravita": "raro",
+            "rimedio": "Aggiungere `.neq('stato','annullata')` a chiudiPartita (meglio ancora: `.eq('stato','colpo')`, che è l'unico stato da cui ha senso chiudere), e mettere in tenta_colpo un `if g.stato <> 'colpo' then return g; end if` prima di scrivere il tentativo.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Rieseguire schema.sql dopo testimone.sql spegne il testimone in silenzio, e rimette in piedi la vecchia avvia_impostore che apertura.sql aveva tolto",
+            "dove": [
+              "supabase/schema.sql:956-984 (avanza_impostore senza turno_da = now())",
+              "supabase/testimone.sql:26-58 (la stessa firma, con turno_da = now())",
+              "supabase/schema.sql:1038-1069 (avvia_impostore a 4 argomenti)",
+              "supabase/apertura.sql:14 (drop function della versione a 4 argomenti, con la spiegazione del perché)"
+            ],
+            "sequenza": "Il database è aggiornato: schema.sql, poi eliminazione.sql, apertura.sql, testimone.sql. Più avanti serve aggiungere una colonna o una tabella e si riesegue schema.sql — cosa che il file stesso dichiara sicura («Rieseguibile: se lo rilanci non rompe niente»). Il `create or replace function avanza_impostore` alla riga 956 ha la stessa identica firma di quello in testimone.sql e lo sovrascrive con la versione che non aggiorna turno_da. Da lì in poi turno_da resta fermo al valore messo da avvia_impostore: dopo trenta secondi dall'inizio della partita secondiDelTestimone restituisce 0 per sempre, puoAvanzare dice sempre sì, e chiunque può far saltare il turno di chi sta parlando al primo tocco. Nessun errore, nessun messaggio: semplicemente il tasto «Aspetta 30s» non compare più. Nello stesso passaggio la riga 1038 ricrea la avvia_impostore a 4 argomenti che apertura.sql aveva fatto sparire apposta, riportando in vita l'ambiguità che quel drop serviva a evitare.",
+            "cosaSbaglia": "Due file dichiarano la stessa funzione con la stessa firma e contenuto diverso, e vince l'ultimo eseguito. Il commento in apertura.sql spiega esattamente perché è pericoloso lasciare in giro una vecchia firma, ma schema.sql — che è il file che si rilancia più spesso — continua a contenerla e a contenere anche la avanza_impostore vecchia. Il danno non è visibile finché qualcuno non prova a passare il turno a chi sta parlando.",
+            "gravita": "raro",
+            "rimedio": "Togliere da schema.sql le definizioni di avanza_impostore e avvia_impostore e lasciarle nei file che le governano (testimone.sql e apertura.sql), oppure allineare schema.sql alle versioni buone. In ogni caso una sola definizione per funzione, in un solo file.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Nello stato 'colpo' l'app dice «Ti hanno beccato» a tutti, compresi gli innocenti e chi era stato eliminato per errore",
+            "dove": [
+              "src/components/Impostore.jsx:922-926 (l'etichetta sta fuori dal ternario `tocca ?`)",
+              "src/components/Impostore.jsx:123-125 (nello stato 'colpo' la schermata Fuori è disattivata apposta, quindi resta solo questa)"
+            ],
+            "sequenza": "Otto giocatori, un impostore. Al giro 1 il gruppo sbaglia ed elimina l'innocente 'd'. Al giro 2 becca l'impostore: stato 'colpo'. Sul telefono di 'd', e su quello di tutti gli innocenti ancora vivi, la schermata Colpo si apre con in cima, a caratteri di etichetta, «Ti hanno beccato», e sotto «Marco ci prova — sta scrivendo la parola che avevate voi».",
+            "cosaSbaglia": "L'etichetta si rivolge all'impostore scoperto ma è stampata sopra tutti e due i rami del componente, quindi la legge anche chi è dalla parte opposta. Nel momento più teso della partita — il gruppo ha appena vinto e sta aspettando il colpo di coda — l'app dice a chi ha vinto che è stato beccato. Non rompe niente, ma racconta il falso alla persona sbagliata, e per un istante fa credere di essere l'impostore a chi non lo è.",
+            "gravita": "confonde",
+            "rimedio": "Spostare l'etichetta dentro il ramo `tocca`, e per gli altri metterne una che dica quello che sta succedendo davvero (per esempio «L'avete beccato»).",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "In quattro il gruppo può votare due impostori, e la partita parte con gli impostori già in maggioranza: è finita prima che qualcuno parli",
+            "dove": [
+              "src/config/impostore.js:27 (sceltePerImpostori: [1, 2], senza legame col numero di giocatori)",
+              "src/components/Impostore.jsx:272-286 (le due risposte sono sempre tutte e due attive)",
+              "src/lib/partiteImpostore.js:142-169 (avviaPartita non controlla il rapporto impostori/innocenti)",
+              "src/lib/impostore.js:450-453 (impostoriInMaggioranza, che viene interrogata solo dentro dopoAccusa)"
+            ],
+            "sequenza": "Si apparecchia una partita in quattro (il minimo). Nel voto d'apertura la proposta evidenziata è 1, ma il gruppo sceglie 2 e la maggioranza passa. avviaPartita sorteggia due impostori su quattro giocatori: da subito impostoriVivi = 2 e innocentiVivi = 2, cioè impostoriInMaggioranza è già vero. Si fa comunque tutto il giro di parole e tutto il voto d'accusa. Se al voto ne beccano uno solo dei due, dopoAccusa vede 1 impostore contro 1 innocente, dichiara vincitori gli impostori e chiude.",
+            "cosaSbaglia": "La regola «se gli impostori restano in maggioranza fra i vivi, hanno vinto» viene controllata solo dopo un'accusa, mai al momento di distribuire le parole. Con quattro giocatori e due impostori la condizione di vittoria è già soddisfatta al fischio d'inizio: il gruppo gioca un giro intero e un voto per una partita che secondo le sue stesse regole era già decisa, e l'app non lo dice da nessuna parte. È una scelta del gruppo, ma è una scelta che l'app gli lascia fare senza avvisarlo e senza applicare la regola quando scatta.",
+            "gravita": "raro",
+            "rimedio": "Nella schermata d'apertura spegnere (o segnalare) l'opzione «2» quando i giocatori sono meno di cinque, e in avviaPartita rifiutare un numero di impostori che li lascerebbe già in maggioranza — è lo stesso conto che impostoriInMaggioranza fa già, basta chiamarlo prima di sorteggiare.",
+            "verdetto": "non-verificato"
+          }
+        ]
+      },
+      {
+        "famiglia": "Impostore — piu' telefoni insieme: stato condiviso, scritture fuori ordine e voti che sopravvivono al giro",
+        "difetti": [
+          {
+            "titolo": "La partita nuova parte da sola, con i voti della partita di prima",
+            "dove": [
+              "src/components/Impostore.jsx:226-238",
+              "src/components/Impostore.jsx:215-218",
+              "src/hooks/useImpostore.js:102-105",
+              "src/hooks/useImpostore.js:107-118"
+            ],
+            "sequenza": "Sei persone, sei telefoni. Finisce la partita 1 (o la si annulla): su tutti e sei `voto` nel hook e' rimasto l'ultimo voto d'accusa, quello dove avevano votato tutti. Il telefono A tocca «Comincia in 6» e crea la partita 2: solo su A `nuova()` fa `setVoto(null)`. Sugli altri cinque la partita 2 arriva dal realtime, `setPartita` la monta, e nello stesso commit React monta `Preparazione` — che e' un figlio, quindi il suo effetto parte PRIMA dell'effetto del hook che va a caricare il voto d'apertura giusto.",
+            "cosaSbaglia": "Preparazione legge `voto` = l'ultimo voto d'accusa della partita 1. Quindi `quanti` = 6 votanti, `tutti` = 6 giocatori, `conteggi` = il tally delle accuse. `bastaPerCominciare(6,6)` e' vero e `conteggioAffidabile` pure (con due impostori il tally somma 12, con uno somma 6: sempre >= dei votanti). L'effetto alza `partito.current` e chiama subito `onAvvia(sceltaVincente(conteggi, [1,2], consigliata))` — cioe' decide quanti impostori guardando le prime due caselle del tally delle ACCUSE della partita precedente. Il voto «Quanti impostori?» viene saltato del tutto: nessuno tocca niente e la partita e' gia' partita, con un numero di impostori arbitrario. Succede a ogni partita dalla seconda in poi.",
+            "gravita": "rompe",
+            "rimedio": "Non lasciare che `voto` sopravviva al cambio di partita: nel hook tenere `voto` insieme all'id della partita a cui appartiene (o azzerarlo appena `partita.id` cambia, non solo in `nuova`). In piu' dare a `<Preparazione>` la `key={partita.id}` come gia' fa `<Giro>`, e nell'effetto rifiutarsi di partire se il voto in mano non e' `partita.votoAperturaId`.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Fra un giro e l'altro il voto vecchio resta in mano, e il tasto «Rivela» e' gia' vivo",
+            "dove": [
+              "src/hooks/useImpostore.js:104",
+              "src/lib/partiteImpostore.js:281",
+              "src/components/Impostore.jsx:714",
+              "src/components/Impostore.jsx:733",
+              "src/components/Impostore.jsx:861-864",
+              "src/hooks/useImpostore.js:180-188"
+            ],
+            "sequenza": "Sei giocatori A–F, due impostori. Giro 1: si apre V1, votano tutti e sei, uno rivela. L'accusa becca un impostore e sbaglia un innocente: `dopoAccusa` dice 'in-corso', e `chiudiAccusa` passa `p_voto: null` — la riga della partita torna con `vote_id = NULL`. Su tutti i telefoni `partita.votoId` diventa null, ma l'effetto del hook e' `if (quale && quale !== voto?.id)`: con `quale` nullo non chiama `caricaVoto(null)`, quindi `voto` resta V1. Giro 2: i quattro vivi parlano, l'ultimo preme «Fatto, avanti» → stato 'voto', `vote_id` ancora null. `Accusa` si monta su tutti e quattro e `if (!voto) return <Rotella/>` non scatta, perche' voto = V1.",
+            "cosaSbaglia": "Per il secondo o secondo e mezzo che serve a `apriVoto` (insert + update + rilettura del voto = tre giri di rete) la schermata d'accusa del giro 2 e' quella del giro 1: nella griglia ci sono anche i due gia' usciti, `hoVotato` e' vero per tutti («Hai votato.» senza aver votato), le proprie scelte del giro 1 risultano evidenziate, e soprattutto `tuttiHannoVotato(partita, V1.hannoVotato)` e' vero — i quattro vivi stanno tutti nell'elenco di chi aveva votato al giro 1 — quindi compare subito il tasto grande «Rivela». Chi lo tocca in quella finestra manda `chiudiAccusa(partita, V1)`: l'esito del GIRO 2 viene calcolato con le schede del GIRO 1 (qualcuno esce, o non esce, per voti che in questo giro nessuno ha dato), V2 appena creato viene buttato, e siccome su quel telefono `partita.votoId` e' ancora null, `p_voto` scrive `vote_id = NULL` anche se si va a 'colpo' o 'finita'. Da li' in poi rivelazione, storico e `paga` lavorano senza schede: tutti gli impostori risultano impuniti e «Nessuno ha indovinato».",
+            "gravita": "rompe",
+            "rimedio": "Nell'effetto del hook chiamare sempre `caricaVoto(quale)` anche quando `quale` e' nullo (togliere la guardia `quale &&`), cosi' fra un giro e l'altro `voto` torna null e `Accusa` mostra la rotella invece del voto scaduto. In piu' in `Accusa` non fidarsi di `voto` finche' `voto.id !== partita.votoId`, e in `chiudiAccusa` rifiutare la chiamata se `voto.id` non e' `partita.votoId` (stessa severita' del controllo gia' presente su `voto.opzioni`).",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "L'impostore beccato al primo giro viene pagato come se l'avesse fatta franca",
+            "dove": [
+              "src/lib/partiteImpostore.js:241-248",
+              "src/lib/impostore.js:190-195",
+              "src/lib/impostore.js:289",
+              "src/lib/impostore.js:299-305",
+              "src/components/Impostore.jsx:1104-1109"
+            ],
+            "sequenza": "Otto giocatori, due impostori A e B. Giro 1: due accuse, il gruppo becca A (impostore) e sbaglia D (innocente). `fuori` = [A, D], resta un impostore vivo. Giro 2: si accusa uno solo, il gruppo becca B. `dopoAccusa` vede `restano.length === 0` e manda a 'colpo'. B tenta il colpo di coda e sbaglia la parola. `chiudiPartita` → `paga(partita, voto)` con il voto del giro 2.",
+            "cosaSbaglia": "`paga` passa `impostori: partita.impostori` — tutti e due — e le schede del solo ultimo giro. `esito` accusa solo B, quindi `impuniti = [A]`: l'impostore che il gruppo aveva beccato al primo giro incassa i punti della Legge «impostore-impunito». E la stessa funzione racconta la partita: `raccontaFinale` con `impuniti.length > 0` mette `vincitore: 'impostori'` e titolo «L'ha fatta franca», su una partita in cui il gruppo li ha beccati tutti e due e l'app ha appena fatto giocare il colpo di coda a uno scoperto. La rivelazione scrive «impunito +N» sotto la faccia di A. Non e' un caso di laboratorio: e' il finale normale di ogni partita a due impostori che ne becca uno per giro. Le prove coprono `dopoAccusa` in questo scenario (prove/impostore.mjs:517-523) ma non arrivano mai a `premi`.",
+            "gravita": "rompe",
+            "rimedio": "Chi e' scoperto lo dice `partita.fuori`, non l'ultima scheda. In `paga` e in `raccontaFinale` calcolare `scoperti = impostori.filter(id => fuori.includes(id))` e `impuniti = impostori.filter(id => !fuori.includes(id))`, lasciando all'ultimo voto solo il compito di dire chi ha indovinato.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Lo storico traduce le schede con l'elenco dei giocatori invece che con le opzioni di quel voto",
+            "dove": [
+              "src/lib/partiteImpostore.js:83-91",
+              "src/components/Impostore.jsx:487-494",
+              "src/components/Impostore.jsx:151-158",
+              "src/components/Impostore.jsx:1034"
+            ],
+            "sequenza": "Una partita finisce dopo due giri d'accusa: al secondo giro le opzioni erano i sei superstiti piu' ALTRO_GIRO, non gli otto di partenza. La partita entra nello storico. Chiunque apra l'Impostore vede la riga, e toccandola si riapre la finestra del finale.",
+            "cosaSbaglia": "`leggiStorico` prende dalle `votes` solo `id, ballots`: le `options` non le legge. Quindi `Storico` chiama `schedePerId(p.schede, p.giocatori)` e `FinestraFinale` passa `voto={{ schede: daStorico.schede }}` senza `opzioni`, per cui `Rivelazione` ripiega su `partita.giocatori`. Le schede pero' sono NUMERI DI POSIZIONE dentro le opzioni di quel voto: dal secondo giro in poi la posizione 2 non e' il terzo giocatore ma il terzo superstite. I voti finiscono su persone diverse da quelle votate — titolo del finale sbagliato, «X ha indovinato» a chi non ha indovinato, scoperti e impuniti scambiati. E' esattamente la trappola che `paga` evita con un commento esplicito (partiteImpostore.js:238-240) e che qui e' rimasta aperta. Per le partite finite in un giro solo non si vede, perche' li' `vivi()` e' `giocatori` nello stesso ordine: il difetto compare solo dalle partite con un'eliminazione in mezzo.",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere `options` alla select di `leggiStorico` e portarsi dietro `opzioni` fino a `Storico` e a `FinestraFinale`, cosi' `schedePerId` usa sempre le opzioni del voto che ha prodotto quelle schede.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Il numero del giro resta inchiodato a «Giro 1 di 2» per il resto della partita",
+            "dove": [
+              "supabase/eliminazione.sql:48-49",
+              "supabase/schema.sql:1104-1105",
+              "src/lib/impostore.js:474-476",
+              "src/lib/impostore.js:516-518",
+              "src/components/Impostore.jsx:640",
+              "src/components/Impostore.jsx:655"
+            ],
+            "sequenza": "Si gioca il giro 1, si vota, il gruppo chiede un altro giro (o elimina qualcuno). `dopoAccusa` calcola `giro: 2, giriTotali: 2` e li manda a `chiudi_accusa`. La funzione SQL pero' scrive `giro = case when p_stato = 'in-corso' then 1 else giro end`: il `giro` calcolato dal motore non viene mai usato, viene sempre riscritto a 1. `giri_totali` invece prende il valore passato, 2.",
+            "cosaSbaglia": "Dal secondo giro in poi la riga sul database ha sempre `giro = 1` e `giri_totali = 2`, e il giro dopo il motore ricalcola 1+1 = 2 e riscrive gli stessi numeri. La schermata del turno stampa «Giro 1 di 2» al secondo giro, al terzo, al quinto: il contatore non sale mai, e l'etichetta `aria-label` dice la stessa bugia. Il «di 2» poi non vuol dire piu' niente, visto che i giri non si votano piu' all'apertura e non c'e' nessun totale. Le prove controllano `dopoAccusa` (prove/impostore.mjs:511, 748) ma nessuna guarda cosa scrive l'SQL.",
+            "gravita": "confonde",
+            "rimedio": "Passare il giro a `chiudi_accusa` come parametro e scriverlo (`giro = coalesce(p_giro, giro)`) invece di forzarlo a 1. E siccome un totale non esiste piu', togliere il «di N» dalla schermata: basta «Giro 3».",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Il testimone non protegge chi apre il giro nuovo: chiudi_accusa non tocca turno_da",
+            "dove": [
+              "supabase/eliminazione.sql:43-53",
+              "supabase/schema.sql:1099-1108",
+              "supabase/testimone.sql:52",
+              "supabase/apertura.sql:47",
+              "src/lib/impostore.js:127-139"
+            ],
+            "sequenza": "Sei telefoni. Finisce il voto d'accusa del giro 1 — fra parlare, votare e rivelare sono passati diversi minuti dall'ultimo «Fatto, avanti». `chiudi_accusa` riparte con `turno = 0` e un `ordine` rimescolato, ma nella sua update `turno_da` non c'e'. Resta l'orario dell'ultimo avanzamento del giro prima.",
+            "cosaSbaglia": "`avvia_impostore` e `avanza_impostore` mettono `turno_da = now()`, `chiudi_accusa` no. Quindi il primo di turno di ogni giro dal secondo in poi ha il testimone gia' scaduto da minuti: `secondiDelTestimone` torna 0 e `puoAvanzare` lascia passare chiunque. La persona sorteggiata per aprire il giro non ha ancora aperto bocca e uno qualsiasi degli altri cinque puo' saltarla premendo «Fatto, avanti» — che e' esattamente il dito veloce da cui la regola doveva proteggere. Dal secondo turno in poi il testimone torna a funzionare, il che rende la cosa ancora piu' difficile da capire: sembra che il testimone funzioni «a volte».",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere `turno_da = now()` alla update di `chiudi_accusa` quando `p_stato = 'in-corso'` (in eliminazione.sql e nella copia dentro schema.sql).",
+            "verdetto": "reale",
+            "prova": "Confermato. L'update di `chiudi_accusa` (schema.sql:1099-1108, identico in eliminazione.sql:43-53) elenca fuori, stato, ordine, giri_totali, turno, giro, vote_id, rivela_chiesta: `turno_da` non c'e'. Le altre due funzioni che cambiano turno lo mettono a `now()`: apertura.sql:47 e testimone.sql:52. Quel `turno_da` risale all'ultimo `avanza_impostore` andato a buon fine, cioe' proprio quello che ha portato la partita a 'voto' (impostore.js:72 restituisce stato 'voto' e schema.sql:1096-1099/testimone.sql:46-52 aggiorna comunque), quindi al primo turno del giro nuovo sono gia' passati i minuti del voto d'accusa: `secondiDelTestimone` (impostore.js:127-131) torna 0 e `puoAvanzare` (impostore.js:134-138) lascia passare chiunque. Le prove sul testimone (prove/impostore.mjs:571-604) esercitano solo le funzioni pure con `turnoDa` passato a mano."
+          },
+          {
+            "titolo": "Si puo' chiedere un altro giro E accusare qualcuno nella stessa scheda",
+            "dove": [
+              "src/components/Impostore.jsx:740-749",
+              "src/components/Impostore.jsx:753-755",
+              "src/components/Impostore.jsx:845",
+              "src/lib/impostore.js:99-110"
+            ],
+            "sequenza": "Sei vivi, due impostori ancora in gioco, quindi `quanti` = 2. Al voto d'accusa tocco «Non ne so abbastanza — un altro giro»: `chiediUnAltroGiro` mette `scelti = [indiceAltroGiro]`. Poi tocco anche la faccia di X: `alterna` vede `prima.length` = 1 < `quanti` = 2 e aggiunge, quindi `scelti = [ALTRO_GIRO, X]`. Il tasto di conferma e' attivo perche' `chiedoAncora` scavalca il controllo sul numero di scelte. Mando.",
+            "cosaSbaglia": "La regola scritta nel codice due righe sopra dice che sono due risposte alla stessa domanda e che mescolarle vuol dire votare due cose in una volta — e `chiediUnAltroGiro` azzera apposta; `alterna` pero' non azzera in senso opposto. La scheda finisce nel conteggio due volte: `quantiVoglionoUnAltroGiro` la conta, e `conteggi[X]` prende +1. Basta questo a ribaltare l'esito: con 3 richieste di altro giro e 2 accuse pulite su X piu' una scheda mista, `siRiparte` confronta 3 > 3 e risponde no — il gruppo NON riparte e X esce, per un voto arrivato da chi aveva appena dichiarato di non saperne abbastanza. Senza il difetto sarebbe stato 3 > 2 e nessuno usciva. Succede solo con due impostori vivi: con uno solo `prima.length >= quanti` blocca la seconda scelta.",
+            "gravita": "confonde",
+            "rimedio": "In `alterna`, se `prima` contiene `indiceAltroGiro`, ripartire da `[i]` invece di accodare. Oppure rifiutare la scheda mista in `vota_impostore`.",
+            "verdetto": "reale",
+            "prova": "Confermato. `chiediUnAltroGiro` (Impostore.jsx:753-755) azzera e lascia `scelti = [indiceAltroGiro]`, ma `alterna` (Impostore.jsx:740-749) non azzera in senso opposto: con due impostori vivi `quanti = 2` (Impostore.jsx:719) e il controllo Impostore.jsx:746 `if (prima.length >= quanti) return prima` non blocca (1 < 2), quindi aggiunge. Il tasto resta attivo perche' Impostore.jsx:845 usa `chiedoAncora ? false : scelti.length !== quanti`. Il database non filtra: `vota_impostore` controlla solo i limiti dell'array (schema.sql:1012-1015) e scrive tutte le posizioni. Nel conteggio la stessa scheda vale due volte: `quantiVoglionoUnAltroGiro` la conta (impostore.js:90-94, basta che l'elenco includa ALTRO_GIRO) e il ciclo di `siRiparte` (impostore.js:104-108) somma anche l'accusa a X, cosi' `voglionoAncora > max(conteggi)` (impostore.js:109) puo' ribaltarsi da 3>2 a 3>3. Con un impostore solo la seconda scelta e' davvero bloccata, come dice il rapporto."
+          },
+          {
+            "titolo": "chiudiPartita paga senza controllare di avere il voto in mano",
+            "dove": [
+              "src/lib/partiteImpostore.js:342-346",
+              "src/lib/partiteImpostore.js:241-248",
+              "src/hooks/useImpostore.js:104",
+              "src/components/Impostore.jsx:910-912"
+            ],
+            "sequenza": "Il telefono F ha una lettura andata male: nell'effetto del hook `caricaVoto(quale)` non e' awaitata e non ha `.catch`, quindi se `leggiVoti` fallisce una volta (rete ballerina) `voto` resta null per sempre — l'effetto non rigira, perche' `partita.votoId` non cambia piu'. La partita arriva a 'colpo', l'impostore scrive la parola, il realtime porta il `tentativo` a tutti. Su F l'effetto di `Colpo` vede `partita.tentativo != null` e chiama `onChiudi()` → `chiudiPartita(partita, null)`.",
+            "cosaSbaglia": "`chiudiAccusa` si ferma con un errore se non le dai il voto (`if (!voto?.opzioni) throw`), `chiudiPartita` no: `paga` ripiega in silenzio su `opzioni = partita.giocatori` e `schede = {}`. Con schede vuote `esito` non accusa nessuno, quindi TUTTI gli impostori risultano impuniti e nessuno risulta indovino. La dedupe e' per (legge, membro): le chiavi `smascheratore:<chi>` scritte dal telefono corretto restano, ma le chiavi `impostore-impunito:<impostore>` che quel calcolo non aveva prodotto sono nuove e passano — quindi i punti sbagliati si SOMMANO a quelli giusti, anche se qualcun altro aveva gia' pagato bene. Peggiora il fatto che `onChiudi` cambia identita' a ogni aggiornamento della partita (`chiudi` dipende da `partita` e `voto`), quindi l'effetto rispara piu' volte finche' lo stato non diventa 'finita'.",
+            "gravita": "rompe",
+            "rimedio": "Mettere in `paga`/`chiudiPartita` la stessa guardia di `chiudiAccusa`: se manca `voto?.opzioni` o se `voto.id !== partita.votoId`, fermarsi con un errore invece di pagare a vuoto. E dare un `.catch` con ritentativo a `caricaVoto` nell'effetto del hook.",
+            "verdetto": "falso",
+            "prova": "La sequenza non regge. La premessa e' «l'effetto non rigira, perche' partita.votoId non cambia piu'», ma la lista di dipendenze e' useImpostore.js:105 `[partita?.stato, partita?.votoAperturaId, partita?.votoId, voto?.id, caricaVoto]`: `partita?.stato` cambia a ogni passaggio di stato, e per arrivare al colpo la partita DEVE passare da 'voto' a 'colpo'. A quel cambio l'effetto rigira, `quale` (= votoId) e' ancora diverso da `voto?.id` (undefined) e `caricaVoto` riprova, ben prima che l'impostore finisca di scrivere la parola. Quindi una singola lettura fallita non lascia `voto` nullo «per sempre». Restano veri i due fatti di contorno — `chiudiPartita`/`paga` non hanno la guardia che `chiudiAccusa` ha (partiteImpostore.js:267-269 contro 342-346, con il ripiego silenzioso di partiteImpostore.js:242-246) e `onChiudi` cambia identita' a ogni aggiornamento (useImpostore.js:207-214) — ma il modo per arrivarci non e' questo: e' la partita che finisce con `vote_id = NULL` gia' descritta nei difetti 2 e 9, dove un telefono aperto dopo trova `voto` nullo per costruzione (useImpostore.js:48 non chiama `caricaVoto` se `votoId` e' nullo). Come scritto, falso."
+          },
+          {
+            "titolo": "La risposta di una RPC lenta riscrive sopra un aggiornamento realtime piu' recente",
+            "dove": [
+              "src/hooks/useImpostore.js:64-73",
+              "src/hooks/useImpostore.js:137-145",
+              "src/hooks/useImpostore.js:147-155",
+              "src/lib/partiteImpostore.js:281"
+            ],
+            "sequenza": "Telefono A e' l'ultimo di turno e preme «Fatto, avanti» con la rete lenta. `avanza_impostore` scrive stato 'voto' e la riga parte, ma la risposta ad A ci mette un secondo. Nel frattempo il realtime consegna 'voto' a tutti, i telefoni montano `Accusa`, uno di loro vince la corsa e scrive `vote_id = V`, e il realtime consegna anche quello ad A. Poi arriva la risposta della RPC di A, che e' la riga com'era un secondo prima — senza `vote_id` — e `setPartita(await avanzaTurno(partita))` la mette dentro senza guardare cosa c'era gia'.",
+            "cosaSbaglia": "Il guardiano nel gestore del realtime confronta solo gli id delle partite (`nuova.id !== precedente.id`), quindi dentro la stessa partita non c'e' nessun controllo di anzianita', e le sei `setPartita(await ...)` sparse nel hook non ne hanno affatto. Su A resta `partita.votoId = null` mentre il voto vero esiste. `Accusa` non riapre nulla (il freno `gia.current === partita.id` ha gia' scattato) e l'effetto del hook non azzera `voto`, quindi A vota e si comporta normalmente — ma se e' A a toccare «Rivela», `chiudiAccusa` manda `p_voto: partita.votoId ?? null` = NULL. La partita finisce con `vote_id` nullo: da quel momento lo storico la rilegge senza schede e la racconta come «L'ha fatta franca» anche se erano stati beccati tutti, e chi riapre l'app paga di nuovo tutti gli impostori come impuniti. Il danno resta scritto.",
+            "gravita": "raro",
+            "rimedio": "Far passare ogni scrittura dello stato dalla stessa funzione di merge del realtime, e scartare una riga piu' vecchia di quella in mano (serve una colonna `updated_at` sulla partita, o almeno confrontare stato/turno/giro prima di sostituire). In `chiudiAccusa` prendere il `vote_id` da mandare dal voto in mano (`voto.id`), non da `partita.votoId`.",
+            "verdetto": "reale",
+            "prova": "Il meccanismo c'e' tutto. Il gestore realtime confronta solo gli id (useImpostore.js:67 `nuova.id !== precedente.id`): dentro la stessa partita `return nuova` senza nessun controllo di anzianita', e le `setPartita(await ...)` sparse (useImpostore.js:129, 141, 151, 161, 171, 184, 196, 210) non ne hanno affatto, quindi la risposta di `avanza_impostore` — che ritorna la riga com'era nella sua transazione (testimone.sql:47-54 `returning *`) — riporta `votoId` a null su A. Da li' il freno di `Accusa` (Impostore.jsx:722-727, `gia.current === partita.id`) impedisce di riaprire, useImpostore.js:104 non azzera `voto` (quale nullo), e se e' A a rivelare `chiudiAccusa` manda `p_voto: partita.votoId ?? null` = NULL (partiteImpostore.js:281): il danno resta scritto sulla riga, e da li' in poi `leggiStorico` (partiteImpostore.js:80-81) restituisce `schede: {}` e `raccontaFinale` mette tutti gli impostori fra gli impuniti col titolo «L'ha fatta franca» (impostore.js:289, 303-305). Due precisazioni: la corsa richiede che il realtime del `vote_id` arrivi ad A PRIMA della sua stessa risposta HTTP, quindi 'raro' e' l'etichetta giusta; e «chi riapre l'app paga di nuovo tutti gli impostori» e' esagerato — `chiudiPartita` si chiama solo dall'effetto di `Colpo` (Impostore.jsx:910-912), che non viene montato quando lo stato e' gia' 'finita' (Impostore.jsx:176)."
+          },
+          {
+            "titolo": "vota_impostore non guarda la scadenza, e chiudiScaduti puo' murare la partita in preparazione",
+            "dove": [
+              "supabase/schema.sql:991-1026",
+              "supabase/schema.sql:910",
+              "src/lib/voti.js:76-88",
+              "src/App.jsx:249",
+              "src/config/impostore.js:31"
+            ],
+            "sequenza": "Si crea la partita, si apre il voto «Quanti impostori?» con scadenza a 30 minuti. Il gruppo si distrae — si va a cena, si rimanda. Passata la mezz'ora, il primo che apre o riapre l'app fa partire `chiudiScaduti`, che trova quel voto fra gli aperti scaduti e gli mette `closed_at`. Poi il gruppo torna e prova a votare.",
+            "cosaSbaglia": "`vota_impostore` controlla `closed_at` e il doppio voto ma, a differenza di `vota`, non controlla `expires_at`: prima della chiusura si puo' votare all'infinito su un voto scaduto, e dopo la chiusura ogni tocco risponde «Il voto e' chiuso» e basta. Nessuno riesce piu' a raggiungere la maggioranza, l'avvio automatico non scatta mai e la partita resta in 'preparazione' — e finche' c'e' una partita aperta non se ne puo' cominciare un'altra. L'unica uscita e' «Annulla la partita», che pero' e' un tasto che in quello stato non spiega di essere l'unica strada. Vale anche per il voto d'accusa se un giro dura piu' di mezz'ora.",
+            "gravita": "raro",
+            "rimedio": "O allineare `vota_impostore` a `vota` mettendo il controllo su `expires_at`, o — meglio per questo gioco — escludere i voti di categoria 'impostore' da `chiudiScaduti` e togliergli la scadenza: quel voto lo chiude la partita, non l'orologio.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Ogni giro d'accusa lascia in giro un voto per ogni telefono che ha perso la corsa",
+            "dove": [
+              "src/lib/partiteImpostore.js:192-230",
+              "src/components/Impostore.jsx:722-727",
+              "src/hooks/useImpostore.js:147-155"
+            ],
+            "sequenza": "Sei telefoni vedono lo stato passare a 'voto' con `vote_id` nullo nello stesso istante. Ognuno monta `Accusa`, ognuno ha il suo `gia = useRef(null)` appena nato, ognuno controlla `if (!partita || partita.votoId) return` sulla propria copia locale — che e' nulla su tutti e sei. Quindi partono sei `apriVoto`.",
+            "cosaSbaglia": "`apriVoto` fa prima l'INSERT del voto e poi tenta l'update con `.is('vote_id', null)`: la corsa la vince uno solo, ma le sei righe in `votes` sono gia' state scritte tutte. Restano cinque sondaggi «Chi e' l'impostore?» orfani per ogni giro d'accusa, aperti e votabili via id. Non si vedono nell'interfaccia, ma si accumulano (una partita di tre giri ne lascia quindici) e `chiudiScaduti`, che ha `.limit(20)`, si ritrova a chiuderli venti alla volta a ogni apertura dell'app.",
+            "gravita": "raro",
+            "rimedio": "Invertire l'ordine: una funzione SQL che, con la riga della partita bloccata, crea il voto solo se `vote_id is null` e lo aggancia nella stessa transazione — lo stesso schema gia' usato da `assicura_voto_sfida`.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "In quattro si puo' votare «2 impostori», e la partita e' gia' decisa prima della prima parola",
+            "dove": [
+              "src/config/impostore.js:27",
+              "src/lib/partiteImpostore.js:142-157",
+              "src/lib/impostore.js:450-453"
+            ],
+            "sequenza": "Quattro persone (il minimo). Al voto d'apertura le opzioni sono sempre 1 e 2, senza guardare quanti sono; il gruppo sceglie 2. `avviaPartita` prende il numero cosi' com'e' e `preparaPartita` sorteggia due impostori su quattro.",
+            "cosaSbaglia": "Con due impostori e due innocenti `impostoriInMaggioranza` e' gia' vero al fischio d'inizio, ma nessuno lo controlla: il controllo esiste solo dentro `dopoAccusa`, dopo la prima accusa. Il gruppo gioca un giro intero per una partita che, per regola sua, gli impostori hanno gia' vinto — e qualunque accusa che non becchi entrambi in un colpo la chiude con «Vi hanno fatti fuori». Lo stesso vale piu' morbido in cinque, dove un solo giro sbagliato basta a chiuderla.",
+            "gravita": "raro",
+            "rimedio": "Filtrare `sceltePerImpostori` sul numero di giocatori (2 impostori solo da sei in su), oppure far rifiutare ad `avviaPartita` un numero che renderebbe `impostoriInMaggioranza` vero al primo turno.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "La schermata d'apertura spiega le regole vecchie",
+            "dove": [
+              "src/components/Impostore.jsx:378-381",
+              "src/components/Impostore.jsx:433-440"
+            ],
+            "sequenza": "Si apre l'Impostore da fermi. La prima cosa che si legge, prima di scegliere chi gioca, e' la spiegazione del gioco; sotto il tasto «Comincia in N» c'e' la nota su quanti impostori ci saranno.",
+            "cosaSbaglia": "«Dopo due giri si vota chi sembra fuori posto» non e' piu' vero: adesso si vota alla fine di OGNI giro, e quanti giri si fanno lo decide il gruppo di volta in volta con l'opzione «un altro giro». E la nota «Ci sara' un impostore / Ci saranno due impostori», che legge `IMPOSTORE.quantiImpostori(n)`, annuncia come deciso quello che ora e' solo il valore consigliato del voto d'apertura: il gruppo puo' votare il contrario e trovarsi una partita diversa da quella promessa trenta secondi prima. Sono le uniche due frasi che spiegano le regole a chi non le conosce, e ne raccontano una versione che il codice non gioca piu'.",
+            "gravita": "confonde",
+            "rimedio": "Riscrivere le due frasi sulle regole nuove: si vota dopo ogni giro, e quanti impostori lo decide il voto che parte subito dopo (indicando quello consigliato come consigliato).",
+            "verdetto": "reale",
+            "prova": "Confermato, ed e' un difetto di contenuto, non di stile: sono le uniche due frasi che spiegano le regole. Impostore.jsx:378-381 dice «Dopo due giri si vota chi sembra fuori posto», mentre adesso si vota alla fine di ogni giro e quanti giri farne lo decide il gruppo con ALTRO_GIRO (impostore.js:65-72 e 79-86; config/impostore.js:7-14 e prove/impostore.mjs:566-567 confermano che `giriTotali` e' 1 e i giri non si votano piu'). Impostore.jsx:433-440 legge `IMPOSTORE.quantiImpostori(giocatori.length)` e annuncia «Ci sara' un impostore / Ci saranno due impostori» come deciso, ma quella funzione e' solo la proposta del voto d'apertura (config/impostore.js:20-24) e il gruppo puo' votare il contrario: `sceltaVincente` (impostore.js:404-411) prende la piu' votata e solo a parita' la consigliata."
+          }
+        ]
+      },
+      {
+        "famiglia": "I punti e il racconto del finale",
+        "difetti": [
+          {
+            "titolo": "Un impostore beccato a un giro precedente viene pagato come «impunito», e la partita vinta dal gruppo risulta persa",
+            "dove": [
+              "src/lib/impostore.js:194-195 — scoperti/impuniti calcolati solo sugli accusati dell'ultimo voto",
+              "src/lib/impostore.js:210-252 — premi()",
+              "src/lib/impostore.js:265-307 — raccontaFinale()",
+              "src/lib/partiteImpostore.js:241-255 — paga()",
+              "src/components/Impostore.jsx:1104-1110 — l'etichetta sotto la faccia"
+            ],
+            "sequenza": "Otto giocatori, due impostori: a e b. Giro 1: il gruppo accusa a (impostore) e c (innocente) → a esce SCOPERTO, c eliminato per errore, si riparte in sei. Giro 2: il gruppo accusa b → scoperto anche lui, restano zero impostori, stato 'colpo'. b tenta il colpo di coda e sbaglia la parola. Il primo telefono che vede il tentativo chiama chiudiPartita → paga().",
+            "cosaSbaglia": "premi() e raccontaFinale() ricevono partita.impostori (tutti e due) ma le schede del SOLO ultimo voto, dove a non era nemmeno fra le opzioni perché era già fuori. Verificato: accusati=['b'], scoperti=['b'], impuniti=['a']. paga() scrive +5 'impostore-impunito' ad a, cioè all'impostore beccato per primo, e raccontaFinale restituisce titolo «L'ha fatta franca» con vincitore 'impostori'. La verità è l'opposta: il gruppo li ha beccati tutti e due e il colpo è fallito, quindi ha vinto il gruppo. La schermata scrive «impunito +5» sotto la faccia di a, lo storico colora la riga come vittoria degli impostori, e i 5 punti finiscono davvero in classifica. Succede in QUALSIASI partita con due impostori beccati in giri diversi — cioè il caso normale, visto che si accusano tanti quanti sono gli impostori vivi.",
+            "gravita": "rompe",
+            "rimedio": "scoperti/impuniti vanno dedotti da partita.fuori (impostore fuori = scoperto), non dagli accusati dell'ultimo voto: passare `fuori` a premi() e raccontaFinale() e calcolarli lì, lasciando all'ultimo voto solo il compito di dire chi ha indovinato.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "L'impostore che vince per numeri viene marchiato «scoperto» e non prende niente, mentre paga il compagno eliminato al primo giro",
+            "dove": [
+              "src/lib/impostore.js:189-192 — la soglia usa impostori.length invece degli impostori ancora vivi",
+              "src/lib/impostore.js:194-195",
+              "src/lib/partiteImpostore.js:288-289 — paga() chiamata alla chiusura per numeri",
+              "src/components/Impostore.jsx:1093-1110"
+            ],
+            "sequenza": "Otto giocatori, impostori a e b. Giro 1: escono a (scoperto) e c (per errore). Giri 2, 3 e 4: il gruppo elimina d, e, f, tutti innocenti. Ultimo giro: restano b, g, h — un impostore vivo solo, quindi si accusa una persona sola. b vota g, h vota g, g vota b. Esce g: uno contro uno, impostoriInMaggioranza → stato 'finita' → chiudiAccusa chiama paga().",
+            "cosaSbaglia": "dopoAccusa fa il conto giusto (impostori VIVI = 1) e fa uscire solo g. premi() e raccontaFinale() rifanno lo stesso conto con impostori.length = 2: la soglia scende al secondo classificato e negli accusati entra anche b, con un voto solo. Verificato: la schermata scrive «Vi hanno fatti fuori», e sotto la faccia di b — vivo, mai eliminato, vincitore della partita — scrive «scoperto», con zero punti. Ad a, eliminato al primo giro, tocca «impunito +5». Il tabellone del finale è esattamente rovesciato rispetto a quello che il gruppo ha appena visto succedere.",
+            "gravita": "rompe",
+            "rimedio": "la soglia dell'accusa deve usare il numero di impostori ancora vivi, e premi()/raccontaFinale() devono ricevere quello stesso numero: sono già due conti diversi fatti sulla stessa partita, ed è la causa di metà di questi difetti.",
+            "verdetto": "reale",
+            "prova": "Rigiocata: partita = {impostori:['a','b'], fuori:['a','c','d','e','f']}, opzioni ultimo voto = [b,g,h,altro-giro], schede {b→g, h→g, g→b}. dopoAccusa fa il conto giusto sugli impostori VIVI (src/lib/impostore.js:481-482) e restituisce {eliminati:['g'], stato:'finita', vincitore:'impostori'}. Poi chiudiAccusa chiama paga (src/lib/partiteImpostore.js:289) e premi() rifà il conto con impostori.length = 2: la soglia di src/lib/impostore.js:190 (`conteggi[ordinati[Math.min(impostori.length, ordinati.length) - 1]]`) scende al secondo classificato, quindi esito = {accusati:['b','g'], scoperti:['b'], impuniti:['a'], indovini:['g']} — b entra fra gli accusati con UN voto solo, pur essendo vivo e vincitore. Uscita reale: assegnazioni = [{a,+5,'impostore-impunito'},{g,+2,'smascheratore'}]; raccontaFinale = {titolo:'Vi hanno fatti fuori', scoperti:['b']}. Impostore.jsx:1093 e 1104-1110 scrivono quindi «scoperto» sotto b (vivo, mai eliminato) e «impunito +5» sotto a (fuori dal primo giro). Stessa radice del difetto 1 ma sintomo e percorso diversi (ramo 'finita' invece di 'colpo'), e nessuna prova lo copre."
+          },
+          {
+            "titolo": "Lo storico ridecodifica le schede con l'elenco dei giocatori e racconta il finale opposto",
+            "dove": [
+              "src/components/Impostore.jsx:487-494 — schedePerId(p.schede, p.giocatori)",
+              "src/components/Impostore.jsx:151-158 — FinestraFinale riceve voto={{ schede }} senza opzioni",
+              "src/components/Impostore.jsx:1034 — fallback voto?.opzioni ?? partita.giocatori",
+              "src/lib/partiteImpostore.js:83-88 — la query su votes legge 'id, ballots' e non 'options'"
+            ],
+            "sequenza": "Otto giocatori, un impostore: d. Giro 1: il gruppo elimina b per errore. Giro 2: le opzioni del voto diventano [a,c,d,e,f,g,h,altro-giro] e tutti accusano d, che lì sta in posizione 2. La partita finisce, il colpo fallisce, tutti leggono il finale giusto. Il giorno dopo qualcuno apre «Le partite di prima» e tocca quella riga.",
+            "cosaSbaglia": "leggiStorico prende i ballots ma non le options del voto, e Storico/Rivelazione li ridecodificano con p.giocatori, dove la posizione 2 è 'c' e non 'd'. Verificato sulla stessa partita: in diretta il finale è «Beccato» con sei premiati; nello storico diventa «L'ha fatta franca», nessuno scoperto, nessun premiato. È lo stesso scambio numero-persona che è già costato due volte, e colpisce ogni partita durata più di un giro d'accusa — nelle partite di un giro solo le due liste coincidono per caso e non si vede niente.",
+            "gravita": "confonde",
+            "rimedio": "leggere anche `options` in leggiStorico, portarle nella partita dello storico e passarle a schedePerId e a FinestraFinale; oppure salvare le schede già tradotte in id sulla riga della partita quando si chiude.",
+            "verdetto": "reale",
+            "prova": "Rigiocata: un impostore d, b eliminato al giro 1, opzioni del giro 2 = [a,c,d,e,f,g,h,altro-giro] dove d sta in posizione 2; nell'elenco intero la posizione 2 è c. In diretta (Impostore.jsx:1034 usa voto?.opzioni) il finale è {titolo:'Beccato', vincitore:'gruppo', scoperti:['d'], premiati:6}. Nello storico (Impostore.jsx:490 `schedePerId(p.schede, p.giocatori)`) diventa {titolo:'L’ha fatta franca', vincitore:'impostori', scoperti:[], premiati:0}. La causa è che src/lib/partiteImpostore.js:84 legge `select('id, ballots')` senza `options`, quindi p.schede arriva senza il proprio elenco, e Impostore.jsx:153 passa a FinestraFinale `voto={{ schede: daStorico.schede }}` senza opzioni, facendo scattare il fallback di Impostore.jsx:1034. La riga dello storico si colora anche come vittoria degli impostori (Impostore.jsx:507-511). Corretta anche l'osservazione che nelle partite di un giro solo non si vede: apriVoto costruisce le opzioni con opzioniDelVoto (src/lib/impostore.js:85), che al primo giro coincide con partita.giocatori + ALTRO_GIRO. Nessuna prova copre lo storico: prove/impostore.mjs prova schedePerId solo con l'elenco giusto (righe 182-199)."
+          },
+          {
+            "titolo": "paga() senza il voto in mano regala +5 a ogni impostore, e la dedupeKey rende l'errore definitivo",
+            "dove": [
+              "src/lib/partiteImpostore.js:242 — const opzioni = voto?.opzioni ?? partita.giocatori",
+              "src/lib/partiteImpostore.js:250-251 — dedupeKey impostore:<partita>:<legge>:<membro>",
+              "src/hooks/useImpostore.js:44-49 — setStato('pronto') gira prima di await caricaVoto",
+              "src/components/Impostore.jsx:910-912 — useEffect che chiude appena vede il tentativo"
+            ],
+            "sequenza": "La partita è in 'colpo' e l'impostore beccato ha appena scritto la parola sbagliata. Un altro giocatore, che nel frattempo aveva chiuso o ricaricato l'app, la riapre: leggiPartita torna, setStato('pronto') gira prima che caricaVoto abbia finito, Colpo si monta con voto = null, vede partita.tentativo diverso da null e chiama subito chiudi → chiudiPartita → paga(partita, null).",
+            "cosaSbaglia": "Senza voto le schede sono vuote, quindi accusati = [] e impuniti = TUTTI gli impostori. Verificato: paga scrive +5 'impostore-impunito' a ogni impostore, anche se erano stati beccati tutti e il colpo era fallito. E siccome la chiave è impostore:<partita>:<legge>:<membro>, quelle righe non collidono con quelle giuste — che pagano 'smascheratore' ad altre persone — quindi i due finali si sommano invece di escludersi, e la prima scrittura vince per sempre. Sulla domanda: le dedupeKey sono davvero uniche per partita+legge+persona, e lo stesso premio non si paga due volte; ma niente impedisce a due finali diversi della stessa partita di convivere in classifica.",
+            "gravita": "raro",
+            "rimedio": "far fallire paga() quando manca voto?.opzioni, esattamente come già fa chiudiAccusa (partiteImpostore.js:267-269); e in useImpostore aspettare il voto prima di dichiarare 'pronto'.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Chi indovina viene pagato anche quando il gruppo ha perso — la regola vale solo per il colpo di coda",
+            "dove": [
+              "src/lib/impostore.js:216-232 — la regola è applicata solo a colpoRiuscito",
+              "src/lib/impostore.js:239-250",
+              "src/lib/impostore.js:294 — premiati svuotato solo col colpo",
+              "src/components/Impostore.jsx:1124-1128"
+            ],
+            "sequenza": "Finale per numeri: nell'ultimo voto il gruppo elimina un innocente e gli impostori restano in parità, ma qualcuno in quella scheda aveva comunque indicato un impostore vero. Nel caso che ho rigiocato il premiato è perfino g, l'innocente eliminato proprio da quel voto.",
+            "cosaSbaglia": "Il commento dentro premi() dice a chiare lettere che premiare chi ha indovinato in una partita che il gruppo ha perso vuol dire pagare due volte lo stesso finale ai due lati opposti — e infatti col colpo riuscito la lista degli indovini viene svuotata. Nel finale per numeri no: la schermata annuncia «X ha indovinato: +2 a testa» sotto il titolo «Vi hanno fatti fuori», e i +2 vengono scritti davvero. Racconto e scrittura coincidono, ma tutti e due contraddicono la regola che il codice si è dato tre righe sopra.",
+            "gravita": "confonde",
+            "rimedio": "decidere una volta sola: se il vincitore del finale sono gli impostori, premiati e assegnazioni di 'smascheratore' vanno svuotati in tutti i finali, non solo in quello ribaltato.",
+            "verdetto": "gia-coperto",
+            "prova": "Il comportamento descritto è reale (nel finale per numeri della sequenza del difetto 2 esce davvero {titolo:'Vi hanno fatti fuori', premiati:['g']} con g pagato +2), ma la «regola» che si dice violata non è una regola del progetto: è la motivazione del ramo colpoRiuscito, e prove/impostore.mjs la fissa esattamente al contrario. La prova alle righe 392-407 costruisce una partita in cui a è scoperto e b resta IMPUNITO — cioè un finale che raccontaFinale classifica 'L’ha fatta franca' con vincitore 'impostori', quindi una partita che il gruppo ha perso — e asserisce «senza colpo: b impunito, e chi ha beccato prende il suo» (somma(perso).c > 0). La riga 409-413 fissa l'eccezione al solo colpo riuscito («e chi li aveva beccati non prende piu' niente»), e la riga 632 fa lo stesso su raccontaFinale. In più la Legge XXIV è individuale per costruzione: src/config/leggi.js:90-91, «Hai votato l’impostore giusto» — non «il gruppo ha vinto». Il finale per numeri non è distinguibile dal finale 'franca' rispetto a questo criterio, quindi non c'è nessuna incoerenza fra racconto, scrittura e Legge: la segnalazione stessa ammette che «racconto e scrittura coincidono»."
+          },
+          {
+            "titolo": "Chi è uscito per errore non prende mai niente, e i voti giusti dei giri precedenti spariscono",
+            "dove": [
+              "src/lib/partiteImpostore.js:241-247 — paga guarda solo l'ultimo voto",
+              "src/lib/partiteImpostore.js:279-281 — chiudendo un giro che riparte, vote_id torna null",
+              "supabase/eliminazione.sql:50 — vote_id = p_voto (null quando si riparte)",
+              "src/config/leggi.js:90-91 — «Hai votato l'impostore giusto»"
+            ],
+            "sequenza": "Giro 1: c indica l'impostore a, ma la maggioranza accusa d, che esce per errore. Giro 2: il gruppo sbaglia ancora ed esce c. Giro 3: finalmente beccano a e la partita finisce.",
+            "cosaSbaglia": "Quando si riparte, chiudi_accusa azzera vote_id e quel voto non lo rilegge più nessuno: paga() usa solo l'ultimo. c aveva votato l'impostore giusto — che è letteralmente il testo della Legge — e non prende niente, perché nell'ultimo voto era già fuori e la sua scheda non esiste più. Alla rivelazione compare solo fra quelli «rimessi per strada». Vale per chiunque ci prenda in un giro che non è l'ultimo, ed è anche l'unico modo in cui un innocente eliminato per errore poteva prendere qualcosa.",
+            "gravita": "confonde",
+            "rimedio": "tenere l'elenco dei voti della partita (una colonna voti uuid[] invece di un vote_id solo) e far calcolare gli indovini su tutti i giri, o almeno pagare 'smascheratore' alla chiusura di ogni giro invece che solo alla fine.",
+            "verdetto": "reale",
+            "prova": "Confermato: src/lib/partiteImpostore.js:281 passa `p_voto: esitoGiro.stato === 'in-corso' ? null : (partita.votoId ?? null)`, e supabase/eliminazione.sql:50 (= supabase/schema.sql:1106) scrive `vote_id = p_voto`, quindi ripartendo l'id del voto vecchio viene cancellato dalla riga e nessuno lo rilegge più — né paga (src/lib/partiteImpostore.js:241-248, che vede solo il voto passato dall'ultimo giro), né leggiStorico (riga 91, `perId[p.votoId]`). Chi ha indicato l'impostore vero in un giro non finale non riceve la Legge XXIV, il cui testo è letteralmente src/config/leggi.js:90-91 «Hai votato l’impostore giusto»; alla rivelazione compare solo fra gli «eliminati per strada» (Impostore.jsx:1048 e 1115-1119). Due precisazioni: (a) non è una svista ma una scelta dichiarata nel commento a src/lib/partiteImpostore.js:279-280 — resta comunque un buco fra il testo della Legge e quello che si paga; (b) è falso che sia «l'unico modo in cui un innocente eliminato per errore poteva prendere qualcosa»: nella sequenza del difetto 2, g viene eliminato proprio dall'ultimo voto e incassa lo stesso +2 smascheratore."
+          },
+          {
+            "titolo": "Il contatore dei giri resta inchiodato su «Giro 1 di 2»",
+            "dove": [
+              "supabase/eliminazione.sql:48-49 — giro = case when p_stato = 'in-corso' then 1 else giro end",
+              "supabase/schema.sql:1104-1105 — stessa riga",
+              "src/lib/impostore.js:473-476 e 516-518 — dopoAccusa calcola giro+1 e giriTotali = giro+1",
+              "src/components/Impostore.jsx:640 e 654-655 — «Giro {giro} di {giriTotali}»"
+            ],
+            "sequenza": "Qualsiasi partita che vada oltre il primo giro: si vota, si riparte (perché è uscito un innocente o perché il gruppo ha chiesto un altro giro), si rifà il giro di parole e si guarda l'intestazione della schermata del turno. Poi ancora, al terzo, al quarto giro.",
+            "cosaSbaglia": "dopoAccusa restituisce giro = giro+1, ma chiudi_accusa riscrive giro = 1 ogni volta che si riparte. Al giro dopo il motore riparte quindi da 1 e ricalcola giriTotali = 2: dal secondo giro in poi la schermata dice «Giro 1 di 2» per sempre, anche al quinto giro, e anche l'aria-label dei pallini. Il motore e il database non sono d'accordo su cosa sia il numero del giro, e le prove in prove/impostore.mjs (riga 511) verificano la versione del motore, che è quella che il database butta via.",
+            "gravita": "confonde",
+            "rimedio": "o chiudi_accusa smette di forzare giro = 1 e scrive il giro che gli passa il motore (serve un parametro p_giro accanto a p_giri), o il motore smette di far salire il giro e l'interfaccia legge solo giriTotali.",
+            "verdetto": "reale",
+            "prova": "Confermato riga per riga. dopoAccusa restituisce `giro: (partita.giro ?? 1) + 1` e `giriTotali: (partita.giro ?? 1) + 1` (src/lib/impostore.js:474-476 e 517-518), ma chiudiAccusa non passa mai il giro alla funzione del database: src/lib/partiteImpostore.js:273-282 manda solo p_fuori, p_stato, p_ordine, p_giri, p_voto — e supabase/eliminazione.sql:49 (= supabase/schema.sql:1105) fa `giro = case when p_stato = 'in-corso' then 1 else giro end`. Al giro dopo il motore riparte quindi da giro=1 e ricalcola giriTotali = 2, che `coalesce(p_giri, giri_totali)` riscrive uguale per sempre. avanza_impostore non lo alza (schema.sql:978 con p_giro = partita.giro invariato, src/lib/impostore.js:70). Risultato: Impostore.jsx:654-655 e l'aria-label di Impostore.jsx:640 dicono «Giro 1 di 2» dal secondo giro in poi, anche al quinto. Esatta anche l'osservazione sulle prove: prove/impostore.mjs:511 e 748 verificano `r.giro === 2` sul motore, cioè proprio il valore che il database butta via — quindi non è una guardia."
+          },
+          {
+            "titolo": "Al secondo giro d'accusa la schermata usa il voto del giro prima, e un tocco chiude il turno con le schede vecchie",
+            "dove": [
+              "src/hooks/useImpostore.js:102-105 — quando votoId torna null il voto vecchio non viene azzerato",
+              "src/components/Impostore.jsx:769 — if (!voto) return Rotella, ma voto è quello vecchio",
+              "src/components/Impostore.jsx:714-718 e 733-735 — opzioni, hannoVotato e tuttiDentro presi da lì",
+              "src/components/Impostore.jsx:861-863 — il tasto «Rivela» pieno"
+            ],
+            "sequenza": "Giro 1: votano tutti, si accusa, esce un innocente, si riparte (vote_id torna null e nessuno azzera il voto nello stato). Il gruppo rifà il giro di parole; l'ultimo preme «Fatto, avanti» e la partita passa a 'voto' con vote_id ancora null. Accusa si monta, chiede l'apertura del voto nuovo, e per il tempo di un giro di rete `voto` è ancora quello del giro precedente.",
+            "cosaSbaglia": "In quella finestra la schermata legge opzioni, hannoVotato e schede del voto vecchio: mostra «Hai votato.» a chi non ha votato niente, la griglia con dentro chi è già uscito, e — siccome tutti i vivi risultano aver votato al giro prima — il tasto pieno «Rivela» invece di «Chiedi di rivelare». Chi lo tocca chiama chiudiAccusa con le schede del giro precedente: il turno d'accusa si chiude senza che nessuno abbia votato, i voti vecchi vengono riapplicati ai superstiti e la partita va avanti. Il guardrail scritto apposta in chiudiAccusa (riga 267) non scatta, perché le opzioni ci sono: sono solo quelle sbagliate.",
+            "gravita": "raro",
+            "rimedio": "in useImpostore azzerare il voto quando partita.votoId diventa null, così Accusa mostra la rotella finché il voto nuovo non è arrivato.",
+            "verdetto": "reale",
+            "prova": "Confermato: quando chiudiAccusa riporta vote_id a null, il `voto` nello stato non viene azzerato — src/hooks/useImpostore.js:102-105 fa `if (quale && quale !== voto?.id) caricaVoto(quale)`, e con `quale` null la condizione è falsa, quindi caricaVoto(null) (righe 32-35, l'unico punto che fa setVoto(null)) non viene mai raggiunto. Accusa si rimonta al voto successivo (Impostore.jsx:187) con il ref `gia` azzerato dallo smontaggio, la guardia `if (!voto) return <Rotella>` di Impostore.jsx:769 non scatta perché voto è quello vecchio, e opzioni/persone/hannoVotato/tuttiDentro vengono presi da lì (Impostore.jsx:714-718 e 733-735). Con tutti i vivi presenti nel `hannoVotato` del giro prima, tuttiHannoVotato è vero e Impostore.jsx:861-863 mostra il tasto pieno «Rivela». Chi lo tocca chiama rivela -> chiudiAccusa(partita, voto vecchio): il guardrail di src/lib/partiteImpostore.js:267-269 controlla solo `voto?.opzioni`, che ci sono (sbagliate), quindi passa, e dopoAccusa riapplica le schede del giro precedente ai superstiti — i voti per chi è già uscito cadono perché `conteggi` è costruito sui vivi (src/lib/impostore.js:173 e 177), gli altri contano ed eliminano qualcuno senza che nessuno abbia votato. La finestra dura tre round-trip (insert votes + update games + leggiVoti, src/lib/partiteImpostore.js:199-229 e src/hooks/useImpostore.js:104): il tocco distruttivo è raro, ma la schermata sbagliata («Hai votato.», griglia con dentro i morti) si vede a ogni giro dopo il primo."
+          },
+          {
+            "titolo": "Se l'impostore beccato sparisce, la partita resta in 'colpo' e non paga nessuno",
+            "dove": [
+              "src/components/Impostore.jsx:892-968 — Colpo, nessuna uscita per chi aspetta",
+              "src/lib/partiteImpostore.js:288-289 — in 'colpo' paga() non viene chiamata",
+              "src/lib/partiteImpostore.js:316-328 — abbandonaPartita non paga niente",
+              "src/lib/partiteImpostore.js:68-76 — leggiStorico filtra su stato 'finita'"
+            ],
+            "sequenza": "Il gruppo becca tutti gli impostori, si va al colpo di coda. L'unico che può tentare chiude l'app, gli si scarica il telefono, o esce e non torna.",
+            "cosaSbaglia": "Nessuno può chiudere la partita: chiudiPartita parte solo quando tentativo non è più null, e per tutti gli altri Colpo mostra una rotella «Un attimo di silenzio» senza vie d'uscita. L'unica strada è «Annulla la partita», che mette stato 'annullata' senza chiamare paga(): il gruppo ha vinto la partita e non prende nemmeno i +2 di smascheratore, e la partita non compare nemmeno nello storico. È l'unico stato del gioco in cui una partita conclusa può non pagare niente a nessuno.",
+            "gravita": "confonde",
+            "rimedio": "dare al gruppo un modo di rinunciare al colpo (una maggioranza come per la rivelazione, o una scadenza sul tentativo) che chiuda la partita passando da chiudiPartita invece che da abbandonaPartita.",
+            "verdetto": "reale",
+            "prova": "Confermato: in stato 'colpo' paga() non viene chiamata da nessuna parte — chiudiAccusa paga solo `if (dopo.stato === 'finita')` (src/lib/partiteImpostore.js:289) — e l'unico innesco di chiudiPartita è l'effetto di Impostore.jsx:910-912, che richiede `partita.tentativo != null`. Per chi aspetta, Colpo (Impostore.jsx:955-966) mostra solo `<Rotella testo=\"Un attimo di silenzio\" />`: nessun tasto, nessun timeout, nessuna scadenza. L'unica uscita è Abbandona (renderizzato perché 'colpo' rientra in inCorsoOra, Impostore.jsx:87-95), che porta ad abbandonaPartita: src/lib/partiteImpostore.js:316-328 fa solo `update({ stato: 'annullata' })` e non chiama paga, quindi né i +5 agli impuniti né i +2 agli smascheratori. E leggiStorico filtra `.eq('stato', 'finita')` (riga 74), quindi la partita non compare nemmeno fra «Le partite di prima». Vero anche che è l'unico stato in cui una partita conclusa può non pagare niente a nessuno: 'finita' passa sempre da paga (righe 289 e 346)."
+          }
+        ]
+      },
+      {
+        "famiglia": "impostore",
+        "difetti": [
+          {
+            "titolo": "I punti e il finale guardano solo l'ultimo voto: un impostore beccato al primo giro viene pagato come impunito",
+            "dove": [
+              "src/lib/partiteImpostore.js:241-255 (paga)",
+              "src/lib/partiteImpostore.js:289 (chiudiAccusa chiama paga con l'ultimo voto)",
+              "src/lib/impostore.js:194-195 (scoperti/impuniti da esito)",
+              "src/lib/impostore.js:265-307 (raccontaFinale)",
+              "src/components/Impostore.jsx:1028-1040 (Rivelazione)"
+            ],
+            "sequenza": "Otto giocatori a..h, due impostori a e b. GIRO 1: c,d,e,f,g,h indicano tutti [a,d] tranne c e d che incrociano — conteggi a=6, d=5, c=1. Escono a (scoperto) e d (innocente). Resta b vivo, la partita torna 'in-corso'. GIRO 2: le opzioni sono b,c,e,f,g,h + altro-giro, e cinque su sei accusano b. dopoAccusa scopre b, non resta nessun impostore, stato 'colpo'. b tenta il colpo di coda e sbaglia la parola. chiudiPartita -> paga(partita, votoDelGiro2).",
+            "cosaSbaglia": "paga() passa a premi() `impostori: partita.impostori` (tutti e due) e `giocatori: partita.giocatori` (tutti e otto), ma come schede solo quelle dell'ULTIMO voto. Nel voto del giro 2 'a' non era nemmeno un'opzione, quindi ha zero voti, non finisce fra gli accusati e cade in `impuniti`. Risultato: ad 'a' vengono accreditati i 5 punti di 'impostore-impunito' anche se il gruppo l'aveva beccato al primo giro, e raccontaFinale — vedendo impuniti.length > 0 — dichiara vincitore 'impostori' col titolo \"L'ha fatta franca\" su una partita in cui il gruppo li ha presi tutti e due e il colpo di coda e' fallito. Stesso difetto sugli indovini: chi ha indicato 'a' al primo giro non prende i 2 punti di 'smascheratore', e 'd', eliminato per errore al primo giro dopo aver indovinato, non prende niente perche' non ha potuto votare al secondo. Il dato per farlo giusto c'e' gia' (partita.fuori incrociato con partita.impostori da' gli scoperti veri) ma non viene usato. Le prove coprono solo partite a un giro solo, quindi non lo vedono.",
+            "gravita": "rompe",
+            "rimedio": "Calcolare scoperti/impuniti da `partita.fuori` invece che dal solo esito dell'ultimo voto (scoperti = impostori dentro fuori), e accumulare gli indovini su tutti i voti d'accusa della partita, non solo sull'ultimo — vuol dire tenere l'elenco dei vote_id di ogni giro sulla partita, non un vote_id solo.",
+            "verdetto": "reale",
+            "prova": "Ricostruita passo per passo. GIRO 1: dopoAccusa (impostore.js:482-486) con impostoriOra=[a,b] su 8 vivi, conteggi a=6/d=5/c=1 -> soglia=ordinati[1]=d=5 -> accusati=[a,d], fuori=[a,d], restano=[b] -> stato 'in-corso' (impostore.js:509-519). chiudiAccusa manda p_voto=null (partiteImpostore.js:281), quindi il voto del giro 1 e' scollegato dalla partita per sempre. GIRO 2: nuovo voto con opzioni [b,c,e,f,g,h,altro-giro], b accusato -> restano.length===0 e scopertiOra=[b] -> stato 'colpo' (impostore.js:492-499). Colpo fallito -> chiudiPartita -> paga(partita, votoDelGiro2) (partiteImpostore.js:346). Dentro paga, righe 244-245: `impostori: partita.impostori` (tutti e due) e `giocatori: partita.giocatori` (tutti e otto), ma riga 246 `schede: schedePerId(voto?.schede, opzioni)` con le sole schede del giro 2. In esito, 'a' ha zero voti (non era nemmeno opzione), quindi non entra in `accusati` e impostore.js:195 `impuniti = impostori.filter(id => !accusati.includes(id))` lo mette fra gli impuniti: +5 di 'impostore-impunito' a chi era stato beccato al primo giro. Stesso dato in raccontaFinale (impostore.js:289 `vincitore: ... || r.impuniti.length > 0 ? 'impostori'` e 303-305 titolo 'L’ha fatta franca'), quindi Rivelazione (Impostore.jsx:1031-1038) annuncia la vittoria degli impostori su una partita in cui erano stati presi tutti e due, e la tessera di 'a' a Impostore.jsx:1109 dice 'impunito +5'. Sugli indovini vale lo stesso: 'd', eliminato per errore al giro 1, non e' nelle schede del giro 2 e non prende nulla. Il dato per farlo giusto c'e' (partita.fuori incrociato con partita.impostori) e non viene usato: `fuori` arriva a raccontaFinale ma serve solo a impostoriInMaggioranza (impostore.js:282). Nessuna prova in prove/impostore.mjs esce dal singolo giro: 'i punti' (riga 273-303), 'i punti quando il colpo riesce' (389-421) e 'Come e finita' (607-672) chiamano premi/raccontaFinale con un solo insieme di schede sugli otto di partenza. Nessuna guardia."
+          },
+          {
+            "titolo": "Lo storico traduce le schede con partita.giocatori invece che con le opzioni del voto",
+            "dove": [
+              "src/components/Impostore.jsx:490 (schedePerId(p.schede, p.giocatori))",
+              "src/lib/partiteImpostore.js:83-91 (leggiStorico legge 'id, ballots' e non options)",
+              "src/components/Impostore.jsx:151-158 (FinestraFinale con voto={{ schede }} senza opzioni)",
+              "src/components/Impostore.jsx:1034 (fallback voto?.opzioni ?? partita.giocatori)"
+            ],
+            "sequenza": "Stessa partita di sopra (giocatori [a,b,c,d,e,f,g,h], fuori [a,d] dopo il primo giro). Il voto finale ha options = [b,c,e,f,g,h,'altro-giro']. Le schede sul database sono per esempio { c:[0], e:[0], f:[0], g:[0], h:[0] } — zero vuol dire 'b'. Finita la partita, chiunque apre l'Impostore e guarda \"Le partite di prima\", oppure tocca la riga per riaprirla.",
+            "cosaSbaglia": "leggiStorico non porta mai a casa `votes.options`, quindi lo Storico e' costretto a tradurre gli indici con `p.giocatori`: lo zero diventa 'a' invece di 'b', e ogni indice e' spostato di tanti posti quanti sono gli eliminati dei giri precedenti. La riga dello storico calcola quindi raccontaFinale su accuse inventate — titolo, vincitore e colore possono essere l'opposto di quello che e' successo. Riaprendo la riga e' peggio: FinestraFinale riceve `voto={{ schede }}` senza `opzioni`, Rivelazione ripiega di nuovo su partita.giocatori e annuncia \"X e Y hanno indovinato: +2 a testa\" facendo i nomi delle persone sbagliate. E' esattamente l'errore di indici che il commento in paga() dice di aver gia' pagato due volte, rimasto in piedi in questo terzo posto.",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere `options` alla select di leggiStorico, portarsi dietro `opzioni` insieme a `schede` su ogni partita dello storico, e passarlo a FinestraFinale come voto={{ schede, opzioni }}. Tolto quello, togliere anche il fallback `?? partita.giocatori` da Rivelazione e da paga: se le opzioni non ci sono e' meglio non raccontare niente che raccontare il falso.",
+            "verdetto": "reale",
+            "prova": "partiteImpostore.js:84 `.select('id, ballots')` — leggiStorico non porta mai `options`, e riga 90-91 mette in `p.schede` i ballots grezzi (numeri di posizione). Impostore.jsx:490 e' quindi costretto a `schede: schedePerId(p.schede, p.giocatori)`: con un voto finale aperto sui soli superstiti (partiteImpostore.js:196 `opzioniDelVoto` = vivi + altro-giro) ogni indice slitta di quanti sono gli eliminati dei giri precedenti. Verificato che al primo giro il difetto non si vede (opzioniDelVoto conserva l'ordine di giocatori e mette ALTRO_GIRO in coda, quindi options[i]===giocatori[i]) e che si vede da ogni giro successivo. Esempio minimo che ribalta il titolo: un impostore solo, 'a' innocente eliminato al giro 1, giro 2 con opzioni [b,c,d,e,f,g,h,altro-giro] e tutti che votano l'indice 6 (= 'h', l'impostore); tradotto con giocatori a..h l'indice 6 diventa 'g', quindi accusati=['g'], scoperti=[], impuniti=['h'] e raccontaFinale (impostore.js:289,303) scrive 'L’ha fatta franca' + vincitore 'impostori' su una partita vinta dal gruppo, con anche il colore della riga (Impostore.jsx:506-511) invertito. Riaprendo la riga il difetto si ripete: Impostore.jsx:154 passa `voto={{ schede: daStorico.schede }}` senza `opzioni`, e Rivelazione ripiega su Impostore.jsx:1034 `voto?.opzioni ?? partita.giocatori`, cosi' `r.premiati` (riga 1124-1128) fa i nomi sbagliati con '+2 a testa'. E' lo stesso errore di indici del commento a partiteImpostore.js:238-240, rimasto scoperto in questi due punti. Nessuna prova tocca leggiStorico o i componenti."
+          },
+          {
+            "titolo": "L'hook non azzera il voto quando la partita passa a un voto nuovo: il giro d'accusa si puo' chiudere con le schede del voto precedente",
+            "dove": [
+              "src/hooks/useImpostore.js:102-105 (l'effetto ricarica solo se `quale` e' valorizzato, non azzera mai)",
+              "src/lib/partiteImpostore.js:281 (chiudiAccusa rimette vote_id a null ripartendo)",
+              "src/components/Impostore.jsx:714 (opzioni = voto?.opzioni ?? partita.giocatori)",
+              "src/components/Impostore.jsx:733 e 861-864 (tuttiDentro e il tasto Rivela)",
+              "src/lib/partiteImpostore.js:267-269 (la guardia controlla solo che `opzioni` esista)"
+            ],
+            "sequenza": "VARIANTE A, primo giro d'accusa: il gruppo vota quanti impostori, la partita parte, `voto` nell'hook resta il voto d'apertura (opzioni ['1','2']) perche' partita.votoId e' null e l'effetto non ricarica niente. Finito il giro di parole la partita passa a 'voto', Accusa si monta e chiede apriVoto — ma per i due giri di rete che servono a crearlo, sullo schermo c'e' ancora il voto d'apertura: due tessere chiamate \"Qualcuno\", \"Hanno votato N su 2\", e la nota \"devono chiederlo in 2\" mentre la soglia vera e' 5. Se all'apertura avevano votato tutti (capita: la partita parte alla maggioranza ma i tocchi degli altri arrivano lo stesso), tuttiHannoVotato risulta vero e compare subito il tasto grosso \"Rivela\". Chi lo tocca chiama chiudiAccusa(partita, votoDApertura). VARIANTE B, dal secondo giro in poi: ripartendo, chiudi_accusa mette vote_id a null ma `voto` nell'hook resta quello del giro appena chiuso, con dentro tutti quelli che avevano gia' votato. Finito il nuovo giro, Accusa si rimonta e per lo stesso intervallo mostra il voto vecchio: tutti leggono \"Hai votato.\", nessuno puo' votare, e siccome i votanti del giro prima sono un sovrainsieme dei vivi di adesso il tasto \"Rivela\" e' li' subito.",
+            "cosaSbaglia": "La guardia di chiudiAccusa controlla solo che il voto abbia delle opzioni, e il voto sbagliato ce le ha. Nella variante A le schede vengono tradotte con ['1','2'], nessun id combacia, l'esito e' zero accusati: il primo giro d'accusa svanisce in silenzio, non esce nessuno, la partita riparte a parlare e il voto di quel giro non viene nemmeno mai creato. Nella variante B il giro nuovo viene deciso con le schede del giro vecchio: chi al giro precedente aveva preso voti e non e' ancora uscito puo' essere eliminato senza che nessuno l'abbia accusato adesso. In tutti e due i casi non compare nessun errore.",
+            "gravita": "rompe",
+            "rimedio": "Nell'effetto dell'hook, quando `quale` e' nullo o diverso da voto?.id, fare `setVoto(null)` prima di ricaricare — cosi' Accusa mostra la sua Rotella invece del voto di prima. E rendere la guardia di chiudiAccusa vera: rifiutare se `voto.id !== partita.votoId`, non solo se mancano le opzioni.",
+            "verdetto": "reale",
+            "prova": "useImpostore.js:103-104: `const quale = partita?.stato === 'preparazione' ? partita?.votoAperturaId : partita?.votoId; if (quale && quale !== voto?.id) caricaVoto(quale)`. Quando `quale` e' null non si entra mai nel ramo, e caricaVoto (righe 31-38) — l'unico posto che fa `setVoto(null)` — non viene chiamato. `voto` resta quindi appeso. VARIANTE A verificata: dopo avviaPartita lo stato e' 'in-corso' e votoId null, quindi `quale`=null e `voto` resta il voto d'apertura (creaPartita lo crea con `options: IMPOSTORE.sceltePerImpostori.map(String)` = ['1','2'], partiteImpostore.js:107). Passando a 'voto', Accusa monta, Impostore.jsx:769 `if (!voto) return <Rotella/>` non scatta perche' voto e' truthy, e la schermata usa Impostore.jsx:714 `opzioni = voto?.opzioni` = ['1','2']: due tessere con `nome('1')` -> 'Qualcuno' (riga 812), `tutti = persone.length` = 2 -> 'Hanno votato N su 2' (riga 786), `serve = quantiPerRivelare(2)` = 2 (riga 730) mentre `bastaPerRivelare` conta sui vivi e ne vuole 5 (impostore.js:344). VARIANTE B verificata: chiudi_accusa rimette vote_id a null quando si riparte (partiteImpostore.js:281 + eliminazione.sql:50), quindi `quale` torna null e `voto` resta quello del giro appena chiuso, con dentro tutti i suoi votanti; se il giro precedente si era chiuso perche' avevano votato tutti, `tuttiHannoVotato(partita, voto.hannoVotato)` (Impostore.jsx:733) e' vero appena Accusa rimonta — i vivi di adesso sono un sottoinsieme dei votanti di prima — e il tasto grosso 'Rivela' (Impostore.jsx:861-864) e' li' subito, mentre tutti leggono 'Hai votato.' (riga 782). La guardia di chiudiAccusa (partiteImpostore.js:267-269) controlla solo `!voto?.opzioni` e il voto sbagliato le ha, quindi passa: in A le schede tradotte con ['1','2'] non combaciano con nessun id (impostore.js:177 `if (accusato in conteggi)`), massimo=0, accusati=[] e il giro svanisce in silenzio; in B le schede del giro vecchio decidono il giro nuovo e chi aveva preso voti prima ed e' ancora vivo esce senza che nessuno l'abbia accusato adesso. Due precisazioni oneste, che non smontano il difetto: (1) la finestra e' quella dei due giri di rete di apriVoto, quindi serve un tocco svelto — ma se apriVoto fallisce la finestra non si chiude piu' su quel telefono, perche' Impostore.jsx:724-726 mette `gia.current = partita.id` PRIMA di `onApri()` e non riprova fino al rimontaggio; (2) in variante A il voto del giro viene comunque inserito nella tabella votes e resta orfano, non 'non viene creato'. Nessuna prova copre l'hook."
+          },
+          {
+            "titolo": "Si accusano piu' persone di quanti sono gli impostori vivi, e il gruppo puo' perdere in un voto solo",
+            "dove": [
+              "src/lib/impostore.js:185-192 (ordinati, soglia, accusati)",
+              "src/lib/impostore.js:480-486 (dopoAccusa usa quell'esito per riempire `fuori`)",
+              "src/lib/impostore.js:504-506 (impostoriInMaggioranza subito dopo)"
+            ],
+            "sequenza": "Otto giocatori a..h, due impostori a e b, primo giro d'accusa, ognuno indica due nomi come chiede la schermata. Schede: c=[d,e], d=[c,e], e=[c,d], f=[g,h], g=[f,h], h=[f,g], a=[c,f], b=[d,g]. Conteggi: c=3, d=3, f=3, g=3, e=2, h=2, a=0, b=0.",
+            "cosaSbaglia": "La soglia e' il conteggio del secondo classificato (3), e accusati prende tutti quelli che arrivano a quella soglia: escono c, d, f, g — quattro persone quando gli impostori vivi sono due. Restano vivi a, b, e, h: due impostori contro due innocenti, impostoriInMaggioranza e' vero e la partita finisce 'finita' con vittoria degli impostori alla fine del primo giro, senza che nessuno li avesse accusati. Il commento dice che a parita' sull'ultimo posto utile entrano tutti i pari, ma il risultato contraddice la regola dichiarata (\"si accusano tante persone quanti sono gli impostori ancora vivi\") e con quattro-otto persone che indicano due nomi a testa le parita' a meta' classifica sono la norma, non l'eccezione. Basta una parita' a tre per far uscire tre innocenti in un colpo.",
+            "gravita": "rompe",
+            "rimedio": "Tagliare comunque a `impostori.length` accusati: a parita' sull'ultimo posto utile o si sorteggia fra i pari, o non esce nessuno e si va a un altro giro. Qualunque delle due, purche' il numero di eliminati non superi mai il numero di impostori vivi.",
+            "verdetto": "reale",
+            "prova": "Schede rifatte a mano e verificate valide anche per l'interfaccia (ogni scheda ha esattamente `quanti`=2 nomi, come impone Impostore.jsx:746+845, e nessuno vota se stesso, filtro a Impostore.jsx:793): c=[d,e], d=[c,e], e=[c,d], f=[g,h], g=[f,h], h=[f,g], a=[c,f], b=[d,g] -> c=3, d=3, f=3, g=3, e=2, h=2, a=0, b=0. In esito, impostore.js:185-187 `ordinati` = [c,d,f,g,e,h] (pari ordinati alfabeticamente dal tie-break `a < b ? -1 : 1`); riga 189-191 `soglia = conteggi[ordinati[Math.min(2,6)-1]]` = conteggi[d] = 3; riga 192 `accusati = giocatori.filter(id => conteggi[id] >= soglia && conteggi[id] > 0)` = [c,d,f,g] — quattro accusati con due impostori vivi. dopoAccusa li mette tutti in `fuori` (impostore.js:486), poi impostoriInMaggioranza su {a,b} vivi contro {e,h} da' 2 > 0 && 2 <= 2 -> true (impostore.js:452), e riga 504-506 chiude la partita con vincitore 'impostori' alla fine del primo giro, senza che nessuno avesse accusato a o b. La prova 'ne becca uno e sbaglia l’altro' (prove/impostore.mjs:233-245) ha conteggi a=6, c=4, d=2: nessuna parita' sulla soglia, quindi non tocca questo caso; nessun'altra prova mette due persone a pari sull'ultimo posto utile. Nessuna guardia limita `accusati.length`."
+          },
+          {
+            "titolo": "Il numero del giro lo azzera il database: la schermata dice \"Giro 1 di 2\" per sempre",
+            "dove": [
+              "supabase/eliminazione.sql:49 (giro = case when p_stato = 'in-corso' then 1 else giro end)",
+              "supabase/schema.sql:1105 (stessa riga nella copia dentro lo schema)",
+              "src/lib/partiteImpostore.js:273-282 (chiudiAccusa non manda mai p_giro)",
+              "src/lib/impostore.js:474-475 e 516-517 (dopoAccusa calcola giro+1 e giriTotali=giro+1)",
+              "src/components/Impostore.jsx:640 e 654-655 (i pallini e la scritta)"
+            ],
+            "sequenza": "Partita a otto. Finito il primo giro, tre chiedono \"un altro giro\" e due accusano: siRiparte, dopoAccusa restituisce giro=2 e giriTotali=2. chiudi_accusa scrive giri_totali=2 ma rimette giro=1. Il giro dopo, la partita in mano al client ha di nuovo giro=1, dopoAccusa ricalcola giro=2 e giriTotali=2, il database rimette giro=1. E cosi' via, al terzo, al quarto giro.",
+            "cosaSbaglia": "Il `giro` calcolato dal motore non arriva mai al database (chiudi_accusa non ha un parametro per riceverlo) e viene sovrascritto con 1 a ogni ripartenza, mentre giri_totali si blocca a 2. La schermata del giro di parole, e l'etichetta dei pallini che i lettori di schermo leggono, dicono \"Giro 1 di 2\" al secondo giro, al terzo e al quarto. Con le regole nuove giriTotali non significa piu' niente — nessuno sa quanti giri si faranno — quindi il denominatore e' una promessa che l'app non puo' mantenere. La prova 'e il giro sale invece di azzerarsi' passa perche' verifica dopoAccusa, che e' giusto: e' la scrittura a buttare via il risultato.",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere p_giro a chiudi_accusa e scriverlo, e nel frattempo togliere il denominatore dalla schermata: \"Giro 3\" e' vero, \"Giro 1 di 2\" no.",
+            "verdetto": "reale",
+            "prova": "Confermato su tutti e tre i lati. (1) La firma di chiudi_accusa non ha nessun parametro per il giro: eliminazione.sql:23-30 e schema.sql:1079-1086 prendono p_partita, p_fuori, p_stato, p_ordine, p_giri, p_voto — e partiteImpostore.js:273-282 infatti manda solo quelli, `p_giri: esitoGiro.giriTotali` ma mai il giro. (2) eliminazione.sql:49 e schema.sql:1105 `giro = case when p_stato = 'in-corso' then 1 else giro end`: ripartendo il giro torna a 1. (3) Il motore lo calcola bene ma inutilmente: impostore.js:474-475 e 517-518 restituiscono `giro: (partita.giro ?? 1) + 1` e lo stesso valore in giriTotali, quindi con giro sempre 1 in ingresso giri_totali si blocca a 2 per sempre. Verificato anche che nel frattempo nessun altro lo muove: avanzaTurno passa `p_giro: prossimo.giro` e avanza (impostore.js:68-73) restituisce il giro invariato. Risultato a schermo: Impostore.jsx:640 `aria-label={`Giro ${partita.giro} di ${partita.giriTotali}`}` e riga 655 `Giro {partita.giro} di {partita.giriTotali}` dicono 'Giro 1 di 2' al secondo giro, al terzo, al quarto. La prova 'e il giro sale invece di azzerarsi' (prove/impostore.mjs:511) verifica dopoAccusa, che e' corretto: e' la scrittura a buttare via il risultato, e nessuna prova puo' vederlo. Danno solo cosmetico (`giro` non entra in nessuna decisione), quindi 'confonde' e' la severita' giusta."
+          },
+          {
+            "titolo": "Il testimone non riparte dopo un altro giro: il primo che parla puo' essere saltato subito",
+            "dove": [
+              "supabase/eliminazione.sql:42-54 (chiudi_accusa non tocca turno_da)",
+              "supabase/schema.sql:1098-1110 (stessa funzione)",
+              "supabase/testimone.sql:46-55 (avanza_impostore invece lo aggiorna)",
+              "src/lib/impostore.js:127-139 (secondiDelTestimone, puoAvanzare)"
+            ],
+            "sequenza": "Finito il primo giro si vota; il voto dura il tempo che serve, diciamo un minuto. Il gruppo chiede un altro giro (o accusa un innocente e si continua). chiudi_accusa mette turno=0 e un ordine nuovo, ma turno_da resta l'orario dell'ultimo \"Fatto, avanti\" del giro precedente. Chi si trova primo nel nuovo ordine apre bocca; chiunque altro tocca \"Fatto, avanti\" nello stesso istante.",
+            "cosaSbaglia": "secondiDelTestimone calcola su turno_da, che e' vecchio di piu' di trenta secondi: il conto e' gia' a zero e il tasto e' acceso per tutti. Il primo di ogni giro dal secondo in poi resta senza il mezzo minuto di protezione che la regola gli promette, e senza che l'interfaccia lo dica. Vale per ogni giro nuovo, non e' un caso limite: la fase di voto dura sempre piu' di trenta secondi.",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere `turno_da = now()` all'update di chiudi_accusa quando p_stato = 'in-corso', come fa gia' avanza_impostore e come fa avvia_impostore alla partenza.",
+            "verdetto": "reale",
+            "prova": "Confronto diretto fra le due funzioni. avanza_impostore nella versione nuova aggiorna l'orologio: testimone.sql:47-53 `set ordine = ..., turno = ..., giro = ..., stato = ..., turno_da = now()`. chiudi_accusa no: l'elenco completo delle colonne toccate e' eliminazione.sql:44-51 (e schema.sql:1100-1107) — fuori, stato, ordine, giri_totali, turno, giro, vote_id, rivela_chiesta — e `turno_da` non c'e'. Anche avvia_impostore lo mette (apertura.sql:47), quindi il buco e' solo sulla ripartenza. Conseguenza sul motore: la colonna e' `not null default now()` (testimone.sql:18-19), quindi resta l'orario dell'ultimo 'Fatto, avanti' del giro precedente; impostore.js:129 `const passati = (adesso - Date.parse(partita.turnoDa)) / 1000` e riga 131 danno 0 secondi residui, e impostore.js:138 `return secondiDelTestimone(partita, adesso) === 0` sblocca il tasto per chiunque. Siccome fra l'ultimo turno e il primo del giro nuovo c'e' tutta la fase di voto, che dura sempre piu' di trenta secondi, il primo di ogni giro dal secondo in poi resta sistematicamente senza protezione — e Impostore.jsx:679/684-686 non mostra nulla, perche' per lui il conto e' gia' a zero. Le prove sul testimone (prove/impostore.mjs:571-604) lavorano su oggetti partita costruiti a mano e non passano da chiudi_accusa."
+          },
+          {
+            "titolo": "Con due impostori vivi si puo' votare \"un altro giro\" E accusare qualcuno nella stessa scheda",
+            "dove": [
+              "src/components/Impostore.jsx:740-749 (alterna)",
+              "src/components/Impostore.jsx:753-755 (chiediUnAltroGiro)",
+              "src/components/Impostore.jsx:845 (disabled = chiedoAncora ? false : ...)",
+              "src/lib/impostore.js:90-110 (quantiVoglionoUnAltroGiro e siRiparte contano le stesse schede su due lati)"
+            ],
+            "sequenza": "Partita con due impostori ancora vivi, quindi quanti = 2. Nella schermata del voto tocco \"Non ne so abbastanza — un altro giro\" (scelti diventa [indiceAltroGiro]), poi tocco la faccia di una persona. alterna vede prima.length = 1, che e' minore di quanti = 2, e aggiunge. Tocco \"Vota\".",
+            "cosaSbaglia": "Parte una scheda [altro-giro, personaX], cioe' una richiesta di sentire ancora e un'accusa insieme. siRiparte conta quella scheda fra chi vuole un altro giro, ed esito conta lo stesso voto fra le accuse a personaX: lo stesso votante pesa su tutti e due i piatti della bilancia che decide se si riparte o se qualcuno esce. Il commento sopra chiediUnAltroGiro dice espressamente che le due cose non si mescolano, ma il tetto di alterna e' il numero di impostori e non tiene conto che uno dei posti e' gia' occupato da una risposta di tipo diverso. Con un impostore solo non capita (il tetto e' 1), quindi si vede solo nelle partite a due.",
+            "gravita": "confonde",
+            "rimedio": "In alterna, se prima include indiceAltroGiro ripartire da [i] invece di accodare — o piu' semplicemente non contare l'opzione altro-giro nel tetto e tenerla mutuamente esclusiva in tutte e due le direzioni.",
+            "verdetto": "reale",
+            "prova": "Sequenza verificata sul codice. Con due impostori vivi `quanti = impostoriVivi(partita).length` = 2 (Impostore.jsx:719). Tocco 'Non ne so abbastanza': Impostore.jsx:754 `setScelti(prima => prima.includes(indiceAltroGiro) ? [] : [indiceAltroGiro])` -> scelti = [indiceAltroGiro], lunghezza 1. Tocco poi una faccia: Impostore.jsx:740-748, il tetto e' `if (prima.length >= quanti) return prima` con quanti=2, quindi 1 < 2 e la persona viene aggiunta — il tetto conta i posti, non il tipo di risposta, e ALTRO_GIRO non e' fra `persone` (riga 717) quindi non viene mai tolto. Il tasto e' attivo: Impostore.jsx:845 `disabled={(chiedoAncora ? false : scelti.length !== quanti) || inCorso}` con chiedoAncora vero da' false. Parte una scheda [altro-giro, personaX] verso vota_impostore, che accetta qualunque indice valido (schema.sql:1012-1017). Poi lo stesso votante pesa su tutti e due i piatti: impostore.js:100 lo conta in `quantiVoglionoUnAltroGiro`, e impostore.js:104-107 conta personaX nei conteggi del confronto della riga 109 — e lo ricontano le accuse in esito (impostore.js:174-179). L'ordine inverso invece e' gia' guardato (riga 754 azzera tutto), quindi si vede solo facendo prima 'altro giro' e poi la faccia, e solo con due impostori vivi: con uno solo il tetto e' 1 e la persona non entra. Il commento a Impostore.jsx:751-752 dice espressamente che le due risposte non si mescolano. Nessuna prova costruisce una scheda mista: prove/impostore.mjs:743-764 usa schede con [ALTRO_GIRO] da solo o con la sola accusa."
+          },
+          {
+            "titolo": "Testi che raccontano regole che non esistono piu' o che non valgono per chi legge",
+            "dove": [
+              "src/components/Impostore.jsx:378-381 (\"Dopo due giri si vota chi sembra fuori posto\")",
+              "src/components/Impostore.jsx:924 (\"Ti hanno beccato\" fuori dal ramo di chi e' stato beccato)"
+            ],
+            "sequenza": "1) Chiunque apre l'Impostore per cominciare una partita legge la spiegazione sotto il titolo. 2) Il gruppo becca l'impostore, la partita passa a 'colpo': tutti i giocatori ancora dentro — innocenti compresi — vedono la schermata Colpo, dove l'etichetta \"Ti hanno beccato\" sta prima del bivio fra chi tenta e chi guarda.",
+            "cosaSbaglia": "La prima frase descrive la regola vecchia: adesso si vota alla fine di OGNI giro, e quanti giri si fanno lo decide il voto, non un due scritto prima di cominciare. Chi legge la spiegazione impara una regola che l'app non applica piu'. La seconda dice a cinque innocenti che sono stati beccati loro, due righe sopra \"Marco ci prova\": e' l'unica riga della schermata che dovrebbe stare dentro il ramo `tocca`.",
+            "gravita": "confonde",
+            "rimedio": "Riscrivere la spiegazione di Apparecchia sulle regole nuove (un giro, poi si vota, e nel voto c'e' anche \"un altro giro\") e spostare l'etichetta \"Ti hanno beccato\" dentro il ramo di chi puo' tentare, lasciando agli altri un'etichetta d'attesa.",
+            "verdetto": "reale",
+            "prova": "Prima parte: Impostore.jsx:378-381, la spiegazione sotto il titolo dice 'Dopo due giri si vota chi sembra fuori posto'. E' la regola vecchia — config/impostore.js:14 tiene `giriTotali: 1` col commento che il numero di giri non si decide piu' prima, avviaPartita forza `const giri = 1` (partiteImpostore.js:150), avanza manda al voto alla fine di ogni giro (impostore.js:68-73) e la prova 'si parte da un giro' (prove/impostore.mjs:566) fissa il nuovo comportamento. Chi legge quella schermata impara una regola che l'app non applica piu'. Seconda parte: Impostore.jsx:924 `<p className=\"imp-etichetta\">Ti hanno beccato</p>` sta PRIMA del bivio `{tocca ? ... : ...}` che comincia a riga 926, e Colpo viene montato per tutti i giocatori della partita — Impostore.jsx:176 e' `partita?.stato === 'colpo' && inGioco`, senza filtro su eFuori (anzi riga 123 toglie apposta la schermata 'Sei fuori' in questo stato). Quindi gli innocenti ancora vivi e gli eliminati per errore leggono 'Ti hanno beccato' due righe sopra 'Marco ci prova' (riga 958): e' l'unica riga della schermata che dovrebbe stare dentro il ramo `tocca`."
+          },
+          {
+            "titolo": "Il ripulitore dei sondaggi scaduti puo' chiudere il voto dell'Impostore e piantare la partita",
+            "dove": [
+              "src/lib/voti.js:76-88 (chiudiScaduti prende tutti i voti aperti del viaggio, categoria compresa)",
+              "src/App.jsx:249 (chiamata a ogni apertura dell'app)",
+              "src/lib/partiteImpostore.js:99 e 197 (scadenza a IMPOSTORE.minutiVoto = 30)",
+              "supabase/schema.sql:1005-1010 (vota_impostore rifiuta se closed_at non e' nullo)"
+            ],
+            "sequenza": "Si crea la partita e si apre il voto \"Quanti impostori?\". Il gruppo si distrae — si va a cena, si cambia locale — e passano piu' di trenta minuti con due o tre voti dati su otto. Qualcuno riapre l'app: chiudiScaduti trova il voto scaduto e gli mette closed_at. Da quel momento chi tocca \"Vota\" prende \"Il voto e' chiuso.\"",
+            "cosaSbaglia": "Il ripulitore non filtra per categoria, quindi tratta i voti dell'Impostore come i sondaggi di logistica. Chiuso il voto d'apertura non si raggiunge piu' la maggioranza, bastaPerCominciare resta falso, la partita non parte mai e resta in 'preparazione': siccome finche' ce n'e' una aperta non se ne puo' cominciare un'altra, l'unica uscita e' \"Annulla la partita\". Con lo stesso meccanismo, un voto d'accusa lasciato aperto mezz'ora si chiude e chi non aveva ancora votato non puo' piu' farlo — li' almeno resta la strada del \"chiedi di rivelare\", quindi non si pianta del tutto.",
+            "gravita": "raro",
+            "rimedio": "Escludere `category = 'impostore'` da chiudiScaduti — quei voti hanno gia' il loro padrone, che e' la partita — oppure dare loro una scadenza molto piu' lunga, visto che il timer non serve al gioco ma solo a non lasciare righe appese.",
+            "verdetto": "reale",
+            "prova": "voti.js:79-83: la query e' `.eq('trip_id', VIAGGIO.id).is('closed_at', null).lt('expires_at', ...)` — nessun filtro su `category`, quindi prende anche i voti creati con `category: 'impostore'` (partiteImpostore.js:105 e 203). Gira a ogni apertura dell'app (App.jsx:249) e gli errori sono ingoiati (voti.js:86 `.catch(() => {})`), quindi in silenzio. I voti dell'Impostore scadono davvero: partiteImpostore.js:99 e 197 mettono `expires_at` a `IMPOSTORE.minutiVoto` = 30 minuti (config/impostore.js:31), e chiudi_voto chiude solo se scaduto ma li' lo e' (schema.sql:944). Da quel momento vota_impostore rifiuta: schema.sql:1008 `if v.closed_at is not null then raise exception 'Il voto e'' chiuso.'`, che l'interfaccia mostra in `avviso` (Impostore.jsx:250-252). Verificato anche il blocco che ne segue: senza altri voti `bastaPerCominciare(quanti, tutti)` (impostore.js:416-418) non diventa mai vero, l'effetto di Preparazione (Impostore.jsx:226-238) non chiama mai onAvvia, la partita resta in 'preparazione' e Apparecchia non si vede perche' Impostore.jsx:97 la mostra solo con partita assente/finita/annullata — l'unica uscita e' 'Annulla la partita' (Impostore.jsx:95, che compare perche' 'preparazione' e' inCorsoOra). Il caso del voto d'accusa e' meno grave come descritto, perche' resta la strada di rivela_chiesta. Nessuna guardia, nessuna prova: prove/impostore.mjs non tocca voti.js."
+          }
+        ]
+      },
+      {
+        "famiglia": "impostore",
+        "difetti": [
+          {
+            "titolo": "I punti finali si calcolano sull'elenco intero con le schede dell'ultimo giro: paga chi è stato beccato, non paga chi ha vinto",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\lib\\partiteImpostore.js:241-255 (paga)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\lib\\impostore.js:189-195 (soglia e scoperti/impuniti in esito)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\lib\\impostore.js:265-307 (raccontaFinale)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:1029-1040 (Rivelazione)"
+            ],
+            "sequenza": "Sei giocatori a..f, impostori a e b (il gruppo vota 2). GIRO 1: si accusano a (impostore, beccato) e c (innocente). Restano b,d,e,f -> si continua. GIRO 2: b vota d, e vota d, f vota d -> esce d. Restano b,e,f -> si continua. GIRO 3: b vota e, e vota b, f vota e -> esce e. Ora è 1 impostore contro 1 innocente: impostoriInMaggioranza, stato 'finita', vincono gli impostori. chiudiAccusa chiama paga(dopo, voto) con il voto del giro 3.",
+            "cosaSbaglia": "paga() passa a premi() `partita.impostori` (tutti e due) e `partita.giocatori` (tutti e sei), ma le schede sono solo quelle dell'ultimo giro. Dentro esito() la soglia è dimensionata su impostori.length=2, quindi prende i DUE più votati del giro 3 invece dell'unico. Verificato eseguendo il motore: accusati=['b','e'], scoperti=['b'], impuniti=['a'], indovini=['e']. Risultato: (1) 'a', beccato al giro 1, incassa 5 punti come impostore-impunito; (2) 'b', che ha vinto la partita, non prende niente ed è etichettato «scoperto» nella rivelazione; (3) 'e', innocente eliminato dalla parte che ha perso, incassa 2 punti da smascheratore. La rivelazione dice contemporaneamente «Vi hanno fatti fuori» e mostra b come scoperto. Chi ha indovinato nei giri precedenti non prende invece mai niente, perché quelle schede sono state buttate (vote_id azzerato).",
+            "gravita": "rompe",
+            "rimedio": "Chi è scoperto e chi è impunito si sa già senza ricontare: gli impostori dentro `partita.fuori` sono gli scoperti, `impostoriVivi(partita)` sono gli impuniti. Usare quelli in paga() e in raccontaFinale(), e limitare il calcolo degli indovini a esito({impostori: impostoriVivi, giocatori: vivi}). Se si vuole pagare anche chi ha indovinato in un giro precedente, i voti dei giri chiusi vanno accumulati invece di azzerare vote_id.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Ogni giro d'accusa si apre con il voto del giro prima ancora in mano, e il tasto «Rivela» è già acceso",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\hooks\\useImpostore.js:102-105",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\lib\\partiteImpostore.js:281 (p_voto = null quando si riparte)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:722-733 e 861-864"
+            ],
+            "sequenza": "GIRO 2, quattro vivi (b,d,e,f): tre schede su d, una su e. Si rivela, esce d, la partita torna 'in-corso' e chiudi_accusa rimette vote_id a NULL. Si parla il GIRO 3 (b,e,f). L'ultimo preme «Fatto, avanti» -> stato 'voto', vote_id ancora NULL. Accusa si monta su tutti i telefoni. Chiunque prema il tasto grande «Rivela» nel mezzo secondo prima che il voto nuovo arrivi.",
+            "cosaSbaglia": "L'effetto del hook ricarica il voto solo `if (quale && ...)`: quando vote_id torna NULL non azzera niente, e `voto` resta quello del giro chiuso. Quindi Accusa non mostra la rotella (voto non è null) ma si disegna con i dati vecchi: hoVotato=true («Hai votato»), le facce con gli indici del giro prima, e soprattutto tuttiHannoVotato() è vero (b,e,f avevano tutti votato al giro 2) quindi compare subito «Rivela». Premendolo, rivela() chiama chiudiAccusa(partita, votoVecchio): le schede del giro 2 vengono riapplicate ai vivi di adesso, i voti su d cadono perché d non è più fra i giocatori, e il gruppo elimina 'e' con un voto solo, di un giro già concluso. Stessa cosa al primo voto della partita: lì il voto rimasto in mano è quello d'apertura, opzioni ['1','2'], e la griglia mostra due tessere «Qualcuno» con l'avatar rotto e «devono chiederlo in 2».",
+            "gravita": "rompe",
+            "rimedio": "Nel hook, quando `quale` è falsy fare setVoto(null): così Accusa mostra la rotella («Apro il voto») finché il voto vero non arriva. In più, in Accusa non fidarsi di `voto` se non è quello della partita: guardia `voto?.id === partita.votoId` prima di calcolare hoVotato, tuttiDentro e le opzioni.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Lo storico legge le schede con l'elenco dei giocatori invece che con le opzioni del voto: è di nuovo lo scarto d'indice",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:487-494 (Storico)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:151-158 (FinestraFinale dallo storico, voto senza opzioni)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\lib\\partiteImpostore.js:84 (leggiStorico non chiede `options`)"
+            ],
+            "sequenza": "Qualunque partita finita in cui c'è stata almeno una eliminazione o un «altro giro» prima dell'ultimo voto. Es. sei giocatori a..f, impostori a,b: giro 1 esce a e c, giro 2 e 3 come sopra. A partita finita, apri la schermata dell'Impostore e guarda la riga nello storico, poi toccala per riaprire il resoconto.",
+            "cosaSbaglia": "Le schede sul database sono numeri di posizione dentro voto.opzioni, e dal secondo giro le opzioni sono [superstiti..., 'altro-giro'], non partita.giocatori. Storico chiama schedePerId(p.schede, p.giocatori) e la finestra riaperta passa voto={{schede}} senza opzioni, quindi Rivelazione ripiega su partita.giocatori. Ogni numero slitta di uno o più posti. Verificato: le schede vere {b:['e'], e:['b'], f:['e']} diventano {b:['b'], e:['a'], f:['b']}, e il resoconto passa da scoperti=['b'] premiati=['e'] a scoperti=['a','b'] premiati=['e','f']. La stessa partita raccontata due volte in due modi diversi, e nessuno dei due è quello per cui sono stati pagati i punti. leggiStorico non legge nemmeno la colonna `options`, quindi il dato giusto non c'è proprio.",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere `options` alla select di leggiStorico e portarselo dietro sulla partita (es. p.opzioniVoto), poi usare schedePerId(p.schede, p.opzioniVoto ?? p.giocatori) sia in Storico sia nel voto passato a FinestraFinale. Il fallback su giocatori va bene solo per le partite di un giro solo.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Con due impostori vivi si può chiedere «un altro giro» E accusare qualcuno nella stessa scheda",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:740-749 (alterna)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:753-755 (chiediUnAltroGiro)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:845 (disabled del tasto Vota)"
+            ],
+            "sequenza": "Otto giocatori, due impostori vivi (quindi si devono indicare in due). Nella schermata del voto: prima tocca «Non ne so abbastanza — un altro giro», poi tocca la faccia di qualcuno. Il tasto in fondo resta acceso e dice «Vota». Premilo.",
+            "cosaSbaglia": "chiediUnAltroGiro azzera le scelte, ma alterna() non ha la guardia specchiata: con quanti=2 vede scelti=[indiceAltroGiro] (lunghezza 1 < 2) e accoda la persona. La scheda parte come [8,3]. Verificato: schedePerId la traduce in ['altro-giro','d'], quantiVoglionoUnAltroGiro la conta, e allo stesso tempo conteggi['d'] sale di uno. Una persona sola pesa su due risposte alla stessa domanda, mentre tutti gli altri ne hanno una — e se «altro giro» perde per un voto, quella accusa in più può decidere chi esce. Il tasto di conferma è abilitato perché il ramo `chiedoAncora ? false : ...` salta del tutto il controllo sul numero di scelte. Con un impostore solo non capita, perché lì la lunghezza è già al massimo.",
+            "gravita": "confonde",
+            "rimedio": "In alterna(), se scelti contiene indiceAltroGiro ripartire da zero (o rifiutare il tocco), come chiediUnAltroGiro fa nel verso opposto. E nel disabled del tasto usare `chiedoAncora ? scelti.length !== 1 : scelti.length !== quanti`.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Durante il giro lo schermo dice sempre quanti impostori c'erano all'inizio, non quanti ne restano",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:654-659"
+            ],
+            "sequenza": "Otto giocatori, il gruppo vota due impostori. Giro 1, si vota, ne viene beccato uno. La partita riparte con sette persone. Guarda l'intestazione del giro 2, poi arriva al voto e guarda il titolo di quella schermata.",
+            "cosaSbaglia": "L'intestazione usa partita.impostori.length, che è il numero di partenza e non cambia mai. Il giro 2 continua a dire «2 impostori» mentre di vivo ce n'è uno. Due schermate dello stesso gioco si contraddicono nello stesso minuto: Accusa usa impostoriVivi() e scrive «Vota l'impostore» al singolare chiedendone uno solo. Il commento sopra dice che questo numero sta lì perché «è la cosa che serve a ragionare»: è esattamente il numero su cui la gente ragiona, ed è sbagliato.",
+            "gravita": "confonde",
+            "rimedio": "Usare impostoriVivi(partita).length, e scrivere qualcosa come «1 impostore ancora in giro» quando ne è già stato beccato uno — così si capisce anche che il conto è sceso perché uno è uscito.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Il contatore dei giri resta congelato su «Giro 1 di 2» per tutta la partita",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\supabase\\schema.sql:1104-1105 (chiudi_accusa: turno e giro forzati a 0 e 1)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\lib\\impostore.js:474-476 e 516-518 (dopoAccusa alza giro)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:640 e 655"
+            ],
+            "sequenza": "Qualunque partita che vada oltre il primo giro: finisci il giro 1, al voto vince «un altro giro» (o esce qualcuno), si riparte. Guarda l'intestazione. Ripeti quattro volte.",
+            "cosaSbaglia": "dopoAccusa restituisce giro = giro+1, ma quel valore non arriva mai al database: chiudi_accusa scrive `giro = case when p_stato = 'in-corso' then 1 else giro end`, e l'unico numero che passa è giriTotali via p_giri. Siccome partita.giro riletto è sempre 1, p_giri vale sempre 2. Risultato: il primo giro dice «Giro 1 di 1», tutti gli altri dicono «Giro 1 di 2» per sempre, anche al quinto. E il «di 2» non vuol dire più niente, perché i giri non si votano più all'inizio: promette una fine che non esiste. Anche l'aria-label dei pallini dice la stessa cosa.",
+            "gravita": "confonde",
+            "rimedio": "O chiudi_accusa scrive il giro che arriva (`giro = coalesce(p_giro, giro)`, con p_giro = esitoGiro.giro), oppure si toglie del tutto il «di N» e resta solo «Giro 3» — che è l'unica cosa vera adesso che il numero di giri non è più deciso in anticipo.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Il testimone non protegge chi parla per primo in ogni giro dopo il primo",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\supabase\\schema.sql:1099-1109 (chiudi_accusa non tocca turno_da)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\supabase\\testimone.sql:46-55 (solo avanza_impostore aggiorna turno_da)"
+            ],
+            "sequenza": "Finisci il giro 1, vota, discuti un paio di minuti, il gruppo chiede un altro giro (o esce qualcuno). La partita riparte al turno 0 con l'ordine rimescolato. Chi ha il dito veloce preme «Fatto, avanti» nell'istante in cui la schermata cambia, prima che il primo abbia aperto bocca.",
+            "cosaSbaglia": "turno_da lo aggiornano solo avvia_impostore e avanza_impostore. chiudi_accusa rimette turno a 0 e cambia l'ordine ma lascia turno_da all'ora dell'ultimo «fatto» del giro precedente — cioè a prima di tutta la fase di voto. Quindi secondiDelTestimone è già 0 quando il giro riparte, puoAvanzare è vero per chiunque, e il tasto è acceso per tutti dal primo istante. Il primo di ogni giro dal secondo in poi viene saltato esattamente come prima che il testimone esistesse, e non c'è nessun segno che manchi qualcosa: il tasto dice «Fatto, avanti», non «Aspetta 30s».",
+            "gravita": "confonde",
+            "rimedio": "Aggiungere `turno_da = now()` nell'update di chiudi_accusa quando p_stato = 'in-corso'.",
+            "verdetto": "reale",
+            "prova": "turno_da viene scritto solo in due punti: apertura.sql:47 (avvia_impostore) e testimone.sql:52 (avanza_impostore). chiudi_accusa (schema.sql:1099-1109, eliminazione.sql:43-53) rimette turno a 0 e cambia l'ordine ma non tocca turno_da. Quindi al riavvio del giro turnoDa e' l'ora dell'ultimo «fatto» del giro precedente, cioe' prima di tutta la fase di voto: impostore.js:127-131 secondiDelTestimone restituisce 0 e impostore.js:134-138 puoAvanzare e' vero per chiunque, Impostore.jsx:677-679 disegna «Fatto, avanti» acceso per tutti. Le prove sul testimone (prove/impostore.mjs:571-604) provano solo puoAvanzare/secondiDelTestimone a partire da un turnoDa dato: non coprono chi scrive quel campo."
+          },
+          {
+            "titolo": "Nello stato 'colpo' tutti leggono «Ti hanno beccato», e chi era già uscito perde la lista delle parole",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:924 (etichetta fuori dal ramo `tocca`)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:123 (Fuori escluso quando lo stato è 'colpo')"
+            ],
+            "sequenza": "Otto giocatori, due impostori. Giro 1: il gruppo accusa un impostore e un innocente — l'innocente esce ed è nella schermata «Sei fuori — adesso guardi» con tutte le parole. Giro 2: viene beccato anche il secondo impostore, la partita passa a 'colpo'. Guarda lo schermo dell'innocente eliminato, e anche quello di un innocente ancora vivo.",
+            "cosaSbaglia": "L'etichetta «Ti hanno beccato» è renderizzata prima del ramo `tocca ? ... : ...`, quindi la legge chiunque sia fra i giocatori: gli innocenti vivi, e pure gli innocenti eliminati per errore. Su quei telefoni la schermata dice «Ti hanno beccato» e subito sotto «Marco ci prova», che sono due frasi rivolte a due persone diverse. In più la condizione a riga 123 toglie la schermata Fuori a tutti gli usciti e non solo all'impostore appena scoperto (che è il motivo scritto nel commento): chi era fuori da un giro perde di colpo la lista delle parole che gli era stata promessa, e si ritrova una rotella d'attesa.",
+            "gravita": "confonde",
+            "rimedio": "Spostare «Ti hanno beccato» dentro il ramo `tocca`, e per gli altri mettere un'etichetta neutra («Ultima carta»). Per la schermata Fuori, escluderla solo a chi è in `puo` (l'impostore che deve scrivere), non a tutti quelli in stato 'colpo'.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Chi non sta giocando vede — e può premere — «Annulla la partita»",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:95",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:142-146"
+            ],
+            "sequenza": "In fase di apparecchiatura togli una persona dall'elenco dei giocatori e fai partire la partita. Su quel telefono apri la schermata dell'Impostore, mentre gli altri stanno parlando. Premi «Annulla la partita», poi «Sì, annulla».",
+            "cosaSbaglia": "Abbandona è condizionato solo a inCorsoOra, senza inGioco. Quindi chi non è fra i giocatori si trova, in cima allo schermo, un tasto che chiude la partita a tutti — e subito sotto la frase «C'è una partita in corso e tu non ci sei dentro. Goditela da fuori.» Le tre schermate del gioco vero (Preparazione, Colpo, Accusa) hanno tutte la guardia inGioco, con un commento che spiega perché; questa, che è l'unica distruttiva, non ce l'ha. Un tocco per curiosità cancella la serata a otto persone e la partita non si recupera (stato 'annullata', non si riprende).",
+            "gravita": "confonde",
+            "rimedio": "Mettere anche qui la guardia: `{inCorsoOra && inGioco && <Abbandona .../>}`. Chi guarda da fuori non deve poter chiudere il tavolo.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "La schermata d'apertura promette un numero di impostori che poi si vota, e parla di due giri che non esistono più",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:378-381",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:433-440"
+            ],
+            "sequenza": "Metti otto persone nell'elenco. Sotto il tasto leggi «Ci saranno due impostori. Nessuno saprà chi.» e sopra «Dopo due giri si vota chi sembra fuori posto.» Premi «Comincia in 8». Nella schermata dopo il gruppo vota 1 impostore, e la partita parte con uno.",
+            "cosaSbaglia": "La nota sotto il tasto usa IMPOSTORE.quantiImpostori(n), che adesso è solo il valore consigliato nel voto: la frase è al futuro indicativo («Ci saranno due impostori») su una cosa che decide il gruppo trenta secondi dopo, e può risultare falsa. La riga sopra dice «Dopo due giri si vota», ma i giri non si votano più all'inizio e si vota alla fine di ogni giro. Sono le due frasi che spiegano le regole a chi non ha mai giocato, e nessuna delle due descrive il gioco che sta per partire.",
+            "gravita": "confonde",
+            "rimedio": "Riscrivere le due righe sulla regola vera: «A turno ognuno dice una parola collegata. Finito il giro si vota: si accusa qualcuno, oppure si chiede un altro giro.» E per gli impostori dire che lo decide il gruppo («Quanti impostori lo votate voi fra un attimo — di solito due in otto»).",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Chi apre l'app quando si sta già votando non ha nessun modo di vedere la propria parola",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:127-140 (la carta segreta vive solo dentro Giro)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:187-199 (Accusa)"
+            ],
+            "sequenza": "Otto giocatori. Uno di loro è al bagno con il telefono in tasca e non apre mai l'app durante il giro di parole. L'ultimo preme «Fatto, avanti», la partita passa a 'voto'. Quello torna, apre l'app e si trova direttamente la schermata del voto.",
+            "cosaSbaglia": "La carta coperta e il tasto «Tieni premuto: la tua parola» stanno tutti e due dentro Giro, che si monta solo con stato 'in-corso'. Nello stato 'voto' non c'è nessun modo di leggere assegnazioni[membro.id]. Quella persona vota senza sapere che parola aveva — e soprattutto senza sapere se l'impostore è lei, cosa che nella variante «parola simile» è l'unica informazione che conta. Il localStorage `impostore-letta-<id>` non c'entra: la parola non è mai stata mostrata.",
+            "gravita": "raro",
+            "rimedio": "Portare il tasto «Tieni premuto: la tua parola» anche in Accusa (e nella Preparazione dopo l'avvio), oppure mostrare la carta coperta sopra il voto se `impostore-letta-<id>` non è mai stato scritto su quel telefono.",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Con quattro giocatori e due impostori la partita nasce già vinta, e nessuno lo dice",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\config\\impostore.js:27 (sceltePerImpostori sempre [1,2])",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\lib\\impostore.js:450-453 (impostoriInMaggioranza)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:208-297 (Preparazione)"
+            ],
+            "sequenza": "Quattro giocatori, il minimo. Nella schermata «Quanti impostori?» tocca 2 e vota; tre su quattro fanno lo stesso. La partita parte con due impostori e due innocenti.",
+            "cosaSbaglia": "impostoriInMaggioranza è già vera prima che qualcuno apra bocca (2 impostori, 2 innocenti), ma quel controllo gira solo dentro dopoAccusa, mai all'avvio. Il gioco parte lo stesso e finisce comunque al primo voto: se il gruppo becca tutti e due si va al colpo, in ogni altro caso escono uno o due e la partita chiude con «Vi hanno fatti fuori». Gli innocenti hanno un solo esito possibile diverso dalla sconfitta, e la schermata del voto non lo dice. La scelta «2» viene offerta identica a quattro persone e a otto.",
+            "gravita": "raro",
+            "rimedio": "Togliere l'opzione 2 quando i giocatori sono meno di sei (sceltePerImpostori come funzione del numero, non come costante), oppure lasciarla e scrivere sotto l'avviso: «In quattro con due impostori il gruppo ha una sola occasione: beccarli tutti e due al primo voto.»",
+            "verdetto": "non-verificato"
+          },
+          {
+            "titolo": "Due impostori beccati insieme scrivono tutti e due la parola, ma la seconda risposta sparisce senza dire niente",
+            "dove": [
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\src\\components\\Impostore.jsx:892-953 (Colpo)",
+              "C:\\Users\\Lenovo\\Desktop\\ALL41\\supabase\\schema.sql:1129 (tenta_colpo esce se tentativo non è null)"
+            ],
+            "sequenza": "Otto giocatori, due impostori a e b, tutti e due ancora vivi. Al voto il gruppo li accusa entrambi: dopoAccusa li segna scoperti e la partita passa a 'colpo'. Sui telefoni di a e di b compare «Ultima carta» con il campo di scrittura. a scrive la parola giusta e preme «È questa» mezzo secondo prima di b, che stava scrivendo la stessa cosa.",
+            "cosaSbaglia": "chiPuoTentare restituisce tutti gli scoperti, quindi il modulo si apre a entrambi. tenta_colpo ammette solo il primo: la chiamata di b restituisce la riga com'è, senza errore, e subito dopo b esegue chiudiPartita. Sul suo telefono non compare nessun messaggio — la finestra del finale si apre e mostra «a ha tentato «Mare»», mentre b è convinto di aver mandato il suo. La nota sotto il campo dice «Una sola volta», che si legge come «hai un solo tentativo tu», non come «solo uno di voi due può rispondere».",
+            "gravita": "raro",
+            "rimedio": "O si sceglie chi tenta (l'ultimo scoperto, o chi fra i due ha preso più voti) e agli altri si mostra la schermata d'attesa; oppure si lascia a entrambi e si scrive «Rispondete in due: vale la prima che arriva», e chi arriva secondo riceve una riga esplicita invece del silenzio.",
+            "verdetto": "reale",
+            "prova": "Impostore.jsx:896-906 `puo = chiPuoTentare(...)` restituisce tutti gli scoperti (impostore.js:378-380) e `tocca = puo.includes(membro.id)`: con due scoperti il campo si apre su entrambi i telefoni. schema.sql:1129 `if g.tentativo is not null then return g; end if;` — la seconda chiamata restituisce la riga com'e', senza raise, quindi partiteImpostore.js:303 non lancia e useImpostore.js:195-196 prosegue dritto con `setPartita(await chiudiPartita(dopo, voto))`: sul telefono di b nessun messaggio, e il finale mostra il tentativo di a (Impostore.jsx:1068-1073). La nota di Impostore.jsx:953 «Una sola volta» non distingue i due casi. L'effetto di Impostore.jsx:910-912 chiude la finestra solo quando il tentativo di a e' gia' arrivato via realtime, quindi la finestra fra il submit di a e l'eco esiste davvero. prove/impostore.mjs:375-387 prova chiPuoTentare ma non l'unicita' del tentativo."
+          }
+        ]
+      }
+    ]
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Caccia"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verifica"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "caccia:regole",
+      "phaseIndex": 1,
+      "phaseTitle": "Caccia",
+      "agentId": "afbe964adcd9c0bc6",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786205725711,
+      "queuedAt": 1786205718710,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "impostore",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206377944,
+      "tokens": 133693,
+      "toolCalls": 18,
+      "durationMs": 652228,
+      "resultPreview": "{\"famiglia\":\"impostore\",\"difetti\":[{\"titolo\":\"L'impostore beccato in un giro precedente viene pagato come impunito, e il finale dice che l'ha fatta franca\",\"dove\":[\"src/lib/partiteImpostore.js:241-248 (paga)\",\"src/lib/impostore.js:194-195 (scoperti/impuniti in esito)\",\"src/lib/impostore.js:289-305 (vincitore e titolo in raccontaFinale)\",\"src/components/Impostore.jsx:1031-1040 (Rivelazione)\"],\"sequ…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "caccia:stati",
+      "phaseIndex": 1,
+      "phaseTitle": "Caccia",
+      "agentId": "ac7a030a41f4b179b",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786205726121,
+      "queuedAt": 1786205718712,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Impostore — transizioni di stato, chiusura della partita e …",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206387300,
+      "tokens": 136545,
+      "toolCalls": 18,
+      "durationMs": 661178,
+      "resultPreview": "{\"famiglia\":\"Impostore — transizioni di stato, chiusura della partita e pagamento dei punti\",\"difetti\":[{\"titolo\":\"Chi paga guarda solo l'ultimo voto: un impostore beccato al primo giro viene pagato come «impunito» e il finale dice che ha vinto lui\",\"dove\":[\"src/lib/partiteImpostore.js:241-255 (paga)\",\"src/lib/impostore.js:194-195 (scoperti/impuniti in esito)\",\"src/lib/impostore.js:281-305 (raccon…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "caccia:concorrenza",
+      "phaseIndex": 1,
+      "phaseTitle": "Caccia",
+      "agentId": "ab8c6434e1d472a50",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786205727080,
+      "queuedAt": 1786205718712,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Impostore — piu' telefoni insieme: stato condiviso, scrittu…",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206428511,
+      "tokens": 154875,
+      "toolCalls": 15,
+      "durationMs": 701431,
+      "resultPreview": "{\"difetti\":[{\"titolo\":\"La partita nuova parte da sola, con i voti della partita di prima\",\"dove\":[\"src/components/Impostore.jsx:226-238\",\"src/components/Impostore.jsx:215-218\",\"src/hooks/useImpostore.js:102-105\",\"src/hooks/useImpostore.js:107-118\"],\"sequenza\":\"Sei persone, sei telefoni. Finisce la partita 1 (o la si annulla): su tutti e sei `voto` nel hook e' rimasto l'ultimo voto d'accusa, quello…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "caccia:punteggio",
+      "phaseIndex": 1,
+      "phaseTitle": "Caccia",
+      "agentId": "a11a398c3e03b5657",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786205728395,
+      "queuedAt": 1786205718712,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "I punti e il racconto del finale",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206357803,
+      "tokens": 142696,
+      "toolCalls": 23,
+      "durationMs": 629407,
+      "resultPreview": "{\"difetti\":[{\"titolo\":\"Un impostore beccato a un giro precedente viene pagato come «impunito», e la partita vinta dal gruppo risulta persa\",\"dove\":[\"src/lib/impostore.js:194-195 — scoperti/impuniti calcolati solo sugli accusati dell'ultimo voto\",\"src/lib/impostore.js:210-252 — premi()\",\"src/lib/impostore.js:265-307 — raccontaFinale()\",\"src/lib/partiteImpostore.js:241-255 — paga()\",\"src/components/…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "caccia:schede",
+      "phaseIndex": 1,
+      "phaseTitle": "Caccia",
+      "agentId": "a0bea4d4030c01f13",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786205726858,
+      "queuedAt": 1786205718713,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "impostore",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206284177,
+      "tokens": 153379,
+      "toolCalls": 17,
+      "durationMs": 557317,
+      "resultPreview": "{\"famiglia\":\"impostore\",\"difetti\":[{\"titolo\":\"I punti e il finale guardano solo l'ultimo voto: un impostore beccato al primo giro viene pagato come impunito\",\"dove\":[\"src/lib/partiteImpostore.js:241-255 (paga)\",\"src/lib/partiteImpostore.js:289 (chiudiAccusa chiama paga con l'ultimo voto)\",\"src/lib/impostore.js:194-195 (scoperti/impuniti da esito)\",\"src/lib/impostore.js:265-307 (raccontaFinale)\",\"s…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "caccia:interfaccia",
+      "phaseIndex": 1,
+      "phaseTitle": "Caccia",
+      "agentId": "a63204f2c41e25030",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786205728305,
+      "queuedAt": 1786205718713,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "impostore",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206354502,
+      "tokens": 151662,
+      "toolCalls": 18,
+      "durationMs": 626196,
+      "resultPreview": "{\"difetti\":[{\"titolo\":\"I punti finali si calcolano sull'elenco intero con le schede dell'ultimo giro: paga chi è stato beccato, non paga chi ha vinto\",\"dove\":[\"C:\\\\Users\\\\Lenovo\\\\Desktop\\\\ALL41\\\\src\\\\lib\\\\partiteImpostore.js:241-255 (paga)\",\"C:\\\\Users\\\\Lenovo\\\\Desktop\\\\ALL41\\\\src\\\\lib\\\\impostore.js:189-195 (soglia e scoperti/impuniti in esito)\",\"C:\\\\Users\\\\Lenovo\\\\Desktop\\\\ALL41\\\\src\\\\lib\\\\imposto…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "verifica:schede",
+      "phaseIndex": 2,
+      "phaseTitle": "Verifica",
+      "agentId": "a32a73988ae317b10",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786206289333,
+      "queuedAt": 1786206286166,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206650728,
+      "tokens": 109765,
+      "toolCalls": 17,
+      "durationMs": 361395,
+      "resultPreview": "{\"esiti\":[{\"titolo\":\"I punti e il finale guardano solo l'ultimo voto: un impostore beccato al primo giro viene pagato come impunito\",\"verdetto\":\"reale\",\"prova\":\"Ricostruita passo per passo. GIRO 1: dopoAccusa (impostore.js:482-486) con impostoriOra=[a,b] su 8 vivi, conteggi a=6/d=5/c=1 -> soglia=ordinati[1]=d=5 -> accusati=[a,d], fuori=[a,d], restano=[b] -> stato 'in-corso' (impostore.js:509-519).…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 8,
+      "label": "verifica:interfaccia",
+      "phaseIndex": 2,
+      "phaseTitle": "Verifica",
+      "agentId": "a1a681116b2515809",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786206361727,
+      "queuedAt": 1786206356782,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206750633,
+      "tokens": 125936,
+      "toolCalls": 17,
+      "durationMs": 388905,
+      "resultPreview": "{\"esiti\":[{\"titolo\":\"I punti finali si calcolano sull'elenco intero con le schede dell'ultimo giro\",\"verdetto\":\"reale\",\"prova\":\"Confermato eseguendo il motore vero sulla sequenza descritta. partiteImpostore.js:241-248 — paga() passa `impostori: partita.impostori` e `giocatori: partita.giocatori` (l'elenco INTERO) ma `schede` del solo ultimo voto; impostore.js:189-192 dimensiona la soglia su `impos…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 9,
+      "label": "verifica:punteggio",
+      "phaseIndex": 2,
+      "phaseTitle": "Verifica",
+      "agentId": "a9d0acf9c38f9560c",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786206366826,
+      "queuedAt": 1786206360982,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206783672,
+      "tokens": 135003,
+      "toolCalls": 20,
+      "durationMs": 416845,
+      "resultPreview": "{\"esiti\":[{\"titolo\":\"Un impostore beccato a un giro precedente viene pagato come «impunito» e la partita vinta dal gruppo risulta persa\",\"verdetto\":\"reale\",\"prova\":\"Rigiocata sul motore vero (8 giocatori, impostori a e b; giro 1 accusa a+c; giro 2 accusa b). dopoAccusa restituisce correttamente stato 'colpo' e vincitore 'gruppo'. Poi chiudiPartita -> paga (src/lib/partiteImpostore.js:346 e 241-248…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 10,
+      "label": "verifica:regole",
+      "phaseIndex": 2,
+      "phaseTitle": "Verifica",
+      "agentId": "a690256c4892f13fa",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786206384603,
+      "queuedAt": 1786206379822,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206697148,
+      "tokens": 120994,
+      "toolCalls": 18,
+      "durationMs": 312544,
+      "resultPreview": "{\"esiti\":[{\"titolo\":\"L'impostore beccato in un giro precedente viene pagato come impunito, e il finale dice che l'ha fatta franca\",\"verdetto\":\"reale\",\"prova\":\"Confermato riga per riga. `paga` (src/lib/partiteImpostore.js:242-248) costruisce le schede SOLO dall'ultimo voto — `schedePerId(voto?.schede, opzioni)` — ma passa `impostori: partita.impostori` (tutti e due) e `giocatori: partita.giocatori`…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 11,
+      "label": "verifica:stati",
+      "phaseIndex": 2,
+      "phaseTitle": "Verifica",
+      "agentId": "a0176e1a01df0fe56",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786206395289,
+      "queuedAt": 1786206389100,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206804312,
+      "tokens": 132123,
+      "toolCalls": 20,
+      "durationMs": 409023,
+      "resultPreview": "{\"esiti\":[{\"titolo\":\"Chi paga guarda solo l'ultimo voto: un impostore beccato al primo giro viene pagato come «impunito»\",\"verdetto\":\"reale\",\"prova\":\"partiteImpostore.js:242-248: paga() passa impostori: partita.impostori (TUTTI) e schede: schedePerId(voto?.schede, opzioni) del solo ultimo voto. In esito(), conteggi si costruisce su `giocatori` = tutti gli otto (impostore.js:173), quindi 'a' — che …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 12,
+      "label": "verifica:concorrenza",
+      "phaseIndex": 2,
+      "phaseTitle": "Verifica",
+      "agentId": "ad3bbece08b13281b",
+      "model": "claude-opus-5",
+      "state": "done",
+      "startedAt": 1786206432647,
+      "queuedAt": 1786206428539,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Progetto: All For One (ALL41), web app React/Vite + Supabase, in italiano.\nCartella di lavoro: la corrente. NON MODIFICARE NESSUN FILE — solo lettura e ragionamento.\n\nStai cercando difetti nel gioco dell'IMPOSTORE. I file:\n- src/lib/impostore.js — il motore puro (regole, turni, voto, esito, punti)\n- src/lib/partiteImpostore.js — le scritture su Supabase\n- src/hooks/useImpostore.js — lo stato e il …",
+      "lastProgressAt": 1786206913688,
+      "tokens": 137010,
+      "toolCalls": 19,
+      "durationMs": 481039,
+      "resultPreview": "{\"esiti\":[{\"titolo\":\"La partita nuova parte da sola coi voti della partita di prima\",\"verdetto\":\"reale\",\"prova\":\"Sequenza ricostruita e confermata riga per riga. (a) A partita finita `voto` resta l'ultimo voto d'accusa: useImpostore.js:103-104 calcola `quale = partita.votoId` (stato 'finita', non 'preparazione') e `if (quale && quale !== voto?.id)` non ricarica niente. (b) Solo chi crea azzera: us…"
+    }
+  ],
+  "totalTokens": 1633681,
+  "totalToolCalls": 220
+}
