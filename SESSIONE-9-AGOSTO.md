@@ -180,6 +180,8 @@ punti si prendono **solo vincendo**, abbandonare non ne toglie.
       cinque test su dispositivo ancora aperto, e non lo posso fare io.
 - [ ] **Audio su iPhone** — registrare e riascoltare. Verifica bloccante
       n.3 dello spec, mai chiusa: in casa c'era solo un Android.
+      ⚠️ **Adesso conta il doppio**: il gesto è cambiato oggi (un tocco
+      invece di tenere premuto) e nessuno l'ha ancora toccato con un dito.
 
 ## 2. I numeri utili — ✅ fatti, ma **ricontrollali**
 
@@ -230,15 +232,23 @@ risponde, dimmelo e lo tolgo.
       posto in cui viene detto perché hai perso dei punti. E dove c'è roba
       scritta a mano, la prima uscita avvisa invece di buttare via.
 
-- [ ] **Audio: un tocco per registrare**, non tenere premuto. E a fine
-      registrazione chiedere *«Vuoi contrassegnarlo come importante?»*
+- [x] ✅ **Audio: un tocco per registrare**, e la domanda dopo.
 
-      ✅ **Correzione:** avevo scritto che tocca anche la Guida. **Non è
-      vero.** La Guida insegna solo il «tieni premuto»; il «trascina in su
-      per segnarlo importante» vive solo dentro Vocali, nel suggerimento
-      sotto il tasto e nell'`aria-label`. Il lavoro è più piccolo di come
-      l'avevo messo in conto. ⚠️ Resta che **va provato su un telefono
-      vero**: è un gesto, e su desktop non si prova.
+      Il vocale **parte subito**, e per otto secondi resta offerto
+      *«❗ Segnalo»*. La domanda non tiene in ostaggio l'audio: se venisse
+      prima dell'invio, un minuto di registrazione resterebbe appeso in
+      memoria ad aspettare un tocco, e chi si distrae lo perde. Un vocale
+      perso è già il difetto n.3 e non serve un secondo modo.
+
+      Trovato strada facendo: **il bollino «importante» non arrivava agli
+      altri** — `useVocali` ascoltava gli UPDATE solo per le eliminazioni.
+      Segnare un vocale lo segnava solo sul tuo telefono, cioè esattamente
+      quello che segnarlo doveva evitare.
+
+      ⚠️ **DA PROVARE SU UN TELEFONO VERO — non posso farlo io.** Serve un
+      microfono e un dito. Da controllare: che due tocchi nervosi non
+      facciano partire due registrazioni, e che l'indicatore del microfono
+      (il pallino arancione su iPhone) **si spenga** quando fermi.
 - [ ] **Gli avvisi dei messaggi rapidi si vedono da tutti i tab**
       (*«Leo ha lanciato un sondaggio — mostra / vedo dopo»*)
 - [ ] **La richiesta di aggiornare la posizione compare in tutti i tab**
