@@ -74,6 +74,30 @@ export async function mandaVocale({ blob, mimeType, durata, importante = false }
   return { ok: true, vocale: daRiga(data) }
 }
 
+// ⚠️ Si segna DOPO che il vocale è già partito, e non prima.
+//
+// Il gesto vecchio — tieni premuto e trascina in su — chiedeva di
+// decidere «è importante?» mentre stavi ancora parlando, con un
+// movimento che non si vede da nessuna parte. Adesso la domanda arriva
+// quando ha senso, cioè quando hai finito.
+//
+// Ma la domanda **non tiene in ostaggio l'audio**: il vocale parte
+// subito, e questa è una correzione che arriva dopo. Se la domanda
+// venisse prima dell'invio, un minuto di registrazione resterebbe
+// appeso in memoria in attesa di un tocco — e chi si distrae, o a cui
+// si blocca il telefono, lo perderebbe. In questa app un vocale perso
+// è già il difetto n.3, e non ne serve un secondo modo.
+//
+// Si può solo accendere, non spegnere: è un ripensamento di un secondo
+// dopo, non un interruttore.
+export async function segnaImportante(id) {
+  const { error } = await supabase
+    .from('voice_messages')
+    .update({ importante: true })
+    .eq('id', id)
+  if (error) throw error
+}
+
 // Morbida come nel resto dell'app.
 export async function eliminaVocale(id) {
   const { error } = await supabase

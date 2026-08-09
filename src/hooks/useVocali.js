@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
-import { eliminaVocale, leggiVocali, TETTO_VOCALI } from '../lib/vocali.js'
+import { eliminaVocale, leggiVocali, segnaImportante, TETTO_VOCALI } from '../lib/vocali.js'
 import { leggiMembri } from '../lib/membri.js'
 import { descriviErrore } from '../lib/errori.js'
 
@@ -71,8 +71,21 @@ export function useVocali() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'voice_messages' },
         ({ new: riga }) => {
-          if (!riga?.deleted_at) return
-          setVocali((precedenti) => precedenti.filter((v) => v.id !== riga.id))
+          if (riga?.deleted_at) {
+            setVocali((precedenti) => precedenti.filter((v) => v.id !== riga.id))
+            return
+          }
+          // ⚠️ E l'altro UPDATE che esiste: «segnalo importante», che si
+          // preme un secondo dopo l'invio. Senza questo il bordo rosso
+          // compariva solo sul telefono di chi l'ha premuto, e sugli
+          // altri sette il vocale restava uno qualunque — cioè proprio
+          // quello che segnarlo doveva evitare. Stesso difetto delle
+          // eliminazioni, e stessa correzione.
+          setVocali((precedenti) =>
+            precedenti.map((v) =>
+              v.id === riga.id ? { ...v, importante: Boolean(riga.importante) } : v
+            )
+          )
         }
       )
       .subscribe()
@@ -115,5 +128,28 @@ export function useVocali() {
     }
   }, [])
 
-  return { vocali, membri, stato, errore, inserisci, togli }
+  // ⚠️ Come `togli`: se non riesce, il bollino TORNA indietro.
+  //
+  // Segnare un vocale importante è una promessa fatta agli altri sette —
+  // «guardate questo prima degli altri». Un bollino che compare solo sul
+  // telefono di chi l'ha premuto è la stessa bugia dell'eliminazione che
+  // spariva solo a te, e va detta allo stesso modo: se non è andata,
+  // sparisce e si vede che non è andata.
+  const segna = useCallback(async (id) => {
+    setVocali((precedenti) =>
+      precedenti.map((v) => (v.id === id ? { ...v, importante: true } : v))
+    )
+    try {
+      await segnaImportante(id)
+      return true
+    } catch (e) {
+      setVocali((precedenti) =>
+        precedenti.map((v) => (v.id === id ? { ...v, importante: false } : v))
+      )
+      console.warn('[all41] il vocale non si è segnato:', e?.message ?? e)
+      return false
+    }
+  }, [])
+
+  return { vocali, membri, stato, errore, inserisci, togli, segna }
 }

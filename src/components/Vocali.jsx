@@ -12,10 +12,24 @@ import { descriviErrore } from '../lib/errori.js'
 import { dopoVocale } from '../lib/regole.js'
 import Rotella from './Rotella.jsx'
 
-// Quanto bisogna salire col dito perche' il vocale parta segnato.
-const TRASCINAMENTO = 60
+// Per quanti secondi resta offerto «segnalo importante» dopo l'invio.
+// Abbastanza da accorgersene e decidere, non tanto da restare li' a
+// ingombrare la barra mentre uno ne registra un altro.
+const SECONDI_PER_SEGNARE = 8
 
-// Il sostituto del walkie-talkie. Si tiene premuto, si parla, si lascia.
+// Il sostituto del walkie-talkie. Un tocco parte, un tocco ferma.
+//
+// ⚠️ Prima si teneva premuto, e trascinando in su il vocale partiva
+// segnato come importante. Due cose sbagliate in un gesto solo: tenere
+// premuto un minuto col telefono all'orecchio non si puo' fare, e il
+// trascinamento chiedeva di decidere «e' importante?» **mentre stavi
+// ancora parlando**, con un movimento che non era scritto da nessuna
+// parte tranne che in un suggerimento sotto il tasto.
+//
+// Adesso: un tocco parte, un tocco ferma, e la domanda arriva quando ha
+// senso — dopo. Il vocale pero' parte SUBITO: la domanda non tiene in
+// ostaggio l'audio, e' una correzione che si puo' fare nei secondi
+// successivi. Vedi il commento su `segnaImportante` in lib/vocali.js.
 //
 // Impaginato come una chat, perché è una chat: i tuoi a destra, quelli
 // degli altri a sinistra con avatar e nome, l'ultimo in fondo e si
@@ -24,7 +38,7 @@ const TRASCINAMENTO = 60
 // Il formato non è scritto nel codice: lo sceglie il browser e si salva
 // quello vero insieme al file. È la verifica bloccante n.3 dello spec.
 export default function Vocali({ membro }) {
-  const { vocali, membri, stato, errore, inserisci, togli } = useVocali()
+  const { vocali, membri, stato, errore, inserisci, togli, segna } = useVocali()
 
   const sessione = useRef(null)
   const fondo = useRef(null)
@@ -33,7 +47,8 @@ export default function Vocali({ membro }) {
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [suona, setSuona] = useState(null)
-  const [importante, setImportante] = useState(false)
+  // L'ultimo mandato, finche' si puo' ancora segnare importante.
+  const [daSegnare, setDaSegnare] = useState(null)
 
   const puoRegistrare = registrazioneDisponibile()
 
@@ -61,10 +76,14 @@ export default function Vocali({ membro }) {
     }
   }, [])
 
-  // Si tiene premuto e si parla; trascinando in su il tasto diventa
-  // rosso e il vocale parte segnato. Un gesto solo invece di un
-  // interruttore da ricordarsi di spegnere: il dito e' gia' li'.
-  const partenzaY = useRef(0)
+  // L'offerta di segnarlo si ritira da sola. Non è un pentimento
+  // permanente: è il secondo subito dopo, quando uno si accorge di aver
+  // detto una cosa che gli altri devono sentire prima delle altre.
+  useEffect(() => {
+    if (!daSegnare) return undefined
+    const t = setTimeout(() => setDaSegnare(null), SECONDI_PER_SEGNARE * 1000)
+    return () => clearTimeout(t)
+  }, [daSegnare])
 
   // Mentre si registra o si manda, l'app non si ricarica da sola: quella
   // ricarica si porterebbe via l'audio, che è l'unica copia che esiste.
@@ -73,20 +92,22 @@ export default function Vocali({ membro }) {
     return tieniOccupato('vocale')
   }, [registrando, inCorso])
 
-  function muovi(e) {
-    if (!registrando) return
-    setImportante(partenzaY.current - e.clientY >= TRASCINAMENTO)
-  }
-
-  // Il dito è ancora giù? Il permesso del microfono può metterci un
-  // attimo, e in quell'attimo il dito può essersene già andato: senza
-  // questo, la registrazione partiva DOPO il rilascio e restava aperta
-  // da sola, col pallino arancione acceso, finché qualcuno non toccava
-  // di nuovo il tasto — e a quel punto partiva il vocale.
-  const ditoGiu = useRef(false)
+  // ⚠️ Restava anche col tocco singolo, e serve ancora.
+  //
+  // Fra il tocco e `setRegistrando(true)` c'e' un await — il permesso del
+  // microfono — e in quel buco `registrando` e' ancora falso. Due tocchi
+  // ravvicinati passavano tutti e due il controllo e partivano due
+  // registrazioni: la seconda sovrascriveva `sessione`, e la prima
+  // restava aperta e orfana **col microfono acceso**. Su iPhone e' il
+  // pallino arancione, e si spegneva da solo solo allo scadere del
+  // minuto.
+  //
+  // Col tocco singolo il rischio e' persino piu' alto di prima: adesso
+  // «tocca» e «tocca di nuovo» sono lo stesso gesto, e due tocchi
+  // nervosi sul tasto sono la cosa piu' naturale del mondo.
   const staPartendo = useRef(false)
 
-  async function premi(e) {
+  async function avvia() {
     // ⚠️ `staPartendo` è un ref e non uno stato, e serve proprio per
     // quello: fra il tocco e `setRegistrando(true)` c'è un await — il
     // permesso del microfono — e in quel buco `registrando` è ancora
@@ -99,9 +120,9 @@ export default function Vocali({ membro }) {
     staPartendo.current = true
     setAvviso(null)
     setSecondi(0)
-    partenzaY.current = e.clientY
-    setImportante(false)
-    ditoGiu.current = true
+    // Si registra qualcosa di nuovo: l'offerta sul vocale di prima
+    // sparisce, o si finirebbe per segnare quello sbagliato.
+    setDaSegnare(null)
 
     try {
       const avviata = await avviaRegistrazione({
@@ -109,18 +130,9 @@ export default function Vocali({ membro }) {
         onFermato: () => setRegistrando(false),
       })
 
-      // Rilasciato mentre chiedevamo il microfono: si spegne subito e
-      // non si manda niente. Un dito che sfiora non è un messaggio.
-      if (!ditoGiu.current) {
-        avviata.annulla()
-        setSecondi(0)
-        return
-      }
-
       sessione.current = avviata
       setRegistrando(true)
     } catch (e) {
-      ditoGiu.current = false
       setAvviso(spiegaErroreMicrofono(e))
     } finally {
       // Solo l'avvio è finito, non la registrazione: da qui in poi a
@@ -129,8 +141,7 @@ export default function Vocali({ membro }) {
     }
   }
 
-  async function lascia() {
-    ditoGiu.current = false
+  async function ferma() {
     const corrente = sessione.current
     if (!corrente) return
     sessione.current = null
@@ -148,13 +159,15 @@ export default function Vocali({ membro }) {
 
     setInCorso(true)
     try {
-      const esito = await mandaVocale({ ...registrato, importante }, membro.id)
+      // Parte sempre normale. Se era importante lo si dice fra un attimo,
+      // e il vocale intanto è già al sicuro sul server.
+      const esito = await mandaVocale(registrato, membro.id)
       if (!esito.ok) {
         setAvviso(`Aspetta ${esito.attesa}s.`)
         return
       }
       inserisci(esito.vocale)
-      setImportante(false)
+      setDaSegnare(esito.vocale.id)
       setAvviso(null)
       // Le due Leggi della durata: il vocale da due secondi e quello da
       // un minuto. In silenzio — si scoprono nel Testamento, non qui.
@@ -201,37 +214,51 @@ export default function Vocali({ membro }) {
         </p>
       ) : (
         <div className="voc-barra">
+          {/* ⚠️ La domanda sta SOPRA il tasto e non dentro un foglio.
+              Un foglio in sovrimpressione fermerebbe tutto per una cosa
+              che si può benissimo ignorare — e il vocale è già partito,
+              quindi ignorarla è una risposta legittima: vuol dire «no».
+              Sparisce da sola dopo qualche secondo. */}
+          {daSegnare && !registrando && (
+            <div className="voc-segna" role="status">
+              <span>Era importante?</span>
+              <button
+                type="button"
+                className="voc-segna-si"
+                onClick={() => {
+                  segna(daSegnare)
+                  setDaSegnare(null)
+                }}
+              >
+                ❗ Segnalo
+              </button>
+            </div>
+          )}
+
           <div className="voc-tasti">
             <button
               type="button"
-              className={
-                registrando
-                  ? importante
-                    ? 'voc-premi attivo segnato'
-                    : 'voc-premi attivo'
-                  : 'voc-premi'
-              }
-              onPointerDown={premi}
-              onPointerMove={muovi}
-              onPointerUp={lascia}
-              onPointerCancel={lascia}
-              onPointerLeave={registrando ? lascia : undefined}
+              className={registrando ? 'voc-premi attivo' : 'voc-premi'}
+              // Un tocco parte, un tocco ferma. Niente `onPointerLeave`:
+              // col gesto vecchio serviva a non lasciare il microfono
+              // acceso se il dito scivolava via, adesso allontanare il
+              // dito non vuol dire più niente — e se lo fermasse, non si
+              // potrebbe posare il telefono mentre si parla.
+              onClick={registrando ? ferma : avvia}
               disabled={inCorso}
-              aria-label="Tieni premuto e parla, trascina in su per segnarlo"
+              aria-label={registrando ? 'Tocca per fermare e mandare' : 'Tocca per parlare'}
             >
               <Microfono grande={!registrando && !inCorso} />
               {inCorso
                 ? 'Mando…'
                 : registrando
                   ? `${LIMITI.voice.durataMax - secondi}s`
-                  : ''}
+                  : 'Parla'}
             </button>
           </div>
 
           {registrando && (
-            <p className={importante ? 'voc-gesto segnato' : 'voc-gesto'}>
-              {importante ? '❗ Parte come importante' : 'Trascina in su per segnarlo'}
-            </p>
+            <p className="voc-gesto">Tocca di nuovo per mandarlo</p>
           )}
 
           {registrando && (
