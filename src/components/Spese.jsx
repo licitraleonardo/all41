@@ -20,7 +20,7 @@ import Rotella from './Rotella.jsx'
 // mette già lui: due padding annidati raddoppierebbero i margini e
 // spingerebbero il contenuto a metà pagina.
 export default function Spese({ membro, senzaCornice = false }) {
-  const conti = useSpese()
+  const conti = useSpese(membro.id)
   const [foglio, setFoglio] = useState(null)
 
   const { stato, errore } = conti
@@ -91,12 +91,18 @@ function SaldoMio({ conti, ioId, onApri }) {
       <span className="saldo-etichetta">
         {mio === 0 ? 'Sei in pari' : mio > 0 ? 'Devi ricevere' : 'Devi dare'}
       </span>
-      {mio !== 0 && <strong className="saldo-cifra">{formattaEuro(Math.abs(mio))}</strong>}
-      {quanti > 0 && (
-        <span className="saldo-apri">
-          {quanti === 1 ? 'un conto aperto' : `${quanti} conti aperti`} ›
-        </span>
+      {/* Il segno «−» c'era solo nel colore, e il colore non si legge ad
+          alta voce: «devi dare 30» e «devi ricevere 30» erano due numeri
+          identici distinti da una sfumatura. Adesso il meno si vede. */}
+      {mio !== 0 && (
+        <strong className="saldo-cifra">
+          {mio < 0 ? '−' : ''}
+          {formattaEuro(Math.abs(mio))}
+        </strong>
       )}
+      {/* «Conti aperti» descriveva uno stato; «Salda» dice cosa si può
+          fare toccando. È l'azione, ed è l'unica cosa che si fa da qui. */}
+      {quanti > 0 && <span className="saldo-apri">Salda ›</span>}
     </button>
   )
 }
@@ -271,7 +277,7 @@ function Cronologia({ conti, ioId }) {
 // Il tasto lo può premere chiunque dei due: se i contanti te li mette in
 // mano lui, sei tu ad avere l'app aperta.
 function FoglioPersona({ conti, ioId, personaId, onChiudi }) {
-  const { passaggi, membriPerId, registraRimborso, saldi } = conti
+  const { passaggi, membriPerId, registraRimborso, saldi, dettaglio } = conti
   const persona = membriPerId[personaId]
   const nome = (id) => membriPerId[id]?.nome ?? 'Qualcuno'
   const io = personaId === ioId
@@ -301,6 +307,37 @@ function FoglioPersona({ conti, ioId, personaId, onChiudi }) {
                 ? `In tutto devi ricevere ${formattaEuro(mio)}`
                 : `In tutto devi dare ${formattaEuro(-mio)}`}
           </p>
+        )}
+
+        {/* ⚠️ Il «da dove viene». Il numero qui sopra è il saldo NETTO dopo
+            che tutte le spese si sono compensate, non la propria parte di
+            una cena: con due spese incrociate non assomiglia più a nessuna
+            divisione rifacibile a mente, e un numero che non sai rifare —
+            sui soldi — vale come un numero sbagliato. È successo a chi
+            l'app l'ha scritta. Le righe sommano esattamente al saldo, e c'è
+            una prova che lo tiene fermo. */}
+        {io && dettaglio.length > 0 && (
+          <details className="saldo-dettaglio">
+            <summary>Da dove viene</summary>
+            <ul>
+              {dettaglio.map((r) => (
+                <li key={`${r.genere}-${r.id}`}>
+                  <span>
+                    {r.genere === 'rimborso'
+                      ? `${r.hoDato ? 'Hai dato a' : 'Ti ha dato'} ${nome(r.altro)}`
+                      : `${r.descrizione} — ${formattaEuro(r.totale)} in ${r.inQuanti}`}
+                  </span>
+                  <strong className={r.centesimi < 0 ? 'in-meno' : 'in-piu'}>
+                    {r.centesimi > 0 ? '+' : '−'}
+                    {formattaEuro(Math.abs(r.centesimi))}
+                  </strong>
+                </li>
+              ))}
+            </ul>
+            <p className="saldo-dettaglio-totale">
+              In tutto <strong>{mio < 0 ? '−' : ''}{formattaEuro(Math.abs(mio))}</strong>
+            </p>
+          </details>
         )}
 
         {miei.length === 0 && (
@@ -363,24 +400,46 @@ function Salda({ passaggio, ioId, nome, conNome, onRegistra, onFatto }) {
   const [importo, setImporto] = useState('')
   const [inCorso, setInCorso] = useState(false)
   const [errore, setErrore] = useState(null)
+  const [conferma, setConferma] = useState(null)
+
+  // ⚠️ L'importo si congela alla prima volta che si guarda, e non si
+  // rilegge da `passaggio` a ogni disegno.
+  //
+  // `passaggio` viene da `chiDeveAChi`, che si ricalcola a ogni riga nuova
+  // che arriva dal realtime. Con la scheda aperta, qualcuno che segna una
+  // cena dall'altra parte del tavolo cambiava il numero **mentre lo stavi
+  // leggendo**: toccavi «Salda 30,00» e ne registravi 75, perché quello che
+  // parte era `passaggio.centesimi` di adesso e non quello di un attimo
+  // prima. Un rimborso è un fatto e non si revoca: quei 45 € restavano
+  // spostati fra due persone.
+  const [congelato] = useState(passaggio.centesimi)
+  const cambiato = passaggio.centesimi !== congelato
 
   const scritto = inCentesimi(importo)
-  const centesimi = apri ? scritto : passaggio.centesimi
+  const centesimi = apri ? scritto : congelato
   const valido = centesimi !== null && centesimi > 0 && centesimi <= MAX_CENTESIMI
 
   const paghiTu = passaggio.da === ioId
   const altro = nome(paghiTu ? passaggio.a : passaggio.da)
-  const quanto = formattaEuro(passaggio.centesimi)
+  const quanto = formattaEuro(congelato)
 
+  // Due tempi: il primo tocco dice cosa sta per succedere, il secondo lo
+  // fa. Sui soldi la conferma non è un fastidio — è l'unico punto in cui si
+  // legge, prima che diventi un fatto, la frase «X → Y, tot euro».
   async function salda() {
+    if (conferma === null) {
+      setConferma(centesimi)
+      return
+    }
     setInCorso(true)
     setErrore(null)
     try {
-      await onRegistra({ da: passaggio.da, a: passaggio.a, centesimi })
+      await onRegistra({ da: passaggio.da, a: passaggio.a, centesimi: conferma })
       onFatto()
     } catch (e) {
       setErrore(descriviErrore(e))
       setInCorso(false)
+      setConferma(null)
     }
   }
 
@@ -413,6 +472,17 @@ function Salda({ passaggio, ioId, nome, conNome, onRegistra, onFatto }) {
         </label>
       )}
 
+      {/* Se il conto è cambiato mentre la scheda era aperta lo si dice,
+          invece di far partire il numero vecchio in silenzio o di
+          sostituirlo sotto il dito. */}
+      {cambiato && (
+        <p className="salda-cambiato" role="status">
+          Nel frattempo il conto è cambiato: adesso sarebbe{' '}
+          <strong>{formattaEuro(passaggio.centesimi)}</strong>. Chiudi e riapri se
+          vuoi quello aggiornato.
+        </p>
+      )}
+
       {errore && <p className="spese-guasto">{errore}</p>}
 
       <button
@@ -421,8 +491,22 @@ function Salda({ passaggio, ioId, nome, conNome, onRegistra, onFatto }) {
         onClick={salda}
         disabled={!valido || inCorso}
       >
-        {inCorso ? 'Un attimo…' : `Salda ${formattaEuro(valido ? centesimi : passaggio.centesimi)}`}
+        {inCorso
+          ? 'Un attimo…'
+          : conferma !== null
+            ? `Sicuro? ${paghiTu ? 'Hai dato' : 'Ti ha dato'} ${formattaEuro(conferma)} ${paghiTu ? 'a' : ''} ${paghiTu ? altro : ''}`.trim()
+            : `Salda ${formattaEuro(valido ? centesimi : congelato)}`}
       </button>
+
+      {conferma !== null && !inCorso && (
+        <button
+          type="button"
+          className="riga-secondaria"
+          onClick={() => setConferma(null)}
+        >
+          No, aspetta
+        </button>
+      )}
 
       {/* I contanti arrivano spesso a metà: "ti do cento dei centotrenta"
           è un fatto avvenuto quanto il resto, e va potuto registrare. */}

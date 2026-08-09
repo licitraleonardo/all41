@@ -4,10 +4,20 @@
 // perde niente, e Allan non commenta i soldi degli altri. Nessun limite di
 // velocità, nessuna Legge, nessuna battuta.
 
-// Verifica bloccante n.4: ogni lettura ha un tetto. Cinque giorni per
-// otto persone non arrivano a cento spese nemmeno volendo, ma il tetto
-// c'è comunque perché la regola non ha eccezioni.
-export const TETTO_ELENCO = 100
+// Verifica bloccante n.4: ogni lettura ha un tetto.
+//
+// ⚠️ Era cento, ed è la stessa forma del difetto già pagato con
+// `chiudiScaduti`: un tetto scelto pensando «non ci arriviamo mai» che
+// diventa un troncamento silenzioso. Con le righe eliminate che occupavano
+// un posto ciascuna, la sera del 16 — quando si tira la riga — le spese dei
+// primi due giorni sarebbero semplicemente sparite dai conti di tutti.
+//
+// E non lo prendeva nessuna prova: i saldi troncati sommano comunque a zero,
+// perché è un sottoinsieme coerente. Sono sbagliati e tornano lo stesso.
+//
+// Adesso sono cinquecento, e soprattutto le eliminate non si leggono più
+// (vedi `leggiSpese`), quindi il tetto conta solo righe vere.
+export const TETTO_ELENCO = 500
 
 export const MAX_DESCRIZIONE = 60
 

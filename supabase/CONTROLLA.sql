@@ -49,4 +49,12 @@ select
          where proname = 'apri_voto_impostore' and pronargs = 4)
        then 'a posto'
        else 'MANCA — ogni giro lascia in giro un sondaggio orfano per telefono' end
+union all
+select
+  'Un rimborso si registra una volta sola',
+  case when exists (
+         select 1 from pg_proc
+         where proname = 'registra_rimborso' and pronargs = 5)
+       then 'a posto'
+       else 'MANCA — lo stesso rimborso puo essere registrato da tutti e due' end
 ;

@@ -10,7 +10,7 @@ import {
 } from '../lib/spese.js'
 import { inCache } from '../lib/cache.js'
 import { leggiMembri } from '../lib/membri.js'
-import { calcolaSaldi, chiDeveAChi } from '../lib/saldi.js'
+import { calcolaSaldi, chiDeveAChi, dettaglioSaldo } from '../lib/saldi.js'
 import { descriviErrore } from '../lib/errori.js'
 
 // Il `catch` che c'era qui era vuoto. Una ricarica che fallisce non deve
@@ -21,7 +21,7 @@ function guastoRicarica(e) {
   console.warn('[all41] la ricarica delle spese non è riuscita:', e?.message ?? e)
 }
 
-export function useSpese() {
+export function useSpese(ioId) {
   const [spese, setSpese] = useState([])
   const [rimborsi, setRimborsi] = useState([])
   const [membri, setMembri] = useState([])
@@ -76,6 +76,15 @@ export function useSpese() {
   )
 
   const passaggi = useMemo(() => chiDeveAChi(saldi), [saldi])
+
+  // Da dove viene il proprio saldo, riga per riga. Le righe sommano
+  // esattamente al saldo — c'è una prova che lo tiene fermo — ed è tutto il
+  // senso della cosa: un numero che non si può rifare, sui soldi, vale come
+  // un numero sbagliato.
+  const dettaglio = useMemo(
+    () => dettaglioSaldo(spese, rimborsi, membri.map((m) => m.id), ioId),
+    [spese, rimborsi, membri, ioId]
+  )
 
   // ⚠️ Ogni modifica aggiorna ANCHE la copia locale, non solo lo schermo.
   //
@@ -154,6 +163,7 @@ export function useSpese() {
     membriPerId,
     saldi,
     passaggi,
+    dettaglio,
     stato,
     errore,
     registra,

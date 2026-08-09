@@ -23,6 +23,7 @@ const DA_UNIRE = [
   ['apertura.sql', 'avvia_impostore con i giri: senza, l’Impostore non parte proprio'],
   ['giro.sql', 'chiudi_accusa col giro vero: senza, il contatore resta su “Giro 1”'],
   ['voto-unico.sql', 'Un giro d’accusa apre UN voto solo, non uno per telefono'],
+  ['rimborso-unico.sql', 'Un rimborso registrato una volta sola, non una per telefono'],
 ]
 
 const USCITA = 'DA-LANCIARE.sql'
@@ -113,6 +114,14 @@ select
          where proname = 'apri_voto_impostore' and pronargs = 4)
        then 'a posto'
        else 'MANCA — ogni giro lascia in giro un sondaggio orfano per telefono' end
+union all
+select
+  'Un rimborso si registra una volta sola',
+  case when exists (
+         select 1 from pg_proc
+         where proname = 'registra_rimborso' and pronargs = 5)
+       then 'a posto'
+       else 'MANCA — lo stesso rimborso puo essere registrato da tutti e due' end
 ;
 `
 

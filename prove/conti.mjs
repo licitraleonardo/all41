@@ -8,6 +8,7 @@ import {
   dividi,
   calcolaSaldi,
   chiDeveAChi,
+  dettaglioSaldo,
 } from '../src/lib/saldi.js'
 
 let falliti = 0
@@ -237,6 +238,53 @@ for (const p of passaggiOtto) {
   dopo[p.a] -= p.centesimi
 }
 prova('dopo i passaggi sono tutti a zero', Object.values(dopo).every((v) => v === 0))
+
+// ─────────────────────────────────────────────────────────────────────
+// Da dove viene il saldo, riga per riga
+//
+// La proprieta' che rende la schermata utile e' una sola: le righe devono
+// sommare ESATTAMENTE al saldo. Se non sommassero, spiegherebbero una cosa
+// diversa da quella che l'app mostra -- e sui soldi sarebbe peggio che non
+// spiegare niente.
+
+console.log('\ndettaglioSaldo')
+{
+  const G = ['a', 'b', 'c', 'd']
+  const spese = [
+    { id: 's1', descrizione: 'Cena', centesimi: 8750, paganti: ['b'], divisaFra: G, eliminata: false, creataIl: '2026-08-14T20:00:00Z' },
+    { id: 's2', descrizione: 'Benzina', centesimi: 6500, paganti: ['a'], divisaFra: G, eliminata: false, creataIl: '2026-08-14T10:00:00Z' },
+    { id: 's3', descrizione: 'Tolta', centesimi: 9999, paganti: ['a'], divisaFra: G, eliminata: true, creataIl: '2026-08-14T09:00:00Z' },
+  ]
+  const rimborsi = [
+    { id: 'r1', da: 'a', a: 'b', centesimi: 1000, eliminato: false, creatoIl: '2026-08-15T09:00:00Z' },
+  ]
+
+  const saldi = calcolaSaldi(spese, rimborsi, G)
+  const righe = dettaglioSaldo(spese, rimborsi, G, 'a')
+  const somma = righe.reduce((t, r) => t + r.centesimi, 0)
+
+  prova('le righe sommano esattamente al saldo', somma === saldi.a, { somma, saldo: saldi.a })
+  prova('e vale per tutti, non solo per uno', G.every((id) =>
+    dettaglioSaldo(spese, rimborsi, G, id).reduce((t, r) => t + r.centesimi, 0) === saldi[id]
+  ))
+  prova('la spesa eliminata non compare', !righe.some((r) => r.id === 's3'))
+  prova('il rimborso compare', righe.some((r) => r.genere === 'rimborso'))
+  prova('chi ha dato i contanti se li vede come piu', righe.find((r) => r.id === 'r1').centesimi === 1000)
+  prova('chi li ha ricevuti come meno',
+    dettaglioSaldo(spese, rimborsi, G, 'b').find((r) => r.id === 'r1').centesimi === -1000)
+  prova('la spesa che hai pagato tu porta il segno giusto',
+    righe.find((r) => r.id === 's2').centesimi > 0)
+  prova('quella pagata da un altro pure', righe.find((r) => r.id === 's1').centesimi < 0)
+  prova('dalla piu recente', righe[0].quando >= righe[righe.length - 1].quando)
+  prova('chi non e del gruppo non ha dettaglio', dettaglioSaldo(spese, rimborsi, G, 'zzz').length === 0)
+
+  // Chi non c'entra con una spesa non se la ritrova fra le righe.
+  const soloDue = [{ id: 'x', descrizione: 'Caffe', centesimi: 400, paganti: ['a'], divisaFra: ['a', 'b'], eliminata: false, creataIl: '2026-08-14T08:00:00Z' }]
+  prova('una spesa che non ti riguarda non compare',
+    dettaglioSaldo(soloDue, [], G, 'c').length === 0)
+  prova('e chi paga e consuma da solo non si vede una riga a zero',
+    dettaglioSaldo([{ id: 'y', descrizione: 'Suo', centesimi: 500, paganti: ['a'], divisaFra: ['a'], eliminata: false, creataIl: '2026-08-14T08:00:00Z' }], [], G, 'a').length === 0)
+}
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
 process.exit(falliti === 0 ? 0 : 1)

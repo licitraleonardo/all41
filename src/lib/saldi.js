@@ -78,6 +78,84 @@ export function calcolaSaldi(spese, pagamenti, membriIds) {
   return saldi
 }
 
+// Da dove viene il tuo saldo, riga per riga.
+//
+// ⚠️ Esiste perché il numero non era spiegabile, e sui soldi un numero che
+// non sai rifare vale come un numero sbagliato. È successo a chi l'app l'ha
+// scritta: «perché devo solo 5,63? 87,50 diviso 4 non fa 5,63». Il conto
+// era giusto — quel 5,63 veniva da un'altra spesa, e soprattutto la
+// schermata mostra il **saldo netto** dopo che tutte le spese si sono
+// compensate fra loro, non la tua parte di quella cena. Con due spese
+// incrociate il risultato non assomiglia più a nessuna divisione rifacibile
+// a mente.
+//
+// Le righe qui sotto sommano ESATTAMENTE al saldo, ed è la proprietà che
+// rende la schermata utile: se non sommassero, spiegherebbe una cosa
+// diversa da quella che mostra.
+export function dettaglioSaldo(spese, pagamenti, membriIds, ioId) {
+  const conosciuto = (id) => membriIds.includes(id)
+  if (!conosciuto(ioId)) return []
+
+  const righe = []
+
+  for (const spesa of spese) {
+    if (spesa.eliminata) continue
+
+    const paganti = [...spesa.paganti].filter(conosciuto).sort()
+    const fra = [...spesa.divisaFra].filter(conosciuto).sort()
+    if (paganti.length === 0 || fra.length === 0) continue
+
+    // Gli stessi due conti di `calcolaSaldi`, e devono restare gli stessi:
+    // se un giorno divergono, questa schermata comincia a raccontare una
+    // matematica che non è quella che muove i soldi.
+    let quanto = 0
+    const messo = dividi(spesa.centesimi, paganti.length)
+    const i = paganti.indexOf(ioId)
+    if (i >= 0) quanto += messo[i]
+
+    const quote = dividi(spesa.centesimi, fra.length)
+    const j = fra.indexOf(ioId)
+    if (j >= 0) quanto -= quote[j]
+
+    if (quanto === 0) continue
+
+    righe.push({
+      genere: 'spesa',
+      id: spesa.id,
+      descrizione: spesa.descrizione,
+      // Positivo = hai messo tu e ti rientra; negativo = l'hai consumata.
+      centesimi: quanto,
+      hoPagato: i >= 0,
+      inQuanti: fra.length,
+      totale: spesa.centesimi,
+      quando: spesa.creataIl,
+    })
+  }
+
+  for (const pagamento of pagamenti) {
+    if (pagamento.eliminato) continue
+    if (!conosciuto(pagamento.da) || !conosciuto(pagamento.a)) continue
+    if (pagamento.da !== ioId && pagamento.a !== ioId) continue
+
+    righe.push({
+      genere: 'rimborso',
+      id: pagamento.id,
+      // Chi ha dato i contanti riduce il proprio debito: per lui è un più.
+      centesimi: pagamento.da === ioId ? pagamento.centesimi : -pagamento.centesimi,
+      hoDato: pagamento.da === ioId,
+      altro: pagamento.da === ioId ? pagamento.a : pagamento.da,
+      quando: pagamento.creatoIl,
+    })
+  }
+
+  // Dalla più recente, come l'elenco delle spese. A parità di istante l'id
+  // più basso, o due telefoni ordinerebbero diverso.
+  return righe.sort(
+    (a, b) =>
+      Date.parse(b.quando ?? 0) - Date.parse(a.quando ?? 0) || (a.id < b.id ? -1 : 1)
+  )
+}
+
 // Il "chi deve a chi": si prende il debito più grosso e lo si manda al
 // credito più grosso, finché non resta niente. Non è il minor numero di
 // bonifici possibile in assoluto — quello è un problema NP — ma su otto
