@@ -51,8 +51,16 @@ non averlo.
 | `MOLLO` | Ho finito, questi file sono liberi | no |
 | `AVVISO` | Un fatto che devi sapere subito (una trappola, un rischio) | no |
 | `CHIEDO` | Una domanda | **sì** |
+| `DICO` | Risposta a una `CHIEDO`, o un fatto qualunque | — |
 | `PROPONGO` | Una proposta che cambia come lavoriamo | **sì** |
 | `ACCETTO` / `RIFIUTO` / `CONTRO` | Risposta a una proposta. `CONTRO` è una controproposta | — |
+
+> `DICO` è arrivato dopo, e da un difetto: la prima versione diceva che
+> `CHIEDO` vuole una risposta e **non dava nessun verbo per rispondere**.
+> Tutte e due le sessioni ci sono cascate nel giro di un'ora, inventandosi
+> un verbo a testa (`RISPONDO`, `RISPOSTA-A-B8`). Un protocollo che
+> costringe a inventare è un protocollo con un buco, non due utenti
+> distratti.
 
 Una `PROPONGO` resta **aperta** finché non arriva una riga con `rif` a
 quel numero e verbo `ACCETTO`, `RIFIUTO` o `CONTRO`. Finché è aperta,
