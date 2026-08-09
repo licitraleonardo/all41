@@ -22,35 +22,71 @@ create index if not exists push_subscriptions_membro on push_subscriptions (memb
 
 alter table push_subscriptions enable row level security;
 
--- Iscriversi e disiscriversi si fa dall'app; leggere l'elenco no.
+-- ⚠️ Nessuna policy, e quindi NESSUN accesso diretto dall'app.
 --
--- ⚠️ Niente `select` per gli autenticati: l'elenco degli endpoint lo
--- legge solo il server che manda le notifiche, con la chiave di servizio.
--- Un endpoint in mano a qualcun altro è un modo per mandare notifiche a
--- quel telefono senza passare da qui.
-do $$
+-- Questa tabella non si legge, non si scrive e non si cancella dal
+-- telefono: l'elenco degli endpoint lo vede solo il server che manda le
+-- notifiche, con la chiave di servizio. Un endpoint in mano a qualcun
+-- altro è un modo per far suonare quel telefono senza passare da qui.
+--
+-- Iscriversi e disiscriversi si fanno con le due funzioni qui sotto, che
+-- fanno **una cosa sola ciascuna** e non restituiscono niente.
+--
+-- ⚠️ Il primo tentativo era diverso, e non funzionava. C'erano tre policy
+-- (insert, update, delete) e nessuna di lettura, e sembrava giusto: si
+-- scrive e non si legge. Ma il database rifiutava tutto in silenzio.
+--
+--   `upsert` diventa `insert ... on conflict do update`, e per aggiornare
+--   la riga in conflitto Postgres deve prima leggerla.
+--
+--   E anche una `delete ... where endpoint = ...` non toglieva niente:
+--   rispondeva «204, fatto» e la riga restava lì. Senza permesso di
+--   lettura le righe da cancellare non sono visibili, quindi non ne
+--   cancella nessuna — e non lo dice.
+--
+-- Verificato mettendo `insert`, `upsert` e `delete` uno accanto all'altro
+-- con la stessa sessione anonima dell'app: il primo passava, gli altri
+-- due no. È il difetto per cui «Accendi» sul telefono non iscriveva
+-- nessuno e la tabella restava vuota.
+--
+-- `security definer` è la stessa strada già presa per le altre scritture
+-- che chiedono più permessi di quanti ne abbia chi le chiama:
+-- `registra_rimborso` e `apri_voto_impostore`.
+
+drop policy if exists "push: iscrizione" on push_subscriptions;
+drop policy if exists "push: riscrittura" on push_subscriptions;
+drop policy if exists "push: disiscrizione" on push_subscriptions;
+
+create or replace function iscrivi_push(
+  p_endpoint text,
+  p_membro uuid,
+  p_chiavi jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public'
-      and tablename = 'push_subscriptions' and policyname = 'push: iscrizione'
-  ) then
-    create policy "push: iscrizione"
-      on push_subscriptions for insert to authenticated with check (true);
-  end if;
+  -- Toglie e rimette: lo stesso telefono che si riscrive non fa un
+  -- doppione, e se ha cambiato profilo la riga segue il profilo nuovo.
+  delete from push_subscriptions where endpoint = p_endpoint;
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public'
-      and tablename = 'push_subscriptions' and policyname = 'push: riscrittura'
-  ) then
-    create policy "push: riscrittura"
-      on push_subscriptions for update to authenticated using (true) with check (true);
-  end if;
+  insert into push_subscriptions (endpoint, member_id, chiavi)
+  values (p_endpoint, p_membro, p_chiavi);
+end;
+$$;
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public'
-      and tablename = 'push_subscriptions' and policyname = 'push: disiscrizione'
-  ) then
-    create policy "push: disiscrizione"
-      on push_subscriptions for delete to authenticated using (true);
-  end if;
-end $$;
+create or replace function disiscrivi_push(p_endpoint text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from push_subscriptions where endpoint = p_endpoint;
+end;
+$$;
+
+grant execute on function iscrivi_push(text, uuid, jsonb) to authenticated;
+grant execute on function disiscrivi_push(text) to authenticated;

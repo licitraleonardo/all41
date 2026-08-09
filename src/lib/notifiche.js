@@ -61,14 +61,24 @@ export async function iscriviti(membroId) {
 
   const grezza = iscrizione.toJSON()
 
-  const { error } = await supabase.from('push_subscriptions').upsert(
-    {
-      endpoint: grezza.endpoint,
-      member_id: membroId,
-      chiavi: grezza.keys,
-    },
-    { onConflict: 'endpoint' }
-  )
+  // ⚠️ Passa da una funzione del database, non dalla tabella.
+  //
+  // Su `push_subscriptions` non c'è nessuna policy: dal telefono non si
+  // legge, non si scrive e non si cancella. L'elenco degli endpoint lo
+  // vede solo il server che manda, perché un endpoint in mano a qualcun
+  // altro è un modo per far suonare quel telefono senza passare da qui.
+  //
+  // Il primo tentativo scriveva sulla tabella e sembrava giusto — tre
+  // policy, insert/update/delete, nessuna lettura — ma il database
+  // rifiutava tutto in silenzio: `upsert` ha bisogno di leggere la riga
+  // in conflitto, e perfino una `delete` mirata rispondeva «fatto» senza
+  // togliere niente, perché senza lettura quelle righe non sono
+  // visibili. È il motivo per cui «Accendi» non iscriveva nessuno.
+  const { error } = await supabase.rpc('iscrivi_push', {
+    p_endpoint: grezza.endpoint,
+    p_membro: membroId,
+    p_chiavi: grezza.keys,
+  })
   if (error) throw error
 
   return { ok: true }
@@ -80,7 +90,7 @@ export async function disiscriviti() {
   const iscrizione = await registrazione.pushManager.getSubscription()
   if (!iscrizione) return
 
-  await supabase.from('push_subscriptions').delete().eq('endpoint', iscrizione.endpoint)
+  await supabase.rpc('disiscrivi_push', { p_endpoint: iscrizione.endpoint })
   await iscrizione.unsubscribe()
 }
 

@@ -71,5 +71,45 @@ console.log('\nle iscrizioni morte si tolgono, le altre no')
   prova('un errore senza codice non toglie niente', senzaCodice.length === 0)
 }
 
+console.log('\nl iscrizione non tocca la tabella a mano')
+{
+  // ⚠️ La trappola che ha fatto restare la tabella vuota, e «Accendi» sul
+  // telefono senza effetto.
+  //
+  // `push_subscriptions` non ha nessuna policy: dal telefono non si
+  // legge, non si scrive, non si cancella. Sembrava bastasse dare tre
+  // policy di scrittura e nessuna di lettura — si scrive e non si legge,
+  // no? — e invece il database rifiutava tutto **in silenzio**:
+  //
+  //   - `upsert` diventa `insert ... on conflict do update`, e per
+  //     aggiornare la riga in conflitto Postgres deve prima leggerla
+  //   - e perfino una `delete` mirata rispondeva «204, fatto» senza
+  //     togliere niente: senza lettura quelle righe non sono visibili,
+  //     quindi non ne cancella nessuna, e non lo dice
+  //
+  // Chi rimettesse una scrittura diretta qui rifarebbe lo stesso giro, e
+  // se ne accorgerebbe solo perche' il tasto non fa niente.
+  const lib = readFileSync('src/lib/notifiche.js', 'utf8')
+    .split('\n')
+    .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+    .join('\n')
+
+  prova('niente scrittura diretta sulla tabella', !lib.includes("from('push_subscriptions')"))
+  prova('si iscrive con la funzione', lib.includes("rpc('iscrivi_push'"))
+  prova('e si disiscrive con la funzione', lib.includes("rpc('disiscrivi_push'"))
+
+  // E le funzioni devono poter scavalcare le policy, o non servirebbero.
+  // ⚠️ Via i commenti prima di contare: in questo progetto i commenti
+  // citano il codice che spiegano, e qui dentro «security definer» sta
+  // scritto anche nella riga che ne racconta la ragione. E' la terza
+  // volta oggi che questa distrazione mi manda in rosso una prova buona.
+  const sql = readFileSync('supabase/push.sql', 'utf8')
+    .split('\n')
+    .filter((r) => !/^\s*--/.test(r))
+    .join('\n')
+  prova('le funzioni sono security definer', (sql.match(/security definer/g) ?? []).length === 2)
+  prova('e la tabella non ha policy', !sql.includes('create policy'))
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)
 process.exit(falliti === 0 ? 0 : 1)
