@@ -1,0 +1,19 @@
+/* L'avviso di chi sta per buttare via quello che ha scritto.
+
+   Sta in cima al foglio e non di fianco al tasto, perché il gesto che lo
+   fa comparire — un tocco sul velo, o il tasto indietro — non parte da
+   nessun punto preciso dello schermo: l'occhio non sa dove tornare a
+   guardare, quindi si mette dove l'occhio sta già. */
+
+.foglio-avviso {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--coral, #e8604a);
+  background: #fdf1ee;
+  border: 1px solid var(--coral, #e8604a);
+  border-radius: 10px;
+}

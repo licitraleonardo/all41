@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Foglio from './Foglio.jsx'
 import { urlAvatar } from '../config/avatar.js'
 import { PROPOSTA } from '../config/proposte.js'
 
@@ -29,13 +30,14 @@ export default function Proposta({ destinatario, ioId, onCrea, onAnnulla, inCors
   }
 
   return (
-    <div
-      className="foglio-sfondo"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Proponi punti per ${destinatario.nome}`}
+    // Sporco solo quando c'e' scritto un motivo: i punti da soli si
+    // rifanno con due tocchi, la frase no.
+    <Foglio
+      etichetta={`Proponi punti per ${destinatario.nome}`}
+      sporco={motivo.trim().length > 0}
+      onChiudi={onAnnulla}
     >
-      <div className="foglio">
+      <>
         <div className="proposta-testa">
           <img
             src={urlAvatar(destinatario.avatarStyle, destinatario.avatarSeed)}
@@ -106,7 +108,7 @@ export default function Proposta({ destinatario, ioId, onCrea, onAnnulla, inCors
         <button type="button" className="secondario-foglio" onClick={onAnnulla}>
           Lascia stare
         </button>
-      </div>
-    </div>
+      </>
+    </Foglio>
   )
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Foglio from './Foglio.jsx'
 import { urlAvatar } from '../config/avatar.js'
 import { negliAppunti } from '../lib/appunti.js'
 
@@ -24,8 +25,8 @@ export default function FoglioPosizione({ persona, onChiudi }) {
   }
 
   return (
-    <div className="foglio-sfondo" role="dialog" aria-modal="true" aria-label={persona.nome}>
-      <div className="foglio">
+    <Foglio etichetta={persona.nome} onChiudi={onChiudi}>
+      <>
         <div className="pos-foglio-testa">
           <img
             src={urlAvatar(persona.avatarStyle, persona.avatarSeed)}
@@ -48,10 +49,13 @@ export default function FoglioPosizione({ persona, onChiudi }) {
           Aprilo in Maps
         </a>
 
+        {/* Qui non si sta facendo niente, si sta guardando: «Chiudi» e
+            non «Lascia stare», che vuol dire abbandonare qualcosa. Sono
+            le due sole parole rimaste in tutta l'app. */}
         <button type="button" className="secondario-foglio" onClick={onChiudi}>
           Chiudi
         </button>
-      </div>
-    </div>
+      </>
+    </Foglio>
   )
 }

@@ -4,6 +4,7 @@ import { dataDiOggi, statoDelViaggio } from '../lib/giorni.js'
 import { magliaNeraDelGiorno, mvpDelGiorno, saldiDelGiorno } from '../lib/classifica.js'
 import Proposta from './Proposta.jsx'
 import PropostaInAttesa from './PropostaInAttesa.jsx'
+import Foglio from './Foglio.jsx'
 
 export default function Classifica({
   classifica,
@@ -189,13 +190,19 @@ export default function Classifica({
       {/* La trappola è scattata: lo si dice in faccia a chi c'è cascato,
           col conto. Il gruppo lo legge comunque nello storico. */}
       {aspetta && (
-        <div
-          className="foglio-sfondo"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Hai già una proposta in voto"
+        // ⚠️ `chiudibileFuori={false}` non è pigrizia: questo foglio dice
+        // che stai per pagare, e le due uscite non sono uguali. Un tocco
+        // storto sul velo lo farebbe sparire senza che nessuno abbia
+        // deciso niente, e la trappola della Legge XIV si paga una volta
+        // sola per viaggio: chi non l'ha letta non capirebbe mai perché
+        // ha perso dei punti. Il tasto indietro invece lo chiude, perché
+        // quello si preme apposta.
+        <Foglio
+          etichetta="Hai già una proposta in voto"
+          chiudibileFuori={false}
+          onChiudi={() => setAspetta(null)}
         >
-          <div className="foglio">
+          <>
             <p className="punizione-testo">Aspetta almeno che finisca la votazione.</p>
             <p className="punizione-nota">Ne hai già una aperta.</p>
             <button type="button" className="primario-spese" onClick={() => setAspetta(null)}>
@@ -204,18 +211,21 @@ export default function Classifica({
             <button type="button" className="secondario-foglio" onClick={insisti}>
               Mandala lo stesso
             </button>
-          </div>
-        </div>
+          </>
+        </Foglio>
       )}
 
       {punizione && (
-        <div
-          className="foglio-sfondo"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Il Testamento ha qualcosa da dirti"
+        // Stessa ragione di sopra, ancora piu' forte: qui i punti li hai
+        // gia' persi, e questo foglio e' l'unico posto in tutta l'app in
+        // cui viene detto perche'.
+        <Foglio
+          etichetta="Il Testamento ha qualcosa da dirti"
+          chiudibileFuori={false}
+          className="punizione"
+          onChiudi={() => setPunizione(null)}
         >
-          <div className="foglio punizione">
+          <>
             <p className="punizione-punti">{punizione.punti}</p>
             <p className="punizione-testo">{punizione.testo}</p>
             <p className="punizione-nota">{punizione.legge}. Adesso lo sanno tutti.</p>
@@ -226,8 +236,8 @@ export default function Classifica({
             >
               Me la sono cercata
             </button>
-          </div>
-        </div>
+          </>
+        </Foglio>
       )}
 
       {/* Due schede: quello che è già successo e quello che aspetta te.

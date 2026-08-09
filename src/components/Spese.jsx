@@ -7,6 +7,7 @@ import { MAX_CENTESIMI, MAX_DESCRIZIONE } from '../config/spese.js'
 import { descriviErrore } from '../lib/errori.js'
 import { tieniOccupato } from '../lib/aggiornamento.js'
 import Rotella from './Rotella.jsx'
+import Foglio from './Foglio.jsx'
 
 // L'unica sezione fuori dal sistema punti e senza la voce di Allan: qui
 // ci sono soldi veri di persone vere, e una battuta sul conto di
@@ -296,8 +297,8 @@ function FoglioPersona({ conti, ioId, personaId, onChiudi }) {
   const avere = miei.filter((p) => p.a === ioId)
 
   return (
-    <div className="foglio-sfondo" role="dialog" aria-modal="true" aria-label={persona?.nome}>
-      <div className="foglio foglio-alto">
+    <Foglio etichetta={persona?.nome ?? 'I tuoi conti'} onChiudi={onChiudi} className="foglio-alto">
+      <>
         <h2 className="foglio-titolo">{io ? 'I tuoi conti' : persona?.nome}</h2>
 
         {io && (
@@ -388,8 +389,8 @@ function FoglioPersona({ conti, ioId, personaId, onChiudi }) {
         <button type="button" className="secondario-foglio" onClick={onChiudi}>
           Chiudi
         </button>
-      </div>
-    </div>
+      </>
+    </Foglio>
   )
 }
 
@@ -570,8 +571,13 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
   }
 
   return (
-    <div className="foglio-sfondo" role="dialog" aria-modal="true" aria-label="Nuova spesa">
-      <div className="foglio foglio-alto">
+    <Foglio
+      etichetta="Nuova spesa"
+      sporco={descrizione.trim().length > 0 || importo.trim().length > 0}
+      onChiudi={inCorso ? undefined : onChiudi}
+      className="foglio-alto"
+    >
+      <>
         <h2 className="foglio-titolo">Nuova spesa</h2>
 
         <label className="campo">
@@ -686,8 +692,8 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
         <button type="button" className="secondario-foglio" onClick={onChiudi}>
           Lascia stare
         </button>
-      </div>
-    </div>
+      </>
+    </Foglio>
   )
 }
 

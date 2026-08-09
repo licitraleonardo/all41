@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Foglio from './Foglio.jsx'
 import { MOTIVI_SOS } from '../config/azioni.js'
 
 // Testi piani, nessuna battuta, nessuna emoji decorativa: è l'unica
@@ -12,8 +13,17 @@ export default function FoglioSOS({ onInvia, onAnnulla, inCorso, errore, scaduto
   const puoInviare = scelto.length > 0 && !inCorso
 
   return (
-    <div className="foglio-sfondo" role="dialog" aria-modal="true" aria-label="Richiesta di aiuto">
-      <div className="foglio">
+    // ⚠️ Non si chiude toccando fuori: è l'unica funzione di sicurezza
+    // dell'app, e chi la sta usando ha il telefono in mano mentre
+    // cammina. Il tasto indietro invece la chiude, perché quello si preme
+    // apposta. Stessa ragione dei due tocchi per mandarla.
+    <Foglio
+      etichetta="Richiesta di aiuto"
+      chiudibileFuori={false}
+      sporco={scelto.length > 0}
+      onChiudi={onAnnulla}
+    >
+      <>
         <h2 className="foglio-titolo">Cosa succede?</h2>
 
         <div className="motivi">
@@ -82,10 +92,14 @@ export default function FoglioSOS({ onInvia, onAnnulla, inCorso, errore, scaduto
           {inCorso ? 'Invio…' : errore ? 'Riprova' : 'Manda la richiesta'}
         </button>
 
+        {/* «Lascia stare» ovunque nell'app: è la stessa cosa che
+            succedeva con «Annulla», «Chiudi» e la ×, detta con la stessa
+            parola dappertutto. Uno esce da un foglio senza doverci
+            pensare. */}
         <button type="button" className="secondario" onClick={onAnnulla}>
-          Annulla
+          Lascia stare
         </button>
-      </div>
-    </div>
+      </>
+    </Foglio>
   )
 }

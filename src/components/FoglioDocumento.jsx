@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Foglio from './Foglio.jsx'
 import { MAX_TITOLO } from '../config/documenti.js'
 import { nomeUtile } from '../lib/nomeDocumento.js'
 
@@ -24,8 +25,17 @@ export default function FoglioDocumento({ file, inCorso, avviso, onCarica, onAnn
   }, [file, pdf])
 
   return (
-    <div className="foglio-sfondo" role="dialog" aria-modal="true" aria-label="Nuovo documento">
-      <div className="foglio foglio-alto">
+    // Un documento gia' scelto e' lavoro fatto: si e' aperta la
+    // fotocamera o il gestore dei file, e ricominciare da capo per un
+    // tocco storto sul velo da' fastidio piu' del solito. Per questo
+    // parte gia' "sporco" — la prima uscita avvisa sempre.
+    <Foglio
+      etichetta="Nuovo documento"
+      sporco={!inCorso}
+      onChiudi={inCorso ? undefined : onAnnulla}
+      className="foglio-alto"
+    >
+      <>
         <div className="doc-anteprima">
           {pdf ? (
             <span className="doc-anteprima-pdf" aria-hidden="true">
@@ -83,7 +93,7 @@ export default function FoglioDocumento({ file, inCorso, avviso, onCarica, onAnn
         >
           Lascia stare
         </button>
-      </div>
-    </div>
+      </>
+    </Foglio>
   )
 }
