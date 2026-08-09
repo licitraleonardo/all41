@@ -1,0 +1,47 @@
+/* La riga della versione in fondo, e il tasto per sbloccarsi.
+
+   ⚠️ Resta scolorita come prima — `opacity: 0.3` sta su `.targhetta` in
+   App.css — perché non deve chiamare l'attenzione: chi non ha problemi non
+   ha nessun motivo di guardarla, e un tasto "Aggiorna" ben visibile in
+   fondo a ogni schermata inviterebbe a premerlo per curiosità.
+   Chi invece è bloccato la sta già cercando, perché è l'unico posto
+   dell'app che parla di versioni. */
+
+.targhetta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.targhetta-versione {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sottolineato e non un riquadro: un tasto pieno qui sotto peserebbe più
+   della riga che accompagna. */
+.targhetta-aggiorna {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 4px 2px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.targhetta-aggiorna:disabled {
+  cursor: default;
+  text-decoration: none;
+}
+
+.targhetta-esito {
+  flex-basis: 100%;
+  text-align: center;
+}
+
+.targhetta-aggiorna:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+}

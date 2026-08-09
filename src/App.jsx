@@ -31,6 +31,7 @@ import Altro from './components/Altro.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import NuvolettaAllan from './components/NuvolettaAllan.jsx'
 import Riparo from './components/Riparo.jsx'
+import Targhetta from './components/Targhetta.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
 import { useDerisione } from './hooks/useDerisione.js'
@@ -775,9 +776,7 @@ export default function App() {
 
       <Toast messaggio={toast} onChiudi={() => setToast(null)} />
 
-      <footer className="targhetta">
-        {commit} · {buildTime}
-      </footer>
+      <Targhetta />
     </main>
   )
 }

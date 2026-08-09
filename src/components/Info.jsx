@@ -3,6 +3,7 @@ import './Info.css'
 import { DA_TROVARE, DOVE, EMERGENZE, UTILI } from '../config/info.js'
 import { leggiMembri } from '../lib/membri.js'
 import { daComporre } from '../lib/telefono.js'
+import Targhetta from './Targhetta.jsx'
 
 // Dove si dorme e chi si chiama. Sta nel codice, non sul database: è
 // l'unico pezzo dell'app che potrebbe servire col telefono che non prende
@@ -129,6 +130,18 @@ export default function Info() {
           </ul>
         </>
       )}
+
+      {/* ⚠️ La versione dell'app sta QUI, e non solo sulla schermata
+          d'ingresso dov'era.
+          Dentro una PWA installata sulla home non c'e' barra
+          dell'indirizzo ne' tasto ricarica: se l'app resta indietro,
+          questa riga e' l'unico posto in cui accorgersene, e il tasto
+          accanto l'unico modo di rimediare. Chi e' gia' entrato la
+          schermata d'ingresso non la rivede mai piu'.
+          E questa e' la sezione che la nuvoletta di Allan annuncia come
+          «versione dell'app, crediti e altre cose»: era l'unica cosa che
+          prometteva e non c'era. */}
+      <Targhetta />
 
       {DA_TROVARE.length > 0 && (
         <section className="info-mancanti">

@@ -34,6 +34,91 @@ export function siPuoRicaricare() {
   return occupati.size === 0
 }
 
+// ⚠️ La via d'uscita a mano, per quando l'automatismo qui sotto non parte.
+//
+// Dentro una PWA installata sulla home il controllo automatico a volte non
+// scatta: il sistema tiene l'app congelata per giorni e non la riapre mai
+// per davvero, quindi `visibilitychange` non arriva e `update()` non viene
+// mai chiesto. Lì dentro non c'è barra dell'indirizzo, non c'è tasto
+// ricarica, e chiudere l'app non basta perché non è mai stata chiusa.
+//
+// Tre gradini, dal più gentile al più deciso:
+//
+//   1. si chiede al service worker di controllare
+//   2. se ce n'è uno pronto in attesa, lo si fa entrare subito
+//   3. se dopo tutto questo non è cambiato niente, si butta via la cache
+//      e si ricarica. È il martello, ma funziona sempre.
+//
+// ⚠️ Il terzo gradino costa la copia offline, che va riscaricata. Vale la
+// pena solo perché lo preme una persona che ha appena constatato che
+// l'app è ferma: a quel punto l'alternativa è restare indietro.
+// I dati non si toccano — `localStorage` resta dov'è, e con lui il
+// profilo, il segnalibro dei tab e le copie dei dati.
+export async function forzaAggiornamento() {
+  if (!('serviceWorker' in navigator)) {
+    window.location.reload()
+    return 'ricarico'
+  }
+
+  const registrazione = await navigator.serviceWorker.getRegistration().catch(() => null)
+
+  if (registrazione) {
+    await registrazione.update().catch(() => {})
+
+    // Uno nuovo è pronto o sta arrivando: `controllerchange` ricarica da
+    // sé appena prende il comando.
+    //
+    // ⚠️ Niente `postMessage({type: 'SKIP_WAITING'})`: il service worker
+    // che generiamo (`registerType: 'autoUpdate'`) chiama `skipWaiting()`
+    // da solo appena installato e **non ascolta nessun messaggio** — l'ho
+    // verificato cercandolo in `dist/sw.js`, non c'è. Mandarglielo
+    // sarebbe una riga che sembra fare qualcosa e non fa niente, e la
+    // prossima persona che legge questo file ci crederebbe.
+    if (registrazione.waiting || registrazione.installing) return 'in-arrivo'
+  }
+
+  // Niente di nuovo dal service worker. Può voler dire due cose: che siamo
+  // davvero all'ultima, o che la cache è incastrata su una versione
+  // vecchia e il controllo non se ne accorge. Si distingue chiedendo al
+  // server la pagina, saltando ogni cache.
+  //
+  // ⚠️ Con un pezzo di indirizzo che cambia ogni volta, e non `/index.html`
+  // liscio. `cache: 'reload'` salta la cache del browser ma **non il
+  // service worker**, che ha `/index.html` fra le cose precaricate e lo
+  // servirebbe lui dalla sua copia: il controllo confronterebbe la
+  // versione vecchia con se stessa e direbbe sempre «sei aggiornato»,
+  // cioè esattamente la bugia che questo tasto esiste per smontare.
+  // Un indirizzo che il service worker non ha in elenco non lo tocca, e
+  // la richiesta arriva al server.
+  const fresca = await fetch(`/index.html?controllo=${Date.now()}`, { cache: 'reload' })
+    .then((r) => (r.ok ? r.text() : null))
+    .catch(() => null)
+
+  if (fresca) {
+    // Gli script hanno il nome col codice del contenuto: se quello che il
+    // server serve adesso non è quello che stiamo eseguendo, siamo
+    // indietro davvero.
+    const suoi = [...fresca.matchAll(/\/assets\/([\w.-]+\.js)/g)].map((m) => m[1])
+    const nostri = [...document.querySelectorAll('script[src]')].map((s) =>
+      s.src.split('/').pop()
+    )
+    const indietro = suoi.length > 0 && !suoi.some((s) => nostri.includes(s))
+
+    if (indietro) {
+      if (registrazione) await registrazione.unregister().catch(() => {})
+      if ('caches' in window) {
+        const nomi = await caches.keys().catch(() => [])
+        await Promise.all(nomi.map((n) => caches.delete(n).catch(() => {})))
+      }
+      window.location.reload()
+      return 'ricarico'
+    }
+    return 'gia-aggiornata'
+  }
+
+  return 'niente-da-fare'
+}
+
 export function tieniAggiornata() {
   if (!('serviceWorker' in navigator)) return () => {}
 
