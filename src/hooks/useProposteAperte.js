@@ -86,10 +86,16 @@ export function useProposteAperte(memberId) {
       // chiude e riapre, la classifica resta ferma per ore proprio nel
       // momento in cui la stanno guardando tutti.
       //
-      // Costa una lettura dei membri, che è in cache, e la funzione del
+      // ⚠️ `fresca()`: l'elenco dei membri qui non serve a disegnare, serve
+      // a contare il quorum e a decidere se una proposta è passata. Con
+      // una copia più corta di quella vera — l'ultimo iscritto non c'è
+      // ancora — il quorum si raggiunge quando non si dovrebbe, e chi ha
+      // proposto si prende la penalità della Legge XIII per una proposta
+      // che le regole volevano annullare senza colpe. La funzione del
       // database rifiuta da sola le proposte già risolte da un altro
-      // telefono.
-      await leggiMembri()
+      // telefono, ma non può sapere se il conto dei membri era giusto.
+      await leggiMembri
+        .fresca()
         .then((elenco) => risolviProposte(elenco.map((m) => m.id)))
         .catch(() => {})
 

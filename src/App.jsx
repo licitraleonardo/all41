@@ -264,28 +264,48 @@ export default function App() {
         // dormono resterebbe appeso per sempre: lo chiude chi apre l'app.
         chiudiScaduti().catch(() => {})
 
-        // Le proposte scadute vanno anche applicate, non solo chiuse: i
-        // punti in attesa entrano in classifica o vengono respinti.
-        leggiMembri()
+        // ⚠️ Da qui in giù si DECIDE, non si guarda: si assegnano punti
+        // che hanno una `dedupeKey` e non si revocano. Quindi tutte queste
+        // letture sono `.fresca()`, che non ripiega sulla copia locale.
+        //
+        // Con la copia, il primo telefono che apriva l'app con una tacca
+        // di segnale decideva sui dati di ieri sera — e chiudeva la
+        // questione per tutti: il +3 del record della Pecora a chi era in
+        // testa quando è stata scattata la copia, il quorum di una
+        // proposta contato su un gruppo più piccolo di quello vero, il
+        // «sotto zero» a chi nel frattempo era già risalito.
+        //
+        // Se non riescono a leggere fresco non decidono, e riprovano alla
+        // prossima apertura. È già il modello del progetto: lo muove il
+        // primo che apre l'app. Rimandare di due ore non costa niente,
+        // sbagliare costa per sempre.
+        leggiMembri
+          .fresca()
           .then(async (elenco) => {
             await risolviProposte(elenco.map((m) => m.id))
             // I punteggi si muovono risolvendo le proposte: chi è finito
-            // sotto zero si guarda dopo, non prima.
-            await forseSottoZero(await leggiMembri())
+            // sotto zero si guarda dopo, non prima — e va riletto fresco,
+            // o si guarda proprio la fotografia di prima che si
+            // muovessero.
+            await forseSottoZero(await leggiMembri.fresca())
           })
           .catch(() => {})
 
         // Il record della pecora di ieri vale +3 (Legge XX), e quello di
         // fine viaggio +5 (XXV). Nessuno è sveglio a mezzanotte a
         // chiudere la giornata: la chiude il primo che apre l'app.
-        leggiRecordPecora()
+        // ⚠️ `sheep-trip` non ha la data nella chiave: si assegna una volta
+        // sola per tutto il viaggio, quindi su una copia vecchia si
+        // sbaglierebbe una volta sola e per sempre.
+        leggiRecordPecora
+          .fresca()
           .then((righe) => risolviRecordPecora(righe))
           .catch(() => {})
 
         // Il campione di dama di ieri: stesso schema, lo assegna il
         // primo che apre l'app il giorno dopo. La tabella puo' non
         // esserci ancora, e non e' un guasto.
-        Promise.all([leggiMembri(), import('./lib/partiteDama.js')])
+        Promise.all([leggiMembri.fresca(), import('./lib/partiteDama.js')])
           .then(([elenco, dama]) =>
             dama.leggiPartite().then((partite) =>
               risolviDama(partite, elenco.map((m) => m.id))

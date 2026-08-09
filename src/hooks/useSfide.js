@@ -20,13 +20,29 @@ export function useSfide(memberId) {
   const [voti, setVoti] = useState({})
   const [membri, setMembri] = useState({})
 
-  const ricarica = useCallback(async () => {
-    const [v, elenco, p, vt] = await Promise.all([
-      leggiSfideVinte(),
-      leggiMembri(),
-      leggiPartecipazioni(SFIDE.map((s) => s.id)),
-      leggiVotiSfide(),
-    ])
+  // `fresche` distingue le due cose che questa lettura serve a fare.
+  //
+  // Per DISEGNARE la scheda va benissimo la copia locale: è tutto il senso
+  // dell'offline, e senza rete si guardano le sfide lo stesso.
+  //
+  // Per DECIDERE no. ⚠️ Da qui passano tre cose definitive: quali foto
+  // entrano fra le opzioni del voto (chi manca resta fuori gara e non può
+  // rientrarci), se una sfida si chiude a un «solitario» che solo non era,
+  // e il premio finale da dieci punti — che ha la chiave `caccia-finale`
+  // senza data, cioè si assegna una volta per tutto il viaggio. Con una
+  // copia di due giorni prima, una gara che ha due foto ne mostra una, e
+  // la sfida viene assegnata senza gara alla persona sbagliata, per sempre.
+  const ricarica = useCallback(async (fresche = false) => {
+    const leggi = fresche
+      ? [
+          leggiSfideVinte.fresca(),
+          leggiMembri.fresca(),
+          leggiPartecipazioni.fresca(SFIDE.map((s) => s.id)),
+          leggiVotiSfide.fresca(),
+        ]
+      : [leggiSfideVinte(), leggiMembri(), leggiPartecipazioni(SFIDE.map((s) => s.id)), leggiVotiSfide()]
+
+    const [v, elenco, p, vt] = await Promise.all(leggi)
     setVinte(v)
     setMembri(Object.fromEntries(elenco.map((m) => [m.id, m])))
     setPartecipazioni(p)
@@ -43,10 +59,19 @@ export function useSfide(memberId) {
     // Il 17 si aprono i voti, il 20 si chiude e si assegna il premio:
     // niente succede durante il viaggio, e quello che succede dopo lo
     // muove il primo che apre l'app.
-    ricarica()
+    // ⚠️ Tutte e tre `fresche`: da qui si assegnano sfide e il premio
+    // finale, e sono decisioni che non si tornano indietro. Se la rete non
+    // risponde non si decide niente e ci riprova la prossima apertura —
+    // il che è esattamente il modello, visto che qui non succede niente
+    // fino al 17.
+    //
+    // La rilettura di mezzo dev'essere fresca per lo stesso motivo scritto
+    // in `assegnaPremioCaccia`, che si aspetta le vittorie GIÀ assegnate:
+    // con la copia si ritrovava le stesse di due secondi prima.
+    ricarica(true)
       .then(async ({ vinte: v, partecipazioni: p, voti: vt }) => {
         await risolviCaccia(p, v, vt, memberId).catch(() => {})
-        const dopo = vivo ? await ricarica() : null
+        const dopo = vivo ? await ricarica(true) : null
         if (dopo) await assegnaPremioCaccia(dopo.vinte).catch(() => {})
         if (vivo) await ricarica()
       })

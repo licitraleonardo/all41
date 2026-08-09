@@ -103,7 +103,7 @@ export function svuotaCache() {
 // serve alle pagine successive dell'album, che sovrascriverebbero la
 // prima con un pezzo di mezzo.
 export function conCache(chiave, lettura) {
-  return async (...argomenti) => {
+  const conRipiego = async (...argomenti) => {
     const k = typeof chiave === 'function' ? chiave(...argomenti) : chiave
     // Anche senza copia da servire, la scadenza serve: una lettura appesa
     // qui inchioda comunque chi l'aspetta.
@@ -140,4 +140,35 @@ export function conCache(chiave, lettura) {
       return copia.dati
     }
   }
+
+  // ⚠️ La stessa lettura, ma SENZA ripiego: o è roba di adesso, o solleva.
+  //
+  // Serve a chi non deve guardare, ma DECIDERE. Il patto scritto in cima a
+  // questo file — «una copia vecchia invece di un errore» — è giusto per
+  // tutto quello che si legge e basta, ed è quello che rende l'app usabile
+  // in Sardegna. Ma cinque letture su sedici finiscono dentro decisioni
+  // definitive: assegnare la Legge XX del record della Pecora, chiudere una
+  // sfida della caccia, pagare il premio finale da 10 punti, contare il
+  // quorum di una proposta, far scattare «sotto zero». Sono punti con una
+  // `dedupeKey`, e i punti NON si revocano: il primo telefono che decide
+  // sulla copia di ieri chiude la questione per tutti, per sempre.
+  //
+  // Alcune di quelle chiavi non hanno nemmeno la data — `sheep-trip`,
+  // `caccia-finale`, `sotto-zero` — quindi valgono una volta per tutto il
+  // viaggio.
+  //
+  // Il fallimento qui è quello giusto: una decisione che non riesce a
+  // leggere fresco **non viene presa**, e aspetta la prossima apertura. È
+  // già il modo in cui questo progetto funziona — «lo muove il primo che
+  // apre l'app» — quindi rimandare di due ore non costa niente, mentre
+  // sbagliare costa per sempre.
+  //
+  // Il progetto la distinzione l'aveva già fatta a mano una volta, in
+  // `useGioco`: i conteggi dei voti aperti erano l'unica lettura tenuta
+  // fuori dalla cache, con la motivazione «una copia vecchia direbbe il
+  // falso su quanti hanno già deciso». È la stessa ragione, scritta bene.
+  conRipiego.fresca = (...argomenti) =>
+    conScadenza(lettura(...argomenti), SECONDI_LETTURA * 1000)
+
+  return conRipiego
 }

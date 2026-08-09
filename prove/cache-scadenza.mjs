@@ -98,5 +98,51 @@ console.log('\nchi modifica le spese aggiorna anche la copia')
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// La lettura senza ripiego, per chi decide
+//
+// Il patto di `conCache` — una copia vecchia invece di un errore — e'
+// giusto per tutto quello che si GUARDA, ed e' quello che rende l'app
+// usabile in Sardegna. Ma cinque letture su sedici finiscono dentro
+// decisioni definitive: la Legge XX del record della Pecora, la chiusura di
+// una sfida, il premio finale da dieci punti, il quorum di una proposta,
+// "sotto zero". Sono punti con una dedupeKey, e i punti non si revocano.
+
+console.log('\nla lettura senza ripiego, per chi decide')
+{
+  const testo = readFileSync(new URL('../src/lib/cache.js', import.meta.url), 'utf8')
+  const corpo = testo.slice(testo.indexOf('export function conCache'))
+
+  prova('conCache offre una versione fresca', /\.fresca = /.test(corpo))
+  prova(
+    'e la fresca NON ripiega sulla copia',
+    !/\.fresca = [\s\S]{0,200}daCache/.test(corpo),
+    { aiuto: 'se ripiegasse anche lei, chi decide tornerebbe a decidere sui dati di ieri' }
+  )
+  prova(
+    'ma il tetto di tempo ce l ha lo stesso',
+    /\.fresca = [\s\S]{0,160}conScadenza/.test(corpo)
+  )
+}
+
+console.log('\nchi decide legge fresco')
+{
+  const punti = [
+    ['src/App.jsx', 'leggiMembri.fresca', 'quorum delle proposte e sotto-zero'],
+    ['src/App.jsx', 'leggiRecordPecora.fresca', 'Legge XX e XXV della Pecora'],
+    ['src/hooks/useProposteAperte.js', 'leggiMembri.fresca', 'quorum quando si vota'],
+    ['src/hooks/useSfide.js', 'leggiSfideVinte.fresca', 'sfide e premio finale'],
+    ['src/hooks/useSfide.js', 'leggiPartecipazioni.fresca', 'chi e in gara'],
+  ]
+  for (const [file, cosa, perche] of punti) {
+    const t = readFileSync(new URL('../' + file, import.meta.url), 'utf8')
+    // `leggiMembri.fresca()` e `leggiMembri\n  .fresca()` sono la stessa
+    // cosa: cercare la stringa attaccata farebbe fallire la prova per un
+    // a capo, che e' il modo piu' stupido di perdere mezz'ora.
+    const [oggetto, metodo] = cosa.split('.')
+    prova(`${file}: ${cosa} (${perche})`, new RegExp(`${oggetto}\\s*\\.\\s*${metodo}`).test(t))
+  }
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
 process.exit(falliti === 0 ? 0 : 1)
