@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import Installa from './components/Installa.jsx'
-import { tieniAggiornata } from './lib/aggiornamento.js'
+import { controllaNelleOreMorte, tieniAggiornata } from './lib/aggiornamento.js'
 
 // /installa è una pagina a sé: la guida per mettersi l'app sulla home, e
 // nient'altro. Niente codice, niente onboarding, niente database.
@@ -24,4 +24,10 @@ createRoot(document.getElementById('root')).render(
 // Non sulla pagina di installazione: lì il service worker serve solo a
 // registrarsi, e cercare aggiornamenti di un'app che non è ancora
 // installata non ha senso.
-if (!installazione) tieniAggiornata()
+if (!installazione) {
+  tieniAggiornata()
+  // E l'altra meta': due volte al giorno, nelle ore in cui una ricarica
+  // non porta via niente a nessuno, l'app controlla da sola di non essere
+  // rimasta indietro. Vedi lib/finestreAggiornamento.js.
+  controllaNelleOreMorte()
+}

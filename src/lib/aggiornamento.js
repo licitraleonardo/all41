@@ -1,3 +1,5 @@
+import { attesaACaso, segnalibro, vaControllato } from './finestreAggiornamento.js'
+
 // Tenere aggiornata l'app installata sulla home.
 //
 // Il service worker si aggiorna da solo, ma il browser decide lui quando
@@ -117,6 +119,73 @@ export async function forzaAggiornamento() {
   }
 
   return 'niente-da-fare'
+}
+
+// Il controllo che si fa da solo, nelle ore morte.
+//
+// `forzaAggiornamento` qui sopra è il tasto: lo preme chi si è accorto di
+// qualcosa. Questo è l'altra metà — perché quasi nessuno se ne accorge, e
+// una copia ferma a una versione vecchia resta lì per giorni senza che
+// nessuno la guardi.
+//
+// Le regole del *quando* stanno in `finestreAggiornamento.js`, pure e
+// provate a parte. Qui c'è solo il collegamento al browser.
+const CHIAVE_ULTIMO = 'all41.aggiornamento.ultimo'
+
+function ultimoControllo() {
+  try {
+    return localStorage.getItem(CHIAVE_ULTIMO)
+  } catch {
+    return null
+  }
+}
+
+function segnaControllo(quale) {
+  try {
+    localStorage.setItem(CHIAVE_ULTIMO, quale)
+  } catch {
+    // Navigazione privata: si ricontrollerà. Non è un motivo per fermarsi.
+  }
+}
+
+export function controllaNelleOreMorte() {
+  let attesa = null
+
+  const forse = () => {
+    if (document.visibilityState !== 'visible') return
+    if (attesa) return
+
+    const quale = segnalibro()
+    if (!vaControllato({ ultimo: ultimoControllo(), occupato: !siPuoRicaricare() })) return
+
+    // ⚠️ Il segnalibro si mette PRIMA di partire, non dopo.
+    //
+    // Se lo mettessimo dopo, e il controllo trovasse una versione nuova,
+    // la pagina si ricaricherebbe senza aver segnato niente: alla
+    // riapertura la finestra risulterebbe ancora da fare e si
+    // ricontrollerebbe subito. Segnandolo prima, il peggio che può
+    // succedere è saltare un giro.
+    segnaControllo(quale)
+
+    attesa = setTimeout(() => {
+      attesa = null
+      // Si ricontrolla adesso: fra l'apertura e questo momento sono
+      // passati fino a due minuti, e in due minuti uno può essersi messo
+      // a scrivere una spesa.
+      if (!siPuoRicaricare()) return
+      forzaAggiornamento().catch(() => {})
+    }, attesaACaso())
+  }
+
+  document.addEventListener('visibilitychange', forse)
+  window.addEventListener('focus', forse)
+  forse()
+
+  return () => {
+    if (attesa) clearTimeout(attesa)
+    document.removeEventListener('visibilitychange', forse)
+    window.removeEventListener('focus', forse)
+  }
 }
 
 export function tieniAggiornata() {

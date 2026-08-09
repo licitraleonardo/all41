@@ -73,8 +73,6 @@ const NOMI_TAB = {
   altro: 'Questa sezione',
 }
 
-const commit = __COMMIT__
-const buildTime = __BUILD_TIME__
 
 export default function App() {
   const [vista, setVista] = useState('avvio')
