@@ -323,6 +323,22 @@ export default function App() {
     const copiaFatta = negliAppuntiQuandoPronto(codicePronto)
 
     try {
+      // Stesso motivo di `recupera`: senza sessione l'inserimento viene
+      // rifiutato dalle regole di sicurezza, e `descriviErrore` traduce
+      // quel rifiuto in «Rilancia supabase/schema.sql» — che manda a
+      // cercare il problema nel database quando il problema è il segnale.
+      try {
+        await assicuraSessione()
+      } catch (e) {
+        daiIlCodice('')
+        setErrore(
+          eScaduta(e) || sembraRete(e, navigator.onLine !== false)
+            ? 'La rete non risponde: il profilo non è stato creato. Riprova fra un momento.'
+            : descriviErrore(e)
+        )
+        return
+      }
+
       const nuovo = await creaMembro({ nome, avatarStyle })
       daiIlCodice(nuovo.codice)
       salvaMemberId(nuovo.id)
@@ -355,6 +371,30 @@ export default function App() {
     setInCorso(true)
     setErrore(null)
     try {
+      // ⚠️ La sessione PRIMA della ricerca, e il suo guasto raccontato per
+      // quello che è.
+      //
+      // Senza sessione anonima le regole di sicurezza non fanno vedere
+      // nessuna riga: la ricerca non fallisce, torna zero righe. E zero
+      // righe, qui sotto, diventavano «Non ti trovo. Controlla il codice.»
+      // detto a chi il codice ce l'ha giusto.
+      //
+      // È la frase peggiore che l'app potesse dire, perché la reazione
+      // naturale è aprire «Registrati» e rifare il profilo: otto persone
+      // diventano nove, i saldi delle Spese si dividono per nove, e la
+      // classifica si spezza su due identità che non si ricongiungono più.
+      // Un problema di rete travestito da colpa dell'utente.
+      try {
+        await assicuraSessione()
+      } catch (e) {
+        setErrore(
+          eScaduta(e) || sembraRete(e, navigator.onLine !== false)
+            ? 'Il codice va bene, è la rete che non risponde. Riprova fra un momento.'
+            : descriviErrore(e)
+        )
+        return
+      }
+
       const trovato = await trovaPerCodice(codice)
       if (!trovato) {
         setErrore('Non ti trovo. Controlla il codice.')

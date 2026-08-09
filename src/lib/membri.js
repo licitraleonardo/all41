@@ -58,10 +58,66 @@ export async function trovaPerCodice(codice) {
   return daRiga(data)
 }
 
+// Il codice che si sta provando a usare, messo da parte prima di mandarlo.
+//
+// ⚠️ Serve a non creare due profili per la stessa persona, ed è il difetto
+// peggiore che potesse capitare la sera del 12: la scrittura parte, la rete
+// non risponde, la persona ritocca «Inizia viaggio» — e adesso in `members`
+// ci sono due righe sue. La prima ha un codice che **non ha mai visto**,
+// perché il codice si legge solo nel messaggio dopo la creazione riuscita:
+// è un fantasma irrecuperabile che compare in «Divisa fra» delle Spese,
+// nella classifica e fra le opzioni dell'Impostore. Otto persone, nove
+// profili, e i saldi divisi per nove.
+//
+// Siccome il codice lo genera il telefono, il telefono può anche chiedere
+// «quello di prima è arrivato?» invece di mandarne un altro.
+const CHIAVE_TENTATO = 'all41.codiceTentato'
+
+function ricordaTentativo(codice) {
+  try {
+    localStorage.setItem(CHIAVE_TENTATO, codice)
+  } catch {
+    // Safari in navigazione privata: si perde la rete di sicurezza, non il
+    // profilo. Al massimo si torna al comportamento di prima.
+  }
+}
+
+function scordaTentativo() {
+  try {
+    localStorage.removeItem(CHIAVE_TENTATO)
+  } catch {
+    // vedi sopra
+  }
+}
+
 export async function creaMembro({ nome, avatarStyle }) {
+  // Prima di crearne uno nuovo: c'era un tentativo rimasto in sospeso? Se
+  // quel codice adesso esiste sul database, la scrittura di prima era
+  // arrivata — solo che la risposta non è tornata indietro. Si adotta
+  // quello invece di aggiungere un doppione.
+  const inSospeso = (() => {
+    try {
+      return localStorage.getItem(CHIAVE_TENTATO)
+    } catch {
+      return null
+    }
+  })()
+
+  if (inSospeso) {
+    const gia = await trovaPerCodice(inSospeso).catch(() => null)
+    if (gia) {
+      scordaTentativo()
+      inCache(`membro.${gia.id}`, gia)
+      return gia
+    }
+  }
+
   // Il codice è casuale su 31^5 combinazioni: una collisione è improbabile
   // ma non impossibile, e il vincolo unique la fa fallire. Si riprova.
   for (let tentativo = 0; tentativo < 5; tentativo += 1) {
+    const codice = generaCodice()
+    ricordaTentativo(codice)
+
     const { data, error } = await supabase
       .from('members')
       .insert({
@@ -69,13 +125,14 @@ export async function creaMembro({ nome, avatarStyle }) {
         name: nome,
         avatar_seed: nome,
         avatar_style: avatarStyle,
-        access_code: generaCodice(),
+        access_code: codice,
         last_seen_at: new Date().toISOString(),
       })
       .select(CAMPI)
       .single()
 
     if (!error) {
+      scordaTentativo()
       const nuovo = daRiga(data)
       // Chi si iscrive e resta subito senza segnale deve poter riaprire
       // l'app lo stesso: senza copia, alla riapertura non ci sarebbe
@@ -83,8 +140,20 @@ export async function creaMembro({ nome, avatarStyle }) {
       inCache(`membro.${nuovo.id}`, nuovo)
       return nuovo
     }
-    if (error.code !== '23505') throw error // 23505 = unique_violation
+
+    // Codice già preso: si riprova con un altro, e quello tentato non
+    // serve più a niente.
+    if (error.code === '23505') {
+      scordaTentativo()
+      continue
+    }
+
+    // Qualunque altro guasto — rete appesa compresa — lascia il codice
+    // tentato dov'è: è quello che al prossimo tocco eviterà il doppione.
+    throw error
   }
+
+  scordaTentativo()
   throw new Error('Non sono riuscito a generare un codice libero.')
 }
 
