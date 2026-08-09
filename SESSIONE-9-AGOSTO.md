@@ -251,8 +251,35 @@ risponde, dimmelo e lo tolgo.
       (il pallino arancione su iPhone) **si spenga** quando fermi.
 - [ ] **Gli avvisi dei messaggi rapidi si vedono da tutti i tab**
       (*«Leo ha lanciato un sondaggio — mostra / vedo dopo»*)
-- [ ] **La richiesta di aggiornare la posizione compare in tutti i tab**
-      (*aggiorna / lo faccio dopo*), non solo nella Mappa
+
+      ✅ **Ma prima è saltata fuori una cosa più grave, ed è fatta: l'SOS
+      si vedeva solo dalla chat.** `StrisciaSOS` viveva dentro
+      `ChatRapida`, cioè dentro il tab Gruppo, scheda Chat. Un SOS mandato
+      mentre qualcuno guardava le foto o giocava a dama non compariva da
+      nessuna parte su quel telefono: restava un pallino sull'icona del
+      Gruppo, **identico a quello di chi scrive «che si mangia»**. Stesso
+      difetto del buco del realtime, ma senza bisogno che cadesse la rete
+      — bastava essere in un altro tab, cioè quattro volte su cinque.
+
+      Adesso è fissa in cima a tutta l'app e gli altri quattro banner le
+      cedono il posto.
+
+      Restano da fare gli avvisi veri e propri: sondaggio, «si riparte»,
+      «dove siete».
+
+- [x] ✅ **La richiesta di aggiornare la posizione in tutti i tab** —
+      **c'era già.** Il banner è montato in `App.jsx` fuori dai tab, e ha
+      esattamente i bottoni che volevi (*Aggiorna / No / Non ora*).
+
+      Non l'hai mai visto per due motivi, e nessuno dei due è un difetto:
+      compare solo **durante** il viaggio (oggi `statoDelViaggio` dice
+      *prima*, quindi non può proprio apparire fino al 12), e solo a chi
+      ha condiviso la posizione **almeno una volta** — chi non l'ha mai
+      fatta non ha detto di sì una prima volta, e non si insiste.
+
+      ⚠️ Quindi dal 12 comparirà, e non l'ha ancora visto nessuno sul
+      campo. Se dà fastidio, il numero da girare è `VECCHIA_DOPO_MINUTI`
+      in `lib/rinfrescaPosizione.js` (adesso 120).
 - [ ] **Numero di telefono quando ci si registra**, skippabile: prefisso,
       numero validato, e la frase che spiega dove finisce — *«verrà
       salvato fra le info utili e resta raggiungibile dal gruppo anche
