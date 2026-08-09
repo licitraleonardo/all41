@@ -109,5 +109,29 @@ select
 
 writeFileSync(new URL(USCITA, cartella), testa + pezzi.join('\n') + controllo, 'utf8')
 
+// Lo stesso controllo, da solo. Serve per chiedere "com'e' messo il
+// database?" senza rilanciare niente: e' una select e non tocca niente,
+// quindi si puo' dare in mano a chiunque e lanciare quando si vuole.
+//
+// Generato dalla stessa stringa del file grosso, o sarebbero due domande
+// che col tempo si rispondono diverso.
+const SOLO_CONTROLLO = 'CONTROLLA.sql'
+writeFileSync(
+  new URL(SOLO_CONTROLLO, cartella),
+  [
+    '-- ' + '='.repeat(68),
+    '-- COM’È MESSO IL DATABASE — solo lettura, non cambia niente',
+    '-- ' + '='.repeat(68),
+    '--',
+    '-- Quattro righe: se dicono tutte “a posto”, DA-LANCIARE.sql è arrivato',
+    '-- tutto. Si può rilanciare quando si vuole, non tocca nessun dato.',
+    '--',
+    '-- ⚠️ GENERATO da strumenti/unisci-sql.mjs — non modificarlo a mano.',
+    controllo,
+  ].join('\n'),
+  'utf8'
+)
+
 console.log(`\nsupabase/${USCITA} rifatto da ${DA_UNIRE.length} file.`)
+console.log(`supabase/${SOLO_CONTROLLO} rifatto (solo lettura).`)
 console.log('Aprilo, copia tutto, incollalo nell’SQL Editor di Supabase, Run.\n')
