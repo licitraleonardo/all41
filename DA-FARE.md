@@ -3,6 +3,11 @@
 Coda di lavoro decisa, in ordine. Diversa da `IDEE.md`, che è il parcheggio
 delle cose non decise. Aggiornata prima della partenza.
 
+> 📋 **9 agosto — l'elenco aggiornato sta in `SESSIONE-9-AGOSTO.md`.** Quel
+> giorno sono stati chiusi 45 difetti su 46, e cinque delle cose scritte qui
+> sotto non ci sono più. Questo file resta per il contesto: **per sapere cosa
+> manca adesso, guarda quello.**
+
 ⚠️ **SQL da lanciare**: **`supabase/DA-LANCIARE.sql`**, uno solo, da
 incollare nell'SQL Editor di Supabase. Contiene tutto quello che manca e
 in fondo dice da solo se è andata. È generato: `npm run sql` lo rifà dai

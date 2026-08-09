@@ -3,6 +3,29 @@
 Non è lo spec. Qui dentro non c'è niente di deciso: sono cose a cui abbiamo pensato e che potrebbero avere senso un giorno.
 Una riga per idea, nessun ordine, nessuna priorità. Se serve formattarla, non scriverla.
 
+## Venute a Leonardo usando l'app (9 agosto) — rimandate a dopo il viaggio
+
+Rimandate per una ragione sola: mancavano tre giorni alla partenza e c'erano
+45 difetti aperti. Nessuna delle tre è stata scartata, e nessuna è piccola.
+
+- **Solitario con le carte alla Allan.** Oppure, meglio, una **sezione single
+  player** che raccolga quello che si gioca da soli: la Pecora ci sta già, il
+  solitario ci starebbe accanto. Adesso la Pecora vive nel tab Gioco insieme a
+  cose che si giocano in gruppo, e la differenza non si vede.
+- **Scacchi accanto alla dama, in una sezione «Duo».** La dama esiste già e il
+  motore di partita a due c'è; gli scacchi però non sono «la dama con altri
+  pezzi»: arrocco, en passant, promozione, scacco matto e patta sono cinque
+  regole nuove, ognuna con i suoi casi limite. È una feature intera, non un
+  ritocco.
+- **Onboarding che chiede i documenti importanti** (e il telefono). Il dubbio è
+  scritto nell'appunto stesso: *«o appesantisce?»*. Chiedere roba prima di far
+  vedere qualcosa è il modo più veloce per far chiudere l'app la prima sera —
+  e la prima sera è l'unico momento in cui devono entrare tutti e otto. Se si
+  fa, va fatto **saltabile** e dopo il primo giro dentro l'app.
+
+  *(Il telefono al momento di registrarsi è invece deciso e sta in
+  `SESSIONE-9-AGOSTO.md`, non qui: quello serve a essere raggiungibili offline.)*
+
 ## Rimandate consapevolmente durante la progettazione
 
 - Skribbl.io e Gartic Phone — servono canvas di disegno sincronizzato in tempo reale, infrastruttura che il resto dell'app non usa

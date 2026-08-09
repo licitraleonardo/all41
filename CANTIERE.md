@@ -18,10 +18,11 @@ file, e aggiornato prima di cominciare un pezzo.**
 > e si scrive **solo in coda**. Le regole e gli otto verbi stanno in
 > `ponte/PROTOCOLLO.md`.
 >
-> ⚠️ **9/8 — fermi tutti e due per volontà di Leonardo.** Deve continuare
-> **una sessione sola**, e va deciso quale. La proposta di A è il messaggio
-> `A6`; **B risponda in `ponte/B.jsonl` con `rif: "A6"`.** Finché non c'è
-> risposta, nessuno dei due tocca `src/`, `supabase/` o `prove/`.
+> ✅ **9/8 — accordo chiuso: continua A da sola.** B si è tirata indietro
+> (`ponte/B.jsonl`, messaggio `B9`) e ha consegnato quello che sapeva in
+> `CONTESTO.md` prima di fermarsi. Da lì in poi tutti i commit sono di A.
+> Se una terza sessione apre questa cartella, si dia una lettera, scriva in
+> `ponte/` e **non tocchi `src/` finché A non risponde**.
 
 ---
 
@@ -52,17 +53,20 @@ vedono lo stesso).
 
 | Sessione | Sta facendo | File presi | Da |
 |---|---|---|---|
-| **A** | I nove punti aperti di `CACCIA-IMPOSTORE.md` — **in attesa di conferma da Leonardo**, vedi Conflitti #1 | `src/lib/impostore.js`, `src/lib/partiteImpostore.js`, `src/hooks/useImpostore.js`, `src/components/Impostore.jsx`, `supabase/schema.sql`, `prove/impostore.mjs` | 9/8 |
-| **A** | Caccia automatica in corso su sei sezioni non ancora battute (soldi, chat e vocali, punti, caccia al tesoro e Pecora, senza rete, ingresso). **Solo lettura** finché non porta risultati | nessuno preso in scrittura | 9/8 |
+| **A** | Niente: la road map del 9 agosto è finita, tutto committato e spinto | nessuno | 9/8 |
+| **B** | Ferma. Ha consegnato `CONTESTO.md` e si è tirata indietro | nessuno | 9/8 |
 
-| **B** | ~~Fonde quello che sanno le cinque chat in `CONTESTO.md`~~ **fatto.** Ricavato dalle trascrizioni delle cinque sessioni: come lavora Leonardo, dove ha cambiato idea, 96 trappole già pagate, cosa è scartato di proposito, cosa aspetta una risposta. **Da leggere all'apertura, insieme a questo file.** ⚠️ La fase di verifica del workflow è morta sul limite di sessione: il documento **non** è stato ricontrollato contro il repo | nessuno | 9/8 |
-
-Sessione **A** è quella che ha fatto i commit da `e104479` a `af70748`.
-Sessione **B** è quella di `a6c6a52` (`CACCIA-IMPOSTORE.md`).
+Sessione **A** ha fatto tutti i commit del 9 agosto tranne due.
+Sessione **B** è quella di `a6c6a52` (`CACCIA-IMPOSTORE.md`) e `a90b8fc`
+(`CONTESTO.md`).
 Chi arriva e non è A né B, si dia una lettera e si aggiunga.
 
-**B non ha niente in `src/`, `supabase/` o `prove/`.** Se qualcosa lì risulta
-modificato e non è di A, non è di nessuno dei due: guardare prima di committare.
+⚠️ `CONTESTO.md` **non** è mai stato ricontrollato contro il codice: la fase
+di verifica è morta sul limite di sessione. È materiale buono, non una fonte.
+
+**Il disco è pulito e `main` è allineato a `origin/main`.** Se qui risulta
+modificato qualcosa, è di una sessione che non ha scritto in questa tabella:
+guardare prima di committare.
 
 ---
 
@@ -71,7 +75,14 @@ modificato e non è di A, non è di nessuno dei due: guardare prima di committar
 Qui si scrive quando due lavori si toccano. Non si discute nel codice: si
 scrive qui e si aspetta che Leonardo decida, oppure si prende altro.
 
-### 1. Chi corregge i nove punti dell'Impostore — **aperto**
+### 1. Chi corregge i nove punti dell'Impostore — **chiuso: li ha fatti A**
+
+Leonardo ha confermato, B si è tirata indietro, e i nove sono chiusi in
+`160bdc5` e `37b3151`. La trappola del punto 7 — `schema.sql` che riportava
+indietro tre funzioni senza dare nessun errore — è disinnescata in `49aaef0`:
+una funzione, un file, e un controllo in fondo a `schema.sql` che lo dice.
+
+<details><summary>Com'era la discussione</summary>
 
 `CACCIA-IMPOSTORE.md` è stato scritto dalla sessione **B** (commit
 `a6c6a52`) e lascia aperti nove difetti dell'Impostore.
@@ -94,9 +105,16 @@ armata dentro il file che a Leonardo è stato detto di lanciare.
 *In attesa della parola di Leonardo. Finché non arriva, A non tocca niente
 di quei file.*
 
+</details>
+
 ---
 
-### 2. Dodici commit sono solo su questo disco — **aperto**
+### 2. Dodici commit sono solo su questo disco — **chiuso: spinti**
+
+Leonardo ha dato il permesso di spingere, e da `b214d9f` in poi ogni pezzo
+funzionante finisce su `origin/main` appena è verde. `main` è allineato.
+
+<details><summary>Com'era la discussione</summary>
 
 `main` è **avanti di 12 commit su `origin/main`**. Nessuno dei due ha mai spinto:
 tutto il lavoro del 9 agosto — di A e di B — esiste in un posto solo.
@@ -112,6 +130,8 @@ nessuno l'ha riconfermata, e con due sessioni sullo stesso branch conviene che l
 dica lui.
 
 *In attesa della parola di Leonardo. Chi la riceve, spinga.*
+
+</details>
 
 ---
 
@@ -133,3 +153,25 @@ se una cosa è già stata fatta dall'altro invece di rifarla.
 | `07f73d7` | A | `npm run sql:lancia`, per non aprire il browser |
 | `a6c6a52` | B | `CACCIA-IMPOSTORE.md`: le trenta segnalazioni ritrovate |
 | `af70748` | A | `CONTROLLA.sql`, il controllo del database in sola lettura |
+| `9b1ad94` | A | `CANTIERE.md`: un posto dove mettersi d'accordo |
+| `a90b8fc` | B | `CONTESTO.md`: le cinque chat ricordano le stesse cose |
+| `f21e82a` | A | `ponte/`: un canale che non si può rompere da solo |
+| `e170c74` | B | B si tira indietro e consegna |
+| `752cf47` | A | L'accordo è chiuso: continua A |
+| `49aaef0` | A | Una funzione, un file: disinnescata la trappola di `schema.sql` |
+| `44149da` | A | Le spese eliminate non spariscono più dai conti |
+| `160bdc5` | A | Quattro dei nove dell'Impostore |
+| `25dd6c7` | A | Un giro d'accusa apre **un** voto, non uno per telefono |
+| `80efcd0` | A | I profili di prova |
+| `37b3151` | A | Gli ultimi quattro dell'Impostore |
+| `b214d9f` | A | **Il tetto di tempo al centro** — chiude 8 difetti su 35 |
+| `9a749f0` | A | La sera del 12 si entra, e riprovando non nasce un doppio |
+| `5ff3e8b` | A | I soldi: niente doppioni, e un saldo spiegabile |
+| `494d7b7` | A | Alla Dama i punti si prendono vincendo |
+| `5322d70` | A | Ogni statistica dice cosa mostra |
+| `13550ec` | A | I punti guadagnati arrivano, e l'MVP è quello della giornata |
+| `2026730` | A | Chi decide legge fresco |
+| `4748444` | A | La caccia: il 20 si vota fino a sera, e il pareggio si chiama così |
+| `1fda645` | A | L'app non si ricarica più addosso a chi sta facendo qualcosa |
+| `9c98f9a` | A | I vocali: l'eliminazione vale per tutti |
+| `64d031e` | A | Il buco del socket non si mangia più l'SOS |
