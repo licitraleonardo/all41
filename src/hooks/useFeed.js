@@ -32,6 +32,26 @@ export function useFeed() {
     return elenco
   }, [])
 
+  // ⚠️ Rileggere il feed dopo un buco. Il realtime consegna quello che
+  // succede MENTRE si è collegati: se il socket cade — si passa sotto un
+  // ponte, il telefono va in tasca, la wifi del villaggio fa una delle sue
+  // — quello che è passato in quei venti secondi **non arriva mai più** su
+  // quel telefono. E sullo schermo la conversazione risulta ferma e
+  // completa: non c'è nessun segno che manchi qualcosa.
+  //
+  // Nel caso peggiore a cadere nel buco è un SOS. E lì il buco non si
+  // richiude da solo, perché quando uno si perde gli altri smettono di
+  // scrivere in chat e cominciano a telefonare: non arriva nessun evento
+  // successivo che faccia accorgere di niente.
+  //
+  // ⚠️ `.fresca()`: se qui uscisse la copia locale, il riallineamento
+  // riporterebbe la conversazione INDIETRO invece che avanti. Se non si
+  // riesce a leggere fresco si lascia a schermo quello che c'è.
+  const riallinea = useCallback(async () => {
+    const feed = await leggiFeed.fresca()
+    setAzioni(feed)
+  }, [])
+
   useEffect(() => {
     let vivo = true
 
@@ -47,6 +67,10 @@ export function useFeed() {
         setStato('guasto')
       })
 
+    // La prima iscrizione non è un ritorno: si rilegge dalla seconda in
+    // poi, che è quando il canale si è ricollegato dopo essere caduto.
+    let giaCollegato = false
+
     const canale = supabase
       .channel('feed-quick-actions')
       .on(
@@ -59,13 +83,29 @@ export function useFeed() {
         { event: 'UPDATE', schema: 'public', table: 'quick_actions' },
         ({ new: riga }) => sostituisci(normalizza(riga))
       )
-      .subscribe()
+      .subscribe((statoCanale) => {
+        if (statoCanale !== 'SUBSCRIBED') return
+        if (giaCollegato && vivo) riallinea().catch(() => {})
+        giaCollegato = true
+      })
+
+    // Il ritorno del canale non basta da solo: dentro una PWA messa in
+    // tasca il socket può morire senza che nessuno lo dichiari, e ci si
+    // accorge di essere tornati solo quando lo schermo si riaccende.
+    const alRitorno = () => {
+      if (!vivo || document.visibilityState !== 'visible') return
+      riallinea().catch(() => {})
+    }
+    document.addEventListener('visibilitychange', alRitorno)
+    window.addEventListener('online', alRitorno)
 
     return () => {
       vivo = false
+      document.removeEventListener('visibilitychange', alRitorno)
+      window.removeEventListener('online', alRitorno)
       supabase.removeChannel(canale)
     }
-  }, [inserisci, sostituisci, ricaricaMembri])
+  }, [inserisci, sostituisci, ricaricaMembri, riallinea])
 
   // Se compare un autore che non conosciamo è entrato qualcuno di nuovo:
   // si rileggono i membri una volta sola, non a ogni messaggio.

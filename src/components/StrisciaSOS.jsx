@@ -20,6 +20,9 @@ export default function StrisciaSOS({ nome }) {
 
   useEffect(() => {
     let vivo = true
+    // La prima iscrizione non è un ritorno: si rilegge dalla seconda in
+    // poi, cioè quando il canale si è ricollegato dopo essere caduto.
+    let giaCollegato = false
     const carica = () =>
       leggiSosAperti()
         .then((elenco) => vivo && setAperti(elenco))
@@ -34,10 +37,33 @@ export default function StrisciaSOS({ nome }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'quick_actions' }, () =>
         carica()
       )
-      .subscribe()
+      // ⚠️ E si rilegge anche quando il canale torna su, o quando torna su
+      // l'app. Il realtime consegna solo quello che passa MENTRE si è
+      // collegati: se il socket cade — il telefono in tasca, un tratto
+      // senza campo — l'SOS mandato in quei minuti non arriva mai più su
+      // questo telefono, e la striscia in cima non compare.
+      //
+      // Qui il buco non si richiude da solo, ed è il motivo per cui questo
+      // caso è peggiore di tutti gli altri: quando uno si perde, gli altri
+      // smettono di scrivere in chat e cominciano a telefonare. Non arriva
+      // nessun evento successivo che faccia ricaricare.
+      .subscribe((statoCanale) => {
+        if (statoCanale !== 'SUBSCRIBED') return
+        if (giaCollegato && vivo) carica()
+        giaCollegato = true
+      })
+
+    const alRitorno = () => {
+      if (!vivo || document.visibilityState !== 'visible') return
+      carica()
+    }
+    document.addEventListener('visibilitychange', alRitorno)
+    window.addEventListener('online', alRitorno)
 
     return () => {
       vivo = false
+      document.removeEventListener('visibilitychange', alRitorno)
+      window.removeEventListener('online', alRitorno)
       supabase.removeChannel(canale)
     }
   }, [])
