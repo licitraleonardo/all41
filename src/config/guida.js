@@ -41,16 +41,26 @@ export const VOCI = [
     icona: '📎',
     titolo: 'Altro',
     testo:
-      'Le spese divise, i documenti del viaggio e la mappa di dove siete tutti. Roba che serve in un momento preciso e poi si dimentica.',
+      'Le spese divise, i documenti del viaggio, la mappa di dove siete tutti, i numeri utili e le statistiche. Roba che serve in un momento preciso e poi si dimentica.',
   },
 ]
 
 // La card finale, volutamente vaga. E' l'unica cosa che la guida dice sui
 // punti, ed e' una promessa che l'app puo' mantenere davvero: il motivo
 // di ogni punto compare sempre nella Classifica quando scatta.
+// ⚠️ `attiva`, non `LEGGI.length`.
+//
+// L'elenco ne contiene 49, ma dieci sono spente: aspettano sezioni che
+// non ci sono ancora. La guida diceva «Sono 49» e prometteva quaranta
+// punti che non possono scattare — in un gioco il cui unico meccanismo e'
+// «si scoprono facendole scattare», dieci Leggi introvabili vogliono dire
+// dieci persone che a fine viaggio contano il proprio Testamento e
+// pensano di essersi persi qualcosa.
+const QUANTE_LEGGI = LEGGI.filter((l) => l.attiva).length
+
 export const FINALE = {
   titolo: 'E poi ci sono le Leggi',
-  testo: `Sono ${LEGGI.length}. Danno e tolgono punti da sole, e nessuno ti dira' quali sono: si scoprono facendole scattare. Quando ne scatta una, il motivo compare nella Classifica — quindi si capisce sempre cos'e' successo, anche se non si sapeva prima.`,
+  testo: `Sono ${QUANTE_LEGGI}. Danno e tolgono punti da sole, e nessuno ti dira' quali sono: si scoprono facendole scattare. Quando ne scatta una, il motivo compare nella Classifica — quindi si capisce sempre cos'e' successo, anche se non si sapeva prima.`,
 }
 
 export const APERTURA = 'Cinque tab, qualche gesto che non si vede, e un mucchio di regole che non ti diciamo.'
@@ -118,17 +128,24 @@ export const NUVOLETTE = {
     testo: 'Le cose utili che nessuno cerca finché non servono davvero.',
   },
 
-// Le cinque sotto-voci di Altro. Lo spec le voleva in fila automatica
-// all'ingresso, ed e' stato fatto: alla prova sono cinque cartelli uno
+// Le sei sotto-voci di Altro. Lo spec le voleva in fila automatica
+// all'ingresso, ed e' stato fatto: alla prova sono sei cartelli uno
 // dietro l'altro appena entri, e si leggono come un muro. Adesso ognuna
 // aspetta la sua sezione, come tutte le altre dieci.
 //
 // Il prezzo lo si sapeva ed e' quello: in Guida e Info nessuno entra per
 // curiosita', quindi quei due messaggi molti non li vedranno mai. Meglio
-// due non visti che cinque saltati in blocco.
+// due non visti che sei saltati in blocco.
   'altro.spese': {
     testo:
       'Segnate chi ha pagato. Così a fine viaggio smettete di dire “non mi ricordo quanto ti devo”.',
+  },
+
+  // Mancava, ed era l'unica sezione muta di tutta l'app: stessa ragione
+  // per cui e' stata aggiunta quella della Dama.
+  'altro.documenti': {
+    testo:
+      'Biglietti, prenotazioni, il documento di chi guida. Metteteli qui adesso, non alle sei di mattina in aeroporto.',
   },
 
   'altro.mappa': {
