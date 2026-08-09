@@ -18,8 +18,18 @@ export function votiAperti(oggi) {
   return oggi >= CACCIA.apreIlVoto
 }
 
+// ⚠️ `>` e non `>=`: `CACCIA.chiude` è **l'ultimo giorno in cui si vota**,
+// non il primo in cui non si vota più.
+//
+// Con `>=` il 20 la caccia risultava chiusa già a mezzanotte, mentre i
+// bottoni per votare restavano accesi tutto il giorno: chi votava il 20
+// vedeva il numero salire e non cambiava niente. Le sfide venivano
+// assegnate coi conteggi di ventiquattr'ore prima, e il premio finale da
+// dieci punti — chiave `caccia-finale`, senza data, uno per viaggio —
+// andava a chi era in testa a mezzanotte. L'ultimo dei tre giorni di voto
+// non contava niente.
 export function cacciaChiusa(oggi) {
-  return oggi >= CACCIA.chiude
+  return oggi > CACCIA.chiude
 }
 
 // Le sfide che hanno una gara vera e aspettano solo che si apra il voto.

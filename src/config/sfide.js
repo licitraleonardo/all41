@@ -37,6 +37,11 @@ export const CACCIA = {
   apreIlVoto: '2026-08-17',
   // Tre giorni per votare, e per caricare l'ultima foto di chi ci ha
   // messo di più a scaricare il telefono.
+  //
+  // ⚠️ È l'ULTIMO GIORNO IN CUI SI VOTA, non il primo in cui non si vota
+  // più: il 20 si vota fino a sera. Decisione di Leonardo del 9 agosto —
+  // prima `cacciaChiusa` usava `>=` e il 20 era già chiuso a mezzanotte,
+  // coi bottoni accesi tutto il giorno su una finestra che non c'era più.
   chiude: '2026-08-20',
   // A chi ne ha vinte di più. In pareggio nessuno, come per il resto.
   premioPrimo: 10,

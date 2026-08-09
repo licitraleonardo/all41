@@ -30,7 +30,16 @@ prova('durante il viaggio non si vota', !votiAperti('2026-08-15'))
 prova('nemmeno l’ultimo giorno', !votiAperti('2026-08-16'))
 prova('il 17 si apre', votiAperti('2026-08-17'))
 prova('e non è ancora chiusa', !cacciaChiusa('2026-08-17'))
-prova('il 20 si chiude', cacciaChiusa(CACCIA.chiude))
+
+// ⚠️ Regola cambiata il 9 agosto, per decisione di Leonardo: `CACCIA.chiude`
+// è l'ULTIMO GIORNO IN CUI SI VOTA, non il primo in cui non si vota più.
+// Prima `cacciaChiusa` usava `>=`, quindi il 20 la caccia era già chiusa a
+// mezzanotte mentre i bottoni restavano accesi tutto il giorno: chi votava
+// il 20 vedeva il numero salire e non cambiava niente, e il premio da dieci
+// punti andava a chi era in testa ventiquattr'ore prima.
+prova('il 20 si vota ancora, fino a sera', !cacciaChiusa(CACCIA.chiude))
+prova('il 21 è chiusa', cacciaChiusa('2026-08-21'))
+prova('e resta chiusa dopo', cacciaChiusa('2026-09-01'))
 
 console.log('\nquali sfide vanno ai voti')
 const conDue = { [A]: [foto('f1', 'x'), foto('f2', 'y')], [B]: [foto('f3', 'x')] }
@@ -79,11 +88,12 @@ const partecipazioni = {
 const voti = { [A]: { fotoIds: ['f1', 'f2'], conteggi: [3, 1] } }
 
 prova(
-  'prima del 20 non si chiude niente',
-  chiusureDaFare(partecipazioni, {}, voti, '2026-08-19').length === 0
+  'il 20, ultimo giorno di voto, non si chiude ancora niente',
+  chiusureDaFare(partecipazioni, {}, voti, '2026-08-20').length === 0
 )
 
-const chiusure = chiusureDaFare(partecipazioni, {}, voti, '2026-08-20')
+// Il 21: la finestra e' passata, e adesso si assegna.
+const chiusure = chiusureDaFare(partecipazioni, {}, voti, '2026-08-21')
 prova('due chiusure su tre', chiusure.length === 2, { chiusure })
 prova(
   'la gara la vince la più votata',
@@ -106,7 +116,7 @@ prova(
     { [A]: [foto('f1', 'x'), foto('f2', 'y')] },
     {},
     { [A]: { fotoIds: ['f1', 'f2'], conteggi: [2, 2] } },
-    '2026-08-20'
+    '2026-08-21'
   ).length === 0
 )
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { vincitoreDelVoto } from '../lib/cacciaFinale.js'
 
 // Il voto fra le foto in gara.
 //
@@ -19,6 +20,11 @@ export default function VotoSfida({ voto, foto, ioId, membri, onVota }) {
   const massimo = Math.max(...voto.conteggi, 0)
 
   const perId = Object.fromEntries(foto.map((f) => [f.id, f]))
+
+  // La stessa funzione che decide davvero chi ha vinto, non un massimo
+  // ricalcolato qui: due risposte alla stessa domanda sono il difetto che
+  // questo progetto ha già pagato più volte.
+  const vincitore = chiuso ? vincitoreDelVoto(voto, foto) : null
 
   async function scegli(indice) {
     setInCorso(true)
@@ -80,14 +86,26 @@ export default function VotoSfida({ voto, foto, ioId, membri, onVota }) {
         })}
       </div>
 
-      {chiuso && massimo > 0 && (
-        <p className="voto-sfida-esito">
-          Vince la foto di{' '}
-          {membri[perId[voto.fotoIds[voto.conteggi.indexOf(massimo)]]?.autoreId]?.nome ??
-            'qualcuno'}
-          .
-        </p>
-      )}
+      {/* ⚠️ La schermata deve dire quello che il motore ha davvero deciso.
+          Prima annunciava «Vince la foto di X» prendendo il primo indice
+          col conteggio più alto — ma `vincitoreDelVoto` in pareggio non
+          restituisce nessuno, e con otto persone e due o tre foto in gara
+          il pareggio è frequente. Il gruppo leggeva un vincitore sullo
+          schermo, e in classifica quella sfida non risultava vinta da
+          nessuno e non contava per il premio da dieci punti. Un messaggio
+          che afferma il falso, e su cui poi si litiga a tavola. */}
+      {chiuso &&
+        massimo > 0 &&
+        (vincitore ? (
+          <p className="voto-sfida-esito">
+            Vince la foto di {membri[vincitore.membroId]?.nome ?? 'qualcuno'}.
+          </p>
+        ) : (
+          <p className="voto-sfida-esito">
+            Pareggio: non vince nessuno. Come per le sfide, a pari voti la
+            sfida resta senza vincitore.
+          </p>
+        ))}
 
       {errore && <p className="sondaggio-errore">{errore}</p>}
     </div>
