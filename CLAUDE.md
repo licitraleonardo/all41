@@ -3,6 +3,13 @@
 Progetto: **All For One**, web app per un viaggio di gruppo in Sardegna (12–16 agosto).
 Le specifiche complete stanno in `sardegna-trip-app-spec.md`. Leggilo prima di iniziare.
 
+> ⚠️ **Non sei da solo in questa cartella.** Su questo progetto lavora più di
+> una sessione di Claude Code alla volta, nella **stessa cartella** e sullo
+> stesso `main` — non su due copie. Se due sessioni aprono lo stesso file,
+> l'ultima che scrive cancella il lavoro dell'altra **senza nessun errore**.
+> **Leggi `CANTIERE.md` prima di scrivere qualunque file, e prenditi lì
+> quello su cui lavori.**
+
 ## Ritmo di lavoro
 
 - **Una feature per volta, poi stop.** Alla fine di ogni punto del "Piano di sviluppo" dello spec, fermati e aspetta il mio ok prima di passare al successivo. Non anticipare feature successive perché "tanto ci vuole poco".
