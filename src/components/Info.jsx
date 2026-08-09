@@ -4,6 +4,7 @@ import { DA_TROVARE, DOVE, EMERGENZE, UTILI } from '../config/info.js'
 import { leggiMembri } from '../lib/membri.js'
 import { daComporre } from '../lib/telefono.js'
 import Targhetta from './Targhetta.jsx'
+import FoglioFeedback from './FoglioFeedback.jsx'
 
 // Dove si dorme e chi si chiama. Sta nel codice, non sul database: è
 // l'unico pezzo dell'app che potrebbe servire col telefono che non prende
@@ -12,13 +13,14 @@ import Targhetta from './Targhetta.jsx'
 // Quello che non è ancora stato verificato è scritto come mancante invece
 // di essere riempito a occhio. Un numero inventato in una sezione che si
 // chiama emergenze è peggio che non avere la sezione.
-export default function Info() {
+export default function Info({ membroId }) {
   // ⚠️ I numeri del gruppo arrivano dal database, al contrario di tutto il
   // resto di questa schermata. La promessa fatta a chi lascia il numero —
   // «resta raggiungibile dal gruppo anche senza rete» — la mantiene
   // `conCache`: una volta scaricato l'elenco resta in copia locale, e
   // questa lettura lo serve anche quando la rete non risponde.
   const [gruppo, setGruppo] = useState([])
+  const [scriviFeedback, setScriviFeedback] = useState(false)
 
   useEffect(() => {
     let vivo = true
@@ -129,6 +131,29 @@ export default function Info() {
             ))}
           </ul>
         </>
+      )}
+
+      {/* L'ingresso fisso al «com'è che va»: il cartello arriva ogni
+          tanto e da solo, ma chi ha qualcosa da dire adesso deve poterlo
+          dire adesso, senza aspettare che gli venga chiesto. */}
+      <p className="info-etichetta">Com’è che va</p>
+      <button
+        type="button"
+        className="info-numero info-utile"
+        onClick={() => setScriviFeedback(true)}
+      >
+        <span className="info-numero-cosa">
+          <strong>Dimmi com’è che va</strong>
+          <small>Qualsiasi cosa non torni, o manchi. Lo legge solo chi ha scritto l’app</small>
+        </span>
+      </button>
+
+      {scriviFeedback && (
+        <FoglioFeedback
+          membroId={membroId}
+          dove="info"
+          onChiudi={() => setScriviFeedback(false)}
+        />
       )}
 
       {/* ⚠️ La versione dell'app sta QUI, e non solo sulla schermata

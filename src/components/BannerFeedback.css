@@ -1,0 +1,16 @@
+/* Il cartello del «com'è che va». Stessa impaginazione degli altri —
+   `.banner-dentro` e compagnia arrivano da BannerProposta.css — ma nel
+   colore piu' spento della fila: e' l'unica cosa in cima che non ha
+   nessuna fretta, e non deve somigliare a una che ce l'ha. */
+
+.banner-feedback {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: #55636b;
+  color: var(--sand, #f7f4ec);
+  box-shadow: 0 6px 18px -10px rgba(11, 53, 80, 0.8);
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+}

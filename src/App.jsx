@@ -53,6 +53,9 @@ import { vaMostrato } from './lib/avvisiRapidi.js'
 import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaSOS from './components/StrisciaSOS.jsx'
 import BannerRapido from './components/BannerRapido.jsx'
+import BannerFeedback from './components/BannerFeedback.jsx'
+import FoglioFeedback from './components/FoglioFeedback.jsx'
+import { useFeedback } from './hooks/useFeedback.js'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
 import BannerSfida from './components/BannerSfida.jsx'
 import BannerTestamento from './components/BannerTestamento.jsx'
@@ -171,6 +174,7 @@ export default function App() {
   // che in quel momento stanno guardando le foto.
   const sos = useSosAperti()
   const avviso = useAvvisoRapido(membro?.id, vista === 'dentro')
+  const feedback = useFeedback()
 
   // ⚠️ Chi si è preso la cima. In quel posto ci sta una cosa sola: sono
   // tutti `position: fixed; top: 0`, quindi due insieme si coprono a
@@ -663,6 +667,27 @@ export default function App() {
                 onDopo={daLeggere.zittisci}
               />
             )}
+
+          {/* ⚠️ Ultimo della fila, e con la coda di condizioni piu' lunga
+              di tutte: un feedback aspetta l'SOS, gli avvisi rapidi, le
+              proposte, le sfide e il Testamento. E' l'unica cosa in cima
+              che non ha nessuna fretta: se coprisse qualcosa che ne ha,
+              avrebbe fatto danno. */}
+          {!inCima &&
+            inLinea &&
+            proposte.daDecidere.length === 0 &&
+            sfideDama.daAccettare.length === 0 &&
+            daLeggere.daAnnunciare.length === 0 &&
+            feedback.daChiedere &&
+            !feedback.aperto && (
+              <BannerFeedback onScrivi={feedback.apri} onDopo={feedback.dopo} />
+            )}
+        </Riparo>
+
+        <Riparo zitto>
+          {feedback.aperto && (
+            <FoglioFeedback membroId={membro?.id} dove={tab} onChiudi={feedback.chiudi} />
+          )}
         </Riparo>
 
         <Riparo zitto>
