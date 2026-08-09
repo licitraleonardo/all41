@@ -215,21 +215,30 @@ quindi non cambiano; i quattro locali li ho presi dalle fonti ufficiali
 un numero locale può essere cambiato ieri.** Se ne provi uno e non
 risponde, dimmelo e lo tolgo.
 
-## 3. Comportamenti da cambiare — i tuoi appunti N2, tutti aperti
+## 3. Comportamenti da cambiare — i tuoi appunti N2
 
-Non sono difetti, sono decisioni. Nessuno è stato toccato.
+- [x] ✅ **I fogli si chiudono toccando fuori** — in tutta l'app
+- [x] ✅ **Il tasto indietro del telefono torna indietro**, non chiude l'app
+- [x] ✅ **Un solo modo di uscire da un foglio.** Da quattro parole a due:
+      «Lascia stare» quando abbandoni qualcosa, «Chiudi» quando smetti di
+      guardare
+
+      Le tre uscite stanno in `components/Foglio.jsx`, un posto solo, e
+      otto fogli lo usano. **Due rifiutano il tocco fuori e rispondono lo
+      stesso al tasto indietro** — fuori si tocca per sbaglio, indietro si
+      preme apposta: l'SOS, e la punizione del Testamento, che è l'unico
+      posto in cui viene detto perché hai perso dei punti. E dove c'è roba
+      scritta a mano, la prima uscita avvisa invece di buttare via.
 
 - [ ] **Audio: un tocco per registrare**, non tenere premuto. E a fine
       registrazione chiedere *«Vuoi contrassegnarlo come importante?»*
-      ⚠️ **Tocca anche la Guida**: «tieni premuto e trascina in su» è uno
-      dei tre gesti che la Guida insegna. Cambiando il gesto va cambiata
-      anche quella pagina, o insegna una cosa che non esiste.
-- [ ] **I fogli si chiudono toccando fuori** — in tutta l'app, non solo
-      nelle Spese
-- [ ] **Il tasto indietro del telefono torna indietro**, non chiude l'app.
-      Su iPhone è la strisciata dal bordo
-- [ ] **Un solo modo di uscire da un foglio, uguale ovunque.** Adesso
-      convivono «Annulla», «Lascia stare», «Chiudi» e la ×
+
+      ✅ **Correzione:** avevo scritto che tocca anche la Guida. **Non è
+      vero.** La Guida insegna solo il «tieni premuto»; il «trascina in su
+      per segnarlo importante» vive solo dentro Vocali, nel suggerimento
+      sotto il tasto e nell'`aria-label`. Il lavoro è più piccolo di come
+      l'avevo messo in conto. ⚠️ Resta che **va provato su un telefono
+      vero**: è un gesto, e su desktop non si prova.
 - [ ] **Gli avvisi dei messaggi rapidi si vedono da tutti i tab**
       (*«Leo ha lanciato un sondaggio — mostra / vedo dopo»*)
 - [ ] **La richiesta di aggiornare la posizione compare in tutti i tab**
@@ -268,8 +277,13 @@ Non sono difetti, sono decisioni. Nessuno è stato toccato.
 
 ## 6. Da guardare quando c'è tempo
 
-- [ ] **La Guida è allineata a com'è l'app adesso?** Non l'ho
-      ricontrollata, e oggi l'app è cambiata in venti punti.
+- [x] ✅ **La Guida è allineata?** Controllata, e non lo era in tre punti.
+      Diceva **«Sono 49» Leggi** ma dieci sono spente: in un gioco dove si
+      scoprono facendole scattare, dieci introvabili vuol dire dieci
+      persone che a fine viaggio pensano di essersi perse qualcosa. I
+      **Documenti erano l'unica sezione muta** dell'app. E descriveva tre
+      sezioni di Altro su sei. Adesso `prove/guida.mjs` se ne accorge da
+      sola: se ne aggiungi una senza il suo fumetto, la suite lo dice.
 - [ ] **La schermata di chi viene eliminato all'Impostore** — volevi
       vedere come viene svelato l'impostore. Si guarda solo giocando.
 - [ ] **Il tetto giornaliero dei punti dell'Impostore.** Una sera di
