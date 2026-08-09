@@ -22,6 +22,7 @@ const DA_UNIRE = [
   ['testimone.sql', 'La colonna turno_da, cioè il testimone dei 30 secondi'],
   ['apertura.sql', 'avvia_impostore con i giri: senza, l’Impostore non parte proprio'],
   ['giro.sql', 'chiudi_accusa col giro vero: senza, il contatore resta su “Giro 1”'],
+  ['voto-unico.sql', 'Un giro d’accusa apre UN voto solo, non uno per telefono'],
 ]
 
 const USCITA = 'DA-LANCIARE.sql'
@@ -104,6 +105,14 @@ select
          select 1 from pg_proc
          where proname = 'chiudi_accusa' and pronargs = 7)
        then 'a posto' else 'MANCA — la partita non parte o resta su Giro 1' end
+union all
+select
+  'Un giro apre un voto solo',
+  case when exists (
+         select 1 from pg_proc
+         where proname = 'apri_voto_impostore' and pronargs = 4)
+       then 'a posto'
+       else 'MANCA — ogni giro lascia in giro un sondaggio orfano per telefono' end
 ;
 `
 

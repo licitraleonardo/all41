@@ -252,36 +252,23 @@ export async function apriVoto(partita) {
   const inGioco = opzioniDelVoto(partita)
   const scade = new Date(Date.now() + IMPOSTORE.minutiVoto * 60000).toISOString()
 
-  const { data: voto, error: erroreVoto } = await supabase
-    .from('votes')
-    .insert({
-      trip_id: VIAGGIO.id,
-      category: 'impostore',
-      question: 'Chi e’ l’impostore?',
-      options: inGioco,
-      // Mai anonimo: senza sapere chi ha votato chi non si puo' dare il
-      // punto a chi ha indovinato.
-      anonymous: false,
-      tally: inGioco.map(() => 0),
-      expires_at: scade,
-    })
-    .select('id')
-    .single()
-
-  if (erroreVoto) throw erroreVoto
-
-  const { data, error } = await supabase
-    .from('impostore_games')
-    .update({ vote_id: voto.id })
-    .eq('id', partita.id)
-    .eq('stato', 'voto')
-    .is('vote_id', null)
-    .select(CAMPI)
-    .maybeSingle()
+  // ⚠️ Una funzione sola, non insert-e-poi-update. Prima il voto veniva
+  // scritto PRIMA dell'update protetto: sei telefoni che vedevano lo stato
+  // passare a 'voto' nello stesso istante scrivevano sei righe in `votes`,
+  // e la protezione salvava solo l'aggancio — cinque sondaggi orfani per
+  // ogni giro d'accusa. Invisibili nell'interfaccia, ma cadono dentro la
+  // finestra temporale con cui si ritrovano i giri di una partita, e li'
+  // vengono contati.
+  const { data, error } = await supabase.rpc('apri_voto_impostore', {
+    p_partita: partita.id,
+    p_viaggio: VIAGGIO.id,
+    p_opzioni: inGioco,
+    p_scade: scade,
+  })
 
   if (error) throw error
-  // Se un altro telefono ha aperto il voto nello stesso istante, il
-  // nostro update non trova niente: vince il suo, si rilegge il vero.
+  // Chi arriva secondo riceve la partita com'e': il voto l'ha aperto un
+  // altro, e va bene cosi'.
   return data ? daRiga(data) : leggiPartita()
 }
 
