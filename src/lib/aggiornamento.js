@@ -11,15 +11,58 @@
 // di non mettere in cache, e toglie di mezzo tutta la danza di chiudere
 // e riaprire due volte.
 
+// Se c'è qualcosa a metà a schermo, la ricarica aspetta.
+//
+// ⚠️ Prima ricaricava e basta, e la pagina si portava via quello che stavi
+// facendo: il foglio della spesa compilato — descrizione, importo, chi ha
+// pagato, divisa fra chi — spariva senza un messaggio, e con lui il
+// messaggio in chat scritto a metà, la registrazione di un vocale in corso
+// e la partita alla Pecora. Nessun avviso, nessun modo di capire cos'era
+// successo: l'app semplicemente ricominciava.
+//
+// Chi ha un foglio aperto lo dichiara qui. La ricarica non viene annullata
+// — la versione nuova serve — solo rimandata a quando lo schermo è di
+// nuovo vuoto, che di solito sono pochi secondi.
+const occupati = new Set()
+
+export function tieniOccupato(motivo) {
+  occupati.add(motivo)
+  return () => occupati.delete(motivo)
+}
+
+export function siPuoRicaricare() {
+  return occupati.size === 0
+}
+
 export function tieniAggiornata() {
   if (!('serviceWorker' in navigator)) return () => {}
 
   let ricaricata = false
+  let inAttesa = false
 
   // Quando il service worker nuovo prende il comando, la pagina che sta
   // sotto e' ancora quella vecchia: va ricaricata, una volta sola.
   const alCambio = () => {
     if (ricaricata) return
+
+    // C'è qualcosa a metà: si aspetta che si liberi invece di portarselo
+    // via. Il controllo si rifà quando l'app torna in primo piano e a
+    // intervalli lenti, perché chiudere un foglio non emette nessun
+    // evento che si possa ascoltare da qui.
+    if (!siPuoRicaricare()) {
+      if (!inAttesa) {
+        inAttesa = true
+        console.info('[all41] versione nuova pronta: aspetto che chiudi quello che hai aperto')
+        const riprova = setInterval(() => {
+          if (ricaricata) return clearInterval(riprova)
+          if (!siPuoRicaricare()) return
+          clearInterval(riprova)
+          alCambio()
+        }, 2000)
+      }
+      return
+    }
+
     ricaricata = true
     window.location.reload()
   }

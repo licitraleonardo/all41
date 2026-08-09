@@ -4,6 +4,7 @@ import { useVocali } from '../hooks/useVocali.js'
 import { mandaVocale } from '../lib/vocali.js'
 import { avviaRegistrazione, spiegaErroreMicrofono } from '../lib/registratore.js'
 import { registrazioneDisponibile } from '../lib/formatoAudio.js'
+import { tieniOccupato } from '../lib/aggiornamento.js'
 import { LIMITI } from '../config/limiti.js'
 import { coloreNome, urlAvatar } from '../config/avatar.js'
 import { descriviErrore } from '../lib/errori.js'
@@ -63,6 +64,13 @@ export default function Vocali({ membro }) {
   // rosso e il vocale parte segnato. Un gesto solo invece di un
   // interruttore da ricordarsi di spegnere: il dito e' gia' li'.
   const partenzaY = useRef(0)
+
+  // Mentre si registra o si manda, l'app non si ricarica da sola: quella
+  // ricarica si porterebbe via l'audio, che è l'unica copia che esiste.
+  useEffect(() => {
+    if (!registrando && !inCorso) return undefined
+    return tieniOccupato('vocale')
+  }, [registrando, inCorso])
 
   function muovi(e) {
     if (!registrando) return

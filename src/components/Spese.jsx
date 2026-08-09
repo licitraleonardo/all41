@@ -5,6 +5,7 @@ import { useSpese } from '../hooks/useSpese.js'
 import { formattaEuro, inCentesimi } from '../lib/saldi.js'
 import { MAX_CENTESIMI, MAX_DESCRIZIONE } from '../config/spese.js'
 import { descriviErrore } from '../lib/errori.js'
+import { tieniOccupato } from '../lib/aggiornamento.js'
 import Rotella from './Rotella.jsx'
 
 // L'unica sezione fuori dal sistema punti e senza la voce di Allan: qui
@@ -527,6 +528,12 @@ function FoglioSpesa({ conti, ioId, onChiudi }) {
   const [fra, setFra] = useState(() => membri.map((m) => m.id))
   const [inCorso, setInCorso] = useState(false)
   const [errore, setErrore] = useState(null)
+
+  // Finché questo foglio è aperto l'app non si ricarica da sola. È il
+  // posto dove si perde di più: descrizione, importo, chi ha pagato e
+  // divisa fra chi sono quattro cose da rimettere, e sparivano senza un
+  // messaggio quando arrivava una versione nuova.
+  useEffect(() => tieniOccupato('foglio-spesa'), [])
 
   const centesimi = inCentesimi(importo)
   const tutti = useMemo(() => membri.map((m) => m.id), [membri])
