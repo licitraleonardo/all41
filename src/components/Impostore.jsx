@@ -91,6 +91,20 @@ export default function Impostore({ membro, membri }) {
   const inCorsoOra = Boolean(partita) && !finita
   const inGioco = inCorsoOra && partita.giocatori.includes(membro.id)
 
+  // Chi deve scrivere la parola nel colpo di coda. Si calcola QUI, una
+  // volta, e si passa a chi serve: serve in due posti — a chi mostrare il
+  // foglio del colpo, e a chi lasciare la schermata "Sei fuori" — e due
+  // risposte alla stessa domanda sono il difetto che in questo gioco
+  // abbiamo gia' pagato tre volte.
+  const puoTentare =
+    partita?.stato === 'colpo'
+      ? chiPuoTentare({
+          impostori: partita.impostori,
+          giocatori: partita.giocatori,
+          schede: schedePerId(voto?.schede, voto?.opzioni ?? partita.giocatori),
+        })
+      : []
+
   return (
     <div className="impostore">
       {errore && <p className="imp-guasto">{errore}</p>}
@@ -105,7 +119,12 @@ export default function Impostore({ membro, membri }) {
         </p>
       )}
 
-      {inCorsoOra && <Abbandona onAbbandona={abbandona} />}
+      {/* ⚠️ Anche `inGioco`. Senza, chi era stato tolto dall'elenco prima
+          di far partire la partita leggeva "non ci sei dentro, goditela da
+          fuori" e subito sopra aveva un tasto che chiudeva il tavolo a
+          tutti gli altri. Le tre schermate del gioco vero la guardia ce
+          l'avevano già: questa se l'era persa. */}
+      {inCorsoOra && inGioco && <Abbandona onAbbandona={abbandona} />}
 
       {(!partita || partita.stato === 'finita' || partita.stato === 'annullata') && (
         <>
@@ -133,12 +152,19 @@ export default function Impostore({ membro, membri }) {
         </>
       )}
 
-      {/* Non nello stato 'colpo': lì l'impostore beccato deve indovinare
-          la parola del gruppo, e dopoAccusa l'ha appena messo fra i
-          fuori. La schermata "Sei fuori — vedi le parole di tutti"
-          gliela serviva scritta due centimetri sopra il campo dove
-          doveva scriverla. */}
-      {inCorsoOra && inGioco && partita.stato !== 'colpo' && eFuori(partita, membro.id) && (
+      {/* A chi deve tentare il colpo questa schermata non si mostra: la
+          parola del gruppo gliela servirebbe scritta due centimetri sopra
+          il campo dove deve indovinarla, e dopoAccusa l'ha appena messo
+          fra i fuori.
+          ⚠️ Ma la guardia è "non a chi deve scrivere", non "non nel colpo".
+          Con `stato !== 'colpo'` la schermata delle parole spariva a TUTTI
+          quelli già fuori — e chi era stato eliminato per errore al giro
+          prima la perdeva proprio nel momento in cui la partita finisce,
+          cioè quando serviva a capire com'era andata. */}
+      {inCorsoOra &&
+        inGioco &&
+        !puoTentare.includes(membro.id) &&
+        eFuori(partita, membro.id) && (
         <Fuori partita={partita} membri={membri} nome={nome} />
       )}
 
@@ -205,7 +231,7 @@ export default function Impostore({ membro, membri }) {
       {partita?.stato === 'colpo' && inGioco && (
         <Colpo
           partita={partita}
-          voto={voto}
+          puo={puoTentare}
           membro={membro}
           nome={nome}
           onTenta={tenta}
@@ -461,12 +487,19 @@ function Apparecchia({ membro, membri, onCrea }) {
             : `Servono almeno ${IMPOSTORE.minimoGiocatori} giocatori`}
       </button>
 
+      {/* ⚠️ Non promettere un numero che poi si vota. Diceva "Ci saranno
+          due impostori", il gruppo votava uno, e la partita partiva con
+          uno: era un futuro indicativo su una cosa che decidono loro
+          trenta secondi dopo. Adesso dice chi decide, e il numero resta
+          come consiglio. */}
       {abbastanza && (
         <p className="imp-nota">
+          Quanti impostori lo decidete voi fra un attimo — in{' '}
+          {giocatori.length}{' '}
           {IMPOSTORE.quantiImpostori(giocatori.length) === 1
-            ? 'Ci sarà un impostore.'
-            : 'Ci saranno due impostori.'}{' '}
-          Nessuno saprà chi.
+            ? 'di solito ne basta uno'
+            : 'di solito sono due'}
+          . Nessuno saprà chi.
         </p>
       )}
     </section>
@@ -957,7 +990,10 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
 // se la indovina, ribalta tutto. Per tutti gli altri e' un'attesa — ed e'
 // giusto che sia un'attesa, perche' e' il momento in cui si trattiene il
 // fiato.
-function Colpo({ partita, voto, membro, nome, onTenta, onChiedi, onChiudi }) {
+// `puo` arriva da fuori gia' calcolato: la stessa risposta serve anche a
+// decidere a chi lasciare la schermata "Sei fuori", e calcolarla due volte
+// vuol dire poterla avere diversa nei due posti.
+function Colpo({ partita, puo, membro, nome, onTenta, onChiedi, onChiudi }) {
   const [scritto, setScritto] = useState('')
   const [inCorso, setInCorso] = useState(false)
 
@@ -980,16 +1016,6 @@ function Colpo({ partita, voto, membro, nome, onTenta, onChiedi, onChiudi }) {
   const bastano = bastaPerRivelare(partita, chiesta)
   const hoChiesto = chiesta.includes(membro.id)
 
-  const puo = useMemo(
-    () =>
-      chiPuoTentare({
-        impostori: partita.impostori,
-        giocatori: partita.giocatori,
-        schede: schedePerId(voto?.schede, voto?.opzioni ?? partita.giocatori),
-      }),
-    [partita, voto?.schede, voto?.opzioni]
-  )
-
   const tocca = puo.includes(membro.id)
 
   // Se il tentativo e' gia' arrivato da un altro telefono, la partita si
@@ -1008,10 +1034,15 @@ function Colpo({ partita, voto, membro, nome, onTenta, onChiedi, onChiudi }) {
 
   return (
     <section className="imp-colpo">
-      <p className="imp-etichetta">Ti hanno beccato</p>
-
+      {/* ⚠️ Dentro il ramo, non sopra. Stava fuori dal ternario, quindi
+          "Ti hanno beccato" lo leggevano tutti: sul telefono di un
+          innocente comparivano due frasi rivolte a due persone diverse
+          nello stesso schermo — "Ti hanno beccato" e sotto "Marco ci
+          prova" — proprio nel momento in cui quell'innocente aveva
+          appena vinto. */}
       {tocca ? (
         <>
+          <p className="imp-etichetta">Ti hanno beccato</p>
           <h2 className="imp-titolo">Ultima carta</h2>
           <p className="imp-spiega">
             Scrivi la parola che aveva il gruppo. Se la indovini vinci lo stesso, e
@@ -1050,6 +1081,9 @@ function Colpo({ partita, voto, membro, nome, onTenta, onChiedi, onChiudi }) {
         </>
       ) : (
         <>
+          <p className="imp-etichetta">
+            {puo.length === 1 ? 'L’avete beccato' : 'Li avete beccati'}
+          </p>
           <h2 className="imp-titolo">
             {puo.length === 1 ? `${nome(puo[0])} ci prova` : 'Ci provano'}
           </h2>
