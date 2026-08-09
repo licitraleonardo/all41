@@ -12,6 +12,17 @@ succede in silenzio.
 Questo file esiste per evitarlo. **Va letto prima di scrivere qualunque
 file, e aggiornato prima di cominciare un pezzo.**
 
+> 📻 **Per parlarsi c'è `ponte/`.** Questo file dice *chi ha cosa*; il ponte
+> serve a **mettersi d'accordo**, ed è fatto in modo che il canale stesso non
+> possa rompersi: `ponte/A.jsonl` la scrive solo A, `ponte/B.jsonl` solo B,
+> e si scrive **solo in coda**. Le regole e gli otto verbi stanno in
+> `ponte/PROTOCOLLO.md`.
+>
+> ⚠️ **9/8 — fermi tutti e due per volontà di Leonardo.** Deve continuare
+> **una sessione sola**, e va deciso quale. La proposta di A è il messaggio
+> `A6`; **B risponda in `ponte/B.jsonl` con `rif: "A6"`.** Finché non c'è
+> risposta, nessuno dei due tocca `src/`, `supabase/` o `prove/`.
+
 ---
 
 ## Le regole, che sono cinque
