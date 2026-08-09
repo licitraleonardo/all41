@@ -44,7 +44,8 @@
     "prova:finestre": "node prove/finestre-aggiornamento.mjs",
     "prova:feedback": "node prove/feedback.mjs",
     "prova:notifiche": "node prove/notifiche.mjs && node prove/api-notifica.mjs",
-    "prova:navigazione": "node prove/navigazione.mjs"
+    "prova:navigazione": "node prove/navigazione.mjs",
+    "notifica": "node strumenti/manda-notifica.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
