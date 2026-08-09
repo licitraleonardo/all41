@@ -126,7 +126,7 @@ Non sono difetti del codice. Ma vuol dire che **intro, pallini del Testamento e 
 
 ### Da provare su dispositivi veri
 
-1. **La safe area in PWA installata** — i tab in alto si vedono per intero? È BUG-1, mai verificato.
+1. ~~**La safe area in PWA installata**~~ — **BUG-1 chiuso**: provato su un iPhone 13 il 9 agosto, i tab in alto si vedono per intero. (Il profilo di prova `Francesca` viene da lì, e va via con `svuota.sql`.) ⚠️ Se la prova era in Safari e non con l'app installata sulla home, il caso vero non è ancora coperto: in Safari la barra del browser fa da cuscinetto e nasconde il difetto.
 2. **La copia del codice su iPhone** — entrando, il messaggio dice *"Codice copiato"* o *"Il tuo codice è…"*? Il secondo vuol dire che è fallita.
 3. **Le mosse della dama in tempo reale** fra due telefoni.
 4. **`/installa` aperto da WhatsApp** — deve dire *"Aprila in Safari"*, non mostrare la guida.
@@ -156,7 +156,11 @@ La Legge XXIV dice *"hai votato l'impostore giusto"*, non "eri dalla parte giust
 
 Tutte e due le cose le ha trovate una caccia avversariale sulla modifica appena scritta, non il lavoro che l'ha prodotta. Ci sono **otto controlli sul codice sorgente** in `prove/impostore.mjs` apposta, perché il soffitto è invisibile e toglierlo non romperebbe nient'altro.
 
-**Cosa resta qui:** lo storico tiene un voto solo per partita, quindi di una finita in più giri conosce l'ultimo. Prima diceva *"Nessuno ha indovinato"* su una partita in cui qualcuno aveva preso +2 — un'affermazione falsa, non un'omissione. Adesso, quando non può sapere (`giro > 1`), lo dice invece di inventare. La versione giusta — lo storico che ricostruisce le finestre di tutte le partite — è un pezzo a sé.
+**E lo storico adesso racconta la stessa cosa.** `leggiStorico` ricostruisce le finestre di tutte le partite e dà a ognuna i suoi giri, quindi la rivelazione della sera, la finestra riaperta il giorno dopo e i punti in classifica dicono lo stesso. La regola sta in un posto solo, `src/lib/giriImpostore.js`, con **34 prove**: *un voto appartiene all'ultima partita cominciata prima di lui*.
+
+⚠️ **I confini si leggono da TUTTE le partite, non dalle sole finite.** Con le sole finite, i voti di una partita abbandonata a metà cadono nel conto della finita che la precede — e lì dentro ci sono accuse vere, con id di persone vere, che diventerebbero indovini di una serata che non hanno giocato. C'è una prova che fissa esattamente questo.
+
+E quando i giri non si sanno tutti — perché il tetto della lettura ha tagliato — il finale **lo dice** invece di inventare: `giriTuttiNoti` conta le schede in mano contro il numero di giri che ci sono stati. Non è più un'ipotesi, è una sottrazione.
 
 ### La coda delle foto, rifatta
 

@@ -11,7 +11,14 @@ import {
   stessaParola,
   vivi,
 } from './impostore.js'
+import { votiPerPartita } from './giriImpostore.js'
 import { faiScattareLegge } from './punti.js'
+
+// Tetti delle due letture dello storico (verifica bloccante n.4). Venti
+// partite fanno una sessantina di voti: centocinquanta sono larghi, e
+// sessanta confini coprono anche le partite annullate in mezzo.
+const VOTI_DA_LEGGERE = 150
+const CONFINI_DA_LEGGERE = 60
 
 // Le partite dell'Impostore sul database. Il mazziere vero — chi e'
 // impostore, che parola gli tocca, chi parla adesso — sta in
@@ -76,9 +83,24 @@ export async function leggiStorico(quante = 20) {
 
   if (error) throw error
   const partite = data.map(daRiga)
+  if (partite.length === 0) return []
 
-  const voti = partite.map((p) => p.votoId).filter(Boolean)
-  if (voti.length === 0) return partite.map((p) => ({ ...p, schede: {}, opzioniVoto: [] }))
+  const daQuando = partite[partite.length - 1].creataIl
+
+  // Tutte le partite da lì in poi, non solo le finite: servono i CONFINI.
+  // Con le sole finite, i voti di una abbandonata a metà finirebbero nel
+  // conto della finita che la precede — e lì dentro ci sono accuse vere,
+  // con id di persone vere, che diventerebbero indovini di una partita che
+  // non hanno giocato.
+  const { data: tutte, error: erroreTutte } = await supabase
+    .from('impostore_games')
+    .select('id, created_at')
+    .eq('trip_id', VIAGGIO.id)
+    .gte('created_at', daQuando)
+    .order('created_at', { ascending: false })
+    .limit(CONFINI_DA_LEGGERE)
+
+  if (erroreTutte) throw erroreTutte
 
   // ⚠️ Anche `options`, non solo `ballots`. Le schede sono numeri di
   // posizione dentro le opzioni DI QUEL voto, e dal secondo giro d'accusa
@@ -87,18 +109,41 @@ export async function leggiStorico(quante = 20) {
   // posto e lo storico racconta la partita di qualcun altro.
   //
   // E' la terza volta che questo progetto inciampa sulle posizioni.
+  //
+  // Dalla piu' recente e non dalla piu' vecchia: se il tetto taglia, a
+  // restare senza giri sono le partite in fondo all'elenco, quelle che
+  // nessuno riapre. E chi resta senza non racconta una bugia — `giriTuttiNoti`
+  // se ne accorge e il finale dice che non lo sa.
   const { data: righe, error: erroreVoti } = await supabase
     .from('votes')
-    .select('id, ballots, options')
-    .in('id', voti)
-    .limit(voti.length)
+    .select('id, ballots, options, created_at')
+    .eq('trip_id', VIAGGIO.id)
+    .eq('category', 'impostore')
+    .gte('created_at', daQuando)
+    .order('created_at', { ascending: false })
+    .limit(VOTI_DA_LEGGERE)
 
   if (erroreVoti) throw erroreVoti
+
   const perId = Object.fromEntries((righe ?? []).map((r) => [r.id, r]))
+
+  // I voti d'apertura fuori da tutti i conti: le loro opzioni sono numeri
+  // ("1", "2") e non persone.
+  const aperture = new Set(partite.map((p) => p.votoAperturaId).filter(Boolean))
+  const raggruppati = votiPerPartita(
+    (tutte ?? []).map((r) => ({ id: r.id, creataIl: r.created_at })),
+    (righe ?? []).filter((v) => !aperture.has(v.id))
+  )
+
   return partite.map((p) => ({
     ...p,
     schede: perId[p.votoId]?.ballots ?? {},
     opzioniVoto: perId[p.votoId]?.options ?? [],
+    // Tutti i giri d'accusa di questa partita, cosi' lo storico racconta
+    // la stessa cosa che ha raccontato la rivelazione e che ha pagato
+    // `paga`. Prima ne conosceva uno solo, e su una partita finita in piu'
+    // giri diceva "Nessuno ha indovinato" mentre in classifica il +2 c'era.
+    schedeDeiGiri: (raggruppati[p.id] ?? []).map((v) => schedePerId(v.ballots, v.options)),
   }))
 }
 

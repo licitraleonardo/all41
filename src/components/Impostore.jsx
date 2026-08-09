@@ -22,6 +22,7 @@ import {
   schedePerId,
   tuttiHannoVotato,
 } from '../lib/impostore.js'
+import { giriTuttiNoti } from '../lib/giriImpostore.js'
 import { IMPOSTORE, NESSUNA_PAROLA, VARIANTI } from '../config/impostore.js'
 import { PER_ID } from '../config/leggi.js'
 import { urlAvatar } from '../config/avatar.js'
@@ -118,10 +119,10 @@ export default function Impostore({ membro, membri }) {
               partita={partita}
               voto={voto}
               schedeDeiGiri={schedeDeiGiri}
-              // Con un giro solo l'ultimo voto E' tutta la partita. Con
-              // piu' giri lo si sa solo quando la lettura e' tornata:
-              // prima di allora il finale non deve dire "nessuno".
-              giriNoti={schedeDeiGiri.length > 0 || partita.giro <= 1}
+              // Lo stesso conto dello storico: le schede in mano contro i
+              // giri che ci sono stati. Finche' la lettura non e' tornata
+              // sono zero, e il finale non dice "nessuno".
+              giriNoti={giriTuttiNoti(partita, schedeDeiGiri)}
               nome={nome}
               membri={membri}
               onChiudi={() => chiudiRivelazione(partita.id)}
@@ -175,12 +176,11 @@ export default function Impostore({ membro, membri }) {
         <FinestraFinale
           partita={daStorico}
           voto={{ schede: daStorico.schede, opzioni: daStorico.opzioniVoto }}
-          // Lo storico tiene un voto solo per partita: di una finita in
-          // piu' giri conosce l'ultimo e basta. Prima diceva lo stesso
-          // "Nessuno ha indovinato" su una partita in cui qualcuno aveva
-          // preso +2 — la stessa serata raccontata in due modi, che e'
-          // il difetto per cui raccontaFinale esiste.
-          giriNoti={daStorico.giro <= 1}
+          schedeDeiGiri={daStorico.schedeDeiGiri ?? []}
+          // Non piu' un'ipotesi ma un conto: `giro` dice quanti giri
+          // d'accusa ci sono stati, e le schede in mano si contano. Se sono
+          // almeno tante, non ne manca nessuna e il finale puo' parlare.
+          giriNoti={giriTuttiNoti(daStorico, daStorico.schedeDeiGiri)}
           nome={nome}
           membri={membri}
           onChiudi={() => setDaStorico(null)}
@@ -542,6 +542,7 @@ function Storico({ partite, ioId, onApri }) {
             // "un altro giro", e tradurre con l'elenco intero sposta
             // ogni numero di un posto.
             schede: schedePerId(p.schede, p.opzioniVoto?.length ? p.opzioniVoto : p.giocatori),
+            schedeDeiGiri: p.schedeDeiGiri ?? [],
             tentativo: p.tentativo,
             parolaGruppo: p.parolaGruppo,
             fuori: p.fuori,
