@@ -16,6 +16,14 @@ Apri **`supabase/DA-LANCIARE.sql`**, copia tutto, incollalo nell'**SQL Editor di
 
 Dentro ci sono i quattro file di prima, nell'ordine giusto. È **generato** da `strumenti/unisci-sql.mjs`: se tocchi uno degli originali, rifallo con `npm run sql` invece di modificarlo a mano.
 
+**Oppure, senza browser**, se in `.env.local` c'è `SUPABASE_DB_URL` (Supabase → Project Settings → Database → Connection string → URI, quella del **Session pooler**):
+
+```bash
+npm run sql:lancia supabase/DA-LANCIARE.sql
+```
+
+Stampa la stessa tabella di controllo ed esce con errore se qualcosa manca. La stringa di connessione è una chiave: sta in `.env.local`, che il `.gitignore` tiene fuori dal repo, e lo strumento non la stampa mai — nemmeno dentro un messaggio d'errore. `svuota.sql` da lì chiede `--sono-sicuro`, perché non si torna indietro.
+
 | Pezzo | Cosa aggiunge | Se non arriva |
 |---|---|---|
 | `supabase/dama.sql` | La tabella della Dama, le funzioni, **e l'iscrizione al realtime** | La scheda Dama non si apre. Se l'hai lanciato prima del 7 agosto, **rilancialo**: senza l'iscrizione le mosse dell'altro non arrivano mai, e sembra che il gioco sia rotto |
@@ -126,11 +134,13 @@ Non sono difetti del codice. Ma vuol dire che **intro, pallini del Testamento e 
 
 ### Da provare su dispositivi veri
 
-1. ~~**La safe area in PWA installata**~~ — **BUG-1 chiuso**: provato su un iPhone 13 il 9 agosto, i tab in alto si vedono per intero. (Il profilo di prova `Francesca` viene da lì, e va via con `svuota.sql`.) ⚠️ Se la prova era in Safari e non con l'app installata sulla home, il caso vero non è ancora coperto: in Safari la barra del browser fa da cuscinetto e nasconde il difetto.
-2. **La copia del codice su iPhone** — entrando, il messaggio dice *"Codice copiato"* o *"Il tuo codice è…"*? Il secondo vuol dire che è fallita.
-3. **Le mosse della dama in tempo reale** fra due telefoni.
-4. **`/installa` aperto da WhatsApp** — deve dire *"Aprila in Safari"*, non mostrare la guida.
-5. **L'Impostore in sei o otto**, che è l'unica cosa che non si simula.
+Passati il 9 agosto, tutti su dispositivi veri. Da rifare comunque nel giro finale prima della partenza.
+
+1. ~~**La safe area in PWA installata**~~ — **BUG-1 chiuso.** iPhone 13, guardata **dall'app installata sulla home** e non da Safari, che è la distinzione che conta: in Safari la barra del browser fa da cuscinetto e nasconde il difetto. I tab in alto si vedono per intero. (Il profilo di prova `Francesca` viene da lì, e va via con `svuota.sql`.)
+2. ~~**La copia del codice su iPhone**~~ — a posto.
+3. ~~**Le mosse della dama in tempo reale** fra due telefoni~~ — a posto.
+4. ~~**`/installa` aperto da WhatsApp**~~ — a posto.
+5. **L'Impostore in sei o otto**, che è l'unica cosa che non si simula. **L'unico rimasto**, e si può fare solo col gruppo.
 
 ### Difetti noti e non ancora corretti
 
