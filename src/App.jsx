@@ -45,7 +45,9 @@ import { risolviDama } from './lib/puntiDama.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import Derisione from './components/Derisione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
+import { useSosAperti } from './hooks/useSosAperti.js'
 import BannerPosizione from './components/BannerPosizione.jsx'
+import StrisciaSOS from './components/StrisciaSOS.jsx'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
 import BannerSfida from './components/BannerSfida.jsx'
 import BannerTestamento from './components/BannerTestamento.jsx'
@@ -158,6 +160,9 @@ export default function App() {
   // "La tua posizione è ferma lì da tre ore, la aggiorno?" — solo a chi
   // l'ha già condivisa almeno una volta, e solo quando è vecchia davvero.
   const posizione = useRinfrescaPosizione(membro?.id, vista === 'dentro')
+  // ⚠️ Qui e non dentro la chat: un SOS lo devono vedere anche i sette
+  // che in quel momento stanno guardando le foto.
+  const sos = useSosAperti()
 
   // Le sfide a dama arrivano mentre guardi le foto: il banner deve
   // raggiungerti dovunque, come le proposte di punti.
@@ -554,12 +559,27 @@ export default function App() {
 
         <StrisciaOffline attiva={!inLinea} />
 
+        {/* ⚠️ Fuori dal `Riparo` degli altri e prima di tutti: se si
+            rompesse qualcosa nel banner delle proposte, l'SOS deve
+            restare a schermo lo stesso. E in cima ci sta lui: una
+            proposta di punti scade in un'ora, una sfida a dama aspetta,
+            uno che si è perso no. */}
+        <Riparo zitto>
+          <StrisciaSOS
+            aperti={sos.aperti}
+            nome={(id) => membriPerId[id]?.nome ?? 'Qualcuno'}
+            onRientrato={sos.rientrato}
+          />
+        </Riparo>
+
         <Riparo zitto>
           {/* Uno solo alla volta in cima, e la precedenza è delle
               proposte: quelle scadono in un'ora, la posizione può
               aspettare la prossima apertura. Due banner fissi nello
-              stesso posto si coprirebbero a vicenda. */}
-          {inLinea && posizione.daChiedere && proposte.daDecidere.length === 0 && (
+              stesso posto si coprirebbero a vicenda.
+
+              E tutti si tolgono di mezzo quando c'è un SOS aperto. */}
+          {sos.aperti.length === 0 && inLinea && posizione.daChiedere && proposte.daDecidere.length === 0 && (
             <BannerPosizione
               mia={posizione.mia}
               onAggiorna={posizione.aggiorna}
@@ -572,7 +592,7 @@ export default function App() {
               da solo col segnale, e intanto quel posto lo occupa la
               striscia. */}
           <BannerProposta
-            proposte={inLinea ? proposte.daDecidere : []}
+            proposte={inLinea && sos.aperti.length === 0 ? proposte.daDecidere : []}
             membri={membriPerId}
             onVota={proposte.vota}
             onRimanda={proposte.rimanda}
@@ -581,7 +601,7 @@ export default function App() {
           {/* Uno solo in cima alla volta, e la precedenza e' delle
               proposte: quelle scadono in un'ora, una sfida a dama
               aspetta. */}
-          {inLinea && proposte.daDecidere.length === 0 && (
+          {sos.aperti.length === 0 && inLinea && proposte.daDecidere.length === 0 && (
             <BannerSfida
               sfide={sfideDama.daAccettare}
               membri={membriPerId}
@@ -593,7 +613,8 @@ export default function App() {
           {/* Ultimo della fila: una Legge scoperta puo' aspettare piu' di
               una proposta che scade e di una sfida lanciata adesso. E non
               si mostra a chi sta gia' guardando il Testamento. */}
-          {inLinea &&
+          {sos.aperti.length === 0 &&
+            inLinea &&
             proposte.daDecidere.length === 0 &&
             sfideDama.daAccettare.length === 0 &&
             tab !== 'gioco' && (

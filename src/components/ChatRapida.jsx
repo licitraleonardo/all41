@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './ChatRapida.css'
 import Feed from './Feed.jsx'
 import FoglioSOS from './FoglioSOS.jsx'
-import StrisciaSOS from './StrisciaSOS.jsx'
 import { useFeed } from '../hooks/useFeed.js'
 import { useVoti } from '../hooks/useVoti.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
@@ -222,7 +221,6 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
     <div className={senzaCornice ? 'chat-dentro' : 'gruppo-schermo'} ref={schermo}>
       {/* Fuori dalla conversazione e appiccicato in cima: un SOS non deve
           dipendere da quanti messaggi sono arrivati dopo. */}
-      <StrisciaSOS nome={(id) => membri[id]?.nome ?? 'Qualcuno'} />
 
       <div className="conversazione">
         {stato === 'caricamento' && <Rotella />}

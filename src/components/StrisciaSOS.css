@@ -1,24 +1,32 @@
-/* Gli SOS aperti, appiccicati in cima alla conversazione. Corallo pieno
-   e non un bordino: qui il colore deve interrompere quello che stavi
-   facendo, che è l'unica volta in tutta l'app in cui è giusto. */
+/* Gli SOS aperti, inchiodati in cima a TUTTA l'app. Corallo pieno e non
+   un bordino: qui il colore deve interrompere quello che stavi facendo,
+   che è l'unica volta in tutta l'app in cui è giusto.
+
+   ⚠️ `fixed` e non `sticky`, e z-index sopra tutti gli altri banner.
+   Prima stava dentro la chat, quindi era appiccicata in cima a una
+   conversazione che potevi benissimo non stare guardando. Adesso sta
+   sopra il tab in cui sei, qualunque sia, e gli altri banner —
+   proposte, sfide, posizione — si tolgono di mezzo finché c'è: una
+   proposta di punti può aspettare, uno che si è perso no. */
 
 .sos-aperti {
-  position: sticky;
-  top: var(--spazio-alto);
-  z-index: 11;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-width: 616px;
-  margin: 0 auto;
-  padding: 8px 14px 0;
-}
-
-body.con-banner .sos-aperti {
-  top: var(--altezza-banner);
+  padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
+  background: var(--sand, #f7f4ec);
+  box-shadow: 0 6px 18px -10px rgba(11, 53, 80, 0.8);
 }
 
 .sos-aperto {
+  max-width: 616px;
+  width: 100%;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 10px;

@@ -27,7 +27,11 @@ function prova(nome, condizione, dettaglio) {
 
 const posti = [
   ['src/hooks/useFeed.js', 'il feed della chat'],
-  ['src/components/StrisciaSOS.jsx', 'la striscia degli SOS'],
+  // Il riallineamento degli SOS si e' spostato da `StrisciaSOS` a questo
+  // gancio il 9 agosto, quando la striscia e' salita in `App`: prima
+  // viveva dentro la chat, quindi un SOS lo vedeva solo chi era gia' nel
+  // tab giusto. La striscia adesso disegna e basta.
+  ['src/hooks/useSosAperti.js', 'chi legge gli SOS aperti'],
 ]
 
 for (const [file, cosa] of posti) {
