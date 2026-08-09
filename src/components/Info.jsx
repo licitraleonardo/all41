@@ -5,6 +5,7 @@ import { leggiMembri } from '../lib/membri.js'
 import { daComporre } from '../lib/telefono.js'
 import Targhetta from './Targhetta.jsx'
 import FoglioFeedback from './FoglioFeedback.jsx'
+import ChiediNotifiche from './ChiediNotifiche.jsx'
 
 // Dove si dorme e chi si chiama. Sta nel codice, non sul database: è
 // l'unico pezzo dell'app che potrebbe servire col telefono che non prende
@@ -132,6 +133,14 @@ export default function Info({ membroId }) {
           </ul>
         </>
       )}
+
+      {/* ⚠️ Il permesso delle notifiche si chiede da qui, e non da un
+          cartello a sorpresa la prima sera. Si concede una volta sola
+          nella vita: chi dice di no perché gli è saltato addosso mentre
+          stava facendo altro non se lo rivede più, e per riaprirlo deve
+          andare nelle impostazioni del telefono. */}
+      <p className="info-etichetta">Notifiche</p>
+      <ChiediNotifiche membroId={membroId} />
 
       {/* L'ingresso fisso al «com'è che va»: il cartello arriva ogni
           tanto e da solo, ma chi ha qualcosa da dire adesso deve poterlo

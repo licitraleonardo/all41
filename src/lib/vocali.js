@@ -4,6 +4,7 @@ import { conCache } from './cache.js'
 import { uuid } from './id.js'
 import { estensioneDi } from './formatoAudio.js'
 import { verificaLimite } from './limiti.js'
+import { faiSuonare } from './notifiche.js'
 
 const BUCKET = 'vocali'
 const CAMPI =
@@ -71,6 +72,11 @@ export async function mandaVocale({ blob, mimeType, durata, importante = false }
     .single()
 
   if (error) throw error
+
+  // Come per le azioni: si fa suonare e non si aspetta. Vedi il commento
+  // in `lib/azioni.js`.
+  faiSuonare(data.id, 'vocale')
+
   return { ok: true, vocale: daRiga(data) }
 }
 

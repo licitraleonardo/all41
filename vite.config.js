@@ -68,6 +68,12 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Il pezzo che fa suonare i telefoni. `importScripts` e non
+        // `injectManifest`: quella strategia vorrebbe dire riscrivere il
+        // service worker intero, e con lui `skipWaiting` e `clientsClaim`
+        // su cui poggia l'aggiornamento automatico. Cosi' invece si
+        // aggiunge e basta.
+        importScripts: ['/push.js'],
         // I suoni sono già nel bundle e servono offline; le foto no,
         // arrivano da Supabase e sono troppe per la cache.
         globPatterns: ['**/*.{js,css,html,svg,png,mp3,woff2}'],

@@ -2,6 +2,7 @@ import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { conCache } from './cache.js'
 import { verificaLimite } from './limiti.js'
+import { faiSuonare } from './notifiche.js'
 
 const CAMPI = 'id, author_id, kind, payload, importante, deleted_at, created_at'
 
@@ -52,6 +53,16 @@ export async function inviaAzione({ tipo, payload = {}, memberId, importante = f
     .single()
 
   if (error) throw error
+
+  // ⚠️ Dopo l'insert riuscito, e senza aspettare.
+  //
+  // Fa suonare i telefoni degli altri, se ci sono iscritti. Non si
+  // attende e non si guarda com'e' andata: chi ha appena premuto SOS non
+  // deve restare fermo davanti a una rotella perche' una notifica sta
+  // partendo. Se fallisce, l'SOS e' partito lo stesso e dentro l'app si
+  // vede — le notifiche sono un di piu', mai la via principale.
+  faiSuonare(data.id)
+
   return { ok: true, azione: daRiga(data) }
 }
 

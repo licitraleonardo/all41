@@ -69,3 +69,12 @@ export const SECONDI_RETE = {
   // a trenta secondi vorrebbe dire non farli passare mai con poco segnale.
   storage: 90,
 }
+
+// La chiave pubblica delle notifiche.
+//
+// ⚠️ Sta nel codice, in chiaro, ed e' giusto cosi': la meta' pubblica di
+// una coppia VAPID serve proprio a essere spedita a tutti i browser. La
+// meta' privata sta fra le variabili d'ambiente di Vercel, e senza quella
+// nessuno puo' mandare niente.
+export const CHIAVE_PUBBLICA_PUSH =
+  'BMmTtsxcu7RHWiDxA9vAxFuz78WHL0b-BwavuBESjwTCbnHiTXzMreZ-e5v7eLLA5D5vHeh5uNj0PvLUfFWw2g8'

@@ -26,6 +26,7 @@ const DA_UNIRE = [
   ['rimborso-unico.sql', 'Un rimborso registrato una volta sola, non una per telefono'],
   ['telefono.sql', 'La colonna phone: il numero lasciato quando ci si registra'],
   ['feedback.sql', 'La tabella feedback: si scrive e non si rilegge'],
+  ['push.sql', 'Chi si e' iscritto alle notifiche, e da quale telefono'],
 ]
 
 const USCITA = 'DA-LANCIARE.sql'
