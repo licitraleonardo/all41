@@ -105,9 +105,13 @@ function SaldoMio({ conti, ioId, onApri }) {
       </span>
 
       {/* «Conti aperti» descriveva uno stato; «Salda» dice cosa si può
-          fare toccando. Sta a destra, dove va a finire il pollice e dove
-          l'occhio cerca l'azione. */}
-      {quanti > 0 && <span className="saldo-apri">Salda ›</span>}
+          fare toccando. Sta nell'angolo in basso a destra, dove va a
+          finire il pollice e dove l'occhio cerca l'azione.
+          ⚠️ È uno `<span>` disegnato come un tasto, e non un `<button>`:
+          la card **è già** un bottone — tutta toccabile, che su un
+          telefono è quello che serve — e un bottone dentro un bottone è
+          HTML non valido, che il browser spezza come gli pare. */}
+      {quanti > 0 && <span className="saldo-apri">Salda</span>}
     </button>
   )
 }
