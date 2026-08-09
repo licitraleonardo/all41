@@ -132,5 +132,30 @@ console.log('\nil componente non chiama mai history.back()')
   prova('e la ragione e scritta li dentro', testo['Foglio.jsx'].includes('non si chiama mai'))
 }
 
+console.log('\nniente CSS che deborda dallo schermo')
+{
+  // ⚠️ Costato un tentativo sbagliato, il 9 agosto.
+  //
+  // Per tappare i due angoli arrotondati delle schede del Gruppo — da cui
+  // si vedeva passare la chat mentre si scorreva — avevo messo un velo
+  // largo `-50vw` per lato. Tappava, e faceva **scorrere la pagina in
+  // orizzontale**: 1581 px di documento in una finestra da 1280.
+  //
+  // Un debordamento cosi' non da' nessun errore e non si vede da fermi:
+  // si scopre col dito, scorrendo di lato una schermata che non
+  // dovrebbe. La regola: se una cosa deve coprire piu' del suo riquadro,
+  // si usa un modo che non allarghi il documento.
+  const debordano = []
+  for (const f of readdirSync(CARTELLA).filter((n) => n.endsWith('.css'))) {
+    const css = readFileSync(join(CARTELLA, f), 'utf8')
+    for (const m of css.matchAll(
+      /(left|right|margin-left|margin-right|inset)\s*:\s*[^;]*-\d+vw/g
+    )) {
+      debordano.push(`${f}: ${m[0].trim()}`)
+    }
+  }
+  prova('nessun -Nvw che allarga il documento', debordano.length === 0, debordano)
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)
 process.exit(falliti === 0 ? 0 : 1)

@@ -14,6 +14,26 @@
   border-radius: 0 0 11px 11px;
 }
 
+/* ⚠️ Il tappo dietro i due angoli arrotondati.
+   Il fondo pieno qui sopra copre la conversazione che scorre — ma non
+   negli angoli in basso, dove il `border-radius` lascia scoperti due
+   spicchi. Lì i messaggi si vedevano passare mentre si scorreva: due
+   tacche piccole, invisibili da fermi, che si notano solo scorrendo. Ed è
+   esattamente così che sono state notate.
+   Questo è lo stesso riquadro con gli angoli quadrati, in colore pagina e
+   dietro: la barra resta arrotondata com'era, e negli spicchi adesso c'è
+   la pagina invece della chat.
+   ⚠️ `inset: 0` e non un velo largo quanto lo schermo: il primo tentativo
+   debordava di 50vw per lato e faceva scorrere la pagina in orizzontale
+   su desktop — 1581 px di documento in una finestra da 1280. */
+.gruppo-schede::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--sand, #f7f4ec);
+}
+
 /* Col banner in cima le schede scendono sotto di lui, come la barra
    dell'itinerario. */
 body.con-banner .gruppo-schede {
