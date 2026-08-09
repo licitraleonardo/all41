@@ -249,10 +249,18 @@ risponde, dimmelo e lo tolgo.
       microfono e un dito. Da controllare: che due tocchi nervosi non
       facciano partire due registrazioni, e che l'indicatore del microfono
       (il pallino arancione su iPhone) **si spenga** quando fermi.
-- [ ] **Gli avvisi dei messaggi rapidi si vedono da tutti i tab**
-      (*«Leo ha lanciato un sondaggio — mostra / vedo dopo»*)
+- [x] ✅ **Gli avvisi dei messaggi rapidi si vedono da tutti i tab.**
+      Un cartello in cima per i tre che chiedono qualcosa a chi legge —
+      **sondaggio, si riparte, dove siete** — con *Mostra* e *Vedo dopo*.
+      Dice cosa è successo, non «nuovo messaggio»: *«🚗 Si riparte fra 5
+      minuti — Lo dice Leo»*, così decidi se alzarti senza aprire niente.
 
-      ✅ **Ma prima è saltata fuori una cosa più grave, ed è fatta: l'SOS
+      Non interrompono la chat normale (c'è il pallino), i suoni (si
+      sentono da soli) e l'SOS (ha la sua striscia). Chi è già nel Gruppo
+      non lo vede, e scade da solo dopo dieci minuti.
+
+      ✅ **E prima era saltata fuori una cosa più grave, anche quella
+      fatta: l'SOS
       si vedeva solo dalla chat.** `StrisciaSOS` viveva dentro
       `ChatRapida`, cioè dentro il tab Gruppo, scheda Chat. Un SOS mandato
       mentre qualcuno guardava le foto o giocava a dama non compariva da
