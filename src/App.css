@@ -388,3 +388,34 @@
   z-index: 100;
   background: #071f30;
 }
+
+/* ------------------------------------------------- il telefono, se vuoi
+
+   Prefisso e numero sulla stessa riga: sono un dato solo, e separarli in
+   due campi impilati li farebbe sembrare due domande. */
+
+.telefono-riga {
+  display: flex;
+  gap: 8px;
+}
+
+.telefono-prefisso {
+  flex: none;
+  font: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.telefono-riga input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* La riga che dice dove va a finire il numero. Piu' piccola del campo ma
+   leggibile: e' la parte che decide se uno lo lascia o no. */
+.campo-nota {
+  margin: -2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-soft, #55636b);
+}

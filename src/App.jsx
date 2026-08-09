@@ -352,7 +352,7 @@ export default function App() {
     }
   }, [])
 
-  const entra = useCallback(async ({ nome, avatarStyle }) => {
+  const entra = useCallback(async ({ nome, avatarStyle, telefono = null }) => {
     setInCorso(true)
     setErrore(null)
 
@@ -386,7 +386,7 @@ export default function App() {
         return
       }
 
-      const nuovo = await creaMembro({ nome, avatarStyle })
+      const nuovo = await creaMembro({ nome, avatarStyle, telefono })
       daiIlCodice(nuovo.codice)
       salvaMemberId(nuovo.id)
       setMembro(nuovo)

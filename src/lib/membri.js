@@ -3,7 +3,8 @@ import { generaCodice } from './codice.js'
 import { conCache, inCache } from './cache.js'
 import { VIAGGIO } from '../config/viaggio.js'
 
-const CAMPI = 'id, name, avatar_seed, avatar_style, access_code, score, last_seen_at'
+const CAMPI =
+  'id, name, avatar_seed, avatar_style, access_code, score, last_seen_at, phone'
 
 // Le colonne stanno in snake_case perché è la convenzione di Postgres;
 // il resto dell'app vede i nomi dello spec.
@@ -17,6 +18,9 @@ function daRiga(riga) {
     codice: riga.access_code,
     punteggio: riga.score,
     ultimaVisita: riga.last_seen_at,
+    // Facoltativo: chi non l'ha lasciato ha `null`, e le Info lo saltano
+    // invece di mostrare una riga vuota.
+    telefono: riga.phone ?? null,
   }
 }
 
@@ -90,7 +94,7 @@ function scordaTentativo() {
   }
 }
 
-export async function creaMembro({ nome, avatarStyle }) {
+export async function creaMembro({ nome, avatarStyle, telefono = null }) {
   // Prima di crearne uno nuovo: c'era un tentativo rimasto in sospeso? Se
   // quel codice adesso esiste sul database, la scrittura di prima era
   // arrivata — solo che la risposta non è tornata indietro. Si adotta
@@ -127,6 +131,7 @@ export async function creaMembro({ nome, avatarStyle }) {
         avatar_style: avatarStyle,
         access_code: codice,
         last_seen_at: new Date().toISOString(),
+        phone: telefono,
       })
       .select(CAMPI)
       .single()

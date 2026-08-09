@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react'
 import './Info.css'
 import { DA_TROVARE, DOVE, EMERGENZE, UTILI } from '../config/info.js'
+import { leggiMembri } from '../lib/membri.js'
+import { daComporre } from '../lib/telefono.js'
 
 // Dove si dorme e chi si chiama. Sta nel codice, non sul database: è
 // l'unico pezzo dell'app che potrebbe servire col telefono che non prende
@@ -9,6 +12,28 @@ import { DA_TROVARE, DOVE, EMERGENZE, UTILI } from '../config/info.js'
 // di essere riempito a occhio. Un numero inventato in una sezione che si
 // chiama emergenze è peggio che non avere la sezione.
 export default function Info() {
+  // ⚠️ I numeri del gruppo arrivano dal database, al contrario di tutto il
+  // resto di questa schermata. La promessa fatta a chi lascia il numero —
+  // «resta raggiungibile dal gruppo anche senza rete» — la mantiene
+  // `conCache`: una volta scaricato l'elenco resta in copia locale, e
+  // questa lettura lo serve anche quando la rete non risponde.
+  const [gruppo, setGruppo] = useState([])
+
+  useEffect(() => {
+    let vivo = true
+    leggiMembri()
+      .then((elenco) => {
+        if (vivo) setGruppo(elenco.filter((m) => m.telefono))
+      })
+      .catch(() => {
+        // Senza rete e senza copia si mostra il resto: gli altri numeri
+        // stanno nel codice apposta per non dipendere da questa lettura.
+      })
+    return () => {
+      vivo = false
+    }
+  }, [])
+
   return (
     <div className="info">
       <p className="info-etichetta">Dove siamo</p>
@@ -83,6 +108,27 @@ export default function Info() {
           </li>
         ))}
       </ul>
+
+      {/* Il gruppo. Sta dopo le emergenze e i numeri utili perché in un
+          momento brutto si chiama il 112, non un amico — ma prima di
+          «ancora da trovare», perché è roba che c'è. */}
+      {gruppo.length > 0 && (
+        <>
+          <p className="info-etichetta">Il gruppo</p>
+          <ul className="info-numeri info-numeri-calmi">
+            {gruppo.map((m) => (
+              <li key={m.id}>
+                <a className="info-numero info-utile" href={`tel:${daComporre(m.telefono)}`}>
+                  <span className="info-numero-cosa">
+                    <strong>{m.nome}</strong>
+                    <span className="info-utile-cifre">{m.telefono}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {DA_TROVARE.length > 0 && (
         <section className="info-mancanti">

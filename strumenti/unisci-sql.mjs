@@ -24,6 +24,7 @@ const DA_UNIRE = [
   ['giro.sql', 'chiudi_accusa col giro vero: senza, il contatore resta su “Giro 1”'],
   ['voto-unico.sql', 'Un giro d’accusa apre UN voto solo, non uno per telefono'],
   ['rimborso-unico.sql', 'Un rimborso registrato una volta sola, non una per telefono'],
+  ['telefono.sql', 'La colonna phone: il numero lasciato quando ci si registra'],
 ]
 
 const USCITA = 'DA-LANCIARE.sql'
