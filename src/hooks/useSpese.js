@@ -8,9 +8,18 @@ import {
   leggiRimborsi,
   leggiSpese,
 } from '../lib/spese.js'
+import { inCache } from '../lib/cache.js'
 import { leggiMembri } from '../lib/membri.js'
 import { calcolaSaldi, chiDeveAChi } from '../lib/saldi.js'
 import { descriviErrore } from '../lib/errori.js'
+
+// Il `catch` che c'era qui era vuoto. Una ricarica che fallisce non deve
+// prendersi lo schermo — i dati che si stanno guardando restano buoni — ma
+// deve almeno lasciare una traccia: senza, il difetto della spesa che
+// sparisce non aveva nemmeno una riga in console da cui partire.
+function guastoRicarica(e) {
+  console.warn('[all41] la ricarica delle spese non è riuscita:', e?.message ?? e)
+}
 
 export function useSpese() {
   const [spese, setSpese] = useState([])
@@ -43,10 +52,10 @@ export function useSpese() {
     const canale = supabase
       .channel('spese')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () =>
-        vivo ? ricarica().catch(() => {}) : null
+        vivo ? ricarica().catch(guastoRicarica) : null
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () =>
-        vivo ? ricarica().catch(() => {}) : null
+        vivo ? ricarica().catch(guastoRicarica) : null
       )
       .subscribe()
 
@@ -68,32 +77,70 @@ export function useSpese() {
 
   const passaggi = useMemo(() => chiDeveAChi(saldi), [saldi])
 
+  // ⚠️ Ogni modifica aggiorna ANCHE la copia locale, non solo lo schermo.
+  //
+  // Senza, la copia su disco restava sempre un passo indietro, e bastava
+  // questo: segni la cena, l'inserimento riesce, il foglio si chiude. Lo
+  // stesso inserimento fa scattare il realtime anche sul TUO telefono,
+  // riparte `ricarica()`, quella lettura incappa in un blip di segnale e
+  // `conCache` risolve — non fallisce: risolve — con la copia scritta
+  // PRIMA del tuo inserimento. La tua cena spariva dall'elenco e dal
+  // totale, i saldi tornavano indietro, e il `catch` vuoto qui sotto
+  // garantiva che nessuno lo dicesse.
+  //
+  // Poi la rimetti, perché non la vedi più. E adesso ce ne sono due, anche
+  // sui telefoni degli altri sette.
+  const aggiornaSpese = useCallback((cambia) => {
+    setSpese((precedenti) => {
+      const dopo = cambia(precedenti)
+      inCache('spese', dopo)
+      return dopo
+    })
+  }, [])
+
+  const aggiornaRimborsi = useCallback((cambia) => {
+    setRimborsi((precedenti) => {
+      const dopo = cambia(precedenti)
+      inCache('rimborsi', dopo)
+      return dopo
+    })
+  }, [])
+
   const registra = useCallback(
     async (spesa) => {
       const nuova = await aggiungiSpesa(spesa)
-      setSpese((precedenti) =>
+      aggiornaSpese((precedenti) =>
         precedenti.some((s) => s.id === nuova.id) ? precedenti : [nuova, ...precedenti]
       )
     },
-    []
+    [aggiornaSpese]
   )
 
-  const registraRimborso = useCallback(async (rimborso) => {
-    const nuovo = await aggiungiRimborso(rimborso)
-    setRimborsi((precedenti) =>
-      precedenti.some((r) => r.id === nuovo.id) ? precedenti : [nuovo, ...precedenti]
-    )
-  }, [])
+  const registraRimborso = useCallback(
+    async (rimborso) => {
+      const nuovo = await aggiungiRimborso(rimborso)
+      aggiornaRimborsi((precedenti) =>
+        precedenti.some((r) => r.id === nuovo.id) ? precedenti : [nuovo, ...precedenti]
+      )
+    },
+    [aggiornaRimborsi]
+  )
 
-  const togliSpesa = useCallback(async (id) => {
-    await eliminaSpesa(id)
-    setSpese((precedenti) => precedenti.filter((s) => s.id !== id))
-  }, [])
+  const togliSpesa = useCallback(
+    async (id) => {
+      await eliminaSpesa(id)
+      aggiornaSpese((precedenti) => precedenti.filter((s) => s.id !== id))
+    },
+    [aggiornaSpese]
+  )
 
-  const togliRimborso = useCallback(async (id) => {
-    await eliminaRimborso(id)
-    setRimborsi((precedenti) => precedenti.filter((r) => r.id !== id))
-  }, [])
+  const togliRimborso = useCallback(
+    async (id) => {
+      await eliminaRimborso(id)
+      aggiornaRimborsi((precedenti) => precedenti.filter((r) => r.id !== id))
+    },
+    [aggiornaRimborsi]
+  )
 
   // Nei conti entrano anche le righe eliminate — calcolaSaldi le salta da
   // sé — ma a schermo no.
