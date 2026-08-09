@@ -55,10 +55,18 @@ console.log('\nsta sopra tutto, e gli altri banner si tolgono')
   prova(`z-index ${z} sopra i banner (30)`, z > 30, z)
 
   // ⚠️ Una proposta di punti scade in un'ora e una sfida a dama aspetta.
-  // Uno che si e' perso no. Tutti e quattro i banner devono chiedersi se
-  // c'e' un SOS prima di prendersi la cima.
-  const quante = (app.match(/sos\.aperti\.length === 0/g) ?? []).length
-  prova('tutti i banner cedono il posto', quante >= 4, quante)
+  // Uno che si e' perso no. In quel posto ci sta una cosa sola: sono
+  // tutti `position: fixed; top: 0`, quindi due insieme si coprono a
+  // vicenda e chi legge ne vede uno solo, senza sapere che ce n'era un
+  // altro sotto.
+  //
+  // La domanda «chi si e' preso la cima» si fa in un punto solo, e da
+  // li' scende: `sosInCima` -> `inCima` -> i quattro banner.
+  prova('l SOS decide chi sta in cima', /const sosInCima = sos\.aperti\.length > 0/.test(app))
+  prova('e da li scende a tutti', /const inCima = sosInCima \|\| avvisoInCima/.test(app))
+
+  const quante = (app.match(/!inCima/g) ?? []).length
+  prova('tutti e quattro i banner cedono il posto', quante >= 4, quante)
 }
 
 console.log('\nchi legge gli SOS sopravvive a un buco di rete')

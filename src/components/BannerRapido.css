@@ -1,0 +1,21 @@
+/* Il cartello dei messaggi rapidi. Stessa forma di quello delle proposte
+   — fisso in cima, alto per davvero, spinge giù invece di coprire — ma
+   verde ginepro invece che blu: e' una notizia, non una decisione da
+   prendere, e chi lo vede deve capirlo prima di leggerlo. */
+
+.banner-rapido {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--juniper, #2f5d50);
+  color: var(--sand, #f7f4ec);
+  box-shadow: 0 6px 18px -10px rgba(11, 53, 80, 0.8);
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+}
+
+/* `.banner-dentro`, `.banner-testo`, `.banner-motivo`, `.banner-scelte`,
+   `.banner-si` e `.banner-dopo` arrivano da BannerProposta.css: sono la
+   stessa impaginazione, e riscriverla qui vorrebbe dire due posti da
+   tenere allineati a mano. */

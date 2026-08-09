@@ -46,8 +46,11 @@ import Celebrazione from './components/Celebrazione.jsx'
 import Derisione from './components/Derisione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
 import { useSosAperti } from './hooks/useSosAperti.js'
+import { useAvvisoRapido } from './hooks/useAvvisoRapido.js'
+import { vaMostrato } from './lib/avvisiRapidi.js'
 import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaSOS from './components/StrisciaSOS.jsx'
+import BannerRapido from './components/BannerRapido.jsx'
 import StrisciaOffline from './components/StrisciaOffline.jsx'
 import BannerSfida from './components/BannerSfida.jsx'
 import BannerTestamento from './components/BannerTestamento.jsx'
@@ -163,6 +166,20 @@ export default function App() {
   // ⚠️ Qui e non dentro la chat: un SOS lo devono vedere anche i sette
   // che in quel momento stanno guardando le foto.
   const sos = useSosAperti()
+  const avviso = useAvvisoRapido(membro?.id, vista === 'dentro')
+
+  // ⚠️ Chi si è preso la cima. In quel posto ci sta una cosa sola: sono
+  // tutti `position: fixed; top: 0`, quindi due insieme si coprono a
+  // vicenda e chi legge ne vede uno solo — senza sapere che ce n'era un
+  // altro sotto.
+  //
+  // L'ordine è per quanto in fretta scade quello che dicono: un SOS non
+  // scade affatto, «si riparte fra 5 minuti» scade in cinque minuti, una
+  // proposta di punti in un'ora, una Legge scoperta aspetta domani.
+  const sosInCima = sos.aperti.length > 0
+  const avvisoInCima =
+    !sosInCima && vaMostrato({ azione: avviso.azione, ioId: membro?.id, tab })
+  const inCima = sosInCima || avvisoInCima
 
   // Le sfide a dama arrivano mentre guardi le foto: il banner deve
   // raggiungerti dovunque, come le proposte di punti.
@@ -572,6 +589,24 @@ export default function App() {
           />
         </Riparo>
 
+        {/* Subito sotto l'SOS, e sopra le proposte: una proposta di punti
+            scade in un'ora, «si riparte fra 5 minuti» scade in cinque
+            minuti. Se ne mostra uno solo, e chi è già nel Gruppo non lo
+            vede — ce l'ha davanti. */}
+        <Riparo zitto>
+          {avvisoInCima && (
+            <BannerRapido
+              azione={avviso.azione}
+              nome={membriPerId[avviso.azione?.autoreId]?.nome}
+              onMostra={() => {
+                setTab('gruppo')
+                avviso.zittisci()
+              }}
+              onDopo={avviso.zittisci}
+            />
+          )}
+        </Riparo>
+
         <Riparo zitto>
           {/* Uno solo alla volta in cima, e la precedenza è delle
               proposte: quelle scadono in un'ora, la posizione può
@@ -579,7 +614,7 @@ export default function App() {
               stesso posto si coprirebbero a vicenda.
 
               E tutti si tolgono di mezzo quando c'è un SOS aperto. */}
-          {sos.aperti.length === 0 && inLinea && posizione.daChiedere && proposte.daDecidere.length === 0 && (
+          {!inCima && inLinea && posizione.daChiedere && proposte.daDecidere.length === 0 && (
             <BannerPosizione
               mia={posizione.mia}
               onAggiorna={posizione.aggiorna}
@@ -592,7 +627,7 @@ export default function App() {
               da solo col segnale, e intanto quel posto lo occupa la
               striscia. */}
           <BannerProposta
-            proposte={inLinea && sos.aperti.length === 0 ? proposte.daDecidere : []}
+            proposte={inLinea && !inCima ? proposte.daDecidere : []}
             membri={membriPerId}
             onVota={proposte.vota}
             onRimanda={proposte.rimanda}
@@ -601,7 +636,7 @@ export default function App() {
           {/* Uno solo in cima alla volta, e la precedenza e' delle
               proposte: quelle scadono in un'ora, una sfida a dama
               aspetta. */}
-          {sos.aperti.length === 0 && inLinea && proposte.daDecidere.length === 0 && (
+          {!inCima && inLinea && proposte.daDecidere.length === 0 && (
             <BannerSfida
               sfide={sfideDama.daAccettare}
               membri={membriPerId}
@@ -613,7 +648,7 @@ export default function App() {
           {/* Ultimo della fila: una Legge scoperta puo' aspettare piu' di
               una proposta che scade e di una sfida lanciata adesso. E non
               si mostra a chi sta gia' guardando il Testamento. */}
-          {sos.aperti.length === 0 &&
+          {!inCima &&
             inLinea &&
             proposte.daDecidere.length === 0 &&
             sfideDama.daAccettare.length === 0 &&

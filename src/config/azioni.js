@@ -28,6 +28,27 @@ export const SECONDI_ATTESA = {
 
 export const MINUTI_RIPARTENZA = [5, 10, 15, 30]
 
+// Quali messaggi rapidi valgono un cartello in cima **anche a chi sta
+// guardando un altro tab**.
+//
+// Non tutti, e la selezione è il punto: `free_text` è la chat normale e
+// il pallino sull'icona basta; `soundboard` fa già rumore da solo; l'SOS
+// ha la sua striscia, che sta sopra a tutto e non si chiude da sola.
+//
+// Restano i tre che chiedono qualcosa a chi legge — un voto, una
+// posizione, di muoversi — e che se arrivano mentre guardi le foto non
+// li vedi finché non passi dal Gruppo. «Si riparte fra 5 minuti» letto
+// venti minuti dopo è il caso peggiore: gli altri sono già in macchina.
+export const AVVISI_RAPIDI = {
+  tipi: ['si_riparte', 'dove_siete', 'poll'],
+
+  // Dopo quanto smette di avere senso interrompere. Un «si riparte fra 5
+  // minuti» di mezz'ora fa non è più una notizia, è rumore — e un
+  // cartello che si impara a scacciare senza leggere smette di
+  // funzionare anche quando conta.
+  minutiFreschi: 10,
+}
+
 // Finestra entro cui l'autore può ritirare quello che ha mandato. Serve
 // per la foto sbagliata o il messaggio partito per errore: senza, ogni
 // svista resta lì per cinque giorni.
