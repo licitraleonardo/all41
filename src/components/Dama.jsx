@@ -10,7 +10,7 @@ import {
   ricostruisci,
 } from '../lib/dama.js'
 import { classificaDama, comeEFinita, inCorsoPerMe } from '../lib/classificaDama.js'
-import { dopoUnAbbandono, dopoUnaVittoria, eLaPrimaVittoria } from '../lib/puntiDama.js'
+import { dopoUnaVittoria, eLaPrimaVittoria } from '../lib/puntiDama.js'
 import { urlAvatar } from '../config/avatar.js'
 import Rotella from './Rotella.jsx'
 
@@ -147,7 +147,7 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
 
       {classifica.length > 0 && (
         <>
-          <p className="dama-sezione">Come siamo messi</p>
+          <p className="dama-sezione">Rank</p>
           <ol className="dama-classifica">
             {classifica.map((r, i) => (
               <li key={r.id} className={r.id === membro.id ? 'dama-riga io' : 'dama-riga'}>
@@ -328,9 +328,11 @@ export function Scacchiera({
     setInCorso(true)
     try {
       await onAbbandona(partita.id)
-      // Mollare costa: è l'unica cosa della Dama che tocca qualcun
-      // altro, che resta davanti a una scacchiera ferma.
-      dopoUnAbbandono(membro.id).catch(() => {})
+      // ⚠️ Niente penalità: alla Dama i punti si prendono vincendo, e
+      // basta. La Legge XLIX resta scritta e spenta in `config/leggi.js`,
+      // col perché. Una partita dopo cena si molla perché arriva da
+      // mangiare, non per dispetto — e farla costare spinge a non
+      // cominciarla, non a finirla.
       setConfermaResa(false)
     } catch (e) {
       setAvviso(e?.message ?? 'Non ha funzionato.')
@@ -440,7 +442,7 @@ export function Scacchiera({
         : mioColore !== null &&
           (confermaResa ? (
             <div className="dama-resa-conferma">
-              <p>Abbandoni? Vince l'altro, e ti costa punti.</p>
+              <p>Abbandoni? Vince l'altro. A te non costa niente.</p>
               <div>
                 <button type="button" className="dama-resa si" onClick={resa} disabled={inCorso}>
                   Abbandona

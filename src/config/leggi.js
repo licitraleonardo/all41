@@ -176,10 +176,19 @@ export const LEGGI = [
     testo: 'Hai vinto più partite a dama di tutti, in una giornata' },
   { n: 48, id: 'dama-prima-vittoria', punti: 2, attiva: true,
     testo: 'La tua prima partita a dama vinta' },
-  // Mollare a metà lascia l'altro davanti a una scacchiera ferma: è
-  // l'unica cosa della Dama che tocca qualcun altro, ed è per quello che
-  // costa. Una volta al giorno, o una serataccia diventa una voragine.
-  { n: 49, id: 'dama-abbandonata', punti: -2, attiva: true,
+  // ⚠️ SPENTA il 9 agosto, per decisione di Leonardo: alla Dama i punti si
+  // prendono vincendo, e basta. Abbandonare non ne fa perdere.
+  //
+  // Il ragionamento di prima era che mollare lascia l'altro davanti a una
+  // scacchiera ferma, ed è l'unica cosa della Dama che tocca qualcun altro.
+  // Regge, ma sbaglia il verso: una partita a dama dopo cena si molla
+  // perché arriva da mangiare o perché si va a fare il bagno, non per
+  // dispetto. Una penalità su quello trasforma un gioco in un impegno, e
+  // spinge a non cominciare invece che a finire.
+  //
+  // Resta scritta e spenta invece di essere cancellata: la decisione conta
+  // più della riga, e questo è il posto dove si va a cercarla.
+  { n: 49, id: 'dama-abbandonata', punti: -2, attiva: false,
     testo: 'Hai abbandonato una partita a dama' },
 ]
 
