@@ -11,6 +11,8 @@ import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
 import Rotella from './Rotella.jsx'
+import Pellicola from './Pellicola.jsx'
+import { viaggioCominciato } from '../config/rilascio.js'
 
 // Tre schede, non quattro: "Proponi" non era una sezione, era un gesto —
 // e adesso vive dove ha senso, toccando qualcuno nella classifica.
@@ -43,6 +45,19 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
   }, [vista, onVisto, nonLetto.testamento])
 
   const membri = Object.fromEntries(classifica.map((m) => [m.id, m]))
+
+  // ⚠️ Prima del 12 i tre giochi non si costruiscono affatto.
+  //
+  // Non e' un velo steso sopra: l'Impostore e la Dama, appena montati,
+  // aprono ascoltatori sul database e possono creare partite. Un velo li
+  // lascerebbe girare, e si vedrebbero partite create prima di partire.
+  // Al loro posto c'e' una `Pellicola`, che e' solo un disegno.
+  //
+  // Allbo e Testamento restano aperti: sono da guardare, non da giocare,
+  // e con le Leggi congelate non hanno niente da mostrare che non sia
+  // zero.
+  const aperto = viaggioCominciato()
+  const COPERTI = { impostore: 'L’Impostore', dama: 'Dama', pecora: 'All' }
 
   async function crea(dati) {
     setInCorso(true)
@@ -99,7 +114,9 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
 
       {/* Fuori dal blocco che aspetta i dati: il gioco è tutto locale e
           si apre anche se il database non risponde. */}
-      {vista === 'pecora' && <Pecora membroId={membro.id} />}
+      {!aperto && COPERTI[vista] && <Pellicola nome={COPERTI[vista]} />}
+
+      {aperto && vista === 'pecora' && <Pecora membroId={membro.id} />}
 
       {/* L'attesa e il guasto se li tiene l'Allbo: dentro ha due schede,
           e le statistiche non devono aspettare la lettura della
@@ -121,8 +138,8 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
         />
       )}
 
-      {vista !== 'pecora' && vista !== 'allbo' && stato === 'caricamento' && <Rotella />}
-      {vista !== 'pecora' && vista !== 'allbo' && stato === 'guasto' && (
+      {aperto && vista !== 'pecora' && vista !== 'allbo' && stato === 'caricamento' && <Rotella />}
+      {aperto && vista !== 'pecora' && vista !== 'allbo' && stato === 'guasto' && (
         <p className="gioco-guasto">{errore}</p>
       )}
 
@@ -136,11 +153,11 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
         />
       )}
 
-      {stato === 'pronto' && vista === 'impostore' && (
+      {aperto && stato === 'pronto' && vista === 'impostore' && (
         <Impostore membro={membro} membri={membri} />
       )}
 
-      {stato === 'pronto' && vista === 'dama' && (
+      {aperto && stato === 'pronto' && vista === 'dama' && (
         <Dama
           membro={membro}
           membri={membri}

@@ -1,0 +1,58 @@
+/* Il posto di un gioco, prima che il viaggio cominci.
+
+   Vetro smerigliato: si intuisce che sotto c'è qualcosa, ma non si legge
+   niente — che è esattamente la verità, perché sotto non c'è niente
+   davvero. Non è un guasto e non deve sembrarlo: niente rosso, niente
+   punti esclamativi. È una cosa che arriva, non una che si è rotta. */
+
+.pellicola {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 220px;
+  margin-top: 18px;
+  padding: 32px 20px;
+  font: inherit;
+  color: var(--ink-soft, #55636b);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(236, 231, 219, 0.75));
+  border: 1px dashed var(--line, #e4dfd2);
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.pellicola-nome {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink, #16232c);
+  /* Sfocato: si legge il nome del gioco ma sembra dietro a un vetro. */
+  filter: blur(0.4px);
+  opacity: 0.75;
+}
+
+.pellicola-quando {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Toccata: la scritta prende il posto del lucchetto, e resta. */
+.pellicola.toccata .pellicola-quando {
+  color: var(--ink, #16232c);
+}
+
+.pellicola:active {
+  transform: scale(0.995);
+}
+
+.pellicola:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pellicola:active {
+    transform: none;
+  }
+}
