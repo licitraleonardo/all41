@@ -254,10 +254,16 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
         {avviso && <p className="avviso">{avviso}</p>}
 
         {/* Attaccati alla barra e non in cima alla chat: è dov'è il
-            pollice, e non fanno scorrere via la conversazione. Col menu
-            dei suoni aperto spariscono: due file di pillole diverse una
-            sopra l'altra si confondono. */}
-        {foglio !== 'suoni' && (
+            pollice, e non fanno scorrere via la conversazione.
+
+            ⚠️ Col ＋ aperto spariscono. Un menu aperto sotto una fila di
+            bottoni che ne aprono altri è un invito a sbagliare: due file
+            di pillole diverse, una sopra l'altra, e il dito va su quella
+            che capita. «Si riparte» e «Sondaggio» invece li lasciano, e
+            non è un'incoerenza — quelli restano accesi mentre scegli, e
+            il bottone acceso è quello che ti dice da dove è uscito il
+            menu che stai guardando. */}
+        {foglio !== 'suoni' && foglio !== 'piu' && (
         <div className="azioni-rapide">
           <button type="button" className="bottone-sos" onClick={() => setFoglio('sos')}>
             🆘 SOS
@@ -351,7 +357,7 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
                 setMappaAperta(true)
               }}
             >
-              🌍 Dove siamo
+              🌍 Posizione
             </button>
             <button
               type="button"
@@ -361,7 +367,7 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
                 setFeedbackAperto(true)
               }}
             >
-              ✨ Dimmi com’è che va
+              ✨ Feedback
             </button>
           </div>
         )}
