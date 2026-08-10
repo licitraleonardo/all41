@@ -413,6 +413,18 @@
   background: transparent;
 }
 
+/* ⚠️ Il ＋ ha un fondo grigio, gli altri due no.
+   Quando era il 🔊 si vedeva da solo: un'emoji e' colorata e piena. Il
+   ＋ e' un segno sottile dello stesso colore del testo, e su fondo
+   trasparente dentro una casella bianca non si vedeva proprio — sembrava
+   un buco. Il cerchio grigio lo rende una cosa da premere. */
+.tasto-suoni {
+  color: var(--sea, #0b3550);
+  background: #ece7db;
+  font-size: 20px;
+  font-weight: 700;
+}
+
 .tasto-suoni.aperto {
   background: var(--gold);
   border-color: var(--gold);
