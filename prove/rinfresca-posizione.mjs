@@ -4,7 +4,18 @@
 // silenzioso: un banner che compare troppo si impara a chiudere senza
 // leggerlo, e da quel momento non serve piu' a niente.
 
-import { vaChiesto, daQuanto, VECCHIA_DOPO_MINUTI } from '../src/lib/rinfrescaPosizione.js'
+// ⚠️ Prima dell'import: il modulo legge localStorage, che in node non
+// esiste. Un finto deposito basta, e serve a provare l'unica cosa che
+// conta qui — che il "no" duri un giorno e non uno in piu'.
+const deposito = new Map()
+globalThis.localStorage = {
+  getItem: (k) => (deposito.has(k) ? deposito.get(k) : null),
+  setItem: (k, v) => deposito.set(k, v),
+}
+
+const { vaChiesto, daQuanto, VECCHIA_DOPO_MINUTI, haDettoNoOggi, segnaRifiuto } = await import(
+  '../src/lib/rinfrescaPosizione.js'
+)
 
 let falliti = 0
 function prova(nome, condizione, dettaglio) {
@@ -67,6 +78,35 @@ prova('poco piu di due: si arrotonda giu', daQuanto(oreFa(2.2).quando, adesso) =
 prova('sotto le due ore', daQuanto(oreFa(1.5).quando, adesso) === 'da un paio d’ore')
 prova('ieri', daQuanto(oreFa(26).quando, adesso) === 'da ieri')
 prova('tre giorni', daQuanto(oreFa(74).quando, adesso) === 'da 3 giorni')
+
+console.log('\nil «no» di oggi vale anche dove non c era quando l hai detto')
+{
+  // ⚠️ Questa prova nasce da una strada nuova, non da un difetto.
+  //
+  // Il «no» si diceva a un banner. Adesso la posizione si aggiorna anche
+  // toccando il mondino accanto al conto alla rovescia -- una strada che
+  // quel giorno non esisteva. Chi ha risposto «no» ha risposto una volta
+  // sola, e quel no deve valere anche di la': se no basta aggiungere un
+  // pulsante da qualche parte per scavalcare una risposta gia' data.
+  // ⚠️ L'una di notte, e non e' un'ora scelta a caso.
+  //
+  // Il no si segna col giorno **locale**. All'una in Italia la data UTC
+  // e' ancora quella di ieri: se qualcuno qui dentro passasse a
+  // toISOString, un no detto all'una verrebbe segnato al giorno prima e
+  // sarebbe gia' scaduto un secondo dopo averlo detto. Alle 23:30 questa
+  // prova sarebbe verde comunque -- a quell'ora le due date coincidono e
+  // non proverebbe niente.
+  const unaDiNotte = new Date('2026-08-13T01:00:00')
+
+  prova('senza aver detto niente, niente no', !haDettoNoOggi(unaDiNotte))
+
+  segnaRifiuto(unaDiNotte)
+  prova('detto no, vale subito', haDettoNoOggi(unaDiNotte))
+  prova('e vale ancora il pomeriggio dopo', haDettoNoOggi(new Date('2026-08-13T17:00:00')))
+
+  // Il giorno dopo e' un'altra tappa, e la risposta puo' cambiare.
+  prova('ma non il giorno dopo', !haDettoNoOggi(new Date('2026-08-14T09:00:00')))
+}
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
 process.exit(falliti === 0 ? 0 : 1)

@@ -1,28 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { chiediPosizione, condividiPosizione, leggiPosizioni } from '../lib/posizione.js'
-import { vaChiesto } from '../lib/rinfrescaPosizione.js'
+import { rifiutatoIl, segnaRifiuto, vaChiesto } from '../lib/rinfrescaPosizione.js'
 import { dataDiOggi, statoDelViaggio } from '../lib/giorni.js'
-
-const CHIAVE_NO = 'all41.posizione.no'
-
-// Il "no" vale per la giornata e sta in localStorage: in memoria
-// tornerebbe a ogni ricaricamento, cioè esattamente la seccatura che
-// quel bottone deve togliere. È lo stesso ragionamento del "voto dopo".
-function rifiutatoIl() {
-  try {
-    return localStorage.getItem(CHIAVE_NO)
-  } catch {
-    return null
-  }
-}
-
-function segnaRifiuto() {
-  try {
-    localStorage.setItem(CHIAVE_NO, dataDiOggi())
-  } catch {
-    // Safari in navigazione privata può rifiutare: pazienza, si richiede.
-  }
-}
 
 export function useRinfrescaPosizione(membroId, attivo) {
   const [mia, setMia] = useState(null)

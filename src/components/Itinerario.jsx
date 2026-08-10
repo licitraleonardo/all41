@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import './Itinerario.css'
 import Foglio from './Foglio.jsx'
 import Posizioni from './Posizioni.jsx'
+import { chiediPosizione, condividiPosizione } from '../lib/posizione.js'
+import { haDettoNoOggi } from '../lib/rinfrescaPosizione.js'
 import Giorno from './Giorno.jsx'
 import Meteo from './Meteo.jsx'
 import RigaAttesa from './RigaAttesa.jsx'
@@ -22,6 +24,41 @@ export default function Itinerario({ membro, onProfilo }) {
   // Si apre a schermo pieno dentro `Foglio`, che ha gia' le tre uscite:
   // tocco fuori, tasto indietro ed Esc.
   const [mappaAperta, setMappaAperta] = useState(false)
+  // «Aggiorno dove sei…» / «Aggiornata» / il motivo se non riesce.
+  const [posizione, setPosizione] = useState(null)
+
+  // ⚠️ La mappa si apre SUBITO, l'aggiornamento va per conto suo.
+  //
+  // Chi tocca il mondino voleva vedere, e vedere non deve dipendere
+  // dall'essere visti: col permesso negato o senza segnale la mappa resta
+  // utile con le posizioni di prima.
+  //
+  // ⚠️ E non e' silenzioso. In `Posizioni.jsx` c'e' scritto dal primo
+  // giorno «la posizione si condivide con un tasto, mai da sola»: il
+  // mondino **e'** un tasto, ma dice «dove siamo» e non «condividi dove
+  // sono» — uno lo tocca per guardare e come effetto pubblica dov'e' a
+  // sette persone. Per questo mentre aggiorna lo dice, e quando ha finito
+  // lo scrive. Un aggiornamento che si vede e' un'altra cosa da uno di
+  // nascosto.
+  async function apriMappa() {
+    setMappaAperta(true)
+    if (!membro?.id) return
+
+    // ⚠️ Chi oggi ha risposto «no» all'aggiornamento della posizione, no
+    // ha detto. L'ha detto una volta sola, a un banner che allora era
+    // l'unico modo di arrivarci: non vale di meno perché adesso c'è una
+    // strada nuova. Qui la mappa si apre e basta, in silenzio — non
+    // aggiornare è quello che uno si aspetta, e non va annunciato.
+    if (haDettoNoOggi()) return
+
+    setPosizione('in-corso')
+    try {
+      await condividiPosizione(membro.id, await chiediPosizione())
+      setPosizione('fatta')
+    } catch {
+      setPosizione('no')
+    }
+  }
   const data = useDataDiOggi()
   const oggi = giornoPerData(data)
   const rifOggi = useRef(null)
@@ -59,23 +96,23 @@ export default function Itinerario({ membro, onProfilo }) {
 
       <div className="wrap">
         <p className="oggi-viaggio">{VIAGGIO.etichetta}</p>
-        <RigaAttesa />
+        {/* Il mondino sta qui, accanto al conto alla rovescia, dove
+            l'occhio passa gia'. Prima era un riquadro sotto, con cerchio
+            scuro e due righe di testo: si prendeva una riga intera per
+            dire una cosa che un mappamondo dice da solo. */}
+        <div className="oggi-testa">
+          <RigaAttesa />
+          <button
+            type="button"
+            className="oggi-mondo"
+            onClick={apriMappa}
+            aria-label="Dove siamo — la mappa del gruppo"
+          >
+            🌍
+          </button>
+        </div>
         <Meteo dataOggi={data} />
 
-        {/* Il mondino: sta in fondo al programma, dove uno arriva dopo
-            aver letto cosa si fa oggi. */}
-        <button type="button" className="oggi-mondo" onClick={() => setMappaAperta(true)}>
-          <span className="oggi-mondo-icona" aria-hidden="true">
-            🌍
-          </span>
-          <span className="oggi-mondo-testo">
-            <strong>Dove siamo</strong>
-            <small>La mappa del gruppo</small>
-          </span>
-          <span className="oggi-mondo-freccia" aria-hidden="true">
-            ›
-          </span>
-        </button>
 
         <div className="timeline">
           {GIORNI.map((g) => {
@@ -95,6 +132,27 @@ export default function Itinerario({ membro, onProfilo }) {
       {mappaAperta && (
         <Foglio etichetta="Dove siamo" className="foglio-mappa" onChiudi={() => setMappaAperta(false)}>
           <>
+            {/* ⚠️ Questa riga non è un dettaglio: è quello che rende
+                onesto il mondino. Toccandolo si pubblica dov'è uno a
+                sette persone, e chi l'ha toccato voleva guardare, non
+                farsi guardare. Detto mentre succede, è comodo; fatto in
+                silenzio, sarebbe sgradevole. */}
+            {posizione === 'in-corso' && (
+              <p className="mappa-aggiorno" role="status">
+                Aggiorno dove sei…
+              </p>
+            )}
+            {posizione === 'fatta' && (
+              <p className="mappa-aggiorno" role="status">
+                Aggiornato anche dove sei tu.
+              </p>
+            )}
+            {posizione === 'no' && (
+              <p className="mappa-aggiorno guasto" role="status">
+                Dove sei tu non si è aggiornato. Il resto della mappa vale lo stesso.
+              </p>
+            )}
+
             <Posizioni membro={membro} />
             <button
               type="button"

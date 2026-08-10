@@ -37,6 +37,42 @@ export function vaChiesto({
   return minuti >= VECCHIA_DOPO_MINUTI
 }
 
+// ------------------------------------------------------ il "no" di oggi
+//
+// Il "no" vale per la giornata e sta in localStorage: in memoria
+// tornerebbe a ogni ricaricamento, cioè esattamente la seccatura che quel
+// bottone deve togliere. È lo stesso ragionamento del "voto dopo".
+//
+// ⚠️ Sta qui e non dentro l'hook perché ha smesso di riguardare solo il
+// banner. Il mondino accanto al conto alla rovescia aggiorna dove sei
+// come effetto dell'aprire la mappa: chi oggi ha risposto "no" quel no
+// l'ha detto una volta e vale, anche per una strada che allora non
+// esisteva. Una regola che vive in un posto solo non si dimentica di
+// valere altrove.
+const CHIAVE_NO = 'all41.posizione.no'
+
+export function rifiutatoIl() {
+  try {
+    return localStorage.getItem(CHIAVE_NO)
+  } catch {
+    return null
+  }
+}
+
+export function segnaRifiuto(adesso = new Date()) {
+  try {
+    localStorage.setItem(CHIAVE_NO, giornoDi(adesso))
+  } catch {
+    // Safari in navigazione privata può rifiutare: pazienza, si richiede.
+  }
+}
+
+// "Oggi ho detto di no": la domanda che si fa chi sta per condividere
+// senza che nessuno gliel'abbia chiesto adesso.
+export function haDettoNoOggi(adesso = new Date()) {
+  return rifiutatoIl() === giornoDi(adesso)
+}
+
 // Da quanto è ferma, in parole: serve al testo del banner.
 export function daQuanto(quando, adesso = new Date()) {
   const ore = Math.floor((adesso.getTime() - Date.parse(quando)) / 3600000)

@@ -423,73 +423,75 @@
   }
 }
 
-/* ------------------------------------------------------------ il mondo
+/* --------------------------------------------------------- il mondo
 
-   «Dove siete» e' una domanda che ci si fa guardando il programma della
-   giornata: a che ora ci si trova, e dove sono adesso gli altri, sono la
-   stessa domanda. Nascosta dentro un tab chiamato «Altro» non la trovava
-   nessuno.
+   ⚠️ Solo il mappamondo, senza cerchio dietro e senza riquadro.
 
-   Sta in fondo, dopo il programma: chi apre Oggi vuole prima sapere cosa
-   si fa. */
+   Prima era una card bianca con dentro un tondo blu, il titolo e una
+   didascalia: tre elementi per dire quello che un mappamondo dice da
+   solo, e una riga intera di schermata portata via al programma della
+   giornata. Adesso sta accanto al conto alla rovescia, dove l'occhio
+   passa gia'. */
 
-.oggi-mondo {
+.oggi-testa {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 100%;
-  margin: 18px 0 4px;
-  padding: 13px 15px;
-  font: inherit;
-  text-align: left;
-  background: #fff;
-  border: 1px solid var(--line, #e4dfd2);
-  border-radius: 13px;
+  margin-bottom: 22px;
+}
+
+/* Il conto alla rovescia si prende quello che resta, e non ha piu' il suo
+   margine sotto: ce l'ha il contenitore. */
+.oggi-testa .attesa {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* 44 px: il bersaglio minimo per un pollice. L'emoji e' piu' piccola, ma
+   l'area toccabile no -- un tasto che sembra grande quanto il disegno si
+   manca una volta su tre. */
+.oggi-mondo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 30px;
+  line-height: 1;
+  background: transparent;
+  border: 0;
   cursor: pointer;
 }
 
-/* Il mondo tondo su fondo mare: si riconosce con la coda dell'occhio
-   mentre si scorre il programma. */
-.oggi-mondo-icona {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  font-size: 22px;
-  line-height: 1;
-  background: var(--sea, #0b3550);
-  border-radius: 50%;
-}
-
-.oggi-mondo-testo {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  color: var(--ink, #16323f);
-}
-
-.oggi-mondo-testo strong {
-  font-size: 15px;
-}
-
-.oggi-mondo-testo small {
-  font-size: 12px;
-  color: var(--ink-soft, #55636b);
-}
-
-.oggi-mondo-freccia {
-  flex: none;
-  font-size: 20px;
-  color: var(--ink-soft, #55636b);
+.oggi-mondo:active {
+  transform: scale(0.92);
 }
 
 .oggi-mondo:focus-visible {
   outline: 2px solid var(--sea, #0b3550);
   outline-offset: 2px;
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oggi-mondo:active {
+    transform: none;
+  }
+}
+
+/* Come sta andando l'aggiornamento della propria posizione: sopra la
+   mappa, perche' e' la risposta al tocco che l'ha aperta. */
+.mappa-aggiorno {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft, #55636b);
+}
+
+.mappa-aggiorno.guasto {
+  color: var(--coral, #e8604a);
 }
 
 /* Il foglio della mappa e' piu' alto degli altri: una mappa piccola non
