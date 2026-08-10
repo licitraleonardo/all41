@@ -496,7 +496,6 @@ function Apparecchia({ membro, membri, onCrea }) {
             aria-pressed={variante === v.id}
           >
             <strong>{v.nome}</strong>
-            <span>{v.spiega}</span>
           </button>
         ))}
       </div>

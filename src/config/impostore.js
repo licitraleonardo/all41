@@ -59,16 +59,11 @@ export const IMPOSTORE = {
 // nessuna parola si blocca al primo giro e si smaschera da solo, che e'
 // il difetto del gioco classico. Quella classica resta per chi la vuole.
 export const VARIANTI = [
-  {
-    id: 'parola-simile',
-    nome: 'Parola simile',
-    spiega: 'L’impostore riceve una parola diversa ma vicina. Si puo’ bluffare.',
-  },
-  {
-    id: 'senza-parola',
-    nome: 'Senza parola',
-    spiega: 'L’impostore non riceve niente e deve inventare al volo.',
-  },
+  // ⚠️ Solo il nome: la riga che spiegava cosa cambia fra le due e' andata
+  // via il 10 agosto, e con lei il campo `spiega`. Un dato che non legge
+  // piu' nessuno resta li' e mente al primo ritocco.
+  { id: 'parola-simile', nome: 'Parola simile' },
+  { id: 'senza-parola', nome: 'Senza parola' },
 ]
 
 // Quello che vede l'impostore nella variante classica.

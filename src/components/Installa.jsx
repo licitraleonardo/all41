@@ -75,7 +75,6 @@ export default function Installa() {
       <main className="installa">
         <h1 className="installa-titolo">Ci siamo</h1>
         <p className="installa-testo">{INSTALLA.dopo}</p>
-        <p className="installa-avviso">{INSTALLA.avvisoCodice}</p>
       </main>
     )
   }

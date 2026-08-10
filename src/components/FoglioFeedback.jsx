@@ -72,10 +72,6 @@ export default function FoglioFeedback({ membroId, dove, onChiudi }) {
           </p>
         )}
 
-        {/* Chi legge questa roba, detto prima e non dopo: sapere che non
-            lo vede il gruppo cambia quello che si scrive. */}
-        <p className="fdb-nota fdb-chi">Lo legge solo chi ha scritto l’app. Non il gruppo.</p>
-
         <button
           type="button"
           className="primario-chiaro"

@@ -40,14 +40,4 @@ export const INSTALLA = {
   },
 
   dopo: 'Fatto. Adesso c’è l’icona sulla home: si apre da lì, non dal browser.',
-
-  // ⚠️ Questo avviso **non è sparito, ha cambiato momento** — stessa
-  // mossa fatta per i Documenti.
-  //
-  // Stava in cima alla pagina, dove lo leggeva chi non aveva ancora
-  // installato niente e se lo scordava dieci minuti dopo. Adesso sta
-  // sulla schermata di «fatto», cioè nell'istante esatto prima di aprire
-  // l'app e trovarsi il campo del codice davanti. L'app installata ha
-  // uno storage suo: non eredita niente dal browser, e riparte da zero.
-  avvisoCodice: 'Ti chiederà il codice di accesso: l’app installata parte da zero.',
 }
