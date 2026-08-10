@@ -1,0 +1,93 @@
+/* La riga che offre le notifiche, in cima all'app.
+
+   Vestita come gli altri banner che ti raggiungono dove sei — non come
+   un cartello d'allarme: non c'è niente che stia andando storto, è una
+   proposta. */
+
+.offri-notifiche {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 auto 12px;
+  max-width: 616px;
+  padding: 11px 14px;
+  background: #fff;
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px -14px rgba(11, 53, 80, 0.7);
+}
+
+.offri-testo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink, #16232c);
+}
+
+/* La riga del titolo. Il «(consigliato)» ci sta dentro, non accanto: in
+   una colonna flex un figlio in piu' vuol dire una riga in piu'. */
+.offri-titolo {
+  font-size: 13.5px;
+}
+
+.offri-consiglio {
+  font-weight: 400;
+  color: var(--ink-soft, #55636b);
+}
+
+.offri-perche {
+  font-size: 12px;
+  color: var(--ink-soft, #55636b);
+}
+
+.offri-tasti {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.offri-si {
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sand, #f7f4ec);
+  background: var(--sea, #0b3550);
+  border: 0;
+  border-radius: 100px;
+  /* 38 px di altezza: sotto i 36 un pollice lo manca, e questo e' il
+     tasto che stiamo consigliando. Misurato, non stimato. */
+  padding: 11px 16px;
+  cursor: pointer;
+}
+
+/* Spento di proposito: «Non ora» dev'essere facile da premere e non
+   invitante da premere. È la risposta che non costa niente, ma non è
+   quella che stiamo proponendo. */
+.offri-no {
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft, #55636b);
+  background: transparent;
+  border: 0;
+  /* Alto quanto l'altro: «Non ora» dev'essere facile da premere anche se
+     non e' quello che proponiamo. Spento nel colore, non nel bersaglio. */
+  padding: 11px 6px;
+  cursor: pointer;
+}
+
+.offri-si:disabled,
+.offri-no:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.offri-si:focus-visible,
+.offri-no:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}

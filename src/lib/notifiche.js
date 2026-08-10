@@ -207,7 +207,27 @@ export async function riallineaIscrizione(membroId) {
 
   try {
     const registrazione = await navigator.serviceWorker.ready
-    const iscrizione = await registrazione.pushManager.getSubscription()
+    let iscrizione = await registrazione.pushManager.getSubscription()
+
+    // ⚠️ Se il permesso c'e' ma l'iscrizione no, la si crea. Qui prima si
+    // usciva, e non era una prudenza: era un difetto.
+    //
+    // Il permesso in Chrome resta `granted` per sempre; l'iscrizione no —
+    // se ne va con l'app reinstallata, con la cache svuotata, col
+    // telefono cambiato. Chi aveva gia' detto di si' si ritrovava
+    // l'interruttore acceso e non riceveva piu' niente, senza un errore
+    // da nessuna parte.
+    //
+    // `subscribe()` col permesso gia' concesso **non mostra nessun
+    // cartello**: nessun tocco, nessuna domanda, e chi aveva detto di si'
+    // torna a ricevere.
+    if (!iscrizione) {
+      if (!CHIAVE_PUBBLICA_PUSH) return
+      iscrizione = await registrazione.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: chiaveInByte(CHIAVE_PUBBLICA_PUSH),
+      })
+    }
     if (!iscrizione) return
 
     const grezza = iscrizione.toJSON()

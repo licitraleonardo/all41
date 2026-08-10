@@ -55,6 +55,7 @@ import { vaMostrato } from './lib/avvisiRapidi.js'
 import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaSOS from './components/StrisciaSOS.jsx'
 import BannerRapido from './components/BannerRapido.jsx'
+import OffriNotifiche from './components/OffriNotifiche.jsx'
 import BannerFeedback from './components/BannerFeedback.jsx'
 import FoglioFeedback from './components/FoglioFeedback.jsx'
 import { useFeedback } from './hooks/useFeedback.js'
@@ -729,6 +730,17 @@ export default function App() {
           {feedback.aperto && (
             <FoglioFeedback membroId={membro?.id} dove={tab} onChiudi={feedback.chiudi} />
           )}
+        </Riparo>
+
+        {/* ⚠️ Ultimo fra i banner, ed e' voluto: sopra ci sono le cose
+            che scadono — un SOS, «si riparte fra 5 minuti», una proposta
+            in voto. Questa non scade, puo' aspettare il primo momento in
+            cui non c'e' nient'altro da dire.
+
+            Dentro un `Riparo` come gli altri: se si rompe deve sparire,
+            non portarsi dietro l'app. */}
+        <Riparo zitto>
+          <OffriNotifiche membroId={membro?.id} />
         </Riparo>
 
         <Riparo zitto>
