@@ -27,6 +27,7 @@ const DA_UNIRE = [
   ['telefono.sql', 'La colonna phone: il numero lasciato quando ci si registra'],
   ['feedback.sql', 'La tabella feedback: si scrive e non si rilegge'],
   ['push.sql', 'Le due funzioni per iscriversi alle notifiche, e disiscriversi'],
+  ['azzera.sql', 'La classifica riparte da zero la mattina del 12: i punti delle prove non contano'],
 ]
 
 const USCITA = 'DA-LANCIARE.sql'

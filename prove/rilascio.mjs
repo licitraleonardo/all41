@@ -7,6 +7,7 @@
 
 import { APERTURA, FORZA_APERTA, viaggioCominciato } from '../src/config/rilascio.js'
 import { VIAGGIO } from '../src/config/viaggio.js'
+import { readFileSync } from 'node:fs'
 
 let falliti = 0
 function prova(nome, condizione, dettaglio) {
@@ -54,6 +55,38 @@ console.log('\nl interruttore per provarla e spento')
   // uscire tutto scoperto: il primo che gioca si porta via le Leggi per
   // tutti, senza che nessuno se ne accorga.
   prova('FORZA_APERTA e null', FORZA_APERTA === null, FORZA_APERTA)
+}
+
+console.log('\nil taglio della classifica e lo stesso istante dell apertura')
+{
+  // ⚠️ Tre posti dicono «le 6 del 12», e se si separano non lo dice
+  // nessuno: `config/rilascio.js` per l'app, il taglio dentro
+  // `supabase/azzera.sql`, e il cron in `vercel.json`. Uno sfasamento
+  // vuol dire punti guadagnati dopo l'apertura e cancellati lo stesso, o
+  // punti delle prove che restano in classifica per tutto il viaggio.
+  const sql = readFileSync('supabase/azzera.sql', 'utf8')
+  const trovato = (sql.match(/taglio timestamptz := '([^']+)'/) ?? [])[1]
+  prova('il taglio c e, scritto nella funzione', Boolean(trovato), trovato)
+
+  prova(
+    'ed e lo stesso istante in cui l app si apre',
+    new Date(trovato).getTime() === new Date(APERTURA).getTime(),
+    { sql: trovato, app: APERTURA }
+  )
+
+  // Il cron: 04:00 UTC sono le 06:00 a Roma a meta' agosto.
+  const cron = JSON.parse(readFileSync('vercel.json', 'utf8')).crons ?? []
+  const azzera = cron.find((c) => c.path === '/api/azzera')
+  prova('il cron dell azzeramento c e', Boolean(azzera), cron)
+
+  const [minuto, ora] = (azzera?.schedule ?? '').split(' ')
+  const quando = new Date(Date.UTC(2026, 7, 12, Number(ora), Number(minuto)))
+  const aRoma = new Intl.DateTimeFormat('it-IT', {
+    timeZone: 'Europe/Rome',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(quando)
+  prova('e a Roma sono le 06:00', aRoma === '06:00', aRoma)
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)

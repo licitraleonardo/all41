@@ -73,6 +73,10 @@
   ],
   "crons": [
     {
+      "path": "/api/azzera",
+      "schedule": "0 4 * * *"
+    },
+    {
       "path": "/api/sveglia",
       "schedule": "30 10 * * *"
     }
