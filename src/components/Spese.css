@@ -360,22 +360,38 @@
 
    Non si stringe e non va a capo: «Salda» su due righe non lo legge
    nessuno. */
+/* ⚠️ Non e' un bottone, e adesso non lo sembra piu'.
+
+   Era una pillola piena verde scuro, e su una card che e' gia' tutta
+   toccabile sembrava **il** bottone: l'occhio ci andava, e ci andava via
+   dalla cifra, che e' la cosa da leggere. Non perde niente a essere
+   testo, perche' e' `pointer-events: none` -- a essere premuta e' tutta
+   la card, non lei. */
 .saldo-apri {
   align-self: flex-end;
   flex: none;
-  padding: 9px 18px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
-  color: var(--sand, #f7f4ec);
-  background: #1f4433;
-  border-radius: 100px;
+  /* ⚠️ Lo stesso colore dell'etichetta sopra, non un grigio.
+     Il colore del testo della card e' bianco -- viene dal fondo scuro
+     dell'app -- e ogni pezzo dentro se lo riscrive per essere leggibile
+     sul chiaro. Ereditarlo voleva dire bianco su rosa: l'ho visto, non
+     si leggeva niente. */
+  color: #1f4433;
   white-space: nowrap;
 }
 
-/* Sul rosso il tasto prende il colore del debito: la card resta una cosa
-   sola invece di due colori che litigano. */
+/* La freccia dice «si apre», che e' l'unica cosa che la pillola diceva
+   e il testo da solo non direbbe. */
+.saldo-apri::after {
+  content: ' ›';
+}
+
+/* Quando devi dare, come l'etichetta e la cifra: la card resta una cosa
+   sola invece di tre colori che litigano. Prima era la pillola a
+   cambiare fondo, adesso e' il testo a cambiare colore. */
 .saldo-mio.devi .saldo-apri {
-  background: #7a2e20;
+  color: #7a2e20;
 }
 
 /* Il tocco è della card intera, quindi il tasto non deve rispondere per
