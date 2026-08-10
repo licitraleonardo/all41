@@ -148,6 +148,17 @@ export const GIORNI = [
     tono: 'sea',
     badge: 'confermata',
     tappe: [
+      // ⚠️ L'unico orario del viaggio che non si puo' sbagliare: una barca
+      // non aspetta. Sta come tappa sua, con l'ora davanti, invece che
+      // dentro una nota di quella dopo — chi guarda il programma la
+      // mattina del 14 legge le ore in colonna, non i testi.
+      // Fonte: Leonardo, 10 agosto.
+      {
+        ora: '10:30',
+        cosa: 'Partenza — porto di Villasimius',
+        maps: 'https://maps.google.com/?q=Porto+di+Villasimius',
+        note: [{ tipo: 'nota', testo: 'La barca non aspetta: meglio essere lì prima' }],
+      },
       {
         ora: 'Tutto',
         cosa: 'Itinerario 1 — Cuccureddus, Punta Molentis, Porto Giunco, Baia di Vecchia Fortezza',

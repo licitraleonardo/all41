@@ -26,15 +26,14 @@ export const DOVE = {
   // riga che sta in sardegna-trip-app-spec.md. Serve a chi arriva in
   // taxi dall'aeroporto e deve dettarlo al tassista.
   indirizzo: "Villaggio S'oru 'e Mari, 37 — Quartu Sant'Elena",
-  // ⚠️ Resta mancante, ma per un motivo diverso da quello che si credeva.
+  // ⚠️ Non è il centralino del villaggio, perché non esiste.
   //
   // S'oru 'e Mari **non è un residence con una reception**: è una località
   // residenziale sulla costa, dove l'indirizzo è "Villaggio S'oru 'e Mari,
   // <numero civico>" — al 13 c'è una casa di riposo, all'83/B un B&B, al 37
-  // stiamo noi. Quindi un "telefono del villaggio" da cercare non esiste:
-  // quello che serve è il numero di **chi ci affitta la casa**, e ce l'ha
-  // solo Leonardo.
-  telefono: null,
+  // stiamo noi. Quello che serve è il numero di **chi ci affitta la casa**,
+  // e questo è: fonte Leonardo, 10 agosto.
+  telefono: '328 669 0643',
 }
 
 // ------------------------------------------------------------ emergenze
@@ -138,7 +137,9 @@ export const UTILI = [
 
 // Quello che manca, scritto come manca. Serve a due cose: non far
 // credere che la sezione sia completa, e ricordare cosa chiedere.
-export const DA_TROVARE = [
-  'Il numero di chi ci affitta la casa — non esiste un centralino del villaggio',
-  'Orario e molo della barca del 14',
-]
+//
+// ⚠️ Vuoto dal 10 agosto: sono arrivati tutti e due — il numero di chi ci
+// affitta la casa e l'orario della barca. Resta l'elenco, perché in
+// viaggio salterà fuori qualcos'altro che non si sa, e il posto dove
+// scriverlo dev'essere già lì.
+export const DA_TROVARE = []
