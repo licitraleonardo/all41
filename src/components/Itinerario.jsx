@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import './Itinerario.css'
 import Foglio from './Foglio.jsx'
 import Posizioni from './Posizioni.jsx'
-import { chiediPosizione, condividiPosizione } from '../lib/posizione.js'
-import { haDettoNoOggi } from '../lib/rinfrescaPosizione.js'
 import Giorno from './Giorno.jsx'
 import Meteo from './Meteo.jsx'
 import RigaAttesa from './RigaAttesa.jsx'
@@ -24,41 +22,19 @@ export default function Itinerario({ membro, onProfilo }) {
   // Si apre a schermo pieno dentro `Foglio`, che ha gia' le tre uscite:
   // tocco fuori, tasto indietro ed Esc.
   const [mappaAperta, setMappaAperta] = useState(false)
-  // «Aggiorno dove sei…» / «Aggiornata» / il motivo se non riesce.
-  const [posizione, setPosizione] = useState(null)
 
-  // ⚠️ La mappa si apre SUBITO, l'aggiornamento va per conto suo.
+  // ⚠️ Toccare il mondino apre la mappa e **non fa nient'altro**.
   //
-  // Chi tocca il mondino voleva vedere, e vedere non deve dipendere
-  // dall'essere visti: col permesso negato o senza segnale la mappa resta
-  // utile con le posizioni di prima.
+  // Per un giorno ha anche aggiornato la posizione di chi lo toccava, e
+  // la cosa era dichiarata a schermo mentre succedeva. Non bastava: in
+  // `Posizioni.jsx` c'e' scritto dal primo giorno «la posizione si
+  // condivide con un tasto, mai da sola», e questo era un tasto che
+  // diceva «dove siamo» — uno lo toccava per guardare e come effetto
+  // pubblicava dov'era a sette persone. La lettera della regola reggeva,
+  // l'intenzione no.
   //
-  // ⚠️ E non e' silenzioso. In `Posizioni.jsx` c'e' scritto dal primo
-  // giorno «la posizione si condivide con un tasto, mai da sola»: il
-  // mondino **e'** un tasto, ma dice «dove siamo» e non «condividi dove
-  // sono» — uno lo tocca per guardare e come effetto pubblica dov'e' a
-  // sette persone. Per questo mentre aggiorna lo dice, e quando ha finito
-  // lo scrive. Un aggiornamento che si vede e' un'altra cosa da uno di
-  // nascosto.
-  async function apriMappa() {
-    setMappaAperta(true)
-    if (!membro?.id) return
-
-    // ⚠️ Chi oggi ha risposto «no» all'aggiornamento della posizione, no
-    // ha detto. L'ha detto una volta sola, a un banner che allora era
-    // l'unico modo di arrivarci: non vale di meno perché adesso c'è una
-    // strada nuova. Qui la mappa si apre e basta, in silenzio — non
-    // aggiornare è quello che uno si aspetta, e non va annunciato.
-    if (haDettoNoOggi()) return
-
-    setPosizione('in-corso')
-    try {
-      await condividiPosizione(membro.id, await chiediPosizione())
-      setPosizione('fatta')
-    } catch {
-      setPosizione('no')
-    }
-  }
+  // Dentro la mappa il tasto c'e' e dice «Aggiorna dove sono»: chi vuole
+  // farsi vedere lo preme, e sa di averlo premuto.
   const data = useDataDiOggi()
   const oggi = giornoPerData(data)
   const rifOggi = useRef(null)
@@ -105,7 +81,7 @@ export default function Itinerario({ membro, onProfilo }) {
           <button
             type="button"
             className="oggi-mondo"
-            onClick={apriMappa}
+            onClick={() => setMappaAperta(true)}
             aria-label="Dove siamo — la mappa del gruppo"
           >
             🌍
@@ -132,27 +108,6 @@ export default function Itinerario({ membro, onProfilo }) {
       {mappaAperta && (
         <Foglio etichetta="Dove siamo" className="foglio-mappa" onChiudi={() => setMappaAperta(false)}>
           <>
-            {/* ⚠️ Questa riga non è un dettaglio: è quello che rende
-                onesto il mondino. Toccandolo si pubblica dov'è uno a
-                sette persone, e chi l'ha toccato voleva guardare, non
-                farsi guardare. Detto mentre succede, è comodo; fatto in
-                silenzio, sarebbe sgradevole. */}
-            {posizione === 'in-corso' && (
-              <p className="mappa-aggiorno" role="status">
-                Aggiorno dove sei…
-              </p>
-            )}
-            {posizione === 'fatta' && (
-              <p className="mappa-aggiorno" role="status">
-                Aggiornato anche dove sei tu.
-              </p>
-            )}
-            {posizione === 'no' && (
-              <p className="mappa-aggiorno guasto" role="status">
-                Dove sei tu non si è aggiornato. Il resto della mappa vale lo stesso.
-              </p>
-            )}
-
             <Posizioni membro={membro} />
             <button
               type="button"

@@ -481,19 +481,6 @@
   }
 }
 
-/* Come sta andando l'aggiornamento della propria posizione: sopra la
-   mappa, perche' e' la risposta al tocco che l'ha aperta. */
-.mappa-aggiorno {
-  margin: 0 0 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-soft, #55636b);
-}
-
-.mappa-aggiorno.guasto {
-  color: var(--coral, #e8604a);
-}
-
 /* Il foglio della mappa e' piu' alto degli altri: una mappa piccola non
    serve a niente. */
 .foglio.foglio-mappa {
