@@ -138,10 +138,10 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
         </>
       )}
 
+      {/* Resta il fatto, va via il commento. Il ripasso di come sono
+          fatti gli altri due giochi stava dentro la Dama, dove non serve
+          a decidere niente: chi e' qui ha gia' scelto. */}
       {mieAperte.length === 0 && !sfidando && (
-        {/* Resta il fatto, va via il commento. Il ripasso di come sono
-            fatti gli altri due giochi stava dentro la Dama, dove non
-            serve a decidere niente: chi e' qui ha gia' scelto. */}
         <p className="dama-vuoto">Nessuna partita in corso.</p>
       )}
 

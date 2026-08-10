@@ -919,3 +919,32 @@
   flex: none;
   white-space: nowrap;
 }
+
+/* ⚠️ Il quarto livello, che l'Allbo ha fatto comparire.
+
+   Dentro l'Allbo la Classifica ha una riga sua — «Cosa e' successo» e
+   «Da votare» — che c'era gia' e usava le stesse pillole. Messe una sotto
+   l'altra diventavano due file identiche, e non si capiva quale stesse
+   dentro quale: e' esattamente la cosa contro cui il Cassetto aveva
+   scritto un avvertimento, arrivata da un'altra strada.
+
+   Qui dentro quindi niente pillole: testo, e una riga sotto quello
+   scelto. Tre livelli, tre disegni diversi. */
+.segmenti.minori.dentro {
+  margin-top: 16px;
+  gap: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.segmenti.minori.dentro .segmento {
+  border: 0;
+  border-radius: 0;
+  padding: 6px 0 8px;
+  color: var(--ink-soft, #55636b);
+  background: transparent;
+  border-bottom: 2px solid transparent;
+}
+.segmenti.minori.dentro .segmento.attivo {
+  color: var(--sea);
+  background: transparent;
+  border-bottom-color: var(--sea);
+}

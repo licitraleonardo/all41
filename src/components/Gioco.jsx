@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react'
 import './Gioco.css'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 import NuvolettaAllan from './NuvolettaAllan.jsx'
-import Classifica from './Classifica.jsx'
+import Allbo from './Allbo.jsx'
 import Testamento from './Testamento.jsx'
 import Pecora from './Pecora.jsx'
-import Statistiche from './Statistiche.jsx'
 import Impostore from './Impostore.jsx'
 import Dama from './Dama.jsx'
 import { useGioco } from '../hooks/useGioco.js'
@@ -15,23 +14,23 @@ import Rotella from './Rotella.jsx'
 
 // Tre schede, non quattro: "Proponi" non era una sezione, era un gesto —
 // e adesso vive dove ha senso, toccando qualcuno nella classifica.
+// ⚠️ Cinque, non sei. La Classifica e le statistiche sono due modi di
+// guardare la stessa cosa -- quanti punti ha chi -- e sono finite sotto
+// un tetto solo, «Allbo»: ALL41 piu' albo. A 375 px sei pillole si
+// scorrevano, cinque ci stanno quasi tutte.
 const SCHEDE = [
-  ['classifica', 'Classifica'],
+  ['allbo', 'Allbo'],
   ['testamento', 'Testamento'],
   ['impostore', 'Impostore'],
   ['dama', 'Dama'],
   ['pecora', 'All'],
-  // Le statistiche stavano in «Altro», in mezzo a spese e documenti.
-  // Sono numeri sul gioco: record, primati, chi e' bravo a cosa. Stanno
-  // qui, accanto alla classifica che raccontano.
-  ['stat', 'Stat.'],
 ]
 
 export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto, conteggiMvp = {}, damaDaAprire, onDamaAperta, leggeDaAprire, onLeggeAperta }) {
   const { classifica, eventi, diOggi, scoperte, stato, errore, ricarica } = useGioco()
   const [vista, setVista] = useSchedaRicordata(
     'scheda.gioco',
-    'classifica',
+    'allbo',
     SCHEDE.map(([id]) => id)
   )
   const [inCorso, setInCorso] = useState(false)
@@ -102,30 +101,29 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
           si apre anche se il database non risponde. */}
       {vista === 'pecora' && <Pecora membroId={membro.id} />}
 
-      {/* Come la Pecora: le statistiche hanno le loro letture e la loro
-          rotella, quindi non aspettano quelle della classifica. */}
-      {vista === 'stat' && <Statistiche membro={membro} />}
-
-      {vista !== 'pecora' && vista !== 'stat' && stato === 'caricamento' && (
-        <Rotella />
-      )}
-      {vista !== 'pecora' && vista !== 'stat' && stato === 'guasto' && (
-        <p className="gioco-guasto">{errore}</p>
-      )}
-
-      {stato === 'pronto' && vista === 'classifica' && (
-        <Classifica
+      {/* L'attesa e il guasto se li tiene l'Allbo: dentro ha due schede,
+          e le statistiche non devono aspettare la lettura della
+          classifica per comparire. */}
+      {vista === 'allbo' && (
+        <Allbo
+          membro={membro}
           classifica={classifica}
           eventi={eventi}
           diOggi={diOggi}
-          ioId={membro.id}
+          stato={stato}
+          errore={errore}
           proposteAperte={proposteAperte}
           onVotaProposta={onVotaProposta}
           onCrea={crea}
           inCorso={inCorso}
-          errore={erroreProposta}
+          erroreProposta={erroreProposta}
           conteggiMvp={conteggiMvp}
         />
+      )}
+
+      {vista !== 'pecora' && vista !== 'allbo' && stato === 'caricamento' && <Rotella />}
+      {vista !== 'pecora' && vista !== 'allbo' && stato === 'guasto' && (
+        <p className="gioco-guasto">{errore}</p>
       )}
 
       {stato === 'pronto' && vista === 'testamento' && (

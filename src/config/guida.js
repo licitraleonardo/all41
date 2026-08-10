@@ -78,7 +78,12 @@ export const APERTURA = 'Cinque tab, qualche gesto che non si vede, e un mucchio
 // agli altri, anche a chi ti sta davanti. Quello va detto, perche' non lo
 // indovina nessuno.
 export const NUVOLETTE = {
-  'gioco.classifica': {
+  // ⚠️ Segue il nome della scheda, che dal 10 agosto e' «allbo».
+  // Agganciata al nome vecchio non darebbe nessun errore: smetterebbe
+  // solo di comparire, e nessuno se ne accorgerebbe. Se ne accorge
+  // `prove/guida.mjs`, che confronta le nuvolette scritte qui con quelle
+  // che i componenti chiedono davvero.
+  'gioco.allbo': {
     testo:
       'Qui puoi guadagnare punti. In Classifica pero’ puoi anche assegnarli agli altri. Sì, aiutare qualcuno a superarti. Strano, no? Comunque prova tutti i giochi. Magari sei bravo in qualcosa.',
   },

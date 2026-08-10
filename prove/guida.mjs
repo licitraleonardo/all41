@@ -61,9 +61,9 @@ console.log('\nla nuvoletta e una sola, e sta dove serve')
   // allo stesso scopo: che non tornino.
   const quante = Object.keys(NUVOLETTE)
   prova('e una sola', quante.length === 1, quante)
-  prova('ed e quella della Classifica', quante[0] === 'gioco.classifica')
+  prova('ed e quella dell Allbo', quante[0] === 'gioco.allbo')
 
-  const testo = NUVOLETTE['gioco.classifica']?.testo ?? ''
+  const testo = NUVOLETTE['gioco.allbo']?.testo ?? ''
   prova('e dice qualcosa', testo.length > 40)
   // Il senso di tenerla: e' l'unica cosa dell'app che nessuno indovina da
   // solo -- che i punti si danno anche agli altri, e a chi ti sta davanti.

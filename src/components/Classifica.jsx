@@ -255,7 +255,7 @@ export default function Classifica({
 
           Il pallino sulla scheda resta finché non hai votato: è l'unico
           modo di sapere che c'è qualcosa da fare senza aprirla. */}
-      <div className="segmenti minori" role="tablist">
+      <div className="segmenti minori dentro" role="tablist">
         <button
           type="button"
           role="tab"

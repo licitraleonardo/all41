@@ -86,13 +86,14 @@ const nav = await import('../src/lib/navigazione.js')
 
 nav.registraScheda('tab', 'oggi', ['oggi', 'gruppo', 'foto', 'gioco', 'info'])
 nav.registraScheda('scheda.gruppo', 'chat', ['chat', 'vocali', 'cassetto'])
-nav.registraScheda('scheda.gioco', 'classifica', [
-  'classifica',
+nav.registraScheda('scheda.gioco', 'allbo', [
+  'allbo',
   'testamento',
   'impostore',
   'dama',
-  'all',
+  'pecora',
 ])
+nav.registraScheda('scheda.allbo', 'classifica', ['classifica', 'stat'])
 nav.registraScheda('scheda.cassetto', 'spese', ['spese', 'documenti'])
 
 const dove = () => {
@@ -102,7 +103,7 @@ const dove = () => {
 
 console.log('\nsi rifa la strada al contrario')
 {
-  prova('si parte da Oggi', dove() === 'oggi/chat/classifica', dove())
+  prova('si parte da Oggi', dove() === 'oggi/chat/allbo', dove())
 
   nav.vaiA('tab', 'gruppo')
   nav.vaiA('scheda.gruppo', 'vocali')
@@ -118,10 +119,10 @@ console.log('\nsi rifa la strada al contrario')
   }
 
   // ⚠️ Tornando indietro si ripassa da dove si e' passati, in ordine.
-  prova('1º indietro: la Dama si sfila', tappe[0] === 'gioco/vocali/classifica', tappe[0])
-  prova('2º indietro: si torna in Gruppo', tappe[1] === 'gruppo/vocali/classifica', tappe[1])
-  prova('3º indietro: torna la Chat', tappe[2] === 'gruppo/chat/classifica', tappe[2])
-  prova('4º indietro: si torna a Oggi', tappe[3] === 'oggi/chat/classifica', tappe[3])
+  prova('1º indietro: la Dama si sfila', tappe[0] === 'gioco/vocali/allbo', tappe[0])
+  prova('2º indietro: si torna in Gruppo', tappe[1] === 'gruppo/vocali/allbo', tappe[1])
+  prova('3º indietro: torna la Chat', tappe[2] === 'gruppo/chat/allbo', tappe[2])
+  prova('4º indietro: si torna a Oggi', tappe[3] === 'oggi/chat/allbo', tappe[3])
 }
 
 console.log('\ntre livelli di schede, e il ritorno li rifa tutti')
@@ -247,7 +248,7 @@ console.log('\nuna fotografia di una versione vecchia non lascia lo schermo vuot
     a({ state: { all41: { schede: { tab: 'gruppo', 'scheda.gioco': 'sezione-che-non-esiste' } } } })
   }
   const s = nav.leggiStato().schede
-  prova('ricade sul predefinito', s['scheda.gioco'] === 'classifica', s['scheda.gioco'])
+  prova('ricade sul predefinito', s['scheda.gioco'] === 'allbo', s['scheda.gioco'])
   prova('e il resto passa', s.tab === 'gruppo')
 }
 
@@ -301,7 +302,7 @@ console.log('\nun tab rimette a posto TUTTE le sotto-schede, non la sua')
   nav.vaiA('scheda.gioco', 'dama')
 
   nav.vaiAlTab('oggi')
-  prova('anche quella di un altro tab', s()['scheda.gioco'] === 'classifica', s()['scheda.gioco'])
+  prova('anche quella di un altro tab', s()['scheda.gioco'] === 'allbo', s()['scheda.gioco'])
   prova('e quella di terzo livello', s()['scheda.cassetto'] === 'spese', s()['scheda.cassetto'])
 }
 
