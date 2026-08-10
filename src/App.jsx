@@ -51,6 +51,7 @@ import BannerProposta from './components/BannerProposta.jsx'
 import { useSosAperti } from './hooks/useSosAperti.js'
 import { useAvvisoRapido } from './hooks/useAvvisoRapido.js'
 import { useDatiVecchi } from './hooks/useDatiVecchi.js'
+import { riallineaIscrizione } from './lib/notifiche.js'
 import { vaMostrato } from './lib/avvisiRapidi.js'
 import BannerPosizione from './components/BannerPosizione.jsx'
 import StrisciaSOS from './components/StrisciaSOS.jsx'
@@ -183,6 +184,18 @@ export default function App() {
   const sos = useSosAperti()
   const avviso = useAvvisoRapido(membro?.id, vista === 'dentro')
   const feedback = useFeedback()
+
+  // ⚠️ A ogni apertura si rimette a posto l'iscrizione alle notifiche.
+  //
+  // Il browser puo' averne una che sul nostro database non c'e' — prima
+  // volta andata a meta', database svuotato, o il telefono che l'ha
+  // rigenerata da solo. In quei casi l'app diceva «✓ Accese» e non
+  // arrivava niente, e l'unico tasto era «Spegni». Vedi il commento in
+  // `lib/notifiche.js`.
+  useEffect(() => {
+    if (vista !== 'dentro' || !membro?.id) return
+    riallineaIscrizione(membro.id)
+  }, [vista, membro?.id])
 
   // ⚠️ Chi si è preso la cima. In quel posto ci sta una cosa sola: sono
   // tutti `position: fixed; top: 0`, quindi due insieme si coprono a

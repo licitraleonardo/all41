@@ -182,6 +182,48 @@ export async function iscriviti(membroId) {
   return { ok: true }
 }
 
+// ⚠️ Rimettere a posto l'iscrizione a ogni apertura.
+//
+// Il browser puo' avere un'iscrizione che sul nostro database non c'e'.
+// Succede piu' spesso di quanto sembri:
+//
+//   - la prima volta e' andata a meta' (il browser ha detto si', la
+//     scrittura no) — ed e' successo davvero, per un difetto mio
+//   - il database e' stato svuotato, cosa prevista prima della partenza
+//   - il telefono ha rigenerato l'iscrizione da solo, che i servizi di
+//     push fanno ogni tanto senza dire niente
+//
+// In tutti e tre i casi l'app diceva «✓ Accese» e non arrivava niente, e
+// l'unico tasto disponibile era «Spegni»: un vicolo cieco, il secondo
+// dello stesso tipo. Guardare il browser non basta — la domanda vera e'
+// «questo indirizzo lo conosciamo noi?», e a quella non si puo'
+// rispondere dal telefono, perche' la tabella non si legge apposta.
+//
+// Quindi non si chiede: si riscrive. `iscrivi_push` toglie e rimette, e
+// riscrivere una riga identica non costa niente e non fa doppioni.
+export async function riallineaIscrizione(membroId) {
+  if (!membroId || !notifichePossibili()) return
+  if (Notification.permission !== 'granted') return
+
+  try {
+    const registrazione = await navigator.serviceWorker.ready
+    const iscrizione = await registrazione.pushManager.getSubscription()
+    if (!iscrizione) return
+
+    const grezza = iscrizione.toJSON()
+    if (!grezza?.endpoint || !grezza?.keys) return
+
+    await supabase.rpc('iscrivi_push', {
+      p_endpoint: grezza.endpoint,
+      p_membro: membroId,
+      p_chiavi: grezza.keys,
+    })
+  } catch {
+    // Senza rete si riprova alla prossima apertura. Non e' una cosa di
+    // cui avvisare nessuno.
+  }
+}
+
 export async function disiscriviti() {
   if (!notifichePossibili()) return
   const registrazione = await navigator.serviceWorker.ready

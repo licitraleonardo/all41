@@ -108,6 +108,19 @@ console.log('\nl iscrizione non tocca la tabella a mano')
   prova('il tasto guarda l iscrizione', vista.includes('statoIscrizione'))
   prova('e non il permesso', !vista.includes('statoNotifiche'))
   prova('e chiede se c e davvero un iscrizione', lib.includes('getSubscription'))
+
+  // ⚠️ Il secondo vicolo cieco, dello stesso tipo del primo.
+  //
+  // Il browser puo' avere un'iscrizione che sul nostro database non c'e':
+  // prima volta andata a meta', database svuotato, o il telefono che l'ha
+  // rigenerata da solo. L'app diceva «✓ Accese» e non arrivava niente, e
+  // l'unico tasto disponibile era «Spegni».
+  //
+  // Non si puo' chiedere al database se ci conosce -- la tabella non si
+  // legge apposta -- quindi non si chiede: si riscrive a ogni apertura.
+  prova('c e il riallineamento a ogni apertura', lib.includes('riallineaIscrizione'))
+  const app = readFileSync('src/App.jsx', 'utf8')
+  prova('e l app lo chiama davvero', app.includes('riallineaIscrizione(membro.id)'))
   prova('si iscrive con la funzione', lib.includes("rpc('iscrivi_push'"))
   prova('e si disiscrive con la funzione', lib.includes("rpc('disiscrivi_push'"))
 
