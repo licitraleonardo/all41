@@ -25,11 +25,11 @@ import { iscrivi, leggiStato, registraScheda, vaiA } from '../lib/navigazione.js
 // Il valore letto si valida contro l'elenco degli id ammessi: se una
 // sotto-scheda cambia nome fra un deploy e l'altro, il valore vecchio
 // ricade sul predefinito invece di lasciare una schermata vuota.
-export function useSchedaRicordata(chiave, predefinita, valide) {
+export function useSchedaRicordata(chiave, predefinita, valide, opzioni) {
   // Prima di leggere: si dice al controllore che questa scheda esiste, e
   // quali valori accetta. Senza, la fotografia non saprebbe validarla al
   // ritorno dal tasto indietro.
-  registraScheda(chiave, predefinita, valide)
+  registraScheda(chiave, predefinita, valide, opzioni)
 
   const stato = useSyncExternalStore(iscrivi, leggiStato, leggiStato)
   const scheda = stato.schede[chiave] ?? predefinita

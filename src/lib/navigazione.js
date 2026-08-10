@@ -14,6 +14,19 @@
 
 const CHIAVE_TAB = 'tab'
 
+// ⚠️ Anche il profilo e la modifica del profilo passano di qui.
+//
+// Sono schermate a tutta pagina, non sotto-schede, e stavano fuori dalla
+// cronologia: toccando la foto del profilo il tasto indietro non tornava
+// nel viaggio, usciva dall'app.
+//
+// Ci stanno **solo queste due**. Le altre viste — `avvio`, `guasto`,
+// `onboarding`, `nonConfigurato` — non sono posti dove si va, sono stati
+// in cui l'app si trova: tornare indietro dentro un guasto o dentro
+// l'ingresso è peggio che non tornare.
+const CHIAVE_VISTA = 'vista'
+export const VISTE_CON_CRONOLOGIA = ['dentro', 'profilo', 'modifica']
+
 // Le sotto-schede che esistono, con il loro valore buono e quelli
 // ammessi. Le registra chi le usa, alla prima chiamata: così la
 // fotografia sa cosa contiene senza che questo file conosca le schermate.
@@ -68,14 +81,24 @@ function valida(chiave, valore) {
   return c.valide.includes(valore) ? valore : c.predefinita
 }
 
-export function registraScheda(chiave, predefinita, valide) {
+// ⚠️ `ricorda: false` per le schermate che NON devono sopravvivere a una
+// ricaricata.
+//
+// Le sotto-schede sì: chi tira giù per aggiornare la classifica vuole la
+// classifica. Ma il profilo no — ricaricando si deve tornare nel viaggio,
+// non ritrovarsi sulla propria foto. La cronologia serve lo stesso, che è
+// tutto il punto di questa aggiunta.
+export function registraScheda(chiave, predefinita, valide, { ricorda = true } = {}) {
   const gia = conosciute.get(chiave)
   if (gia && gia.predefinita === predefinita) return
-  conosciute.set(chiave, { predefinita, valide })
+  conosciute.set(chiave, { predefinita, valide, ricorda })
   if (stato.schede[chiave] === undefined) {
     stato = {
       ...stato,
-      schede: { ...stato.schede, [chiave]: valida(chiave, leggiSalvato(chiave)) },
+      schede: {
+        ...stato.schede,
+        [chiave]: valida(chiave, ricorda ? leggiSalvato(chiave) : predefinita),
+      },
     }
     // ⚠️ La voce su cui siamo va riscritta, adesso che sappiamo una cosa
     // in piu' su dove siamo.
@@ -117,7 +140,7 @@ function applica(schede, { salvando = true } = {}) {
   const pulite = {}
   for (const [k, v] of Object.entries(schede)) {
     pulite[k] = valida(k, v)
-    if (salvando) salva(k, pulite[k])
+    if (salvando && conosciute.get(k)?.ricorda !== false) salva(k, pulite[k])
   }
   stato = { schede: { ...stato.schede, ...pulite } }
   avvisa()
@@ -231,4 +254,4 @@ function avvio() {
 
 avvio()
 
-export { CHIAVE_TAB }
+export { CHIAVE_TAB, CHIAVE_VISTA }

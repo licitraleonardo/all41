@@ -42,7 +42,7 @@ import { useNonLetto } from './hooks/useNonLetto.js'
 import { useMvp } from './hooks/useMvp.js'
 import { useSfideDama } from './hooks/useSfideDama.js'
 import { useSchedaRicordata } from './hooks/useSchedaRicordata.js'
-import { CHIAVE_TAB } from './lib/navigazione.js'
+import { CHIAVE_TAB, CHIAVE_VISTA, VISTE_CON_CRONOLOGIA } from './lib/navigazione.js'
 import { useLeggiDaLeggere } from './hooks/useLeggiDaLeggere.js'
 import { risolviDama } from './lib/puntiDama.js'
 import Celebrazione from './components/Celebrazione.jsx'
@@ -90,6 +90,15 @@ export default function App() {
   // che permette al tasto indietro di rifare la strada Oggi -> Gioco ->
   // Dama al contrario. Prima era uno `useState` con sessionStorage a
   // mano, e la cronologia non lo vedeva.
+  // ⚠️ `ricorda: false`: ricaricando si torna nel viaggio, non sulla
+  // propria foto. La cronologia serve lo stesso — è tutto il punto.
+  const [vistaInCronologia, setVistaInCronologia] = useSchedaRicordata(
+    CHIAVE_VISTA,
+    'dentro',
+    VISTE_CON_CRONOLOGIA,
+    { ricorda: false }
+  )
+
   const [tab, setTab] = useSchedaRicordata(CHIAVE_TAB, 'oggi', [
     'oggi',
     'gruppo',
@@ -97,6 +106,15 @@ export default function App() {
     'gioco',
     'altro',
   ])
+
+  // Il tasto indietro ha cambiato la vista: si applica. Solo fra le tre
+  // che stanno in cronologia — da un guasto o dall'ingresso non si esce
+  // tornando indietro.
+  useEffect(() => {
+    if (!VISTE_CON_CRONOLOGIA.includes(vista)) return
+    if (vista === vistaInCronologia) return
+    setVista(vistaInCronologia)
+  }, [vistaInCronologia, vista])
 
   const [membro, setMembro] = useState(null)
   const [errore, setErrore] = useState(null)
@@ -544,8 +562,18 @@ export default function App() {
     setIntroFinita(false)
   }, [membro])
 
+  // ⚠️ Il profilo passa dalla cronologia, il resto no.
+  //
+  // Toccando la foto del profilo il tasto indietro non tornava nel
+  // viaggio: usciva dall'app. Adesso `profilo` e `modifica` lasciano una
+  // voce, come fanno i tab.
+  //
+  // Le altre viste no, ed è voluto: `avvio`, `guasto`, `onboarding` e
+  // `nonConfigurato` non sono posti dove si va, sono stati in cui l'app
+  // si trova. Tornare indietro dentro un guasto è peggio che non tornare.
   function vaiA(prossima) {
     setErrore(null)
+    if (VISTE_CON_CRONOLOGIA.includes(prossima)) setVistaInCronologia(prossima)
     setVista(prossima)
   }
 
