@@ -184,13 +184,6 @@ export default function Documenti({ membro }) {
       {stato === 'caricamento' && <Rotella />}
       {stato === 'guasto' && <p className="doc-guasto">{errore}</p>}
 
-      {stato === 'pronto' && documenti.length === 0 && !scelto && (
-        <p className="doc-vuoto">
-          Niente qui dentro. Il biglietto della barca ce l&rsquo;ha uno solo, e non
-          serve mai a lui.
-        </p>
-      )}
-
       {documenti.length > 0 && (
         <ul className="doc-elenco">
           {documenti.map((d) => (
@@ -271,10 +264,8 @@ export default function Documenti({ membro }) {
       {daAvvisare && (
         <Foglio etichetta="Prima di caricare" onChiudi={() => setDaAvvisare(false)}>
           <>
-            <h2 className="foglio-titolo">Qui vanno i documenti del viaggio</h2>
             <p className="doc-avviso-testo">
-              Biglietti, QR, prenotazioni. Chi ha il link li vede, anche quelli
-              &laquo;solo per me&raquo;: niente carte d&rsquo;identità e niente dati
+              Biglietti, QR e prenotazioni. Niente carte d&rsquo;identità o dati
               bancari.
             </p>
             <button type="button" className="primario-chiaro" onClick={hoCapito}>
