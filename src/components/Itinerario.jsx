@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './Itinerario.css'
+import Foglio from './Foglio.jsx'
+import Posizioni from './Posizioni.jsx'
 import Giorno from './Giorno.jsx'
 import Meteo from './Meteo.jsx'
 import RigaAttesa from './RigaAttesa.jsx'
@@ -10,6 +12,16 @@ import { urlAvatar } from '../config/avatar.js'
 import { VIAGGIO } from '../config/viaggio.js'
 
 export default function Itinerario({ membro, onProfilo }) {
+  // ⚠️ La mappa sta qui e non piu' in una sezione sua.
+  //
+  // «Dove siete» e' una domanda che ci si fa guardando il programma della
+  // giornata — «a che ora ci si trova, e dove sono adesso gli altri» sono
+  // la stessa domanda. Nascosta dentro un tab chiamato «Altro» non la
+  // trovava nessuno.
+  //
+  // Si apre a schermo pieno dentro `Foglio`, che ha gia' le tre uscite:
+  // tocco fuori, tasto indietro ed Esc.
+  const [mappaAperta, setMappaAperta] = useState(false)
   const data = useDataDiOggi()
   const oggi = giornoPerData(data)
   const rifOggi = useRef(null)
@@ -50,6 +62,21 @@ export default function Itinerario({ membro, onProfilo }) {
         <RigaAttesa />
         <Meteo dataOggi={data} />
 
+        {/* Il mondino: sta in fondo al programma, dove uno arriva dopo
+            aver letto cosa si fa oggi. */}
+        <button type="button" className="oggi-mondo" onClick={() => setMappaAperta(true)}>
+          <span className="oggi-mondo-icona" aria-hidden="true">
+            🌍
+          </span>
+          <span className="oggi-mondo-testo">
+            <strong>Dove siamo</strong>
+            <small>La mappa del gruppo</small>
+          </span>
+          <span className="oggi-mondo-freccia" aria-hidden="true">
+            ›
+          </span>
+        </button>
+
         <div className="timeline">
           {GIORNI.map((g) => {
             const eOggi = oggi?.giorno === g.giorno
@@ -64,6 +91,21 @@ export default function Itinerario({ membro, onProfilo }) {
           })}
         </div>
       </div>
+
+      {mappaAperta && (
+        <Foglio etichetta="Dove siamo" className="foglio-mappa" onChiudi={() => setMappaAperta(false)}>
+          <>
+            <Posizioni membro={membro} />
+            <button
+              type="button"
+              className="secondario-foglio"
+              onClick={() => setMappaAperta(false)}
+            >
+              Chiudi
+            </button>
+          </>
+        </Foglio>
+      )}
     </div>
   )
 }
