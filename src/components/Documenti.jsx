@@ -8,6 +8,7 @@ import { urlAvatar } from '../config/avatar.js'
 import FotoGrande from './FotoGrande.jsx'
 import BottoneElimina from './BottoneElimina.jsx'
 import FoglioDocumento from './FoglioDocumento.jsx'
+import Foglio from './Foglio.jsx'
 import Rotella from './Rotella.jsx'
 
 // I documenti del viaggio: QR dell'escursione, biglietti, prenotazioni.
@@ -15,7 +16,20 @@ import Rotella from './Rotella.jsx'
 // ⚠️ Non è un'area personale e non si chiama così. Con auth anonima e
 // codice di accesso "privato" non è realmente privato: il "solo per me"
 // toglie il documento dalla vista degli altri, non lo mette al sicuro.
-// La riga in fondo lo dice, e deve restarci.
+//
+// ⚠️ **Questo avvertimento non è sparito: ha cambiato momento.**
+//
+// Stava scritto qui che "la riga in fondo lo dice, e deve restarci". La
+// riga in fondo però la leggeva chi stava guardando i documenti, non chi
+// stava per caricarne uno — e quando poi caricava, dieci schermate dopo,
+// se l'era scordata. Adesso compare mentre si preme "Aggiungi", che è
+// l'unico istante in cui serve.
+//
+// E compare **una volta sola**. Alla terza si preme senza guardare, e un
+// avvertimento che si impara a saltare vale come non averlo scritto: è la
+// stessa ragione per cui il banner della posizione non ricompare.
+const CHIAVE_AVVISO = 'all41.documenti.avvisato'
+
 export default function Documenti({ membro }) {
   const { documenti, membri, stato, errore, inserisci, togli, commutaVisibilita } =
     useDocumenti(membro.id)
@@ -25,6 +39,37 @@ export default function Documenti({ membro }) {
   const [inCorso, setInCorso] = useState(false)
   const [avviso, setAvviso] = useState(null)
   const [grande, setGrande] = useState(null)
+  const [daAvvisare, setDaAvvisare] = useState(false)
+
+  // Il segnalibro sta in localStorage e non in memoria: in memoria
+  // tornerebbe a ogni ricaricata, cioè sarebbe "una volta per apertura" e
+  // non "una volta". Se il browser lo rifiuta — Safari in navigazione
+  // privata — l'avviso ricompare: seccante, ma dalla parte giusta.
+  function giaAvvisato() {
+    try {
+      return localStorage.getItem(CHIAVE_AVVISO) === 'sì'
+    } catch {
+      return false
+    }
+  }
+
+  function scegliFile() {
+    if (!giaAvvisato()) {
+      setDaAvvisare(true)
+      return
+    }
+    campo.current?.click()
+  }
+
+  function hoCapito() {
+    try {
+      localStorage.setItem(CHIAVE_AVVISO, 'sì')
+    } catch {
+      // Pazienza: si rivede la prossima volta.
+    }
+    setDaAvvisare(false)
+    campo.current?.click()
+  }
 
   function prendi(e) {
     const file = e.target.files?.[0]
@@ -212,21 +257,32 @@ export default function Documenti({ membro }) {
         </ul>
       )}
 
-      <p className="doc-nota">
-        Foto e PDF di biglietti, QR e prenotazioni. Chi ha il link li vede: non
-        metteteci carte d&rsquo;identità o dati bancari.
-      </p>
-
       {/* Appiccicato in fondo: ti raggiunge dove sei mentre scorri, ma a
           sezione vuota resta attaccato al testo invece di piantarsi in
           fondo allo schermo. */}
-      <button
-        type="button"
-        className="doc-aggiungi"
-        onClick={() => campo.current?.click()}
-      >
+      <button type="button" className="doc-aggiungi" onClick={scegliFile}>
         Aggiungi un documento
       </button>
+
+      {/* ⚠️ Ferma il caricamento invece di affiancarlo, e non è
+          pignoleria: il selettore di file del telefono si prende tutto lo
+          schermo, quindi un avviso mostrato insieme a quello non lo legge
+          nessuno. Prima si legge, poi si sceglie il file. */}
+      {daAvvisare && (
+        <Foglio etichetta="Prima di caricare" onChiudi={() => setDaAvvisare(false)}>
+          <>
+            <h2 className="foglio-titolo">Qui vanno i documenti del viaggio</h2>
+            <p className="doc-avviso-testo">
+              Biglietti, QR, prenotazioni. Chi ha il link li vede, anche quelli
+              &laquo;solo per me&raquo;: niente carte d&rsquo;identità e niente dati
+              bancari.
+            </p>
+            <button type="button" className="primario-chiaro" onClick={hoCapito}>
+              Ho capito, scelgo il file
+            </button>
+          </>
+        </Foglio>
+      )}
 
       {/* Il visore è lo stesso dell'album: cambia solo il nome del campo
           della data, che qui è al maschile. */}

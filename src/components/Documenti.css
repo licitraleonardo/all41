@@ -256,11 +256,11 @@
 /* La riga che dice come stanno le cose. Non è un dettaglio di stile:
    promettere una privacy che l'app non può mantenere sarebbe peggio che
    non offrirla, quindi questa frase resta. */
-.doc-nota {
-  margin: 18px 0 0;
-  font-size: 12px;
+.doc-avviso-testo {
+  margin: 0 0 18px;
+  font-size: 15px;
   line-height: 1.5;
-  color: var(--ink-soft);
+  color: var(--ink, #16323f);
 }
 
 .doc-apri:focus-visible,
