@@ -86,7 +86,13 @@ const nav = await import('../src/lib/navigazione.js')
 
 nav.registraScheda('tab', 'oggi', ['oggi', 'gruppo', 'foto', 'gioco', 'info'])
 nav.registraScheda('scheda.gruppo', 'chat', ['chat', 'vocali', 'cassetto'])
-nav.registraScheda('scheda.gioco', 'classifica', ['classifica', 'dama'])
+nav.registraScheda('scheda.gioco', 'classifica', [
+  'classifica',
+  'testamento',
+  'impostore',
+  'dama',
+  'all',
+])
 nav.registraScheda('scheda.cassetto', 'spese', ['spese', 'documenti'])
 
 const dove = () => {
@@ -243,6 +249,87 @@ console.log('\nuna fotografia di una versione vecchia non lascia lo schermo vuot
   const s = nav.leggiStato().schede
   prova('ricade sul predefinito', s['scheda.gioco'] === 'classifica', s['scheda.gioco'])
   prova('e il resto passa', s.tab === 'gruppo')
+}
+
+console.log('\nentrare in un tab riparte dalla prima scheda')
+{
+  // ⚠️ Le due meta' di questa prova vanno lette insieme.
+  //
+  // Se combaciassero -- se anche il tasto indietro riportasse alla prima
+  // scheda -- la regola sarebbe sbagliata: vorrebbe dire che tornare
+  // indietro ha smesso di rifare la strada e si e' messo a resettare.
+  // «Ci vado adesso» e «ci sono gia' stato» devono restare due cose
+  // diverse, ed e' l'unico modo di accorgersi se smettessero di esserlo.
+  const s = () => nav.leggiStato().schede
+
+  nav.vaiAlTab('gruppo')
+  nav.vaiA('scheda.gruppo', 'vocali')
+  nav.vaiAlTab('gioco')
+  prova('cambiando tab si va dove hai chiesto', s().tab === 'gioco', s().tab)
+
+  nav.vaiAlTab('gruppo')
+  prova('tornandoci, riparte dalla chat', s()['scheda.gruppo'] === 'chat', s()['scheda.gruppo'])
+
+  // E l'altra meta': la stessa strada, ma col tasto indietro.
+  //
+  // ⚠️ Due pressioni e non una, e la prima e' istruttiva: disfa «sono
+  // tornato in Gruppo» e ti rimette nel Gioco. La sotto-scheda dei vocali
+  // li' e' gia' chat, perche' l'azzeramento e' successo quando sei uscito
+  // dal Gruppo ed e' stato fotografato cosi'. La seconda pressione disfa
+  // «sono andato nel Gioco», e li' i vocali ci sono ancora.
+  finestra.history.back()
+  consegna()
+  prova('1o indietro: si torna nel Gioco', s().tab === 'gioco', s().tab)
+
+  finestra.history.back()
+  consegna()
+  prova('2o indietro: torna il Gruppo', s().tab === 'gruppo', s().tab)
+  prova('e i vocali sono ancora li', s()['scheda.gruppo'] === 'vocali', s()['scheda.gruppo'])
+}
+
+console.log('\nun tab rimette a posto TUTTE le sotto-schede, non la sua')
+{
+  // ⚠️ Nessuna mappa tab -> sotto-schede: si azzerano tutte quelle
+  // registrate. Una mappa a mano si dimentica alla prima sezione nuova, e
+  // si dimentica in silenzio -- nessuno scrive una prova per una sezione
+  // che non sa di aver lasciato indietro.
+  const s = () => nav.leggiStato().schede
+
+  nav.vaiAlTab('gruppo')
+  nav.vaiA('scheda.gruppo', 'cassetto')
+  nav.vaiA('scheda.cassetto', 'documenti')
+  nav.vaiA('scheda.gioco', 'dama')
+
+  nav.vaiAlTab('oggi')
+  prova('anche quella di un altro tab', s()['scheda.gioco'] === 'classifica', s()['scheda.gioco'])
+  prova('e quella di terzo livello', s()['scheda.cassetto'] === 'spese', s()['scheda.cassetto'])
+}
+
+console.log('\nchi arriva da un avviso atterra dove voleva')
+{
+  // Le Leggi da leggere e le sfide a dama saltano dentro una sotto-scheda
+  // precisa. Se l'azzeramento le travolgesse, il tasto «leggi» aprirebbe
+  // la classifica e la Legge resterebbe col pallino.
+  const s = () => nav.leggiStato().schede
+
+  nav.vaiAlTab('oggi')
+  nav.vaiAlTab('gioco', { 'scheda.gioco': 'testamento' })
+  prova('si atterra sul Testamento', s()['scheda.gioco'] === 'testamento', s()['scheda.gioco'])
+
+  // E ci si atterra anche arrivando dal tab dove sei gia'.
+  nav.vaiAlTab('gioco', { 'scheda.gioco': 'dama' })
+  prova('e ci si arriva anche da dentro', s()['scheda.gioco'] === 'dama', s()['scheda.gioco'])
+}
+
+console.log('\ntoccare il tab su cui sei gia non costa una pressione')
+{
+  nav.vaiAlTab('oggi')
+  const voci = finestra.history.length
+  nav.vaiAlTab('oggi')
+  prova('nessuna voce in piu', finestra.history.length === voci, {
+    prima: voci,
+    dopo: finestra.history.length,
+  })
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)

@@ -166,6 +166,50 @@ export function vaiA(chiave, valore) {
   }
 }
 
+// Toccare un tab in basso ci porta alla sua PRIMA scheda, sempre.
+//
+// Vai in Foto → Sfide, poi in Gruppo, poi torni in Foto: devi trovare
+// l'Album. Chi tocca un tab sta ricominciando da lì, e ritrovarsi nella
+// sotto-scheda di venti minuti fa è una sorpresa — mentre il tasto
+// indietro, che invece **deve** riportarti esattamente dove eri, continua
+// a farlo perché applica la fotografia intera e non passa di qui.
+//
+// «Ci vado adesso» e «ci sono già stato» sono due cose diverse, e restano
+// due strade diverse.
+//
+// ⚠️ Nessuna mappa tab → sotto-schede da tenere aggiornata: si rimettono
+// al predefinito **tutte** quelle registrate. Una mappa a mano si
+// dimentica alla prima sezione nuova, e si dimentica in silenzio.
+//
+// `dentro` serve a chi arriva da un avviso e sa già dove vuole atterrare:
+// prima quelle due chiamate scrivevano di nascosto in `sessionStorage`
+// sperando che qualcuno lo rileggesse, e funzionava solo la prima volta
+// che quella schermata veniva creata.
+export function vaiAlTab(valore, dentro = {}) {
+  const prossime = { [CHIAVE_TAB]: valida(CHIAVE_TAB, valore) }
+
+  for (const [chiave, c] of conosciute) {
+    // Il tab lo stiamo decidendo qui. La vista no: `profilo` e `modifica`
+    // non sono sotto-schede di un tab, sono un altro asse -- e la barra
+    // dei tab non esiste nemmeno, là dentro.
+    if (chiave === CHIAVE_TAB || chiave === CHIAVE_VISTA) continue
+    prossime[chiave] = c.predefinita
+  }
+
+  for (const [chiave, v] of Object.entries(dentro)) prossime[chiave] = v
+
+  // Toccare il tab su cui sei già, con tutto al suo posto, non deve
+  // costare una pressione in più per uscirne.
+  if (Object.entries(prossime).every(([k, v]) => stato.schede[k] === v)) return
+
+  applica(prossime)
+  try {
+    window.history.pushState(fotografia(), '')
+  } catch {
+    // Cronologia piena: la navigazione funziona, senza tasto indietro.
+  }
+}
+
 // ⚠️ Quanti fogli sono aperti sopra la navigazione.
 //
 // Si contano, e non si guarda `history.state`: premendo indietro DA un

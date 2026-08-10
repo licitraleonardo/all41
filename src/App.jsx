@@ -41,7 +41,7 @@ import { useNonLetto } from './hooks/useNonLetto.js'
 import { useMvp } from './hooks/useMvp.js'
 import { useSfideDama } from './hooks/useSfideDama.js'
 import { useSchedaRicordata } from './hooks/useSchedaRicordata.js'
-import { CHIAVE_TAB, CHIAVE_VISTA, VISTE_CON_CRONOLOGIA } from './lib/navigazione.js'
+import { CHIAVE_TAB, CHIAVE_VISTA, VISTE_CON_CRONOLOGIA, vaiAlTab } from './lib/navigazione.js'
 import { useLeggiDaLeggere } from './hooks/useLeggiDaLeggere.js'
 import { risolviDama } from './lib/puntiDama.js'
 import Celebrazione from './components/Celebrazione.jsx'
@@ -98,7 +98,11 @@ export default function App() {
     { ricorda: false }
   )
 
-  const [tab, setTab] = useSchedaRicordata(CHIAVE_TAB, 'oggi', [
+  // Solo in lettura: a cambiare tab ci pensa `vaiAlTab`, che rimette
+  // anche le sotto-schede alla prima. Il vecchio setter esiste ancora nel
+  // controllore, ma da qui non lo usa piu' nessuno -- e se ricomparisse,
+  // sarebbe un tab che ti riporta dove eri venti minuti fa.
+  const [tab] = useSchedaRicordata(CHIAVE_TAB, 'oggi', [
     'oggi',
     'gruppo',
     'foto',
@@ -244,24 +248,19 @@ export default function App() {
     (leggeId) => {
       daLeggere.zittisci()
       setLeggeDaAprire(leggeId)
-      setTab('gioco')
-      try {
-        sessionStorage.setItem('scheda.gioco', 'testamento')
-      } catch {
-        // pazienza: si atterra sulla classifica, la Legge resta col pallino
-      }
+      // ⚠️ Si dice dove atterrare, invece di scriverlo di nascosto in
+      // sessionStorage sperando che qualcuno lo rilegga: quel giro
+      // funzionava solo la prima volta che il Gioco veniva creato, perche'
+      // dalla seconda in poi la scheda risultava gia' nota e il valore
+      // messo li' non lo guardava piu' nessuno.
+      vaiAlTab('gioco', { 'scheda.gioco': 'testamento' })
     },
     [daLeggere]
   )
 
   const accettaSfida = useCallback((partitaId) => {
     setDamaDaAprire(partitaId)
-    setTab('gioco')
-    try {
-      sessionStorage.setItem('scheda.gioco', 'dama')
-    } catch {
-      // pazienza: si atterra sulla classifica e la partita si apre lo stesso
-    }
+    vaiAlTab('gioco', { 'scheda.gioco': 'dama' })
   }, [])
   const [membriPerId, setMembriPerId] = useState({})
 
@@ -615,7 +614,7 @@ export default function App() {
           )}
           {tab === 'info' && <Info membroId={membro?.id} />}
         </Riparo>
-        <BarraTab attivo={tab} onCambia={setTab} novita={nonLetto.novita} />
+        <BarraTab attivo={tab} onCambia={vaiAlTab} novita={nonLetto.novita} />
 
         {/* Banner, nuvolette e coriandoli in una rete che tace: sono
             tutte cose in piu', e una che si rompe deve sparire invece di
@@ -647,7 +646,9 @@ export default function App() {
               azione={avviso.azione}
               nome={membriPerId[avviso.azione?.autoreId]?.nome}
               onMostra={() => {
-                setTab('gruppo')
+                // Alla chat, che e' la prima scheda del Gruppo: il
+                // messaggio dell'avviso sta li'.
+                vaiAlTab('gruppo')
                 avviso.zittisci()
               }}
               onDopo={avviso.zittisci}
