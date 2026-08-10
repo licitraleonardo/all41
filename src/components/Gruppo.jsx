@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import './Gruppo.css'
 import ChatRapida from './ChatRapida.jsx'
 import Vocali from './Vocali.jsx'
+import Cassetto from './Cassetto.jsx'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 
 // Il tab Gruppo, come lo vuole lo spec: la Chat Rapida e i Vocali come
@@ -13,7 +14,14 @@ import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 // scorressero insieme per cambiare scheda bisognerebbe risalire tutta la
 // conversazione.
 export default function Gruppo({ membro, suoniDisponibili, nonLetto = {}, onVisto }) {
-  const [vista, setVista] = useSchedaRicordata('scheda.gruppo', 'chat', ['chat', 'vocali'])
+  const [vista, setVista] = useSchedaRicordata('scheda.gruppo', 'chat', [
+    'chat',
+    'vocali',
+    // ⚠️ Le spese e i documenti stavano in «Altro», il magazzino. Sono le
+    // carte del viaggio: chi le cerca le cerca dove sta il gruppo, non in
+    // un tab che non dice cosa contiene.
+    'cassetto',
+  ])
 
   // Si segna letto finché la scheda è aperta, non solo entrandoci: se
   // resti in chat mentre arrivano messaggi, il pallino non deve
@@ -28,6 +36,7 @@ export default function Gruppo({ membro, suoniDisponibili, nonLetto = {}, onVist
         {[
           ['chat', 'Chat'],
           ['vocali', 'Vocali'],
+          ['cassetto', 'Cassetto'],
         ].map(([id, etichetta]) => (
           <button
             key={id}
@@ -49,6 +58,11 @@ export default function Gruppo({ membro, suoniDisponibili, nonLetto = {}, onVist
       {vista === 'vocali' && (
         <div className="gruppo-corpo">
           <Vocali membro={membro} />
+        </div>
+      )}
+      {vista === 'cassetto' && (
+        <div className="gruppo-corpo">
+          <Cassetto membro={membro} />
         </div>
       )}
     </div>

@@ -50,3 +50,15 @@ body.con-banner .gruppo-schede {
 .chat-dentro {
   display: contents;
 }
+
+/* Il Cassetto: le carte del viaggio, conti e documenti.
+
+   ⚠️ Le sue schede stanno piu' vicine al bordo alto del solito, perche'
+   sopra ce n'e' gia' una fila -- quella di Gruppo. `.segmenti.minori`
+   arriva da Gioco.css e le disegna a pillole leggere: due livelli
+   disegnati uguale sarebbero due righe di bottoni identiche una sopra
+   l'altra, e nessuno capirebbe quale sta dentro quale. */
+.cassetto .segmenti.minori {
+  margin-top: 12px;
+  margin-bottom: 4px;
+}

@@ -84,9 +84,10 @@ globalThis.sessionStorage = {
 
 const nav = await import('../src/lib/navigazione.js')
 
-nav.registraScheda('tab', 'oggi', ['oggi', 'gruppo', 'foto', 'gioco', 'altro'])
-nav.registraScheda('scheda.gruppo', 'chat', ['chat', 'vocali'])
+nav.registraScheda('tab', 'oggi', ['oggi', 'gruppo', 'foto', 'gioco', 'info'])
+nav.registraScheda('scheda.gruppo', 'chat', ['chat', 'vocali', 'cassetto'])
 nav.registraScheda('scheda.gioco', 'classifica', ['classifica', 'dama'])
+nav.registraScheda('scheda.cassetto', 'spese', ['spese', 'documenti'])
 
 const dove = () => {
   const s = nav.leggiStato().schede
@@ -115,6 +116,34 @@ console.log('\nsi rifa la strada al contrario')
   prova('2º indietro: si torna in Gruppo', tappe[1] === 'gruppo/vocali/classifica', tappe[1])
   prova('3º indietro: torna la Chat', tappe[2] === 'gruppo/chat/classifica', tappe[2])
   prova('4º indietro: si torna a Oggi', tappe[3] === 'oggi/chat/classifica', tappe[3])
+}
+
+console.log('\ntre livelli di schede, e il ritorno li rifa tutti')
+{
+  // ⚠️ Il Cassetto e' il terzo livello: tab -> Cassetto -> Documenti.
+  // La fotografia e' una mappa piatta di chiavi e non un albero, quindi
+  // il terzo livello non costa niente in piu' -- ma andava provato, non
+  // dato per buono.
+  const s = () => nav.leggiStato().schede
+
+  nav.vaiA('tab', 'gruppo')
+  nav.vaiA('scheda.gruppo', 'cassetto')
+  nav.vaiA('scheda.cassetto', 'documenti')
+  prova('si arriva ai documenti', s()['scheda.cassetto'] === 'documenti')
+
+  finestra.history.back()
+  consegna()
+  prova('1o indietro: tornano le spese', s()['scheda.cassetto'] === 'spese', s()['scheda.cassetto'])
+  prova('e il Cassetto resta aperto', s()['scheda.gruppo'] === 'cassetto')
+
+  finestra.history.back()
+  consegna()
+  prova('2o indietro: si esce dal Cassetto', s()['scheda.gruppo'] === 'chat', s()['scheda.gruppo'])
+  prova('e il tab e ancora Gruppo', s().tab === 'gruppo')
+
+  finestra.history.back()
+  consegna()
+  prova('3o indietro: si cambia tab', s().tab !== 'gruppo', s().tab)
 }
 
 console.log('\nandare dove sei gia non lascia un passo a vuoto')
