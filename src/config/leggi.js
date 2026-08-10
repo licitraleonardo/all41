@@ -176,20 +176,21 @@ export const LEGGI = [
     testo: 'Hai vinto più partite a dama di tutti, in una giornata' },
   { n: 48, id: 'dama-prima-vittoria', punti: 2, attiva: true,
     testo: 'La tua prima partita a dama vinta' },
-  // ⚠️ SPENTA il 9 agosto, per decisione di Leonardo: alla Dama i punti si
-  // prendono vincendo, e basta. Abbandonare non ne fa perdere.
+  // ⚠️ Qui c'era la Legge «hai abbandonato una partita a dama», -2.
   //
-  // Il ragionamento di prima era che mollare lascia l'altro davanti a una
-  // scacchiera ferma, ed è l'unica cosa della Dama che tocca qualcun altro.
-  // Regge, ma sbaglia il verso: una partita a dama dopo cena si molla
-  // perché arriva da mangiare o perché si va a fare il bagno, non per
-  // dispetto. Una penalità su quello trasforma un gioco in un impegno, e
-  // spinge a non cominciare invece che a finire.
+  // Spenta il 9 agosto e **tolta il 10**, e la differenza conta. Spenta
+  // voleva dire «un giorno forse»: restava nell'elenco, e chi passava di
+  // qui poteva riaccenderla senza sapere perché fosse spenta. Adesso
+  // uscire da una partita non registra più niente — non l'ha vinta
+  // nessuno, non entra in classifica, non costa un punto a nessuno — e
+  // una Legge che punisce quel gesto contraddirebbe la regola, non la
+  // completerebbe.
   //
-  // Resta scritta e spenta invece di essere cancellata: la decisione conta
-  // più della riga, e questo è il posto dove si va a cercarla.
-  { n: 49, id: 'dama-abbandonata', punti: -2, attiva: false,
-    testo: 'Hai abbandonato una partita a dama' },
+  // Il ragionamento di allora era che mollare lascia l'altro davanti a
+  // una scacchiera ferma. Regge, ma sbaglia il verso: una partita dopo
+  // cena si molla perché arriva da mangiare o perché si va a fare il
+  // bagno, non per dispetto. All'altro adesso lo dice la partita stessa,
+  // che scrive «è uscito, la partita non conta».
 ]
 
 // Il Testamento si legge in due metà: quello che ti fa guadagnare

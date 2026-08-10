@@ -20,15 +20,10 @@ export async function dopoUnaVittoria(vincitoreId) {
   ).catch(() => null)
 }
 
-// Chi molla lascia l'altro davanti a una scacchiera ferma. Una volta al
-// giorno: una serataccia non deve diventare una voragine.
-export async function dopoUnAbbandono(membroId, adesso = new Date()) {
-  return faiScattareLegge(
-    'dama-abbandonata',
-    membroId,
-    `dama-abbandonata_${membroId}_${dataDiOggi(adesso)}`
-  ).catch(() => null)
-}
+// ⚠️ Qui c'era `dopoUnAbbandono()`, i -2 per chi molla, e non l'ha mai
+// chiamata nessuno: la Legge era spenta e la funzione era codice morto.
+// Dal 10 agosto uscire non costa niente e non registra la partita, quindi
+// se ne va anche la funzione invece di restare li' ad aspettare.
 
 // Il titolo di giornata, assegnato alla prima apertura del giorno dopo —
 // stesso schema del record della Pecora e dell'MVP. Nessuno è sveglio a

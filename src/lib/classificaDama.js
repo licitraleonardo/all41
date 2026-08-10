@@ -7,11 +7,23 @@ import { BIANCO, esito, ricostruisci } from './dama.js'
 // L'unica cosa che non si ricava è la resa, che infatti ha la sua
 // colonna: una partita abbandonata può essere in qualunque posizione, e
 // dalle mosse non si vede che qualcuno se n'è andato.
+//
+// ⚠️ **Uscire non registra la partita.** Non è finita, non l'ha vinta
+// nessuno, non conta per niente.
+//
+// Fino al 10 agosto era il contrario: una abbandonata valeva come una
+// vinta dall'altro. Da lì l'altro si prendeva la vittoria nel rank, e
+// poteva prendersi anche il Trofeo della prima vittoria a dama e
+// concorrere al campione di giornata — due Trofei veri, presi senza
+// giocare. A chi era uscito restava il contatore delle mollate.
+//
+// ⚠️ Il buco, dichiarato: adesso chi sta perdendo può uscire e la
+// partita non è mai esistita. Era quello che le mollate tenevano a bada.
+// Se in viaggio diventa la mossa standard, si rimette il contatore — e
+// il rank torna a dire la verità.
 export function comeEFinita(partita) {
   if (partita.stato === 'abbandonata') {
-    const perdente = partita.abbandonataDa
-    const vincitore = perdente === partita.bianco ? partita.nero : partita.bianco
-    return { finita: true, vincitore, perdente, motivo: 'abbandono' }
+    return { finita: false, vincitore: null, perdente: null, motivo: 'abbandono' }
   }
 
   const fine = esito(ricostruisci(partita.mosse))
@@ -25,13 +37,16 @@ export function comeEFinita(partita) {
   return { finita: true, vincitore, perdente, motivo: 'scacchiera' }
 }
 
-// La classifica della Dama: vinte, perse, patte e abbandoni per persona.
-// Ordinata per vittorie, poi — a parità — per meno abbandoni, poi per id
-// più basso. L'ultimo criterio non è giusto, è deterministico: due
-// telefoni devono stampare la stessa fila.
+// La classifica della Dama: vinte, perse e patte per persona. Ordinata
+// per vittorie, poi — a parità — per id più basso. L'ultimo criterio non
+// è giusto, è deterministico: due telefoni devono stampare la stessa
+// fila.
+//
+// ⚠️ Le abbandonate non entrano: `comeEFinita` le dà per non finite, e
+// il ciclo qui sotto le salta come salta una partita ancora in corso.
 export function classificaDama(partite, membriIds) {
   const conti = Object.fromEntries(
-    membriIds.map((id) => [id, { id, vinte: 0, perse: 0, patte: 0, abbandoni: 0 }])
+    membriIds.map((id) => [id, { id, vinte: 0, perse: 0, patte: 0 }])
   )
 
   for (const p of partite) {
@@ -45,14 +60,11 @@ export function classificaDama(partite, membriIds) {
     }
 
     if (conti[fine.vincitore]) conti[fine.vincitore].vinte += 1
-    if (conti[fine.perdente]) {
-      conti[fine.perdente].perse += 1
-      if (fine.motivo === 'abbandono') conti[fine.perdente].abbandoni += 1
-    }
+    if (conti[fine.perdente]) conti[fine.perdente].perse += 1
   }
 
   return Object.values(conti).sort(
-    (a, b) => b.vinte - a.vinte || a.abbandoni - b.abbandoni || a.id.localeCompare(b.id)
+    (a, b) => b.vinte - a.vinte || a.id.localeCompare(b.id)
   )
 }
 
@@ -71,10 +83,24 @@ export function campioneDelGiorno(partite, membriIds, giorno) {
 
 // Le partite ancora aperte fra quelle che ti riguardano, con l'avviso di
 // chi deve muovere. Serve a mettere in evidenza quello che ti aspetta.
+// ⚠️ «Non finita» e «ancora da giocare» hanno smesso di essere la stessa
+// cosa, e la differenza va detta.
+//
+// Da quando uscire non registra la partita, un'abbandonata risulta non
+// finita — ed e' giusto, non l'ha vinta nessuno. Ma non e' nemmeno
+// giocabile: chi e' uscito e' uscito. Senza questa distinzione le
+// abbandonate tornavano nell'elenco delle partite aperte, con la
+// scacchiera e il turno, come se non fosse successo niente. L'ha preso
+// `prove/dama-classifica.mjs` appena cambiata la regola.
+export function ancoraDaGiocare(partita) {
+  if (partita.stato === 'abbandonata') return false
+  return !comeEFinita(partita).finita
+}
+
 export function inCorsoPerMe(partite, ioId) {
   return partite
     .filter((p) => p.bianco === ioId || p.nero === ioId)
-    .filter((p) => !comeEFinita(p).finita)
+    .filter(ancoraDaGiocare)
     .map((p) => {
       const stato = ricostruisci(p.mosse)
       const toccaId = stato.turno === BIANCO ? p.bianco : p.nero

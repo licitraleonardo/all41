@@ -156,9 +156,6 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
                 <span className="dama-conti">
                   <strong>{r.vinte}</strong> {r.vinte === 1 ? 'vinta' : 'vinte'}
                   {r.perse > 0 && ` · ${r.perse} perse`}
-                  {r.abbandoni > 0 && (
-                    <span className="dama-mollate"> · {r.abbandoni} mollate</span>
-                  )}
                 </span>
               </li>
             ))}
@@ -197,6 +194,19 @@ export function raccontaPartita(partita, ioId, nome) {
   const fine = comeEFinita(partita)
   const gioco = partita.bianco === ioId || partita.nero === ioId
 
+  // ⚠️ Chi e' uscito e' uscito, e all'altro va detto — o gli resta la
+  // scacchiera ferma per sempre, ad aspettare un turno che non arriva.
+  // E' una notizia, non una punizione: la partita non conta per nessuno
+  // dei due, non l'ha vinta nessuno, non entra in classifica.
+  if (partita.stato === 'abbandonata') {
+    const uscito = partita.abbandonataDa
+    return {
+      testo: uscito === ioId ? 'Sei uscito' : `${nome(uscito)} è uscito`,
+      dettaglio: 'La partita non conta',
+      verso: 'patta',
+    }
+  }
+
   if (!fine.finita) {
     const stato = ricostruisci(partita.mosse)
     const toccaId = stato.turno === BIANCO ? partita.bianco : partita.nero
@@ -208,26 +218,16 @@ export function raccontaPartita(partita, ioId, nome) {
 
   if (fine.motivo === 'patta') return { testo: 'Patta', verso: 'patta' }
 
-  const mollata = fine.motivo === 'abbandono'
+  // Qui ci arrivano solo le partite giocate fino in fondo: le
+  // abbandonate se ne sono andate sopra, e non hanno un vincitore.
   if (!gioco) {
     return {
       testo: `${nome(fine.vincitore)} ha battuto ${nome(fine.perdente)}`,
-      dettaglio: mollata ? `${nome(fine.perdente)} ha abbandonato` : null,
       verso: 'finita',
     }
   }
-  if (fine.vincitore === ioId) {
-    return {
-      testo: 'Hai vinto',
-      dettaglio: mollata ? `${nome(fine.perdente)} ha abbandonato` : null,
-      verso: 'vinta',
-    }
-  }
-  return {
-    testo: `Ha vinto ${nome(fine.vincitore)}`,
-    dettaglio: mollata ? 'Hai abbandonato' : null,
-    verso: 'persa',
-  }
+  if (fine.vincitore === ioId) return { testo: 'Hai vinto', verso: 'vinta' }
+  return { testo: `Ha vinto ${nome(fine.vincitore)}`, verso: 'persa' }
 }
 
 function CartaPartita({ partita, ioId, nome, onApri }) {

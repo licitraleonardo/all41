@@ -21,6 +21,27 @@ function prova(nome, ok, extra) {
   }
 }
 
+// ⚠️ Una partita vera che finisce con un vincitore, e serviva.
+//
+// `partitaGiocataFino()` qui sopra gioca sempre la presa piu' lunga e
+// finisce **in patta**: va bene per provare che una partita giocata fino
+// in fondo risulta finita, non per provare chi ha vinto. E da quando
+// uscire non registra piu' niente, le vittorie non si possono piu'
+// simulare con un abbandono -- che e' come le simulava questa prova.
+//
+// Queste 41 mosse sono uscite da una ricerca fra partite casuali, con un
+// generatore a seme fisso perche' fosse ripetibile, tenendo la prima che
+// finiva con un vincitore in meno di 60 mosse. Vince il **bianco**.
+const VINCE_IL_BIANCO = [
+  '42-33', '21-30', '51-42', '17-26', '42-35', '14-21',
+  '35x17', '10x24x42', '49x35', '19-28', '35-26', '30-39',
+  '26-17', '8x26', '46-37', '28x46', '55x37', '26-35',
+  '44x26', '23-30', '37x23', '5-14', '23x5', '3-10',
+  '5x19', '10x28', '58-51', '39-46', '53x39', '28-37',
+  '40-33', '1-8', '33-24', '21-30', '39x21', '37-44',
+  '51x37', '7-14', '21x7', '8-17', '26x8',
+]
+
 const A = 'aaaa', B = 'bbbb', C = 'cccc'
 const TUTTI = [A, B, C]
 
@@ -46,14 +67,15 @@ console.log('\ncome finisce una partita')
   const aperta = { bianco: A, nero: B, mosse: [], stato: 'in-corso' }
   prova('appena aperta non è finita', comeEFinita(aperta).finita === false)
 
+  // ⚠️ Uscire NON registra la partita. Fino al 10 agosto valeva come una
+  // vinta dall'altro, e da li' l'altro si prendeva la vittoria nel rank,
+  // il Trofeo della prima vittoria a dama e un pezzo del campione di
+  // giornata -- Trofei veri, presi senza giocare.
   const resa = { bianco: A, nero: B, mosse: ['42-33'], stato: 'abbandonata', abbandonataDa: B }
   const f = comeEFinita(resa)
-  prova('abbandonando si perde', f.finita && f.vincitore === A && f.perdente === B)
-  prova('e il motivo è l’abbandono', f.motivo === 'abbandono')
-
-  // ⚠️ Anche chi abbandona da vincente perde: è il senso della resa.
-  const resaDelBianco = { bianco: A, nero: B, mosse: [], stato: 'abbandonata', abbandonataDa: A }
-  prova('chi molla perde comunque', comeEFinita(resaDelBianco).vincitore === B)
+  prova('uscendo, la partita non e finita', f.finita === false)
+  prova('e non l ha vinta nessuno', f.vincitore === null && f.perdente === null)
+  prova('ma si sa perche e chiusa', f.motivo === 'abbandono')
 
   const giocata = { bianco: A, nero: B, mosse: partitaGiocataFino(), stato: 'in-corso' }
   const g = comeEFinita(giocata)
@@ -75,37 +97,26 @@ console.log('\ncome finisce una partita')
 
 console.log('\nla classifica')
 {
+  // ⚠️ Nella classifica entrano solo le partite giocate fino in fondo.
+  // Le abbandonate valgono quanto quelle ancora aperte: niente.
   const partite = [
     { bianco: A, nero: B, mosse: [], stato: 'abbandonata', abbandonataDa: B },
     { bianco: A, nero: C, mosse: [], stato: 'abbandonata', abbandonataDa: C },
-    { bianco: B, nero: C, mosse: [], stato: 'abbandonata', abbandonataDa: B },
     { bianco: A, nero: B, mosse: [], stato: 'in-corso' },
   ]
   const cl = classificaDama(partite, TUTTI)
   const per = Object.fromEntries(cl.map((r) => [r.id, r]))
 
-  prova('A ha vinto due volte', per[A].vinte === 2)
-  prova('C ne ha vinta una', per[C].vinte === 1)
-  prova('B nessuna', per[B].vinte === 0)
-  prova('B ha abbandonato due volte', per[B].abbandoni === 2)
-  prova('le partite aperte non contano', per[A].vinte + per[A].perse === 2)
-  prova('in cima c’è A', cl[0].id === A)
-
-  // A parità di vittorie vince chi ha abbandonato di meno: perdere
-  // giocando e mollare non sono la stessa cosa.
-  const pari = [
-    { bianco: A, nero: C, mosse: [], stato: 'abbandonata', abbandonataDa: C },
-    { bianco: B, nero: C, mosse: [], stato: 'abbandonata', abbandonataDa: C },
-    { bianco: C, nero: A, mosse: [], stato: 'abbandonata', abbandonataDa: C },
-  ]
-  const cl2 = classificaDama(pari, TUTTI)
-  prova('a pari vittorie conta chi molla meno', cl2[0].id !== C)
+  prova('le abbandonate non danno vittorie a nessuno', per[A].vinte === 0)
+  prova('e non danno sconfitte a chi e uscito', per[B].perse === 0 && per[C].perse === 0)
+  prova('le aperte, come sempre, non contano', per[A].vinte + per[A].perse === 0)
+  prova('non si contano piu le mollate', per[B].abbandoni === undefined)
 
   // Ordine deterministico: due telefoni, stessa fila.
-  const rimescolate = [...pari].reverse()
+  const rimescolate = [...partite].reverse()
   prova(
     'l’ordine non dipende da come arrivano le partite',
-    JSON.stringify(classificaDama(pari, TUTTI).map((r) => r.id)) ===
+    JSON.stringify(classificaDama(partite, TUTTI).map((r) => r.id)) ===
       JSON.stringify(classificaDama(rimescolate, TUTTI).map((r) => r.id))
   )
 
@@ -116,8 +127,10 @@ console.log('\nil campione di giornata')
 {
   const oggi = '2026-08-14'
   const ieri = '2026-08-13'
+  // Il vincitore e' il bianco: la partita si gioca davvero, perche' un
+  // abbandono adesso non da' la vittoria a nessuno.
   const p = (v, perdente, quando) => ({
-    bianco: v, nero: perdente, mosse: [], stato: 'abbandonata', abbandonataDa: perdente,
+    bianco: v, nero: perdente, mosse: VINCE_IL_BIANCO, stato: 'in-corso',
     creataIl: quando + 'T20:00:00Z',
   })
 
@@ -153,7 +166,10 @@ console.log('\nquello che ti aspetta')
 
   const mie = inCorsoPerMe(partite, A)
   prova('solo le mie e solo le aperte', mie.length === 2)
-  prova('le finite restano fuori', !mie.some((p) => p.id === '3'))
+  // ⚠️ La 3 e' abbandonata. Da quando un'abbandonata risulta «non
+  // finita», senza una guardia apposta tornerebbe qui dentro con la
+  // scacchiera e il turno, come se non fosse successo niente.
+  prova('le abbandonate non tornano giocabili', !mie.some((p) => p.id === '3'))
   prova('quelle degli altri pure', !mie.some((p) => p.id === '4'))
   prova('tocca a me dove sono il bianco', mie.find((p) => p.id === '1').tuaMossa === true)
   prova('non tocca a me dove sono il nero', mie.find((p) => p.id === '2').tuaMossa === false)
