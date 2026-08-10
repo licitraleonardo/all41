@@ -14,6 +14,12 @@
 -- da solo tutto quello che li riferisce. Sono elencate lo stesso, per
 -- rendere chiaro cosa sparisce leggendo il file invece di scoprirlo
 -- dopo.
+--
+-- ⚠️ `push_subscriptions` aggiunta il 10 agosto. Il `cascade` la
+-- svuotava gia' — ha un vincolo verso i membri — ma non essendo scritta
+-- qui, leggendo il file sembrava che le iscrizioni alle notifiche
+-- sopravvivessero. Sarebbero state iscrizioni a nomi di persone
+-- cancellate: la sveglia del 12 sarebbe andata a dei fantasmi.
 truncate table
   dama_games,
   impostore_games,
@@ -29,6 +35,7 @@ truncate table
   photos,
   votes,
   quick_actions,
+  push_subscriptions,
   members
 restart identity cascade;
 
