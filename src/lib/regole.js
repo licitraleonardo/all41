@@ -155,6 +155,10 @@ export async function dopoTesto(memberId, testo, azioneId, adesso = new Date()) 
     memberId,
     `parola-proibita_${azioneId}`
   )
+  // ⚠️ Come sopra: se la Legge non e' scattata non si annuncia. Prima del
+  // viaggio comparirebbe «Quella parola ti costa -2» senza che a nessuno
+  // sia stato tolto niente.
+  if (!esito) return { scattata: false, scattate }
   return { scattata: true, parola, scattate, ...esito }
 }
 
@@ -225,6 +229,13 @@ export async function dopoRifiuto(memberId, tipo) {
     `spam_${memberId}_${tipo}_${dataDiOggi()}_${quante}`,
     penalita
   )
+  // ⚠️ `scattata` dice se e' successo davvero, non se ci abbiamo provato.
+  //
+  // Prima era `true` fisso, e finche' le Leggi scattavano sempre andava
+  // bene per caso. Con le Leggi congelate prima del viaggio comparirebbe
+  // «E ti costa -1» mentre non viene tolto niente: l'app direbbe una
+  // bugia su una cosa che nessuno puo' controllare.
+  if (!esito) return { tentativi, scattata: false }
   return { tentativi, scattata: true, penalita, ...esito }
 }
 

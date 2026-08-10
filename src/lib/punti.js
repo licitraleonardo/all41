@@ -2,6 +2,7 @@ import { supabase } from './supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { conCache } from './cache.js'
 import { PER_ID } from '../config/leggi.js'
+import { viaggioCominciato } from '../config/rilascio.js'
 
 const CAMPI =
   'id, member_id, points, reason, rule_id, vote_id, proposed_by, status, created_at'
@@ -56,6 +57,20 @@ export async function assegnaPunti({
 export async function faiScattareLegge(leggeId, memberId, dedupeKey, puntiEspliciti = null) {
   const legge = PER_ID[leggeId]
   if (!legge) throw new Error(`Legge sconosciuta: ${leggeId}`)
+
+  // ⚠️ Prima del viaggio le Leggi non scattano. Qui, e in nessun altro
+  // posto.
+  //
+  // Ci passano tutte e trentanove le chiamate sparse in nove file: e'
+  // l'unica strozzatura, ed e' per questo che il congelamento e' una
+  // riga invece di una caccia. Ferma insieme i punti, la scoperta e il
+  // festeggiamento — che sono la stessa cosa vista da tre parti.
+  //
+  // ⚠️ E non spegne l'app: i punti delle proposte **non passano di qui**.
+  // `creaProposta` chiama `assegnaPunti` per conto suo, quindi darsi
+  // punti a vicenda, votare e vedere la classifica muoversi continua a
+  // funzionare identico. Si congela il gioco nascosto, non l'app.
+  if (!viaggioCominciato()) return null
 
   // Qualche Legge non ha un punteggio fisso — la XIX cresce con
   // l'insistenza — e in quel caso chi chiama passa il valore.
