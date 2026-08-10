@@ -12,10 +12,12 @@
   gap: 10px;
 }
 
+/* Nel resto delle Info non c'e' un solo blu: qui dentro non ci sta bene
+   nemmeno il titolo. */
 .guida-titolo {
   margin: 0;
   font-size: 18px;
-  color: var(--sea, #0b3550);
+  color: var(--ink, #16232c);
 }
 
 .guida-apertura {
@@ -67,8 +69,8 @@
   padding: 6px 10px;
   font-size: 12.5px;
   line-height: 1.45;
-  color: var(--sea, #0b3550);
-  background: rgba(11, 53, 80, 0.06);
+  color: var(--ink, #16232c);
+  background: rgba(22, 35, 44, 0.05);
   border-radius: 8px;
 }
 

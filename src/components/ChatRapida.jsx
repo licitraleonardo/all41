@@ -223,6 +223,9 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
 
   function alterna(quale) {
     setFoglio((f) => (f === quale ? null : quale))
+    // Chiudendo il ＋ si richiudono anche i suoni: riaprendolo si riparte
+    // dalle tre voci, non da dentro l'elenco dove eri rimasto.
+    setSuoniAperti(false)
   }
 
   return (
@@ -334,41 +337,65 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
             esiste apposta per essere premuta di corsa senza leggere. */}
         {foglio === 'piu' && (
           <div className="menu-su">
-            <button type="button" className="voce-menu" onClick={() => setSuoniAperti((s) => !s)}>
-              🔊 Suoni
-            </button>
-            {suoniAperti &&
-              SUONI.map((s) => (
+            {/* ⚠️ I suoni **sostituiscono** il menu, non ci si aggiungono.
+                Prima l'elenco si infilava fra «Suoni» e «Posizione», e
+                quello che era un menu di tre voci diventava una colonna
+                di dieci con dentro due cose di un altro tipo: si
+                cercava «Feedback» e si trovava «Aho». */}
+            {suoniAperti ? (
+              <>
+                {/* Resta in cima, acceso: e' da li' che sei entrato ed e'
+                    da li' che si torna. */}
                 <button
-                  key={s.file}
                   type="button"
-                  className="voce-menu voce-suono"
-                  onClick={() => lanciaSuono(s)}
-                  disabled={suoniDisponibili[s.file] === false}
+                  className="voce-menu aperta"
+                  onClick={() => setSuoniAperti(false)}
                 >
-                  {s.etichetta}
+                  🔊 Suoni
                 </button>
-              ))}
-            <button
-              type="button"
-              className="voce-menu"
-              onClick={() => {
-                setFoglio(null)
-                setMappaAperta(true)
-              }}
-            >
-              🌍 Posizione
-            </button>
-            <button
-              type="button"
-              className="voce-menu"
-              onClick={() => {
-                setFoglio(null)
-                setFeedbackAperto(true)
-              }}
-            >
-              ✨ Feedback
-            </button>
+                {SUONI.map((s) => (
+                  <button
+                    key={s.file}
+                    type="button"
+                    className="voce-menu voce-suono"
+                    onClick={() => lanciaSuono(s)}
+                    disabled={suoniDisponibili[s.file] === false}
+                  >
+                    {s.etichetta}
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="voce-menu"
+                  onClick={() => setSuoniAperti(true)}
+                >
+                  🔊 Suoni
+                </button>
+                <button
+                  type="button"
+                  className="voce-menu"
+                  onClick={() => {
+                    setFoglio(null)
+                    setMappaAperta(true)
+                  }}
+                >
+                  🌍 Posizione
+                </button>
+                <button
+                  type="button"
+                  className="voce-menu"
+                  onClick={() => {
+                    setFoglio(null)
+                    setFeedbackAperto(true)
+                  }}
+                >
+                  ✨ Feedback
+                </button>
+              </>
+            )}
           </div>
         )}
 

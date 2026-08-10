@@ -1,8 +1,33 @@
-/* Le informazioni pratiche. Grandi e toccabili: se questa schermata
-   serve, serve di fretta. */
+/* Le informazioni pratiche.
+
+   ⚠️ **Il blu era lo sfondo dell'app, non una scelta di questa
+   schermata.**
+
+   Tutte le altre schermate si stendono sopra il fondo scuro con la loro
+   superficie chiara -- `.gioco-schermo`, `.album-schermo`,
+   `.gruppo-schermo` fanno tutte `background-color: var(--sand)`. Le Info
+   erano un `div` nudo: non copriva niente, e il gradiente blu del `body`
+   passava attraverso. Da li' il testo chiaro ereditato, i riquadri che
+   ci galleggiavano sopra, e la sensazione di essere finiti in un'altra
+   app.
+
+   Adesso e' una schermata come le altre, e volutamente la piu' spenta di
+   tutte: niente colori accesi, niente pillole, niente accenti. Qui non
+   c'e' niente da festeggiare -- ci sono un indirizzo, dei numeri e degli
+   orari. */
 
 .info {
-  padding: 4px 0 24px;
+  --ink: #16232c;
+  --ink-soft: #55636b;
+  --line: #e4dfd2;
+
+  min-height: 100dvh;
+  background-color: var(--sand);
+  color: var(--ink);
+  text-align: left;
+  padding: calc(16px + var(--spazio-alto)) 16px calc(20px + var(--altezza-tab));
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .info-etichetta {
@@ -28,7 +53,7 @@
 .info-nome {
   margin: 0 0 4px;
   font-size: 16px;
-  color: var(--sea, #0b3550);
+  color: var(--ink, #16232c);
 }
 
 .info-riga {
@@ -38,24 +63,29 @@
   color: var(--ink-soft, #55636b);
 }
 
+/* Quello che manca non e' un allarme: e' una riga che dice che quel dato
+   non c'e' ancora. Era in rosso e in corsivo, e in una schermata di
+   emergenze il rosso vuol dire un'altra cosa. */
 .info-manca {
   margin: 4px 0 0;
   font-size: 12.5px;
-  font-style: italic;
-  color: var(--coral, #e8604a);
+  color: var(--ink-soft, #55636b);
 }
 
+/* Bordo grigio come tutto il resto: erano pillole col contorno blu, cioe'
+   due accenti in una schermata che non ne vuole. */
 .info-chiama,
 .info-mappa {
   display: inline-block;
   margin-top: 11px;
   padding: 9px 14px;
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
-  color: var(--sea, #0b3550);
-  border: 1px solid var(--sea, #0b3550);
-  border-radius: 100px;
+  color: var(--ink, #16232c);
+  border: 1px solid var(--line, #e4dfd2);
+  border-radius: 10px;
+  background: #fff;
 }
 
 .info-chiama + .info-mappa,
@@ -103,9 +133,9 @@
    farmacia», «il 112 e' quello che...» -- e non per cifre. */
 .info-cifre {
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
-  color: var(--sea, #0b3550);
+  color: var(--ink, #16232c);
   font-variant-numeric: tabular-nums;
 }
 
@@ -156,6 +186,6 @@
 .info-chiama:focus-visible,
 .info-mappa:focus-visible,
 .info-numero:focus-visible {
-  outline: 2px solid var(--sea, #0b3550);
+  outline: 2px solid var(--ink, #16232c);
   outline-offset: 2px;
 }
