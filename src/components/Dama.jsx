@@ -139,10 +139,10 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
       )}
 
       {mieAperte.length === 0 && !sfidando && (
-        <p className="dama-vuoto">
-          Nessuna partita in corso. L'Impostore è di gruppo, All gioca da solo: questa si
-          gioca in due.
-        </p>
+        {/* Resta il fatto, va via il commento. Il ripasso di come sono
+            fatti gli altri due giochi stava dentro la Dama, dove non
+            serve a decidere niente: chi e' qui ha gia' scelto. */}
+        <p className="dama-vuoto">Nessuna partita in corso.</p>
       )}
 
       {classifica.length > 0 && (
