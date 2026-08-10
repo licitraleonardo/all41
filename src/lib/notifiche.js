@@ -62,6 +62,11 @@ export function installataSullaHome() {
   )
 }
 
+export function suAndroid() {
+  if (typeof navigator === 'undefined') return false
+  return /Android/.test(navigator.userAgent)
+}
+
 export function suIPhone() {
   if (typeof navigator === 'undefined') return false
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
