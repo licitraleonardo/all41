@@ -5,6 +5,7 @@ import NuvolettaAllan from './NuvolettaAllan.jsx'
 import Classifica from './Classifica.jsx'
 import Testamento from './Testamento.jsx'
 import Pecora from './Pecora.jsx'
+import Statistiche from './Statistiche.jsx'
 import Impostore from './Impostore.jsx'
 import Dama from './Dama.jsx'
 import { useGioco } from '../hooks/useGioco.js'
@@ -20,6 +21,10 @@ const SCHEDE = [
   ['impostore', 'Impostore'],
   ['dama', 'Dama'],
   ['pecora', 'All'],
+  // Le statistiche stavano in «Altro», in mezzo a spese e documenti.
+  // Sono numeri sul gioco: record, primati, chi e' bravo a cosa. Stanno
+  // qui, accanto alla classifica che raccontano.
+  ['stat', 'Stat.'],
 ]
 
 export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto, conteggiMvp = {}, damaDaAprire, onDamaAperta, leggeDaAprire, onLeggeAperta }) {
@@ -75,7 +80,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
           usata del tab era troppo invadente: adesso Allan dice due righe
           la prima volta che entri, e la guida intera vive in Altro. */}
       {/* Sotto-schede in alto: pattern standard, non aggiunge profondità */}
-      <div className="segmenti" role="tablist">
+      <div className="segmenti scorrevoli" role="tablist">
         {SCHEDE.map(([id, etichetta]) => (
           <button
             key={id}
@@ -97,10 +102,14 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
           si apre anche se il database non risponde. */}
       {vista === 'pecora' && <Pecora membroId={membro.id} />}
 
-      {vista !== 'pecora' && stato === 'caricamento' && (
+      {/* Come la Pecora: le statistiche hanno le loro letture e la loro
+          rotella, quindi non aspettano quelle della classifica. */}
+      {vista === 'stat' && <Statistiche membro={membro} />}
+
+      {vista !== 'pecora' && vista !== 'stat' && stato === 'caricamento' && (
         <Rotella />
       )}
-      {vista !== 'pecora' && stato === 'guasto' && (
+      {vista !== 'pecora' && vista !== 'stat' && stato === 'guasto' && (
         <p className="gioco-guasto">{errore}</p>
       )}
 

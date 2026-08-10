@@ -896,3 +896,26 @@
   color: #2f7d5a;
   white-space: nowrap;
 }
+
+/* ⚠️ Sei segmenti non ci stanno a 375 px.
+
+   La riga scorre in orizzontale invece di stringere i nomi fino a
+   tagliarli. E' lo stesso trattamento della fila dei tasti rapidi in
+   ChatRapida.css: da li' e' copiato, invece di inventarne un altro.
+
+   Chi scorre trova le ultime; la prima -- la Classifica -- resta sempre
+   visibile, ed e' quella da cui si passa piu' spesso. */
+.segmenti.scorrevoli {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.segmenti.scorrevoli::-webkit-scrollbar {
+  display: none;
+}
+
+.segmenti.scorrevoli .segmento {
+  flex: none;
+  white-space: nowrap;
+}
