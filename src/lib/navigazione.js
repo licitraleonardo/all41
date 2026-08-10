@@ -219,10 +219,42 @@ export function vaiAlTab(valore, dentro = {}) {
 // foglio aperto sopra.
 let livelliAperti = 0
 
+// ⚠️ Chiusure chieste e non ancora eseguite.
+//
+// Costato il 10 agosto, ed e' il difetto peggiore che questo file abbia
+// avuto: appena entrato nell'app, aprivi la mappa, toccavi fuori — e
+// uscivi dall'app.
+//
+// La causa e' `StrictMode`, che in sviluppo monta, smonta e rimonta ogni
+// effetto **nello stesso istante**. Il foglio quindi faceva
+// apri → chiudi → apri di fila, e siccome `history.back()` non fa niente
+// sul momento ma mette in coda un evento, l'ordine reale diventava:
+// impila, impila di nuovo, e solo dopo torna indietro. Un passo vero
+// mangiato in silenzio: da li' in poi il foglio era aperto ma tu stavi
+// gia' dietro alla sua voce, e la prossima uscita usciva dall'app.
+//
+// Appena entrati non c'e' cronologia di scorta, ed e' per questo che si
+// vedeva li' e non altrove: piu' avanti quel passo rubato ti riportava
+// solo a una schermata di prima, senza far male a nessuno.
+//
+// La correzione: la chiusura non torna indietro subito, aspetta la fine
+// del giro. Se nel frattempo si apre un foglio — il rimontaggio di
+// StrictMode, oppure un foglio che ne apre un altro — i due si annullano
+// e la voce si riusa, senza toccare la cronologia.
+let chiusureInAttesa = 0
+
 // Aprire un foglio lascia una voce sua: il tasto indietro la toglie per
 // prima, prima di toccare la navigazione.
 export function apriLivello() {
   livelliAperti += 1
+
+  // C'e' una chiusura in volo: la sua voce non e' ancora stata tolta, e
+  // questo foglio se la prende invece di impilarne un'altra.
+  if (chiusureInAttesa > 0) {
+    chiusureInAttesa -= 1
+    return
+  }
+
   try {
     window.history.pushState({ all41Foglio: true }, '')
   } catch {
@@ -235,12 +267,20 @@ export function apriLivello() {
 export function chiudiLivello() {
   if (livelliAperti === 0) return
   livelliAperti -= 1
-  riordiniInCorso += 1
-  try {
-    window.history.back()
-  } catch {
-    riordiniInCorso -= 1
-  }
+  chiusureInAttesa += 1
+
+  // ⚠️ Alla fine del giro, non adesso. E' tutta la correzione: dentro
+  // questo giro puo' ancora arrivare un'apertura che la annulla.
+  queueMicrotask(() => {
+    if (chiusureInAttesa === 0) return
+    chiusureInAttesa -= 1
+    riordiniInCorso += 1
+    try {
+      window.history.back()
+    } catch {
+      riordiniInCorso -= 1
+    }
+  })
 }
 
 // Chi vuole sapere che è stato premuto indietro mentre lui era aperto.

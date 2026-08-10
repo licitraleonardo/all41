@@ -47,13 +47,32 @@ class Cronologia {
   replaceState(s) {
     this.voci[this.i].state = s
   }
+  // ⚠️ **Si sposta dopo, non adesso.** E qui «dopo» vale per lo
+  // spostamento e non solo per l'evento.
+  //
+  // Fino al 10 agosto questa finta spostava `i` subito e rimandava solo
+  // l'avviso. Sembra un dettaglio ed e' la differenza fra prendere un
+  // difetto e non vederlo: il difetto che ha fatto uscire dall'app
+  // toccando fuori dalla mappa stava tutto nel fatto che, fra il `back()`
+  // e il momento in cui il browser lo esegue, **si puo' impilare un'altra
+  // voce**. Con lo spostamento immediato quella finestra non esiste, e la
+  // prova restava verde su un codice rotto. L'ho visto succedere: la
+  // prima versione di questa prova passava anche col difetto dentro.
   back() {
-    if (this.i === 0) return
-    this.i -= 1
-    // ⚠️ **Dopo**, non adesso. E' tutto il punto: nel browser vero
-    // `back()` mette in coda un evento, e chi lo raccoglie non e' detto
-    // sia chi l'ha chiesto.
-    inCoda.push({ state: this.state })
+    // ⚠️ **Il bersaglio si fissa adesso, il salto avviene dopo.**
+    //
+    // E' l'ultimo dettaglio, ed e' quello che fa scattare la trappola:
+    // Chrome decide dove andare nell'istante in cui chiami `back()`, e le
+    // voci impilate nel frattempo non lo spostano. Quindi
+    // «impila, chiudi, impila» finisce **sotto** al punto di partenza, e
+    // l'uscita seguente esce dall'app.
+    //
+    // Misurato nel browser vero il 10 agosto: il `popstate` atterrava
+    // sulla fotografia e non sul foglio, che con lo spostamento calcolato
+    // al momento dell'esecuzione sarebbe stato impossibile.
+    const bersaglio = this.i - 1
+    if (bersaglio < 0) return
+    inCoda.push({ vaiA: bersaglio })
   }
 }
 
@@ -66,11 +85,21 @@ const finestra = {
   removeEventListener() {},
 }
 
+// Il giro finisce: prima si svuotano i microtask (dove adesso vive la
+// chiusura differita di un foglio), poi si consegnano gli eventi.
+async function fineGiro() {
+  await new Promise((r) => setTimeout(r, 0))
+  consegna()
+}
+
 // Consegna gli eventi messi in coda, come farebbe il browser al giro
 // dopo.
 function consegna() {
   while (inCoda.length) {
-    const e = inCoda.shift()
+    const richiesta = inCoda.shift()
+    // Adesso il browser esegue davvero il salto: prima sposta, poi avvisa.
+    if (richiesta.vaiA !== undefined) finestra.history.i = richiesta.vaiA
+    const e = { state: finestra.history.state }
     for (const a of [...ascoltatori]) a(e)
   }
 }
@@ -206,7 +235,7 @@ console.log('\nchiudere un foglio col bottone non lascia una pressione a vuoto')
   prova('aprire lascia una voce', finestra.history.length === voci + 1)
 
   nav.chiudiLivello() // come premere «Lascia stare»
-  consegna() // il riordino torna a galla
+  await fineGiro() // il riordino parte a fine giro e torna a galla
   prova('chiudere la toglie', finestra.history.length === voci + 1)
   prova('e la schermata non si e mossa', dove() === partenza, dove())
 
@@ -229,7 +258,7 @@ console.log('\nun riordino nostro non viene scambiato per un dito')
   nav.apriLivello()
   nav.chiudiLivello()
   nav.apriLivello() // il secondo foglio si apre PRIMA che l'evento arrivi
-  consegna()
+  await fineGiro()
 
   prova('il foglio nuovo non si chiude da solo', chiusure === 0, chiusure)
 
@@ -238,6 +267,48 @@ console.log('\nun riordino nostro non viene scambiato per un dito')
   consegna()
   prova('e il tasto indietro chiude quello aperto', chiusure === 1, chiusure)
   stacca()
+}
+
+console.log('\napri-chiudi-apri nello stesso giro non ruba un passo indietro')
+{
+  // ⚠️ E' il difetto del 10 agosto, quello che faceva uscire dall'app
+  // toccando fuori dalla mappa appena entrati.
+  //
+  // `StrictMode` monta, smonta e rimonta ogni effetto nello stesso
+  // istante: il foglio faceva apri → chiudi → apri di fila. Con la
+  // chiusura immediata l'ordine reale diventava «impila, impila, torna
+  // indietro» — e quel passo indietro era un passo VERO, mangiato in
+  // silenzio. Appena entrati non c'e' cronologia di scorta, e il passo
+  // dopo usciva dall'app.
+  // ⚠️ Si guarda **dove siamo**, non quante voci ci sono: il difetto
+  // rubava una posizione, e la lunghezza non se ne accorge.
+  nav.vaiAlTab('oggi')
+  const dovEro = finestra.history.i
+
+  nav.apriLivello()
+  nav.chiudiLivello()
+  nav.apriLivello() // il rimontaggio di StrictMode, nello stesso giro
+  await fineGiro()
+
+  prova('si sale di un passo solo', finestra.history.i === dovEro + 1, {
+    prima: dovEro,
+    adesso: finestra.history.i,
+  })
+  prova(
+    'e ci stiamo sopra, non dietro',
+    finestra.history.state?.all41Foglio === true,
+    finestra.history.state
+  )
+
+  // La prova che conta: chiudendolo si torna esattamente da dove si era
+  // partiti, non un passo piu' indietro.
+  nav.chiudiLivello()
+  await fineGiro()
+  prova('e chiudendolo si torna esattamente li', finestra.history.i === dovEro, {
+    atteso: dovEro,
+    adesso: finestra.history.i,
+  })
+  prova('senza fogli rimasti aperti', nav.statoInterno().livelliAperti === 0)
 }
 
 console.log('\nuna fotografia di una versione vecchia non lascia lo schermo vuoto')
