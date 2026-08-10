@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './OffriNotifiche.css'
+import { useAltezzaBanner } from '../hooks/useAltezzaBanner.js'
 import {
   installataSullaHome,
   iscriviti,
@@ -24,12 +25,25 @@ import {
 // arriva solo chi ha già detto di sì, cioè quando la risposta è quasi
 // certa.
 //
+// ⚠️ **Fisso in cima come i suoi cinque fratelli, e non è un dettaglio
+// di stile.**
+//
+// La prima versione era un riquadro nel flusso normale, e siccome in
+// `App.jsx` i banner stanno dopo tutto il resto, finiva **in fondo al
+// documento**: nelle Info — la schermata più lunga — si vedeva spuntare
+// laggiù, dove non c'entrava niente. Qui si riusa la stessa impaginazione
+// degli altri (`.banner-dentro` e compagnia nascono in
+// BannerProposta.css) e lo stesso `useAltezzaBanner`, che misura quanto
+// occupa e fa scendere la schermata invece di lasciarcela finire sotto.
+//
 // ⚠️ «Consigliato» è vero, e va tolto il giorno in cui smette di
 // esserlo: l'SOS è l'unica funzione di sicurezza dell'app, e senza
 // notifiche arriva solo a chi ha l'app aperta in quel momento.
 export default function OffriNotifiche({ membroId }) {
   const [mostra, setMostra] = useState(false)
   const [inCorso, setInCorso] = useState(false)
+  const [riquadro, setRiquadro] = useState(null)
+  useAltezzaBanner(riquadro, mostra)
 
   useEffect(() => {
     if (!membroId) return
@@ -76,27 +90,28 @@ export default function OffriNotifiche({ membroId }) {
   }
 
   return (
-    <div className="offri-notifiche" role="status">
-      {/* ⚠️ Due righe, e il «(consigliato)» sta DENTRO la prima.
-          Il contenitore e' una colonna flex, e li' dentro ogni figlio si
-          prende una riga sua: lasciato fuori andava a capo da solo, come
-          se fosse una frase. */}
-      <p className="offri-testo">
-        <span className="offri-titolo">
-          <strong>Vuoi attivare le notifiche?</strong>{' '}
-          <span className="offri-consiglio">(consigliato)</span>
-        </span>
-        <span className="offri-perche">
-          SOS e «si riparte» ti arrivano anche con l’app chiusa.
-        </span>
-      </p>
-      <div className="offri-tasti">
-        <button type="button" className="offri-si" onClick={attiva} disabled={inCorso}>
-          {inCorso ? 'Un attimo…' : 'Attiva'}
-        </button>
-        <button type="button" className="offri-no" onClick={nonOra} disabled={inCorso}>
-          Non ora
-        </button>
+    <div
+      className="banner-notifiche"
+      role="region"
+      aria-label="Attivare le notifiche"
+      ref={setRiquadro}
+    >
+      <div className="banner-dentro">
+        <p className="banner-testo">
+          <strong>Vuoi attivare le notifiche?</strong>
+          <span className="banner-motivo">
+            SOS e «si riparte» ti arrivano anche con l’app chiusa. Consigliato.
+          </span>
+        </p>
+
+        <div className="banner-scelte">
+          <button type="button" className="banner-si" onClick={attiva} disabled={inCorso}>
+            {inCorso ? 'Un attimo…' : 'Attiva'}
+          </button>
+          <button type="button" className="banner-dopo" onClick={nonOra} disabled={inCorso}>
+            Non ora
+          </button>
+        </div>
       </div>
     </div>
   )

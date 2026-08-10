@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js'
 import { CHIAVE_PUBBLICA_PUSH } from '../config/rete.js'
+import { conScadenza } from './scadenza.js'
 
 // Iscriversi alle notifiche, e far partire quelle degli altri.
 //
@@ -26,6 +27,9 @@ export function statoNotifiche() {
   return Notification.permission // 'default' | 'granted' | 'denied'
 }
 
+// Quanto si aspetta il service worker prima di rispondere «non lo so».
+const ATTESA_SERVICE_WORKER = 3000
+
 // ⚠️ Il permesso NON e' l'iscrizione, e confonderli blocca tutto.
 //
 // Il permesso si concede una volta sola e resta per sempre; l'iscrizione
@@ -41,7 +45,23 @@ export async function statoIscrizione() {
   if (Notification.permission === 'denied') return 'bloccate'
 
   try {
-    const registrazione = await navigator.serviceWorker.ready
+    // ⚠️ `serviceWorker.ready` **non rifiuta mai**: se il service worker
+    // non arriva — non registrato, registrazione fallita, navigazione
+    // privata — resta appesa per sempre. E' la stessa trappola
+    // dell'attesa infinita che ci era gia' costata cara con la rete:
+    // aspettare all'infinito non e' prudenza, e' non decidere.
+    //
+    // Chi chiama questa funzione la usa per **decidere se mostrare
+    // qualcosa**, e una promessa appesa non fa comparire niente, in
+    // silenzio: l'interruttore nelle Info resterebbe fermo e la domanda
+    // sulle notifiche non arriverebbe mai. Meglio rispondere «spente»
+    // dopo tre secondi: al peggio si offre di accenderle a chi le ha
+    // gia', e `iscriviti` riusa l'iscrizione che trova invece di farne
+    // una seconda.
+    const registrazione = await conScadenza(
+      navigator.serviceWorker.ready,
+      ATTESA_SERVICE_WORKER
+    )
     const iscrizione = await registrazione.pushManager.getSubscription()
     return iscrizione ? 'accese' : 'spente'
   } catch {

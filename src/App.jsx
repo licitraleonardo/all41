@@ -724,6 +724,24 @@ export default function App() {
             !feedback.aperto && (
               <BannerFeedback onScrivi={feedback.apri} onDopo={feedback.dopo} />
             )}
+
+          {/* ⚠️ Dopo perfino il feedback, cioe' buon ultimo di tutti.
+              Sopra ci sono le cose che scadono — un SOS, «si riparte fra
+              5 minuti», una proposta in un'ora, una sfida lanciata
+              adesso. Le notifiche non scadono: possono aspettare il primo
+              momento in cui non c'e' nient'altro da dire.
+
+              La coda di condizioni e' quella del feedback piu' il
+              feedback stesso: due banner fissi nello stesso posto si
+              coprirebbero a vicenda. */}
+          {!inCima &&
+            inLinea &&
+            proposte.daDecidere.length === 0 &&
+            sfideDama.daAccettare.length === 0 &&
+            daLeggere.daAnnunciare.length === 0 &&
+            !(feedback.daChiedere && !feedback.aperto) && (
+              <OffriNotifiche membroId={membro?.id} />
+            )}
         </Riparo>
 
         <Riparo zitto>
@@ -732,16 +750,6 @@ export default function App() {
           )}
         </Riparo>
 
-        {/* ⚠️ Ultimo fra i banner, ed e' voluto: sopra ci sono le cose
-            che scadono — un SOS, «si riparte fra 5 minuti», una proposta
-            in voto. Questa non scade, puo' aspettare il primo momento in
-            cui non c'e' nient'altro da dire.
-
-            Dentro un `Riparo` come gli altri: se si rompe deve sparire,
-            non portarsi dietro l'app. */}
-        <Riparo zitto>
-          <OffriNotifiche membroId={membro?.id} />
-        </Riparo>
 
         <Riparo zitto>
           <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
