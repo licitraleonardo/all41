@@ -78,7 +78,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
 
       {/* La guida non sta più qui. Una card in cima alla schermata più
           usata del tab era troppo invadente: adesso Allan dice due righe
-          la prima volta che entri, e la guida intera vive in Altro. */}
+          la prima volta che entri, e la guida intera vive in Info. */}
       {/* Sotto-schede in alto: pattern standard, non aggiunge profondità */}
       <div className="segmenti scorrevoli" role="tablist">
         {SCHEDE.map(([id, etichetta]) => (

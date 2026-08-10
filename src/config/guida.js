@@ -15,13 +15,13 @@ export const VOCI = [
     icona: '📅',
     titolo: 'Oggi',
     testo:
-      'Il programma della giornata, il meteo e quanto manca alla partenza. Ogni tappa ha il suo link a Maps: si tocca e si parte.',
+      'Il programma della giornata, il meteo e quanto manca alla partenza. Ogni tappa ha il suo link a Maps: si tocca e si parte. E c’è il mondino: si tocca e si vede dove sono tutti.',
   },
   {
     icona: '💬',
     titolo: 'Gruppo',
     testo:
-      'La chat per le cose brevi. I tasti sopra la tastiera fanno il lavoro sporco: SOS, "dove siete", "si riparte tra 10 minuti", un sondaggio al volo.',
+      'La chat per le cose brevi. I tasti sopra la tastiera fanno il lavoro sporco: SOS, "dove siete", "si riparte tra 10 minuti", un sondaggio al volo. E nel Cassetto ci sono le spese divise e i documenti del viaggio.',
     gesto: 'Nella scheda Vocali si tocca il microfono per parlare, e si tocca di nuovo per mandare.',
   },
   {
@@ -34,14 +34,14 @@ export const VOCI = [
     icona: '🏆',
     titolo: 'Gioco',
     testo:
-      'La classifica, il Testamento delle Leggi scoperte, l’Impostore per il dopocena, la Dama per sfidarsi in due e un gioco della Pecora per le attese.',
+      'La classifica, il Testamento delle Leggi scoperte, l’Impostore per il dopocena, la Dama per sfidarsi in due, un gioco della Pecora per le attese e le statistiche del viaggio.',
     gesto: 'Tocca qualcuno nella classifica per proporgli punti, in su o in giù. Poi vota il gruppo.',
   },
   {
-    icona: '📎',
-    titolo: 'Altro',
+    icona: 'ℹ️',
+    titolo: 'Info',
     testo:
-      'Le spese divise, i documenti del viaggio, la mappa di dove siete tutti, i numeri utili e le statistiche. Roba che serve in un momento preciso e poi si dimentica.',
+      'Dove si dorme, i numeri da chiamare se serve, i telefoni del gruppo — e in fondo questa guida e le impostazioni. Roba che serve in un momento preciso e poi si dimentica.',
   },
 ]
 

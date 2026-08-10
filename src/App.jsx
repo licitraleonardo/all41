@@ -27,7 +27,7 @@ import Itinerario from './components/Itinerario.jsx'
 import Gruppo from './components/Gruppo.jsx'
 import Album from './components/Album.jsx'
 import Gioco from './components/Gioco.jsx'
-import Altro from './components/Altro.jsx'
+import Info from './components/Info.jsx'
 import BarraTab from './components/BarraTab.jsx'
 import Riparo from './components/Riparo.jsx'
 import Targhetta from './components/Targhetta.jsx'
@@ -75,7 +75,7 @@ const NOMI_TAB = {
   gruppo: 'La chat',
   foto: 'L’album',
   gioco: 'Il gioco',
-  altro: 'Questa sezione',
+  info: 'Le info',
 }
 
 
@@ -103,7 +103,7 @@ export default function App() {
     'gruppo',
     'foto',
     'gioco',
-    'altro',
+    'info',
   ])
 
   // Il tasto indietro ha cambiato la vista: si applica. Solo fra le tre
@@ -613,7 +613,7 @@ export default function App() {
               onLeggeAperta={() => setLeggeDaAprire(null)}
             />
           )}
-          {tab === 'altro' && <Altro membro={membro} />}
+          {tab === 'info' && <Info membroId={membro?.id} />}
         </Riparo>
         <BarraTab attivo={tab} onCambia={setTab} novita={nonLetto.novita} />
 

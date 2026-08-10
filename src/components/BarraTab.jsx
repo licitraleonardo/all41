@@ -7,7 +7,11 @@ const TAB = [
   { id: 'gruppo', etichetta: 'Gruppo', icona: '💬' },
   { id: 'foto', etichetta: 'Foto', icona: '📷' },
   { id: 'gioco', etichetta: 'Gioco', icona: '🏆' },
-  { id: 'altro', etichetta: 'Altro', icona: '📎' },
+  // ⚠️ Era «Altro» con la graffetta, e dentro c'erano sei cose senza
+  // niente in comune tranne il non stare altrove: spese, documenti,
+  // mappa, statistiche, guida e info. Adesso ognuna e' tornata dove la si
+  // cerca, e qui resta quello che il tab dice di essere.
+  { id: 'info', etichetta: 'Info', icona: 'ℹ️' },
 ]
 
 export default function BarraTab({ attivo, onCambia, novita }) {

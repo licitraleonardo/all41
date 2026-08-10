@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import './Info.css'
-import { DA_TROVARE, DOVE, EMERGENZE, UTILI } from '../config/info.js'
+import { DOVE, EMERGENZE, UTILI } from '../config/info.js'
 import { leggiMembri } from '../lib/membri.js'
 import { daComporre } from '../lib/telefono.js'
 import Targhetta from './Targhetta.jsx'
 import FoglioFeedback from './FoglioFeedback.jsx'
 import ChiediNotifiche from './ChiediNotifiche.jsx'
+import Guida from './Guida.jsx'
 
 // Dove si dorme e chi si chiama. Sta nel codice, non sul database: è
 // l'unico pezzo dell'app che potrebbe servire col telefono che non prende
@@ -134,14 +135,6 @@ export default function Info({ membroId }) {
         </>
       )}
 
-      {/* ⚠️ Il permesso delle notifiche si chiede da qui, e non da un
-          cartello a sorpresa la prima sera. Si concede una volta sola
-          nella vita: chi dice di no perché gli è saltato addosso mentre
-          stava facendo altro non se lo rivede più, e per riaprirlo deve
-          andare nelle impostazioni del telefono. */}
-      <p className="info-etichetta">Notifiche</p>
-      <ChiediNotifiche membroId={membroId} />
-
       {/* L'ingresso fisso al «com'è che va»: il cartello arriva ogni
           tanto e da solo, ma chi ha qualcosa da dire adesso deve poterlo
           dire adesso, senza aspettare che gli venga chiesto. */}
@@ -165,6 +158,20 @@ export default function Info({ membroId }) {
         />
       )}
 
+      {/* ⚠️ La Guida sta qui dentro, e non e' piu' una sezione sua.
+          E' consultazione: si guarda una volta all'inizio, e poi solo
+          quando qualcuno chiede «ma come si fa a...». Una scheda tutta
+          per lei, in una barra da sei, la faceva sembrare una parte
+          dell'app invece che il libretto delle istruzioni. */}
+      <p className="info-etichetta">Come funziona</p>
+      <Guida membroId={membroId} />
+
+      {/* ⚠️ Le impostazioni sono l'ultima cosa, ed e' voluto: sopra c'e'
+          quello che serve durante il viaggio, qui quello che si tocca una
+          volta e non si guarda piu'. */}
+      <p className="info-etichetta">Impostazioni</p>
+      <ChiediNotifiche membroId={membroId} />
+
       {/* ⚠️ La versione dell'app sta QUI, e non solo sulla schermata
           d'ingresso dov'era.
           Dentro una PWA installata sulla home non c'e' barra
@@ -177,20 +184,6 @@ export default function Info({ membroId }) {
           prometteva e non c'era. */}
       <Targhetta />
 
-      {DA_TROVARE.length > 0 && (
-        <section className="info-mancanti">
-          <p className="info-mancanti-titolo">Ancora da trovare</p>
-          <ul>
-            {DA_TROVARE.map((c) => (
-              <li key={c}>{c}</li>
-            ))}
-          </ul>
-          <p className="info-mancanti-nota">
-            Scritti come mancanti apposta: un numero messo a occhio, qui dentro,
-            farebbe più danni che comodo.
-          </p>
-        </section>
-      )}
     </div>
   )
 }
