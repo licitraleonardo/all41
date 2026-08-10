@@ -3,6 +3,13 @@
    bisognerebbe risalire tutta la chat. */
 
 .gruppo-schede {
+  /* ⚠️ Quanto e' alta questa fila. Serve alla riga del Cassetto qui
+     sotto, che deve appiccicarsi **subito sotto** questa: e' l'unico
+     modo di scriverlo senza infilare 42 a caso in un altro file. La
+     misura viene dal browser, non da un conto a mente -- se cambia il
+     corpo del testo dei segmenti, va rimisurata. */
+  --altezza-schede: 42px;
+
   position: sticky;
   /* Non zero: nell'app installata zero è dietro il notch. */
   top: var(--spazio-alto);
@@ -61,4 +68,35 @@ body.con-banner .gruppo-schede {
 .cassetto .segmenti.minori {
   margin-top: 12px;
   margin-bottom: 4px;
+}
+
+/* ------------------------------------------ la riga dentro il Cassetto
+
+   ⚠️ Si appiccica anche lei, o sparisce.
+
+   Sopra c'e' `.gruppo-schede`, appiccicata e con `z-index: 12`. Questa
+   era `static`: con un elenco di spese abbastanza lungo da far scorrere
+   la pagina saliva, **finiva sotto quella**, e da li' non c'era piu' modo
+   di passare ai Documenti senza risalire tutto.
+
+   Da fermo si vedono tutte e due, ed e' per questo che era passata
+   inosservata: il difetto ha bisogno di contenuto per manifestarsi.
+
+   ⚠️ Legata al Cassetto e non a `.segmenti.minori` in generale: quella
+   classe la usano anche Allbo, Classifica e Testamento, e nessuna delle
+   tre sta sotto una fila appiccicata. Una regola larga le incollerebbe
+   dove non serve. */
+.cassetto > .segmenti.minori {
+  position: sticky;
+  top: calc(var(--spazio-alto) + var(--altezza-schede, 42px));
+  /* Sotto la fila di sopra, sopra il contenuto che le scorre dietro. */
+  z-index: 11;
+  /* Pieno: fra una pillola e l'altra si vedrebbe passare l'elenco. */
+  background: var(--sand, #f7f4ec);
+  padding: 6px 0;
+  margin-top: 6px;
+}
+
+body.con-banner .cassetto > .segmenti.minori {
+  top: calc(var(--altezza-banner) + var(--altezza-schede, 42px));
 }
