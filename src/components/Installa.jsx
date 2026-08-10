@@ -8,8 +8,18 @@ import { negliAppunti } from '../lib/appunti.js'
 // con l'app: niente codice, niente onboarding, solo come mettersela sulla
 // home. È il link che si condivide nel gruppo.
 //
-// Mostra UNA guida sola, quella giusta. Tre guide insieme sono un
-// documento; una è un'istruzione.
+// ⚠️ Mostra **tutte e due** le procedure, iPhone e Android.
+//
+// Prima ne mostrava una sola, quella indovinata dallo user agent, e la
+// ragione scritta qui era «tre guide insieme sono un documento, una è
+// un'istruzione». Regge finché indovini: ma il link si gira nel gruppo,
+// si apre dentro WhatsApp, si rimbalza da un telefono all'altro — e chi
+// deve aiutare qualcuno vuole vedere anche i passi dell'altro sistema.
+// Due procedure da tre righe si leggono in dieci secondi.
+//
+// Il resto è andato via: l'apertura che spiegava cos'è una PWA, l'avviso
+// sul codice (spostato dopo l'installazione, dove serve) e le note in
+// fondo a ognuna.
 export default function Installa() {
   const [dispositivo] = useState(() =>
     riconosci(navigator.userAgent, {
@@ -111,29 +121,35 @@ export default function Installa() {
     )
   }
 
-  const guida = INSTALLA[dispositivo.sistema]
-
   return (
     <main className="installa">
       <h1 className="installa-titolo">{INSTALLA.titolo}</h1>
-      <p className="installa-testo">{INSTALLA.apertura}</p>
-      <p className="installa-avviso">{INSTALLA.avvisoCodice}</p>
 
-      {invito && (
-        <button type="button" className="installa-primario" onClick={installaOra}>
-          Installa app
-        </button>
-      )}
+      <section className="installa-via">
+        <h2 className="installa-sotto">{INSTALLA.ios.nome}</h2>
+        <ol className="installa-passi">
+          {INSTALLA.ios.passi.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ol>
+      </section>
 
-      <h2 className="installa-sotto">
-        {invito ? 'Oppure a mano' : `Da ${guida.browser}, in tre passi`}
-      </h2>
-      <ol className="installa-passi">
-        {guida.passi.map((p) => (
-          <li key={p}>{p}</li>
-        ))}
-      </ol>
-      <p className="installa-nota">{guida.nota}</p>
+      <section className="installa-via">
+        <h2 className="installa-sotto">{INSTALLA.android.nome}</h2>
+        {/* Il tasto solo quando Chrome lo concede davvero. Fino al 10
+            agosto non lo concedeva mai, perche' il manifest non aveva
+            un'icona da 192 e l'app non risultava installabile. */}
+        {invito && (
+          <button type="button" className="installa-primario" onClick={installaOra}>
+            Installa app
+          </button>
+        )}
+        <ol className="installa-passi">
+          {INSTALLA.android.passi.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ol>
+      </section>
     </main>
   )
 }

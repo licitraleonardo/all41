@@ -1,39 +1,36 @@
 // I testi della pagina di installazione. Stanno qui e non nel
 // componente, come tutto il resto: questa è la pagina che verrà riletta
 // e ritoccata più volte, perché è la prima cosa che vede il gruppo.
+//
+// ⚠️ Asciugata il 10 agosto. C'erano un'apertura che spiegava cos'è una
+// PWA, un avviso sul codice e una nota in fondo a ogni procedura: chi
+// apre questa pagina vuole installare l'app, non leggere di come
+// funzionano le app. Restano le due procedure e basta.
 
 export const INSTALLA = {
   titolo: 'Mettila sulla home',
-  apertura:
-    'All For One non sta sugli store. Si aggiunge alla schermata Home e da lì si apre come un’app qualunque — a schermo pieno, senza barre del browser.',
-
-  // ⚠️ Il codice di accesso è la cosa che si dimentica, e la si scopre
-  // solo dopo aver installato: l'app installata ha uno storage suo,
-  // quindi non eredita niente dal browser.
-  avvisoCodice:
-    'Tieni a portata il tuo codice di accesso: l’app installata parte da zero e te lo chiede.',
 
   ios: {
-    browser: 'Safari',
+    nome: 'iPhone',
+    // ⚠️ Su iPhone non esiste nessuna API per installare: Safari non la
+    // espone, punto. Qui un tasto non può esserci, e metterne uno che
+    // non fa niente sarebbe peggio del non averlo.
     passi: [
-      'Tocca il tasto Condividi in fondo allo schermo — il quadrato con la freccia in su.',
-      'Scorri l’elenco e scegli “Aggiungi alla schermata Home”.',
-      'Tocca “Aggiungi” in alto a destra.',
+      'Apri questa pagina in Safari.',
+      'Tocca Condividi in fondo — il quadrato con la freccia in su.',
+      'Scorri e scegli «Aggiungi alla schermata Home».',
     ],
-    // Su iPhone non esiste beforeinstallprompt: si può solo spiegare.
-    nota: 'Su iPhone non c’è nessun bottone che lo faccia al posto tuo. È fatto così.',
   },
 
   android: {
-    browser: 'Chrome',
-    // Il bottone c'è quando il browser lo concede; queste restano come
-    // ripiego, perché l'evento non scatta sempre.
+    nome: 'Android',
+    // Il tasto compare quando Chrome lo concede. Questi passi restano
+    // per quando non scatta.
     passi: [
+      'Apri questa pagina in Chrome.',
       'Tocca i tre puntini in alto a destra.',
-      'Scegli “Installa app” — oppure “Aggiungi a schermata Home”.',
-      'Conferma.',
+      'Scegli «Installa app».',
     ],
-    nota: 'Se compare il bottone qui sopra, fa tutto lui.',
   },
 
   desktop: {
@@ -43,4 +40,14 @@ export const INSTALLA = {
   },
 
   dopo: 'Fatto. Adesso c’è l’icona sulla home: si apre da lì, non dal browser.',
+
+  // ⚠️ Questo avviso **non è sparito, ha cambiato momento** — stessa
+  // mossa fatta per i Documenti.
+  //
+  // Stava in cima alla pagina, dove lo leggeva chi non aveva ancora
+  // installato niente e se lo scordava dieci minuti dopo. Adesso sta
+  // sulla schermata di «fatto», cioè nell'istante esatto prima di aprire
+  // l'app e trovarsi il campo del codice davanti. L'app installata ha
+  // uno storage suo: non eredita niente dal browser, e riparte da zero.
+  avvisoCodice: 'Ti chiederà il codice di accesso: l’app installata parte da zero.',
 }

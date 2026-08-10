@@ -100,3 +100,18 @@
   word-break: break-all;
   color: rgba(247, 244, 236, 0.55);
 }
+
+/* Le due procedure, una sotto l'altra. Una riga sottile fra loro: sono
+   due cose parallele, e senza niente in mezzo si leggono come un elenco
+   solo di sei passi. */
+.installa-via + .installa-via {
+  margin-top: 26px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(247, 244, 236, 0.14);
+}
+
+/* Il tasto sta sopra i passi, non sotto: quando c'e', i passi non
+   servono. */
+.installa-via .installa-primario {
+  margin-bottom: 4px;
+}
