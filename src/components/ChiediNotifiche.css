@@ -1,64 +1,104 @@
-/* «Fatti avvisare». Stessa forma delle righe dei numeri utili — testo a
-   sinistra, azione a destra — perche' e' nella stessa schermata e non
-   deve sembrare un pezzo estraneo. */
+/* «Notifiche» con l'interruttore, dentro le Impostazioni.
+
+   ⚠️ Da fermo e' una riga sola: il nome e l'interruttore. Tutto il resto
+   -- cosa arriva, dove si sbloccano, la riga tecnica -- compare **solo
+   quando qualcosa non va**. Sono spiegazioni costate cinque giri di
+   messaggi e servono di nuovo il giorno in cui succede a qualcun altro,
+   ma chi accende e basta non deve leggersele. */
 
 .notifiche {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
   padding: 12px 14px;
   background: #fff;
   border: 1px solid var(--line, #e4dfd2);
   border-radius: 13px;
 }
 
-.notifiche-testo {
-  flex: 1;
-  min-width: 0;
+.notifiche-riga {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notifiche-nome {
+  font-size: 15px;
+  font-weight: 700;
   color: var(--ink, #16323f);
 }
 
-.notifiche-testo strong {
-  font-size: 14px;
-}
-
-.notifiche-testo small {
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: var(--ink-soft, #55636b);
-}
-
-.notifiche-tasto {
+/* Pieno quando e' acceso, vuoto quando e' spento. Un tasto che dice
+   «Accendi» non dice come sei messo adesso: questo lo dice guardandolo,
+   senza leggere niente. */
+.interruttore {
   flex: none;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--sand, #f7f4ec);
-  background: var(--sea, #0b3550);
-  border: 0;
-  border-radius: 100px;
-  padding: 10px 18px;
-  cursor: pointer;
-}
-
-/* Spegnere non e' l'azione principale: sobrio, cosi' non invita. */
-.notifiche-tasto.spento {
-  color: var(--ink-soft, #55636b);
-  background: transparent;
+  position: relative;
+  width: 52px;
+  height: 30px;
+  padding: 0;
   border: 1px solid var(--line, #e4dfd2);
+  border-radius: 100px;
+  background: #ece7db;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.notifiche-tasto:disabled {
+.interruttore-pallino {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(11, 53, 80, 0.35);
+  transition: transform 0.15s ease;
+}
+
+.interruttore.acceso {
+  background: var(--juniper, #2f5d50);
+  border-color: var(--juniper, #2f5d50);
+}
+
+.interruttore.acceso .interruttore-pallino {
+  transform: translateX(22px);
+}
+
+.interruttore:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
+.interruttore:focus-visible {
+  outline: 2px solid var(--sea, #0b3550);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interruttore,
+  .interruttore-pallino {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------- quando qualcosa non va */
+
+.notifiche-guai {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line, #e4dfd2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notifiche-cosa {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-soft, #55636b);
+}
+
 .notifiche-esito {
-  flex-basis: 100%;
   margin: 0;
   font-size: 12.5px;
   line-height: 1.45;
@@ -66,32 +106,15 @@
 }
 
 .notifiche-nota {
-  flex-basis: 100%;
   margin: 0;
   font-size: 11.5px;
   line-height: 1.45;
   color: var(--ink-soft, #55636b);
 }
 
-.notifiche-tasto:focus-visible {
-  outline: 2px solid var(--sea, #0b3550);
-  outline-offset: 2px;
-}
-
-/* Come sta messo, in due parole. Un tasto da solo non basta: «Accendi»
-   non dice se sei spento o se non hai mai provato. */
-.notifiche-stato {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink-soft, #55636b);
-}
-
-/* La riga tecnica, per quando bisogna capire da lontano. Piccola e a
-   monospazio: non e' per chi usa l'app, e' per chi la ripara. */
+/* La riga per chi ripara, non per chi usa: dice quale dei tre permessi
+   che si chiamano tutti «Notifiche» sta dicendo di no. Si fotografa. */
 .notifiche-diagnostica {
-  flex-basis: 100%;
   margin: 0;
   font-family: ui-monospace, Consolas, monospace;
   font-size: 10.5px;
