@@ -21,6 +21,7 @@ import {
 import { LUNGHEZZA_MAX_TESTO, MINUTI_RIPARTENZA, SECONDI_ATTESA } from '../config/azioni.js'
 import { SONDAGGI } from '../config/sondaggi.js'
 import { SUONI } from '../config/suoni.js'
+import { COPERTO, viaggioCominciato } from '../config/rilascio.js'
 import { suona } from '../lib/audio.js'
 import { creaSondaggio } from '../lib/voti.js'
 import Rotella from './Rotella.jsx'
@@ -221,7 +222,32 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
     }
   }
 
+  // ⚠️ Prima del 12 i tasti speciali sono coperti: «Dove siete», «Si
+  // riparte», «Sondaggio» e i suoni. Restano visibili e toccandoli
+  // dicono quando si aprono — spegnerli e basta lascerebbe chiedere
+  // «perche' non funziona».
+  //
+  // I suoni soprattutto: tengono un conteggio, e le Leggi sulla
+  // soundboard contano le pressioni per spegnerla a chi abusa. Farlo
+  // partire due giorni prima vuol dire arrivare al viaggio con un conto
+  // gia' avviato.
+  //
+  // ⚠️ L'SOS **non** e' qui dentro, ed e' voluto: e' l'unica funzione di
+  // sicurezza dell'app, non tiene nessun conteggio e non da' punti. Il 12
+  // vi spostate tutti, e chi parte all'alba non deve restare scoperto.
+  const aperta = viaggioCominciato()
+
+  function seCoperto() {
+    if (aperta) return false
+    setAvviso(COPERTO)
+    return true
+  }
+
   function alterna(quale) {
+    // ⚠️ Il ＋ no: dentro ci sono Posizione e Feedback, che restano
+    // aperti. Coperti sono «Si riparte», «Sondaggio» e, dentro il menu,
+    // i suoni.
+    if (quale !== 'piu' && seCoperto()) return
     setFoglio((f) => (f === quale ? null : quale))
     // Chiudendo il ＋ si richiudono anche i suoni: riaprendolo si riparte
     // dalle tre voci, non da dentro l'elenco dove eri rimasto.
@@ -274,7 +300,10 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
           <button
             type="button"
             className="azione"
-            onClick={() => manda('dove_siete', { posizione: null })}
+            onClick={() => {
+              if (seCoperto()) return
+              manda('dove_siete', { posizione: null })
+            }}
             disabled={inCorso}
           >
             📍 Dove siete
@@ -370,7 +399,10 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
                 <button
                   type="button"
                   className="voce-menu"
-                  onClick={() => setSuoniAperti(true)}
+                  onClick={() => {
+                    if (seCoperto()) return
+                    setSuoniAperti(true)
+                  }}
                 >
                   🔊 Suoni
                 </button>
