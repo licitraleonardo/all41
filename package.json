@@ -14,6 +14,7 @@
     "prova": "npm run --silent prova:compila && npm run --silent prova:sql && npm run --silent prova:giorni && npm run --silent prova:aggiornamento && npm run --silent prova:riallineamento && npm run --silent prova:conti && npm run --silent prova:proposte && npm run --silent prova:caccia && npm run --silent prova:documenti && npm run --silent prova:posizione && npm run --silent prova:audio && npm run --silent prova:scadenza && npm run --silent prova:cache && npm run --silent prova:coda-foto && npm run --silent prova:scadenza-voti && npm run --silent prova:dispositivo && npm run --silent prova:pecora && npm run --silent prova:impostore && npm run --silent prova:dama && npm run --silent prova:mvp && npm run --silent prova:statistiche && npm run --silent prova:info && npm run --silent prova:fogli && npm run --silent prova:guida && npm run --silent prova:vocali && npm run --silent prova:sos && npm run --silent prova:avvisi && npm run --silent prova:dati-vecchi && npm run --silent prova:telefono && npm run --silent prova:finestre && npm run --silent prova:feedback && npm run --silent prova:notifiche && npm run --silent prova:navigazione && npm run --silent prova:offri-notifiche",
     "prova:compila": "vite build --logLevel error",
     "icone": "node strumenti/fai-icone.mjs",
+    "prospetto": "node strumenti/fai-prospetto.mjs",
     "prova:proposte": "node prove/proposte.mjs",
     "prova:conti": "node prove/conti.mjs && node prove/conti-casuali.mjs",
     "prova:caccia": "node prove/caccia.mjs",
