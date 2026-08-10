@@ -56,14 +56,30 @@ export default defineConfig({
         orientation: 'portrait',
         background_color: '#0B3550',
         theme_color: '#0B3550',
+        // ⚠️ I PNG stanno per primi, e non e' una questione di gusto.
+        //
+        // Chrome considera un'app installabile solo se il manifest
+        // dichiara **un'icona raster da almeno 192x192**. Qui c'erano due
+        // SVG e `apple-touch-icon.png`, che e' 180x180 — misurato, non
+        // stimato: sotto la soglia. Senza icona valida
+        // `beforeinstallprompt` non scatta, quindi il tasto «Installa
+        // app» non compare mai, e su Android resta «Aggiungi a schermata
+        // Home», che fa una scorciatoia invece di un'app vera.
+        //
+        // Si rifanno con `npm run icone`, che li disegna col font a
+        // pixel dell'intro: vedi `strumenti/fai-icone.mjs`.
         icons: [
-          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: '/icona-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icona-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           {
-            src: '/icona-maskable.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: '/icona-512-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'maskable',
           },
+          // Le SVG restano dietro: scalano meglio dove il browser le
+          // accetta, ma da sole non bastavano a nessuno.
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
           { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
         ],
       },
