@@ -48,6 +48,12 @@ self.__all41.decidi = function decidi({ tipo, id, appAperta, giaMostrata }) {
     case 'vocale':
       return giaMostrata ? null : { tag: 'vocali', renotify: false, tab: 'gruppo' }
 
+    // La sveglia del primo giorno, una volta sola in tutto il viaggio.
+    // Porta su Oggi e non sul gruppo: quello che c'e' da vedere e' il
+    // programma della giornata.
+    case 'sveglia':
+      return { tag: 'sveglia', renotify: true, tab: 'oggi' }
+
     // Foto, punti, Leggi scoperte, suoni: mai. Sono cose belle da
     // trovare aprendo l'app, non da farsi svegliare.
     default:
@@ -83,6 +89,10 @@ self.__all41.descrivi = function descrivi({ tipo, chi, payload }) {
       return { titolo: 'Qualcuno ha scritto nel gruppo', corpo: 'Apri per leggere' }
     case 'vocale':
       return { titolo: 'Qualcuno ha mandato un vocale', corpo: 'Apri per ascoltarlo' }
+    case 'sveglia':
+      // Il corpo dice perche' adesso funziona tutto: chi ha provato
+      // l'app nei due giorni prima l'ha trovata mezza coperta.
+      return { titolo: 'All41 vi aspetta', corpo: 'Da stamattina funziona tutto.' }
     default:
       return null
   }

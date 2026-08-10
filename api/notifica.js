@@ -1,6 +1,6 @@
-import webpush from 'web-push'
 import { createClient } from '@supabase/supabase-js'
-import { daNotificare, daTogliere } from './_regole.js'
+import { daNotificare } from './_regole.js'
+import { chiaviPush, mandaATutti } from './_manda.js'
 
 // Manda una notifica a tutto il gruppo tranne a chi l'ha fatta partire.
 //
@@ -18,8 +18,7 @@ import { daNotificare, daTogliere } from './_regole.js'
 // scherzo che questa app non deve rendere possibile. Così il massimo che
 // può fare è rimandare una notifica per una cosa successa davvero.
 
-const CHIAVE_PUBBLICA = process.env.VAPID_PUBLIC_KEY
-const CHIAVE_PRIVATA = process.env.VAPID_PRIVATE_KEY
+const { pubblica: CHIAVE_PUBBLICA, privata: CHIAVE_PRIVATA } = chiaviPush()
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ errore: 'solo POST' })
@@ -84,32 +83,9 @@ export default async function handler(req, res) {
 
   if (!iscritti?.length) return res.status(200).json({ mandate: 0, motivo: 'nessun iscritto' })
 
-  webpush.setVapidDetails('mailto:all41@example.invalid', CHIAVE_PUBBLICA, CHIAVE_PRIVATA)
-
   const roba = JSON.stringify({ tipo, id, chi: autore?.name ?? null, payload })
 
-  const esiti = await Promise.allSettled(
-    iscritti.map((i) =>
-      webpush.sendNotification(
-        { endpoint: i.endpoint, keys: i.chiavi },
-        roba,
-        { TTL: 600 } // dieci minuti: una notizia di ieri non serve a nessuno
-      )
-    )
-  )
-
-  // ⚠️ Le iscrizioni morte si tolgono da sole.
-  //
-  // Un telefono che disinstalla l'app lascia il suo endpoint nella
-  // tabella per sempre, e il servizio di push risponde 404 o 410. Senza
-  // questa pulizia, fra un anno si proverebbe a mandare a otto telefoni
-  // che non esistono più — e ogni invio è tempo di attesa per chi ha
-  // premuto SOS.
-  const morte = daTogliere(esiti, iscritti)
-  if (morte.length) await db.from('push_subscriptions').delete().in('endpoint', morte)
-
-  return res.status(200).json({
-    mandate: esiti.filter((e) => e.status === 'fulfilled').length,
-    tolte: morte.length,
-  })
+  // Dieci minuti di vita: una notizia di ieri non serve a nessuno.
+  const esito = await mandaATutti({ db, iscritti, roba, ttl: 600 })
+  return res.status(200).json(esito)
 }

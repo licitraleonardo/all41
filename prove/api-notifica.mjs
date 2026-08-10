@@ -5,6 +5,8 @@
 // `api/_regole.js` apposta per poter essere provate qui.
 
 import { DA_MANDARE, daNotificare, daTogliere } from '../api/_regole.js'
+import { GIORNO, oggiARoma } from '../api/sveglia.js'
+import { VIAGGIO } from '../src/config/viaggio.js'
 import { readFileSync } from 'node:fs'
 
 let falliti = 0
@@ -135,6 +137,37 @@ console.log('\nl iscrizione non tocca la tabella a mano')
     .join('\n')
   prova('le funzioni sono security definer', (sql.match(/security definer/g) ?? []).length === 2)
   prova('e la tabella non ha policy', !sql.includes('create policy'))
+}
+
+
+console.log('\nla sveglia del 12 suona una volta sola')
+{
+  // ⚠️ Il cron gira **ogni giorno**: se il controllo sul giorno fosse
+  // storto, «All41 vi aspetta» arriverebbe tutte le mattine per sempre —
+  // e nessuno se ne accorgerebbe finche' non comincia a dare fastidio.
+  prova('il giorno e quello di partenza', GIORNO === VIAGGIO.dataInizio, {
+    sveglia: GIORNO,
+    viaggio: VIAGGIO.dataInizio,
+  })
+
+  // L'ora di Roma, non quella del server. Vercel gira in UTC.
+  prova(
+    'a mezzogiorno e mezza UTC del 12 e il 12',
+    oggiARoma(new Date('2026-08-12T10:30:00Z')) === GIORNO
+  )
+
+  // ⚠️ Il caso che una data letta in UTC sbaglia: mezzanotte e mezza
+  // italiana del 12 e' ancora l'11 secondo il server.
+  prova(
+    'e a mezzanotte e mezza italiana e gia il 12',
+    oggiARoma(new Date('2026-08-11T22:30:00Z')) === GIORNO,
+    oggiARoma(new Date('2026-08-11T22:30:00Z'))
+  )
+
+  // E gli altri giorni tace.
+  prova('l 11 non suona', oggiARoma(new Date('2026-08-11T10:30:00Z')) !== GIORNO)
+  prova('il 13 nemmeno', oggiARoma(new Date('2026-08-13T10:30:00Z')) !== GIORNO)
+  prova('e un anno dopo neanche', oggiARoma(new Date('2027-08-12T10:30:00Z')) !== GIORNO)
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)
