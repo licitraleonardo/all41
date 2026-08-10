@@ -22,7 +22,7 @@ export const VOCI = [
     titolo: 'Gruppo',
     testo:
       'La chat per le cose brevi. I tasti sopra la tastiera fanno il lavoro sporco: SOS, "dove siete", "si riparte tra 10 minuti", un sondaggio al volo.',
-    gesto: 'Nella scheda Vocali si tiene premuto il microfono e si parla, come un walkie-talkie.',
+    gesto: 'Nella scheda Vocali si tocca il microfono per parlare, e si tocca di nuovo per mandare.',
   },
   {
     icona: '📷',
@@ -65,106 +65,21 @@ export const FINALE = {
 
 export const APERTURA = 'Cinque tab, qualche gesto che non si vede, e un mucchio di regole che non ti diciamo.'
 
-// Le nuvolette di Allan: una per tab, la prima volta che ci entri e mai
-// piu'. Servono a dire "qui si puo' fare questo" nel momento in cui uno
-// ci e' appena arrivato, che e' l'unico in cui gli interessa saperlo.
+// La nuvoletta di Allan. Una sola, e sta in Classifica.
 //
-// Sono nella voce di Allan e non in quella di un tutorial: asciutta, un
-// po' svogliata, mai entusiasta. Allan non fa il cicerone contento —
-// custodisce il Testamento e lo sa. Se diventasse una mascotte allegra
-// il personaggio si consumerebbe alla prima schermata.
-// Ogni voce ha un id che dice dove si trova: `gruppo` è il tab,
-// `gruppo.vocali` la sua sotto-scheda. Il segnalibro usa questo id,
-// quindi ogni pezzo dell'app si spiega una volta sola nella vita.
+// ⚠️ Erano quindici, una per ogni sezione, e si aprivano la prima volta
+// che ci entravi. Sulla carta era un tutorial gentile: nella pratica sono
+// quindici cartelli da chiudere nei primi cinque minuti, e chi ne chiude
+// tre di fila impara a chiuderli senza leggerli — compresi quelli che
+// dicevano qualcosa.
 //
-// `posizione: 'alto'` per i due step che lo spec vuole "solo spostamento
-// del fumetto": lì non si entra in una sezione nuova, si indica una
-// scheda che sta in cima, e il fumetto va a stare vicino a lei.
+// Ne resta una, dove serve davvero: la Classifica e' l'unico posto
+// dell'app dove si puo' fare una cosa che nessuno si aspetta — dare punti
+// agli altri, anche a chi ti sta davanti. Quello va detto, perche' non lo
+// indovina nessuno.
 export const NUVOLETTE = {
-  oggi: {
-    testo:
-      'Qui c’è il programma del viaggio. Così almeno sapete dove dovreste essere... anche se arriverete in ritardo lo stesso.',
-  },
-
-  gruppo: {
-    testo:
-      'Questa è la chat. Parlate, litigate, prendetevi in giro. Cercate solo di non infrangere le Leggi...',
-  },
-  'gruppo.vocali': {
-    posizione: 'alto',
-    testo:
-      'Se scrivere vi stanca, lasciate un vocale. Sarà comunque troppo lungo per essere ascoltato.',
-  },
-
-  foto: {
-    testo: 'Qui finiscono le foto del viaggio.. Che c’è?? Non c’è nient’altro da dire',
-  },
-  'foto.sfide': {
-    posizione: 'alto',
-    testo: 'Dai un’occhiata alle sfide, ce ne sono di nuove ogni giorno, yuppy...',
-  },
-
   'gioco.classifica': {
     testo:
-      'Qui vedete chi sta vincendo il viaggio. Puoi proporre dei punti per ribaltare o confermare la situazione.',
-  },
-  'gioco.testamento': {
-    testo:
-      'Le Leggi decidono cosa vale punti e cosa vi farà pentire delle vostre azioni. I Trofei? Gloria eterna.',
-  },
-  'gioco.impostore': {
-    testo: 'Uno mente. Gli altri provano a scoprirlo. Claudio non fare il babbo maligno',
-  },
-  // Non era nell'elenco dei quindici perché quando l'hai scritto la Dama
-  // non c'era. Senza, sarebbe l'unica scheda muta di tutta l'app.
-  'gioco.dama': {
-    testo: 'Due persone, una scacchiera, e un’amicizia che regge fino alla terza partita.',
-  },
-  'gioco.pecora': {
-    testo: 'Provo a evitare gli ostacoli, che bella metafora della vita',
-  },
-
-  altro: {
-    testo: 'Le cose utili che nessuno cerca finché non servono davvero.',
-  },
-
-// Le sei sotto-voci di Altro. Lo spec le voleva in fila automatica
-// all'ingresso, ed e' stato fatto: alla prova sono sei cartelli uno
-// dietro l'altro appena entri, e si leggono come un muro. Adesso ognuna
-// aspetta la sua sezione, come tutte le altre dieci.
-//
-// Il prezzo lo si sapeva ed e' quello: in Guida e Info nessuno entra per
-// curiosita', quindi quei due messaggi molti non li vedranno mai. Meglio
-// due non visti che sei saltati in blocco.
-  'altro.spese': {
-    testo:
-      'Segnate chi ha pagato. Così a fine viaggio smettete di dire “non mi ricordo quanto ti devo”.',
-  },
-
-  // Mancava, ed era l'unica sezione muta di tutta l'app: stessa ragione
-  // per cui e' stata aggiunta quella della Dama.
-  'altro.documenti': {
-    testo:
-      'Biglietti, prenotazioni, il documento di chi guida. Metteteli qui adesso, non alle sei di mattina in aeroporto.',
-  },
-
-  'altro.mappa': {
-    testo:
-      'Per chi si perde anche seguendo il gruppo.',
-  },
-
-  'altro.stat': {
-    testo:
-      'Numeri, record e altre prove oggettive delle vostre pessime decisioni.',
-  },
-
-  'altro.guida': {
-    testo:
-      'Se siete arrivati qui significa che non avete ascoltato il tutorial. Classico.',
-  },
-
-  'altro.info': {
-    testo:
-      'Versione dell’app, crediti e altre cose che leggerete per circa quattro secondi.',
+      'Qui puoi guadagnare punti. In Classifica pero’ puoi anche assegnarli agli altri. Sì, aiutare qualcuno a superarti. Strano, no? Comunque prova tutti i giochi. Magari sei bravo in qualcosa.',
   },
 }

@@ -29,7 +29,6 @@ import Album from './components/Album.jsx'
 import Gioco from './components/Gioco.jsx'
 import Altro from './components/Altro.jsx'
 import BarraTab from './components/BarraTab.jsx'
-import NuvolettaAllan from './components/NuvolettaAllan.jsx'
 import Riparo from './components/Riparo.jsx'
 import Targhetta from './components/Targhetta.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
@@ -623,14 +622,6 @@ export default function App() {
             prendersi lo schermo con un cartello d'errore. La barra dei
             tab resta fuori, perche' senza quella non si va da nessuna
             parte. */}
-        <Riparo zitto>
-          {/* Qui resta solo Oggi, che non ha sotto-schede. Gli altri
-              quattro tab montano la nuvoletta al loro interno: lo stato
-              della sotto-scheda vive lì, e i quindici step dello spec
-              parlano di sotto-schede, non di tab. */}
-          {tab === 'oggi' && <NuvolettaAllan membroId={membro?.id} passo="oggi" />}
-        </Riparo>
-
         <StrisciaOffline attiva={!inLinea} copia={datiVecchi} />
 
         {/* ⚠️ Fuori dal `Riparo` degli altri e prima di tutti: se si

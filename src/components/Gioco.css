@@ -875,3 +875,24 @@
 .testamento-custode-riga .testamento-custode {
   margin: 0;
 }
+
+/* Il punteggio e, sotto, cosa si puo' farci.
+
+   ⚠️ «assegna punti» in verde e piccolo: e' l'unica cosa dell'app che
+   nessuno indovina da solo -- che i punti si danno anche agli altri, e
+   anche a chi ti sta davanti. Prima lo diceva solo una freccia. */
+.riga-colonna-punti {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  margin-left: auto;
+}
+
+.riga-assegna {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #2f7d5a;
+  white-space: nowrap;
+}

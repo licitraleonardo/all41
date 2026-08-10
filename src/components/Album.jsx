@@ -17,7 +17,6 @@ import {
   soloInMemoria,
 } from '../lib/codaFotoRegole.js'
 import { SFIDE_PER_ID } from '../config/sfide.js'
-import NuvolettaAllan from './NuvolettaAllan.jsx'
 import { uuid } from '../lib/id.js'
 import Sfide from './Sfide.jsx'
 import FotoGrande from './FotoGrande.jsx'
@@ -284,7 +283,6 @@ export default function Album({ membro }) {
 
   return (
     <div className="album-schermo">
-      <NuvolettaAllan membroId={membro?.id} passo={vista === 'album' ? 'foto' : 'foto.sfide'} />
 
       <div className="segmenti" role="tablist">
         <button

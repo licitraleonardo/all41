@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import './Altro.css'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
-import NuvolettaAllan, { nuvolettaGiaVista } from './NuvolettaAllan.jsx'
 import Spese from './Spese.jsx'
 import Documenti from './Documenti.jsx'
 import Posizioni from './Posizioni.jsx'
@@ -37,18 +36,6 @@ export default function Altro({ membro }) {
 
   // Le sotto-voci parlano solo dopo che si è chiuso il messaggio del
   // tab: al primo ingresso si atterra su Spese, e due fumetti
-  // sovrapposti sono un muro invece che una guida.
-  const [altroGiaVisto, setAltroGiaVisto] = useState(false)
-  useEffect(() => {
-    if (!membro?.id) return undefined
-    const guarda = () => setAltroGiaVisto(nuvolettaGiaVista(membro.id, 'altro'))
-    guarda()
-    // Il messaggio del tab si chiude con un tocco dentro la nuvoletta, e
-    // da fuori non arriva nessun evento: si ricontrolla a intervalli
-    // finché non è chiuso. Costa una lettura di localStorage.
-    const battito = setInterval(guarda, 400)
-    return () => clearInterval(battito)
-  }, [membro?.id])
 
   return (
     <div className="altro-schermo">
@@ -56,8 +43,6 @@ export default function Altro({ membro }) {
           Gruppo, Foto e Gioco. Erano in fila automatica come chiedeva lo
           spec, ma alla prova sono cinque cartelli uno dietro l'altro
           appena entri, e si leggono come un muro. */}
-      <NuvolettaAllan membroId={membro?.id} passo="altro" />
-      {altroGiaVisto && <NuvolettaAllan membroId={membro?.id} passo={`altro.${vista}`} />}
 
       <div className="segmenti" role="tablist">
         {SCHEDE.map(([id, etichetta]) => (

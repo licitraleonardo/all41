@@ -3,7 +3,6 @@ import './Gruppo.css'
 import ChatRapida from './ChatRapida.jsx'
 import Vocali from './Vocali.jsx'
 import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
-import NuvolettaAllan from './NuvolettaAllan.jsx'
 
 // Il tab Gruppo, come lo vuole lo spec: la Chat Rapida e i Vocali come
 // due sotto-schede in alto. Sono due modi di dire la stessa cosa — "dove
@@ -25,10 +24,6 @@ export default function Gruppo({ membro, suoniDisponibili, nonLetto = {}, onVist
 
   return (
     <div className="gruppo-schermo">
-      {/* La nuvoletta sta qui e non in App: lo stato della sotto-scheda
-          vive qui dentro, e sollevarlo fino in cima avrebbe voluto dire
-          farlo per tutti e quattro i contenitori. */}
-      <NuvolettaAllan membroId={membro?.id} passo={vista === 'chat' ? 'gruppo' : 'gruppo.vocali'} />
       <div className="segmenti gruppo-schede" role="tablist">
         {[
           ['chat', 'Chat'],

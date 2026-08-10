@@ -159,8 +159,17 @@ export default function Classifica({
                   <span className="corona"> 🏴</span>
                 )}
               </span>
-              <span className={m.punteggio < 0 ? 'riga-punti sotto' : 'riga-punti'}>
-                {m.punteggio}
+              <span className="riga-colonna-punti">
+                <span className={m.punteggio < 0 ? 'riga-punti sotto' : 'riga-punti'}>
+                  {m.punteggio}
+                </span>
+                {/* ⚠️ Dice cosa succede toccando, che prima lo diceva solo
+                    una freccia. E' l'unica cosa dell'app che nessuno
+                    indovina da solo: che i punti si possono dare **agli
+                    altri**, anche a chi ti sta davanti. */}
+                {!(m.id === ioId && giaCascato) && (
+                  <span className="riga-assegna">assegna punti</span>
+                )}
               </span>
               {/* Senza questa freccia niente dice che la riga si tocca:
                   è la stessa che segna le righe apribili nelle Spese. */}

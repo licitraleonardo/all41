@@ -49,52 +49,34 @@ console.log('\nil numero delle Leggi e quello vero')
   )
 }
 
-console.log('\nogni pezzo dell app ha la sua nuvoletta')
+console.log('\nla nuvoletta e una sola, e sta dove serve')
 {
-  // Le nuvolette si chiedono per nome: `passo="altro.spese"`. Se una
-  // sezione nuova arriva senza la sua voce qui dentro resta **muta**, e
-  // non lo dice nessuno — non e' un errore, semplicemente non compare
-  // niente. E' successo con la Dama, ed era ancora cosi' per i Documenti.
-  const chiesti = new Set()
+  // ⚠️ Erano quindici, una per sezione. Sulla carta un tutorial gentile;
+  // nella pratica quindici cartelli da chiudere nei primi cinque minuti,
+  // e chi ne chiude tre di fila impara a chiuderli senza leggerli --
+  // compresi quelli che dicevano qualcosa.
+  //
+  // Questa prova prima controllava che OGNI sezione ne avesse una, ed era
+  // giusta finche' erano quindici. Adesso controlla il contrario, e serve
+  // allo stesso scopo: che non tornino.
+  const quante = Object.keys(NUVOLETTE)
+  prova('e una sola', quante.length === 1, quante)
+  prova('ed e quella della Classifica', quante[0] === 'gioco.classifica')
 
-  // Quelle scritte per esteso: `passo="oggi"`, `passo="altro"`.
+  const testo = NUVOLETTE['gioco.classifica']?.testo ?? ''
+  prova('e dice qualcosa', testo.length > 40)
+  // Il senso di tenerla: e' l'unica cosa dell'app che nessuno indovina da
+  // solo -- che i punti si danno anche agli altri, e a chi ti sta davanti.
+  prova('parla di assegnare punti agli altri', /assegnarli agli altri/i.test(testo))
+
+  // Una nuvoletta chiesta per un id che non c'e' non da' nessun errore:
+  // semplicemente non compare, e chi l'ha scritta crede che ci sia.
+  const chiesti = new Set()
   for (const t of [app, ...Object.values(sorgente)]) {
     for (const m of t.matchAll(/passo="([\w.]+)"/g)) chiesti.add(m[1])
-    // E quelle costruite: `passo={`altro.${vista}`}` — il prefisso si
-    // legge, la coda viene dall'elenco delle sezioni di quel componente.
-    for (const m of t.matchAll(/passo=\{`(\w+)\.\$\{/g)) chiesti.add(m[1] + '.*')
-    // `passo={vista === 'chat' ? 'gruppo' : 'gruppo.vocali'}`
-    for (const m of t.matchAll(/passo=\{[^}]*?'([\w.]+)'\s*:\s*'([\w.]+)'/g)) {
-      chiesti.add(m[1])
-      chiesti.add(m[2])
-    }
   }
-
-  const SEZIONI = {
-    'gioco.*': ['classifica', 'testamento', 'impostore', 'dama', 'pecora'],
-    'altro.*': ['spese', 'documenti', 'mappa', 'stat', 'guida', 'info'],
-  }
-
-  const attesi = []
-  for (const c of chiesti) {
-    if (!c.endsWith('.*')) {
-      attesi.push(c)
-      continue
-    }
-    const radice = c.slice(0, -2)
-    for (const s of SEZIONI[c] ?? []) attesi.push(`${radice}.${s}`)
-  }
-
-  prova('se ne chiedono parecchie', attesi.length >= 14, attesi.length)
-  for (const id of attesi.sort()) {
-    prova(`«${id}» ha la sua nuvoletta`, Boolean(NUVOLETTE[id]?.testo))
-  }
-
-  // E il contrario: una nuvoletta che nessuno chiede piu' e' un testo che
-  // non vedra' mai nessuno, di solito perche' la sezione e' stata
-  // rinominata.
-  const orfane = Object.keys(NUVOLETTE).filter((k) => !attesi.includes(k))
-  prova('nessuna nuvoletta scritta per una sezione che non esiste', orfane.length === 0, orfane)
+  const orfani = [...chiesti].filter((c) => !NUVOLETTE[c])
+  prova('nessuno ne chiede una che non esiste', orfani.length === 0, orfani)
 }
 
 console.log('\ni tab sono quelli che dice la guida')
@@ -120,16 +102,29 @@ console.log('\nquello che la guida insegna esiste ancora')
   const conGesto = VOCI.filter((v) => v.gesto)
   prova('qualche gesto lo insegna', conGesto.length >= 3, conGesto.length)
 
-  // Il microfono da tenere premuto. Il giorno in cui diventa «un tocco»
-  // — ed e' una cosa gia' chiesta — questa prova si accorge che la Guida
-  // sta insegnando un gesto che non esiste piu'.
+  // ⚠️ Il microfono, e una prova che era passata dicendo il falso.
+  //
+  // Il gesto e' diventato «un tocco» il 9 agosto, e la Guida ha continuato
+  // a insegnare «tieni premuto» per un giorno intero. Questa prova
+  // c'era gia' e non l'ha preso, perche' cercava anche `voc-premi` -- che
+  // e' un **nome di classe CSS**, rimasto uguale mentre il gesto cambiava.
+  //
+  // Adesso guarda il gesto e non il nome: `onPointerDown` c'e' solo se si
+  // tiene premuto davvero.
   const vocali = sorgente['Vocali.jsx'] ?? ''
   const guidaDicePremuto = conGesto.some((v) => /tiene premuto|tieni premuto/i.test(v.gesto))
-  const codiceHaPremuto = /onPointerDown|premi e parla|voc-premi/i.test(vocali)
+  const codiceHaPremuto = /onPointerDown|onPointerUp/.test(vocali)
   prova(
     'se la guida dice «tieni premuto», il microfono lo fa ancora',
     !guidaDicePremuto || codiceHaPremuto,
     { guidaDicePremuto, codiceHaPremuto }
+  )
+  // E il contrario: se il microfono e' a un tocco, la Guida deve dirlo.
+  const codiceEUnTocco = /onClick=\{registrando \? ferma : avvia\}/.test(vocali)
+  prova(
+    'se e a un tocco, la guida lo insegna cosi',
+    !codiceEUnTocco || conGesto.some((v) => /tocca il microfono/i.test(v.gesto)),
+    { codiceEUnTocco, gesti: conGesto.map((v) => v.gesto) }
   )
 
   // ⚠️ Verificato il 9 agosto: il gesto «trascina in su per segnarlo
