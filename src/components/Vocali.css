@@ -239,32 +239,30 @@
    Sta sopra il tasto, dove l'occhio e' appena stato, e non dentro un
    foglio: il vocale e' gia' partito, quindi ignorarla e' una risposta
    legittima e non deve costare un tocco per chiuderla. */
+/* ⚠️ Niente piu' riquadro bianco intorno.
+
+   Era una scheda con ombra e bordo perche' dentro ci stavano due cose --
+   la domanda e il bottone -- e ci voleva qualcosa a tenerle insieme.
+   Adesso dentro c'e' un bottone solo: un riquadro intorno a un bottone e'
+   imballaggio. */
 .voc-segna {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
   margin-bottom: 8px;
-  padding: 8px 10px 8px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink, #16323f);
-  background: #fff;
-  border: 1px solid var(--line, #e4dfd2);
-  border-radius: 12px;
-  box-shadow: 0 8px 20px -12px rgba(11, 53, 80, 0.6);
 }
 
+/* Evidenziato, e largo come il tasto sotto: compare per qualche secondo
+   e poi se ne va, quindi o si vede subito o non si vede per niente. */
 .voc-segna-si {
-  flex: none;
+  flex: 1;
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--sand);
   background: var(--coral, #e8604a);
   border: 0;
-  border-radius: 100px;
-  padding: 8px 14px;
+  border-radius: 12px;
+  padding: 13px 16px;
+  box-shadow: 0 8px 20px -10px rgba(232, 96, 74, 0.9);
   cursor: pointer;
 }
 

@@ -221,7 +221,11 @@ export default function Vocali({ membro }) {
               Sparisce da sola dopo qualche secondo. */}
           {daSegnare && !registrando && (
             <div className="voc-segna" role="status">
-              <span>Era importante?</span>
+              {/* Un tasto solo, e dice cosa fa. Prima erano una domanda
+                  («Era importante?») e una risposta («❗ Segnalo»): due
+                  righe, due letture e un punto esclamativo, per un
+                  bottone che si preme o si ignora. Ignorarlo resta una
+                  risposta legittima — sparisce da solo. */}
               <button
                 type="button"
                 className="voc-segna-si"
@@ -230,7 +234,7 @@ export default function Vocali({ membro }) {
                   setDaSegnare(null)
                 }}
               >
-                ❗ Segnalo
+                Segna come importante
               </button>
             </div>
           )}
@@ -249,11 +253,12 @@ export default function Vocali({ membro }) {
               aria-label={registrando ? 'Tocca per fermare e mandare' : 'Tocca per parlare'}
             >
               <Microfono grande={!registrando && !inCorso} />
-              {inCorso
-                ? 'Mando…'
-                : registrando
-                  ? `${LIMITI.voice.durataMax - secondi}s`
-                  : 'Parla'}
+              {/* Da fermo: solo il microfono. «Parla» sotto un disegno di
+                  microfono e' la didascalia di un'icona che si capisce da
+                  sola. Mentre registra invece resta il conto alla
+                  rovescia, che e' l'unica cosa che vale la pena leggere
+                  li': dice quanto tempo ti rimane. */}
+              {inCorso ? 'Mando…' : registrando ? `${LIMITI.voice.durataMax - secondi}s` : null}
             </button>
           </div>
 
