@@ -4,7 +4,6 @@ import { DOVE, EMERGENZE, UTILI } from '../config/info.js'
 import { leggiMembri } from '../lib/membri.js'
 import { daComporre } from '../lib/telefono.js'
 import Targhetta from './Targhetta.jsx'
-import FoglioFeedback from './FoglioFeedback.jsx'
 import ChiediNotifiche from './ChiediNotifiche.jsx'
 import Guida from './Guida.jsx'
 
@@ -22,7 +21,6 @@ export default function Info({ membroId }) {
   // `conCache`: una volta scaricato l'elenco resta in copia locale, e
   // questa lettura lo serve anche quando la rete non risponde.
   const [gruppo, setGruppo] = useState([])
-  const [scriviFeedback, setScriviFeedback] = useState(false)
 
   useEffect(() => {
     let vivo = true
@@ -135,28 +133,6 @@ export default function Info({ membroId }) {
         </>
       )}
 
-      {/* L'ingresso fisso al «com'è che va»: il cartello arriva ogni
-          tanto e da solo, ma chi ha qualcosa da dire adesso deve poterlo
-          dire adesso, senza aspettare che gli venga chiesto. */}
-      <p className="info-etichetta">Com’è che va</p>
-      <button
-        type="button"
-        className="info-numero info-utile"
-        onClick={() => setScriviFeedback(true)}
-      >
-        <span className="info-numero-cosa">
-          <strong>Dimmi com’è che va</strong>
-          <small>Qualsiasi cosa non torni, o manchi. Lo legge solo chi ha scritto l’app</small>
-        </span>
-      </button>
-
-      {scriviFeedback && (
-        <FoglioFeedback
-          membroId={membroId}
-          dove="info"
-          onChiudi={() => setScriviFeedback(false)}
-        />
-      )}
 
       {/* ⚠️ La Guida sta qui dentro, e non e' piu' una sezione sua.
           E' consultazione: si guarda una volta all'inizio, e poi solo

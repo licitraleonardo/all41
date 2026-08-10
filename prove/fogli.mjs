@@ -110,11 +110,26 @@ console.log('\nchi ci fa scrivere dentro avvisa prima di buttare via')
   // Un foglio con un campo di testo che si chiude al primo tocco sul velo
   // butta via quello che uno stava scrivendo, in silenzio. La regola:
   // se dentro un <Foglio> c'e' un campo, quel foglio dichiara `sporco`.
-  const conCampo = fogli.filter((f) => /<input\s+type="text"|<textarea/.test(codice[f]))
+  // ⚠️ Il campo dev'essere DENTRO il foglio, non solo nello stesso file.
+  //
+  // La regola prima guardava il file intero, e appena la chat ha aperto
+  // la mappa dentro un `<Foglio>` e' diventata rossa: il campo di testo
+  // di ChatRapida e' quello dei messaggi, che sta fuori dal foglio e non
+  // si perde chiudendolo. Una prova che si lamenta di una cosa giusta si
+  // impara a zittire, e da li' in poi non prende piu' niente.
+  const blocchi = (f) => [...codice[f].matchAll(/<Foglio[\s\S]*?<\/Foglio>/g)].map((m) => m[0])
+
+  const conCampo = fogli.filter((f) =>
+    blocchi(f).some((b) => /<input\s+type="text"|<textarea/.test(b))
+  )
 
   prova('ce ne sono, se no la prova non prova niente', conCampo.length >= 3, conCampo)
   for (const f of conCampo) {
-    prova(`${f}: dichiara «sporco»`, /sporco=\{/.test(codice[f]))
+    const rischiosi = blocchi(f).filter((b) => /<input\s+type="text"|<textarea/.test(b))
+    prova(
+      `${f}: ogni foglio con un campo dichiara «sporco»`,
+      rischiosi.every((b) => /sporco=\{/.test(b.split('>')[0] + '>'))
+    )
   }
 }
 

@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './ChatRapida.css'
 import Feed from './Feed.jsx'
 import FoglioSOS from './FoglioSOS.jsx'
+import Foglio from './Foglio.jsx'
+import Posizioni from './Posizioni.jsx'
+import FoglioFeedback from './FoglioFeedback.jsx'
 import { useFeed } from '../hooks/useFeed.js'
 import { useVoti } from '../hooks/useVoti.js'
 import { eliminaAzione, inviaAzione } from '../lib/azioni.js'
@@ -36,6 +39,13 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
   // Non piu' un elenco di suoni spenti: o la soundboard e' spenta tutta,
   // o si suona. Qui dentro c'e' l'ora in cui riapre.
   const [spentaFino, setSpentaFino] = useState(null)
+  // ⚠️ I suoni sono dentro il ＋, ed erano un tocco piu' vicini prima.
+  // E' il prezzo dichiarato di aver separato «mando al gruppo» da «apro
+  // una cosa per me»: se durante il viaggio da' fastidio, si tira fuori
+  // il solo 🔊 e non cambia niente di quello che c'e' sotto.
+  const [suoniAperti, setSuoniAperti] = useState(false)
+  const [mappaAperta, setMappaAperta] = useState(false)
+  const [feedbackAperto, setFeedbackAperto] = useState(false)
   const fondo = useRef(null)
   const barra = useRef(null)
   const schermo = useRef(null)
@@ -311,41 +321,97 @@ export default function ChatRapida({ membro, suoniDisponibili = {}, senzaCornice
           </div>
         )}
 
-        {foglio === 'suoni' && (
+        {/* ⚠️ Le tre cose che aprono qualcosa **per te**, contro i quattro
+            tasti rapidi qui sopra che **mandano qualcosa al gruppo**.
+            Sono due famiglie diverse, e mescolarle farebbe sembrare il
+            mondino della stessa specie dell'SOS — mentre quella fila
+            esiste apposta per essere premuta di corsa senza leggere. */}
+        {foglio === 'piu' && (
           <div className="menu-su">
-            {SUONI.map((s) => (
-              <button
-                key={s.file}
-                type="button"
-                className="voce-menu"
-                onClick={() => lanciaSuono(s)}
-                disabled={suoniDisponibili[s.file] === false}
-              >
-                {s.etichetta}
-              </button>
-            ))}
+            <button type="button" className="voce-menu" onClick={() => setSuoniAperti((s) => !s)}>
+              🔊 Suoni
+            </button>
+            {suoniAperti &&
+              SUONI.map((s) => (
+                <button
+                  key={s.file}
+                  type="button"
+                  className="voce-menu voce-suono"
+                  onClick={() => lanciaSuono(s)}
+                  disabled={suoniDisponibili[s.file] === false}
+                >
+                  {s.etichetta}
+                </button>
+              ))}
+            <button
+              type="button"
+              className="voce-menu"
+              onClick={() => {
+                setFoglio(null)
+                setMappaAperta(true)
+              }}
+            >
+              🌍 Dove siamo
+            </button>
+            <button
+              type="button"
+              className="voce-menu"
+              onClick={() => {
+                setFoglio(null)
+                setFeedbackAperto(true)
+              }}
+            >
+              ✨ Dimmi com’è che va
+            </button>
           </div>
         )}
 
         {/* Megafono e invio stanno DENTRO la casella, non ai suoi lati:
             fuori erano tre oggetti staccati che si contendevano la riga,
             dentro sono una cosa sola con due estremi. */}
+        {mappaAperta && (
+          <Foglio
+            etichetta="Dove siamo"
+            className="foglio-mappa"
+            onChiudi={() => setMappaAperta(false)}
+          >
+            <>
+              <Posizioni membro={membro} />
+              <button
+                type="button"
+                className="secondario-foglio"
+                onClick={() => setMappaAperta(false)}
+              >
+                Chiudi
+              </button>
+            </>
+          </Foglio>
+        )}
+
+        {feedbackAperto && (
+          <FoglioFeedback
+            membroId={membro?.id}
+            dove="chat"
+            onChiudi={() => setFeedbackAperto(false)}
+          />
+        )}
+
         <form className="riga-scrittura" onSubmit={mandaTesto}>
           {/* Il megafono sparisce quando è aperto un altro menu: sopra hai
               già "Si riparte" o il sondaggio, e un terzo bottone che apre
               una terza cosa è solo un invito a sbagliare. */}
-          {(!foglio || foglio === 'suoni') && (
+          {(!foglio || foglio === 'piu') && (
             <button
               type="button"
-              className={foglio === 'suoni' ? 'tasto-suoni aperto' : 'tasto-suoni'}
-              onClick={() => alterna('suoni')}
-              aria-label={foglio === 'suoni' ? 'Chiudi i suoni' : 'Suoni'}
-              aria-expanded={foglio === 'suoni'}
+              className={foglio === 'piu' ? 'tasto-suoni aperto' : 'tasto-suoni'}
+              onClick={() => alterna('piu')}
+              aria-label={foglio === 'piu' ? 'Chiudi' : 'Altre cose'}
+              aria-expanded={foglio === 'piu'}
             >
               {/* Aperto diventa la × che lo chiude: il suggerimento
                   scritto "tocca di nuovo per chiudere" era una didascalia
                   al posto di un bottone che si spiega da solo. */}
-              {foglio === 'suoni' ? '×' : spentaFino && spentaFino > new Date() ? '🔇' : '🔊'}
+              {foglio === 'piu' ? '×' : '＋'}
             </button>
           )}
 

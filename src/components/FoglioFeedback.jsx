@@ -48,13 +48,11 @@ export default function FoglioFeedback({ membroId, dove, onChiudi }) {
   return (
     <Foglio etichetta="Dimmi com’è che va" sporco={pulito.length > 0} onChiudi={onChiudi}>
       <>
-        <h2 className="foglio-titolo">Com’è che va?</h2>
-
-        <p className="fdb-nota">
-          Qualsiasi cosa: una roba che non si capisce, una che manca, una che ti ha fatto
-          ridere. Anche una riga.
-        </p>
-
+        {/* ⚠️ Niente titolo e niente spiegazioni: chi ha premuto ✨ sa
+            gia' cosa sta facendo, e una schermata che ti spiega quello
+            che hai appena scelto di fare e' una schermata che fa perdere
+            tempo. Resta la casella, e sotto l'unica riga che cambia
+            quello che si scrive: chi lo legge. */}
         <label className="campo">
           <textarea
             className="fdb-campo"
@@ -62,7 +60,7 @@ export default function FoglioFeedback({ membroId, dove, onChiudi }) {
             onChange={(e) => setTesto(e.target.value)}
             maxLength={MAX_FEEDBACK}
             rows={5}
-            placeholder="Scrivi qui"
+            placeholder="Lascia il tuo feedback"
             autoFocus
           />
         </label>
