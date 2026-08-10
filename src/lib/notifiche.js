@@ -73,6 +73,45 @@ export function suIPhone() {
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 }
 
+// ⚠️ Cosa vede l'app, in chiaro.
+//
+// Serve a smettere di indovinare. Su Android il permesso delle notifiche
+// vive in almeno tre posti che si chiamano tutti «Notifiche» — quello
+// dell'app, quello del sito, e l'interruttore generale del browser — e da
+// fuori non si capisce quale dei tre stia dicendo di no. Ci abbiamo perso
+// tre giri di messaggi.
+//
+// Questa riga si mostra solo quando qualcosa non va, e si puo'
+// fotografare: dice tutto quello che serve per capire dove guardare.
+export async function comeStaMesso() {
+  if (!notifichePossibili()) return 'notifiche non disponibili in questo browser'
+
+  let iscritto = '?'
+  try {
+    const r = await navigator.serviceWorker.ready
+    iscritto = (await r.pushManager.getSubscription()) ? 'si' : 'no'
+  } catch {
+    iscritto = 'errore'
+  }
+
+  // Lo stato secondo il browser, che a volte dice cose diverse da
+  // `Notification.permission`.
+  let secondoIlBrowser = '?'
+  try {
+    secondoIlBrowser = (await navigator.permissions?.query({ name: 'notifications' }))?.state ?? '?'
+  } catch {
+    secondoIlBrowser = 'non lo dice'
+  }
+
+  return [
+    `permesso: ${Notification.permission}`,
+    `browser dice: ${secondoIlBrowser}`,
+    `iscritto: ${iscritto}`,
+    `dalla home: ${installataSullaHome() ? 'si' : 'no'}`,
+    `service worker: ${'serviceWorker' in navigator ? 'si' : 'no'}`,
+  ].join(' · ')
+}
+
 // Il formato che vuole `pushManager.subscribe`: la chiave in byte, non in
 // testo.
 function chiaveInByte(base64) {

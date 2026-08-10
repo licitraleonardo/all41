@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './ChiediNotifiche.css'
 import {
+  comeStaMesso,
   disiscriviti,
   installataSullaHome,
   iscriviti,
@@ -70,6 +71,8 @@ export default function ChiediNotifiche({ membroId }) {
   const [stato, setStato] = useState('spente')
   const [inCorso, setInCorso] = useState(false)
   const [esito, setEsito] = useState(null)
+  // La riga tecnica: compare solo quando qualcosa non va, e si fotografa.
+  const [diagnostica, setDiagnostica] = useState(null)
 
   const rileggi = () => statoIscrizione().then(setStato)
   useEffect(() => {
@@ -91,6 +94,7 @@ export default function ChiediNotifiche({ membroId }) {
     try {
       const r = await iscriviti(membroId)
       await rileggi()
+      if (!r.ok) setDiagnostica(await comeStaMesso())
       if (r.ok) {
         setEsito(null)
       } else if (r.motivo === 'database') {
@@ -169,6 +173,8 @@ export default function ChiediNotifiche({ membroId }) {
       ) : stato === 'bloccate' ? (
         <p className="notifiche-esito">{spiegaBlocco()}</p>
       ) : null}
+
+      {diagnostica && <p className="notifiche-diagnostica">{diagnostica}</p>}
 
       {/* ⚠️ Detto PRIMA di premere, e non dopo aver fallito: su iPhone
           fuori dall'app installata il permesso non si puo' nemmeno
