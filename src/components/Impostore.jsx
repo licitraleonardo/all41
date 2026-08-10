@@ -451,11 +451,18 @@ function Apparecchia({ membro, membri, onCrea }) {
   return (
     <section className="imp-apparecchia">
       <h2 className="imp-titolo">L’Impostore</h2>
-      <p className="imp-spiega">
-        Ognuno riceve una parola in privato. A turno se ne dice una collegata, ad alta voce.
-        Alla fine di ogni giro si vota: si accusa qualcuno, oppure si chiede un altro
-        giro.
-      </p>
+      {/* Chiuso di suo, come il «da dove viene» delle Spese. Le regole
+          servono a chi non ha mai giocato, cioè una volta sola: dalla
+          seconda partita in poi sono cinque righe che stanno fra te e il
+          tasto per cominciare. */}
+      <details className="imp-regole">
+        <summary>Come si gioca</summary>
+        <p>
+          Ognuno riceve una parola in privato. A turno se ne dice una collegata, ad alta
+          voce. Alla fine di ogni giro si vota: si accusa qualcuno, oppure si chiede un
+          altro giro.
+        </p>
+      </details>
 
       <p className="imp-etichetta">Chi gioca</p>
       <div className="imp-gente">
@@ -507,21 +514,13 @@ function Apparecchia({ membro, membri, onCrea }) {
             : `Servono almeno ${IMPOSTORE.minimoGiocatori} giocatori`}
       </button>
 
-      {/* ⚠️ Non promettere un numero che poi si vota. Diceva "Ci saranno
-          due impostori", il gruppo votava uno, e la partita partiva con
-          uno: era un futuro indicativo su una cosa che decidono loro
-          trenta secondi dopo. Adesso dice chi decide, e il numero resta
-          come consiglio. */}
-      {abbastanza && (
-        <p className="imp-nota">
-          Quanti impostori lo decidete voi fra un attimo — in{' '}
-          {giocatori.length}{' '}
-          {IMPOSTORE.quantiImpostori(giocatori.length) === 1
-            ? 'di solito ne basta uno'
-            : 'di solito sono due'}
-          . Nessuno saprà chi.
-        </p>
-      )}
+      {/* ⚠️ Qui c'era un consiglio su quanti impostori mettere, ed era
+          nato correggendo un difetto vero: prima prometteva "ci saranno
+          due impostori", il gruppo ne votava uno, e la partita partiva
+          con uno.
+          La correzione regge ancora, ma la riga non serve piu': la
+          schermata dopo chiede esattamente quella cosa, con i numeri
+          davanti. Diceva in anticipo una domanda che arriva da sola. */}
     </section>
   )
 }
@@ -797,12 +796,6 @@ function Giro({ partita, membro, membri, nome, onAvanti }) {
       >
         {inCorso ? '…' : possoAvanzare ? 'Fatto, avanti' : `Aspetta ${restano}s`}
       </button>
-      {/* Resta solo quando il tasto e' spento: li' serve a spiegare
-          perche' non si preme. Gli altri suggerimenti sono spariti — il
-          gioco si capisce guardandolo. */}
-      {!possoAvanzare && (
-        <p className="imp-nota">Per mezzo minuto il turno lo passa solo chi parla.</p>
-      )}
 
       <button
         type="button"
@@ -1000,9 +993,6 @@ function Accusa({ partita, voto, membro, membri, nome, onApri, onChiedi, onRivel
                 ? `Hai chiesto di rivelare — ${chiesta.length} su ${serve}`
                 : `Chiedi di rivelare (${chiesta.length} su ${serve})`}
           </button>
-          <p className="imp-nota">
-            Manca ancora qualcuno. Per rivelare prima devono chiederlo in {serve}.
-          </p>
         </>
       )}
     </section>
@@ -1103,7 +1093,6 @@ function Colpo({ partita, puo, membro, nome, onTenta, onChiedi, onChiudi }) {
               {inCorso ? '…' : 'È questa'}
             </button>
           </form>
-          <p className="imp-nota">Una sola volta. Maiuscole e accenti non contano.</p>
         </>
       ) : (
         <>

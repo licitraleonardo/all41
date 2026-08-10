@@ -1006,3 +1006,23 @@
   outline: 2px solid var(--sea);
   outline-offset: 2px;
 }
+
+/* Le regole, chiuse di suo. Come il «da dove viene» delle Spese: servono
+   a chi non ha mai giocato, cioe' una volta sola. Dalla seconda partita
+   in poi erano cinque righe fra te e il tasto per cominciare. */
+.imp-regole {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.imp-regole summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--sea, #0b3550);
+}
+
+.imp-regole p {
+  margin: 8px 0 0;
+  color: var(--ink-soft, #55636b);
+}
