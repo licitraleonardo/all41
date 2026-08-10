@@ -72,41 +72,43 @@ export default function Info({ membroId }) {
         </a>
       </section>
 
-      {/* Le emergenze stanno da sole, in rosso e grandi. Sono tre, e sono
-          tre apposta: questa lista si scorre con gli occhi mentre succede
-          qualcosa, e ogni riga in più è tempo. I numeri che si leggono con
-          calma stanno nella lista sotto. */}
+      {/* ⚠️ Le emergenze erano riquadri rossi col numero in cifre da 26
+          px, cioè un terzo stile di riga in una schermata che ne aveva
+          già due. Adesso sono righe come tutte le altre.
+
+          Erano grandi apposta — quella lista si scorre con gli occhi
+          mentre sta succedendo qualcosa — e quel lavoro adesso lo fa
+          l'ordine: restano **prime**, sopra tutto il resto. Chi scorre
+          dall'alto le trova per prime senza che debbano gridare.
+
+          Si tocca e parte la chiamata, come prima: in emergenza nessuno
+          copia un numero a mano. */}
       <p className="info-etichetta">Se serve aiuto</p>
       <ul className="info-numeri">
         {EMERGENZE.map((e) => (
           <li key={e.numero}>
-            {/* Si tocca e parte la chiamata: in emergenza nessuno copia un
-                numero a mano. */}
             <a className="info-numero" href={`tel:${e.numero}`}>
-              <span className="info-numero-cifre">{e.numero}</span>
-              <span className="info-numero-cosa">
-                <strong>{e.cosa}</strong>
-                <small>{e.dettaglio}</small>
-                {e.quando && <small className="info-quando">{e.quando}</small>}
-              </span>
+              <strong>{e.cosa}</strong>
+              <span className="info-cifre">{e.numero}</span>
+              <small>{e.dettaglio}</small>
+              {e.quando && <small className="info-quando">{e.quando}</small>}
             </a>
           </li>
         ))}
       </ul>
 
       <p className="info-etichetta">Numeri utili</p>
-      <ul className="info-numeri info-numeri-calmi">
+      <ul className="info-numeri">
         {UTILI.map((u) => (
           <li key={u.numero}>
-            <a className="info-numero info-utile" href={`tel:${u.numero.replace(/\s/g, '')}`}>
-              <span className="info-numero-cosa">
-                <strong>{u.cosa}</strong>
-                <span className="info-utile-cifre">{u.numero}</span>
-                <small>{u.dettaglio}</small>
-                {/* Gli orari contano quanto il numero: uno che non risponde
-                    alle tre di notte è peggio di uno che dice "chiuso". */}
-                {u.quando && <small className="info-quando">{u.quando}</small>}
-              </span>
+            <a className="info-numero" href={`tel:${u.numero.replace(/\s/g, '')}`}>
+              <strong>{u.cosa}</strong>
+              <span className="info-cifre">{u.numero}</span>
+              <small>{u.dettaglio}</small>
+              {/* Gli orari restano: un numero che non risponde alle tre di
+                  notte è peggio di uno che dice "chiuso". È un fatto, non
+                  un commento. */}
+              {u.quando && <small className="info-quando">{u.quando}</small>}
             </a>
           </li>
         ))}
@@ -118,14 +120,12 @@ export default function Info({ membroId }) {
       {gruppo.length > 0 && (
         <>
           <p className="info-etichetta">Il gruppo</p>
-          <ul className="info-numeri info-numeri-calmi">
+          <ul className="info-numeri">
             {gruppo.map((m) => (
               <li key={m.id}>
-                <a className="info-numero info-utile" href={`tel:${daComporre(m.telefono)}`}>
-                  <span className="info-numero-cosa">
-                    <strong>{m.nome}</strong>
-                    <span className="info-utile-cifre">{m.telefono}</span>
-                  </span>
+                <a className="info-numero" href={`tel:${daComporre(m.telefono)}`}>
+                  <strong>{m.nome}</strong>
+                  <span className="info-cifre">{m.telefono}</span>
                 </a>
               </li>
             ))}

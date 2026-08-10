@@ -11,8 +11,7 @@
 
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { FINALE, NUVOLETTE, VOCI, APERTURA } from '../src/config/guida.js'
-import { LEGGI } from '../src/config/leggi.js'
+import { NUVOLETTE, VOCI, APERTURA } from '../src/config/guida.js'
 
 let falliti = 0
 function prova(nome, condizione, dettaglio) {
@@ -30,24 +29,21 @@ const sorgente = Object.fromEntries(
 )
 const app = readFileSync('src/App.jsx', 'utf8')
 
-console.log('\nil numero delle Leggi e quello vero')
-{
-  // ⚠️ Il difetto che questa prova ha trovato: la Guida diceva
-  // `LEGGI.length`, cioe' 49, ma dieci sono spente — aspettano sezioni
-  // che non esistono ancora. In un gioco il cui unico meccanismo e' «si
-  // scoprono facendole scattare», dieci Leggi introvabili vogliono dire
-  // dieci persone che a fine viaggio contano il proprio Testamento e
-  // pensano di essersi perse qualcosa.
-  const attive = LEGGI.filter((l) => l.attiva).length
-  const detto = Number((FINALE.testo.match(/Sono (\d+)/) ?? [])[1])
-  prova('la guida dice un numero', Number.isInteger(detto), FINALE.testo.slice(0, 40))
-  prova(`dice ${detto}, e le Leggi accese sono ${attive}`, detto === attive)
-  prova(
-    'e non sta contando anche quelle spente',
-    detto !== LEGGI.length || attive === LEGGI.length,
-    { detto, inElenco: LEGGI.length, accese: attive }
-  )
-}
+// ⚠️ Qui c'era la prova che il numero di Leggi dichiarato dalla Guida
+// combaciasse con quelle accese, e aveva preso un difetto vero: diceva
+// «sono 49» mentre le attive erano 39, cioe' prometteva dieci Leggi
+// introvabili in un gioco il cui unico meccanismo e' «si scoprono
+// facendole scattare».
+//
+// Il 10 agosto quel blocco e' stato tolto dalla Guida, e la prova se n'e'
+// andata con lui: un controllo su un testo che non esiste piu' sarebbe
+// verde per finta, che e' peggio di non averlo. Se le Leggi tornano a
+// essere raccontate da qualche parte, questo controllo torna con loro.
+console.log('\nla Guida non parla piu di quante Leggi ci sono')
+prova(
+  'e nessuno e rimasto a dirlo per sbaglio',
+  !readFileSync('src/config/guida.js', 'utf8').includes('QUANTE_LEGGI')
+)
 
 console.log('\nla nuvoletta e una sola, e sta dove serve')
 {

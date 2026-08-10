@@ -63,83 +63,62 @@
   margin-left: 7px;
 }
 
-/* --------------------------------------------------------- i numeri */
+/* --------------------------------------------------------- i numeri
+
+   ⚠️ Una riga sola per tutti e tre gli elenchi.
+
+   Le emergenze erano riquadri col bordo rosso da 2 px e il numero in
+   cifre da 26: un terzo stile in una schermata che ne aveva gia' due, e
+   soprattutto un pezzo di app che non somigliava al resto dell'app.
+   Erano grandi apposta, e quel lavoro adesso lo fa l'ordine -- stanno
+   prime. */
 
 .info-numeri {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
-}
-
-/* Tutto il riquadro è il tasto: in emergenza non si centra un link
-   piccolo, si schiaccia dove capita. */
-.info-numero {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 13px 15px;
-  text-decoration: none;
-  background: #fdf1ee;
-  border: 2px solid var(--coral, #e8604a);
-  border-radius: 13px;
-}
-
-.info-numero-cifre {
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--coral, #e8604a);
-  font-variant-numeric: tabular-nums;
-}
-
-.info-numero-cosa {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  color: var(--ink, #16323f);
-}
-
-.info-numero-cosa strong {
-  font-size: 14px;
-}
-
-.info-numero-cosa small {
-  font-size: 11.5px;
-  line-height: 1.4;
-  color: var(--ink-soft, #55636b);
-}
-
-/* Quando è aperto: si legge sotto, un po' più marcato del dettaglio,
-   perché è la riga che decide se ha senso chiamare adesso. */
-.info-quando {
-  font-weight: 700;
-}
-
-/* --------------------------------------------------- i numeri con calma
-
-   Stessa forma dei tre rossi — tutto il riquadro è il tasto — ma senza
-   l'allarme addosso: qui non c'è niente che stia succedendo. Il nome
-   viene prima del numero, perché questi si cercano per nome ("la
-   farmacia") e non per cifre. */
-
-.info-numeri-calmi {
   gap: 7px;
 }
 
-.info-utile {
+/* Tutto il riquadro e' il tasto: nessuno centra un link piccolo di
+   fretta, si schiaccia dove capita. */
+.info-numero {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 14px;
+  text-decoration: none;
+  color: var(--ink, #16323f);
   background: #fff;
   border: 1px solid var(--line, #e4dfd2);
-  padding: 11px 14px;
+  border-radius: 13px;
 }
 
-.info-utile-cifre {
+.info-numero strong {
+  font-size: 14px;
+}
+
+/* Il nome viene prima del numero: questi si cercano per nome -- «la
+   farmacia», «il 112 e' quello che...» -- e non per cifre. */
+.info-cifre {
   font-size: 17px;
   font-weight: 800;
   line-height: 1.25;
   color: var(--sea, #0b3550);
   font-variant-numeric: tabular-nums;
+}
+
+.info-numero small {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-soft, #55636b);
+}
+
+/* Quando e' aperto: un po' piu' marcato del dettaglio, perche' e' la riga
+   che decide se ha senso chiamare adesso. */
+.info-quando {
+  font-weight: 700;
 }
 
 /* ------------------------------------------------------ quel che manca */

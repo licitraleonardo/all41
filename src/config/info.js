@@ -111,7 +111,7 @@ export const UTILI = [
   {
     numero: '070 86051',
     cosa: 'Casa di cura Sant’Elena (privata)',
-    dettaglio: 'Viale Marconi 160, Quartu. Per un’urgenza vera fai prima il 112',
+    dettaglio: 'Viale Marconi 160, Quartu',
     quando: 'Centralino',
   },
   // Fonte: guardiacostiera.gov.it, pagina della Capitaneria di porto di

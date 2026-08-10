@@ -1,4 +1,3 @@
-import { LEGGI } from './leggi.js'
 import { LIMITI } from './limiti.js'
 
 // La guida. Tutto testo, niente logica: sta qui perche' cambiera' molte
@@ -47,21 +46,17 @@ export const VOCI = [
 
 // La card finale, volutamente vaga. E' l'unica cosa che la guida dice sui
 // punti, ed e' una promessa che l'app puo' mantenere davvero: il motivo
-// di ogni punto compare sempre nella Classifica quando scatta.
-// ⚠️ `attiva`, non `LEGGI.length`.
+// ⚠️ Qui c'era «E poi ci sono le Leggi», tolto il 10 agosto.
 //
-// L'elenco ne contiene 49, ma dieci sono spente: aspettano sezioni che
-// non ci sono ancora. La guida diceva «Sono 49» e prometteva quaranta
-// punti che non possono scattare — in un gioco il cui unico meccanismo e'
-// «si scoprono facendole scattare», dieci Leggi introvabili vogliono dire
-// dieci persone che a fine viaggio contano il proprio Testamento e
-// pensano di essersi persi qualcosa.
-const QUANTE_LEGGI = LEGGI.filter((l) => l.attiva).length
-
-export const FINALE = {
-  titolo: 'E poi ci sono le Leggi',
-  testo: `Sono ${QUANTE_LEGGI}. Danno e tolgono punti da sole, e nessuno ti dira' quali sono: si scoprono facendole scattare. Quando ne scatta una, il motivo compare nella Classifica — quindi si capisce sempre cos'e' successo, anche se non si sapeva prima.`,
-}
+// Diceva quante sono e che si scoprono facendole scattare, e il conto era
+// guardato da una prova: la Guida aveva gia' detto «sono 49» quando le
+// attive erano 39, promettendo dieci Leggi introvabili.
+//
+// ⚠️ Tolto quel blocco, delle Leggi la Guida non parla piu'. Restano il
+// Testamento, dove si vedono quelle scoperte, e il motivo che compare
+// nella Classifica ogni volta che una scatta. Se all'atto pratico durante
+// il viaggio nessuno capisce da dove arrivano i punti, e' questa la riga
+// da rimettere.
 
 export const APERTURA = 'Cinque tab, qualche gesto che non si vede, e un mucchio di regole che non ti diciamo.'
 

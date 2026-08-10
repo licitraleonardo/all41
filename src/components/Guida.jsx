@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import './Guida.css'
-import { APERTURA, FINALE, VOCI } from '../config/guida.js'
+import { APERTURA, VOCI } from '../config/guida.js'
 import { dopoGuida } from '../lib/regole.js'
 
 // La guida intera, e vive solo in Altro.
@@ -40,11 +40,6 @@ export default function Guida({ membroId }) {
           </li>
         ))}
       </ul>
-
-      <div className="guida-finale">
-        <p className="guida-voce-titolo">{FINALE.titolo}</p>
-        <p className="guida-voce-testo">{FINALE.testo}</p>
-      </div>
     </section>
   )
 }
