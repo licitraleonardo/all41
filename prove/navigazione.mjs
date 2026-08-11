@@ -115,14 +115,9 @@ const nav = await import('../src/lib/navigazione.js')
 
 nav.registraScheda('tab', 'oggi', ['oggi', 'gruppo', 'foto', 'gioco', 'info'])
 nav.registraScheda('scheda.gruppo', 'chat', ['chat', 'vocali', 'cassetto'])
-nav.registraScheda('scheda.gioco', 'allbo', [
-  'allbo',
-  'testamento',
-  'impostore',
-  'dama',
-  'pecora',
-])
+nav.registraScheda('scheda.gioco', 'allbo', ['allbo', 'testamento', 'sala'])
 nav.registraScheda('scheda.allbo', 'classifica', ['classifica', 'stat'])
+nav.registraScheda('scheda.sala', 'impostore', ['impostore', 'dama', 'pecora'])
 nav.registraScheda('scheda.cassetto', 'spese', ['spese', 'documenti'])
 
 const dove = () => {
@@ -137,8 +132,8 @@ console.log('\nsi rifa la strada al contrario')
   nav.vaiA('tab', 'gruppo')
   nav.vaiA('scheda.gruppo', 'vocali')
   nav.vaiA('tab', 'gioco')
-  nav.vaiA('scheda.gioco', 'dama')
-  prova('si arriva in Dama', dove() === 'gioco/vocali/dama', dove())
+  nav.vaiA('scheda.gioco', 'sala')
+  prova('si arriva nella Sala', dove() === 'gioco/vocali/sala', dove())
 
   const tappe = []
   for (let i = 0; i < 4; i++) {
@@ -148,7 +143,7 @@ console.log('\nsi rifa la strada al contrario')
   }
 
   // ⚠️ Tornando indietro si ripassa da dove si e' passati, in ordine.
-  prova('1º indietro: la Dama si sfila', tappe[0] === 'gioco/vocali/allbo', tappe[0])
+  prova('1º indietro: la Sala si sfila', tappe[0] === 'gioco/vocali/allbo', tappe[0])
   prova('2º indietro: si torna in Gruppo', tappe[1] === 'gruppo/vocali/allbo', tappe[1])
   prova('3º indietro: torna la Chat', tappe[2] === 'gruppo/chat/allbo', tappe[2])
   prova('4º indietro: si torna a Oggi', tappe[3] === 'oggi/chat/allbo', tappe[3])
@@ -370,7 +365,7 @@ console.log('\nun tab rimette a posto TUTTE le sotto-schede, non la sua')
   nav.vaiAlTab('gruppo')
   nav.vaiA('scheda.gruppo', 'cassetto')
   nav.vaiA('scheda.cassetto', 'documenti')
-  nav.vaiA('scheda.gioco', 'dama')
+  nav.vaiA('scheda.gioco', 'sala')
 
   nav.vaiAlTab('oggi')
   prova('anche quella di un altro tab', s()['scheda.gioco'] === 'allbo', s()['scheda.gioco'])
@@ -388,9 +383,24 @@ console.log('\nchi arriva da un avviso atterra dove voleva')
   nav.vaiAlTab('gioco', { 'scheda.gioco': 'testamento' })
   prova('si atterra sul Testamento', s()['scheda.gioco'] === 'testamento', s()['scheda.gioco'])
 
-  // E ci si atterra anche arrivando dal tab dove sei gia'.
+  // ⚠️ La sfida a dama atterra due livelli sotto, e questa prova nasce da
+  // una rottura vera: spostando la Dama dentro «Sala giochi», il vecchio
+  // salto continuava a chiedere `scheda.gioco: 'dama'`. Quel valore non
+  // esiste piu', quindi ricadeva sul predefinito e la sfida non si apriva
+  // — senza nessun errore, perche' un valore sconosciuto non e' un
+  // errore: e' solo un valore che non c'e'.
+  nav.vaiAlTab('gioco', { 'scheda.gioco': 'sala', 'scheda.sala': 'dama' })
+  prova('la sfida a dama apre la Sala', s()['scheda.gioco'] === 'sala', s()['scheda.gioco'])
+  prova('e dentro ci trova la Dama', s()['scheda.sala'] === 'dama', s()['scheda.sala'])
+
+  // ⚠️ E il valore vecchio non deve funzionare per sbaglio: se domani
+  // qualcuno rimettesse il salto a un livello solo, questa riga lo prende.
   nav.vaiAlTab('gioco', { 'scheda.gioco': 'dama' })
-  prova('e ci si arriva anche da dentro', s()['scheda.gioco'] === 'dama', s()['scheda.gioco'])
+  prova(
+    'il salto a un livello solo non porta piu da nessuna parte',
+    s()['scheda.gioco'] === 'allbo',
+    s()['scheda.gioco']
+  )
 }
 
 console.log('\ntoccare il tab su cui sei gia non costa una pressione')

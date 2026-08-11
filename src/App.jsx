@@ -261,7 +261,11 @@ export default function App() {
 
   const accettaSfida = useCallback((partitaId) => {
     setDamaDaAprire(partitaId)
-    vaiAlTab('gioco', { 'scheda.gioco': 'dama' })
+    // ⚠️ Due livelli, non uno: la Dama sta dentro «Sala giochi».
+    // Lasciando solo `scheda.gioco: 'dama'` il valore non esisterebbe
+    // piu', ricadrebbe sul predefinito e la sfida non si aprirebbe — in
+    // silenzio, perche' un valore sconosciuto non e' un errore.
+    vaiAlTab('gioco', { 'scheda.gioco': 'sala', 'scheda.sala': 'dama' })
   }, [])
   const [membriPerId, setMembriPerId] = useState({})
 

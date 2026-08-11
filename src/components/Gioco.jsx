@@ -4,9 +4,7 @@ import { useSchedaRicordata } from '../hooks/useSchedaRicordata.js'
 import NuvolettaAllan from './NuvolettaAllan.jsx'
 import Allbo from './Allbo.jsx'
 import Testamento from './Testamento.jsx'
-import Pecora from './Pecora.jsx'
-import Impostore from './Impostore.jsx'
-import Dama from './Dama.jsx'
+import SalaGiochi from './SalaGiochi.jsx'
 import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
@@ -20,12 +18,13 @@ import { viaggioCominciato } from '../config/rilascio.js'
 // guardare la stessa cosa -- quanti punti ha chi -- e sono finite sotto
 // un tetto solo, «Allbo»: ALL41 piu' albo. A 375 px sei pillole si
 // scorrevano, cinque ci stanno quasi tutte.
+// ⚠️ Tre, non cinque. Allbo e Testamento si **guardano**, i tre giochi
+// si **giocano**: erano cose diverse in fila, e a 375 px la fila si
+// scorreva. I giochi sono scesi di un livello, dentro «Sala giochi».
 const SCHEDE = [
   ['allbo', 'Allbo'],
   ['testamento', 'Testamento'],
-  ['impostore', 'Impostore'],
-  ['dama', 'Dama'],
-  ['pecora', 'All'],
+  ['sala', 'Sala giochi'],
 ]
 
 export default function Gioco({ membro, proposteAperte = [], onVotaProposta, nonLetto = {}, onVisto, conteggiMvp = {}, damaDaAprire, onDamaAperta, leggeDaAprire, onLeggeAperta }) {
@@ -56,8 +55,13 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
   // Allbo e Testamento restano aperti: sono da guardare, non da giocare,
   // e con le Leggi congelate non hanno niente da mostrare che non sia
   // zero.
+  // ⚠️ Una guardia sola invece di sei.
+  //
+  // Prima ogni gioco aveva la sua pellicola e ogni riga di render la sua
+  // condizione `aperto &&`: sei posti da ricordarsi, e sei modi di
+  // dimenticarsene aggiungendo un gioco. Adesso e' coperta la porta —
+  // la Sala — e dentro non ci si entra proprio.
   const aperto = viaggioCominciato()
-  const COPERTI = { impostore: 'L’Impostore', dama: 'Dama', pecora: 'All' }
 
   async function crea(dati) {
     setInCorso(true)
@@ -112,11 +116,18 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
         ))}
       </div>
 
-      {/* Fuori dal blocco che aspetta i dati: il gioco è tutto locale e
-          si apre anche se il database non risponde. */}
-      {!aperto && COPERTI[vista] && <Pellicola nome={COPERTI[vista]} />}
+      {!aperto && vista === 'sala' && <Pellicola nome="Sala giochi" />}
 
-      {aperto && vista === 'pecora' && <Pecora membroId={membro.id} />}
+      {aperto && vista === 'sala' && (
+        <SalaGiochi
+          membro={membro}
+          membri={membri}
+          stato={stato}
+          errore={errore}
+          damaDaAprire={damaDaAprire}
+          onDamaAperta={onDamaAperta}
+        />
+      )}
 
       {/* L'attesa e il guasto se li tiene l'Allbo: dentro ha due schede,
           e le statistiche non devono aspettare la lettura della
@@ -138,10 +149,8 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
         />
       )}
 
-      {aperto && vista !== 'pecora' && vista !== 'allbo' && stato === 'caricamento' && <Rotella />}
-      {aperto && vista !== 'pecora' && vista !== 'allbo' && stato === 'guasto' && (
-        <p className="gioco-guasto">{errore}</p>
-      )}
+      {vista === 'testamento' && stato === 'caricamento' && <Rotella />}
+      {vista === 'testamento' && stato === 'guasto' && <p className="gioco-guasto">{errore}</p>}
 
       {stato === 'pronto' && vista === 'testamento' && (
         <Testamento
@@ -153,18 +162,6 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
         />
       )}
 
-      {aperto && stato === 'pronto' && vista === 'impostore' && (
-        <Impostore membro={membro} membri={membri} />
-      )}
-
-      {aperto && stato === 'pronto' && vista === 'dama' && (
-        <Dama
-          membro={membro}
-          membri={membri}
-          apriPartita={damaDaAprire}
-          onAperta={onDamaAperta}
-        />
-      )}
     </div>
   )
 }
