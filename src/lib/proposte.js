@@ -327,7 +327,26 @@ export async function risolviProposte(membriIds = []) {
     const { data: evento, error: erroreRpc } = await supabase.rpc('risolvi_proposta', {
       p_voto: v.id,
     })
-    if (erroreRpc || !evento) continue // già risolta da un altro telefono
+
+    // ⚠️ `evento.id`, non `evento`. Un `null` che arriva dal database non
+    // e' un `null` quando arriva qui.
+    //
+    // `risolvi_proposta` restituisce una **riga** (`returns point_events`)
+    // e usa `return null` per dire «non e' ancora ora, non ho fatto
+    // niente». Ma una riga nulla, passando per l'interfaccia web, diventa
+    // `{id: null, points: null, ...}`: un oggetto, che in JavaScript e'
+    // **vero**. Con `if (!evento)` il controllo non e' mai scattato, e a
+    // ogni apertura dell'app venivano applicate le Leggi di ogni proposta
+    // ancora aperta — mezz'ora dopo il rilascio, un pareggio 2-2 con
+    // quattro votanti su otto ha tolto un punto a tutti mentre la
+    // proposta era ancora in voto.
+    //
+    // Il difetto c'era dal primo giorno e non si vedeva: prima delle 19
+    // le Leggi erano congelate, quindi applicarle non faceva niente.
+    // ⚠️ E' la forma peggiore che ha un difetto: silenzioso finche' una
+    // seconda condizione, scritta altrove e per un altro motivo, smette
+    // di nasconderlo.
+    if (erroreRpc || !evento?.id) continue // non è ancora ora, o l'ha già fatto un altro telefono
 
     await applicaLeggiDellEsito(v, evento, membriIds).catch(() => {})
     risolte.push(evento)

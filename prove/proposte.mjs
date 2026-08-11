@@ -314,6 +314,32 @@ console.log('\nuna proposta dura un giorno, ma non blocca la giornata')
   prova('e il campo viene chiesto al database', /created_at, expires_at/.test(lib))
 }
 
+console.log('\nuna proposta non risolta non deve applicare niente')
+{
+  const lib = readFileSync('src/lib/proposte.js', 'utf8')
+    .split('\n')
+    .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+    .join('\n')
+
+  // ⚠️ La riga che e' costata un punto a otto persone.
+  //
+  // `risolvi_proposta` restituisce una RIGA e usa `return null` per dire
+  // «non e' ancora ora». Ma una riga nulla, arrivando dall'interfaccia
+  // web, diventa `{id: null, points: null, ...}` — un oggetto, che in
+  // JavaScript e' **vero**. Con `if (!evento)` il controllo non scatta
+  // mai e le Leggi di ogni proposta ancora aperta vengono applicate a
+  // ogni apertura dell'app.
+  //
+  // Va guardato un **campo**, non l'oggetto. Chi tornera' a guardare
+  // l'oggetto non vedra' nessun errore: vedra' punti che si muovono da
+  // soli, mesi dopo, e non lo collegera' a questa riga.
+  const dopo = lib.slice(lib.indexOf("rpc('risolvi_proposta'"))
+  const guardia = dopo.slice(0, dopo.indexOf('continue') + 8)
+  prova('la guardia c e', guardia.includes('continue'))
+  prova('e guarda un campo, non l oggetto intero', /evento\?\.\w+|evento\.\w+/.test(guardia))
+  prova('e non la sola verita dell oggetto', !/\|\|\s*!evento\s*\)/.test(guardia))
+}
+
 console.log('')
 if (fallite > 0) {
   console.error(`${fallite} prove fallite, ${passate} passate.`)
