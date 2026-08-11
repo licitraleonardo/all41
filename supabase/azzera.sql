@@ -8,18 +8,16 @@
 -- ⚠️ Il taglio e' una data FISSA, non «adesso».
 --
 -- E' la cosa che rende questa funzione sicura da chiamare in ritardo, o
--- due volte, o tre. Cancella solo quello che sta **prima delle 7 del 12**
--- e ricalcola i punteggi da quello che resta: se parte alle 7:40 invece
--- che alle 7:00 — i cron del piano Hobby non sono puntuali — i punti
--- guadagnati fra le 7:00 e le 7:40 restano dove sono. Con un taglio a
+-- due volte, o tre. Cancella solo quello che sta **prima delle 19 dell'11**
+-- e ricalcola i punteggi da quello che resta: se parte alle 19:40 invece
+-- che alle 19:00 — i cron del piano Hobby non sono puntuali — i punti
+-- guadagnati fra le 19:00 e le 19:40 restano dove sono. Con un taglio a
 -- «adesso» sarebbero spariti, e nessuno avrebbe capito perche'.
 --
--- ⚠️ Erano le 6, sono diventate le 7 la notte del 12. L'Etna ha chiuso
--- Fontanarossa, il volo e' partito da Palermo alle 5:45 e il gruppo e'
--- atterrato a Cagliari verso le 7: alle 6 erano in volo. La notte
--- passata in aeroporto — le partite, i punti, i selfie per ammazzare
--- l'attesa — deve stare tutta dalla parte delle prove, e con il taglio
--- alle 6 sarebbe stata mezza di qua e mezza di la'.
+-- ⚠️ Doveva essere il 12 alle 6, all'arrivo a Quartu. L'Etna ha chiuso
+-- Fontanarossa, il volo si e' spostato a Palermo alle 5:45 del 12, e la
+-- partenza da casa e' diventata la sera dell'11. Il viaggio comincia
+-- quando si esce di casa, non quando si atterra.
 --
 -- ⚠️ Gli eventi si cancellano, non si nascondono. La Classifica mostra
 -- lo storico accanto al punteggio: lasciando gli eventi vecchi con i
@@ -45,8 +43,7 @@ security definer
 set search_path = public
 as $$
 declare
-  taglio timestamptz := '2026-08-12 07:00:00+02';
-  primo_giorno date := date '2026-08-12';
+  taglio timestamptz := '2026-08-11 19:00:00+02';
   quanti integer;
   quanti_membri integer;
   quante_partite integer := 0;
@@ -73,10 +70,15 @@ begin
   get diagnostics n = row_count;
   quante_partite := quante_partite + n;
 
-  -- ⚠️ All si taglia per **giorno**, non per istante: `sheep_records`
-  -- non ha un `created_at`, ha il giorno del record. E' la stessa data
-  -- scritta in un'altra unita' di misura.
-  delete from sheep_records where giorno < primo_giorno;
+  -- ⚠️ All si taglia su `updated_at` e non sul `giorno`.
+  --
+  -- `sheep_records` non ha un `created_at`: ha il **giorno** del record,
+  -- che e' una data senza ore. Finche' il taglio era all'alba del 12 le
+  -- due cose coincidevano. Con il taglio alle 19 dell'11 no: un record
+  -- fatto in aeroporto alle 21 ha `giorno = 11`, e tagliando per giorno
+  -- verrebbe buttato via insieme a quelli delle prove del pomeriggio.
+  -- `updated_at` e' un istante, e con un istante il confronto torna.
+  delete from sheep_records where updated_at < taglio;
   get diagnostics n = row_count;
   quante_partite := quante_partite + n;
 

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { GIORNO, oggiARoma } from './sveglia.js'
+import { GIORNO_AZZERAMENTO, oggiARoma } from './sveglia.js'
 
 // La classifica riparte da zero la mattina del 12.
 //
@@ -18,7 +18,7 @@ import { GIORNO, oggiARoma } from './sveglia.js'
 
 export default async function handler(req, res) {
   const oggi = oggiARoma()
-  if (oggi !== GIORNO) {
+  if (oggi !== GIORNO_AZZERAMENTO) {
     return res.status(200).json({ azzerato: false, motivo: 'non è il giorno', oggi })
   }
 

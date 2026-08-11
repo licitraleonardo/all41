@@ -1,16 +1,16 @@
 // Quando l'app si apre davvero.
 //
-// ⚠️ L'app esce **coperta**, e si scopre da sola alle 7 del 12.
+// ⚠️ L'app esce **coperta**, e si scopre da sola alle **19 dell'11**.
 //
-// ⚠️ Erano le 6, e sono diventate le 7 la notte stessa. L'Etna ha chiuso
-// Fontanarossa e il volo e' stato spostato a Palermo: il gruppo ha
-// passato la notte in aeroporto e atterra a Cagliari verso le 7. Alle 6
-// erano in volo. Aprire l'app e azzerare la classifica mentre otto
-// telefoni sono in modalita' aereo vuol dire farlo succedere nel vuoto —
-// e soprattutto vuol dire che le partite e i punti fatti in aeroporto
-// alle tre di notte, per ammazzare l'attesa, sarebbero **sopravvissuti**
-// al taglio delle 6 solo se fatti dopo. Con il taglio alle 7 la notte in
-// aeroporto sta tutta dalla parte delle prove, dove deve stare.
+// Doveva essere il 12 alle 6 — l'ora in cui il gruppo sarebbe arrivato a
+// Quartu. Poi l'Etna ha chiuso Fontanarossa, il volo si e' spostato a
+// Palermo alle 5:45 del 12, e la partenza da casa e' diventata la sera
+// dell'11: si va in aeroporto, ci si dorme, si vola all'alba.
+//
+// Il viaggio comincia quando si esce di casa, non quando si atterra.
+// Quelle ore — il viaggio verso l'aeroporto, la notte in sala d'attesa —
+// sono la parte di viaggio in cui un'app come questa serve di piu': c'e'
+// tempo morto, si e' tutti insieme, e non c'e' niente da fare.
 //
 // Il link va al gruppo due giorni prima di partire, e due giorni di
 // prove bruciano cose che si possono scoprire una volta sola: le Leggi
@@ -34,11 +34,11 @@
 //     subito e non consumano niente
 //
 // ⚠️ Niente cron e niente deploy per aprire: ogni telefono guarda il
-// proprio orologio. Alle 7 del 12 si apre tutto da sé, in silenzio.
+// proprio orologio. Alle 19 dell'11 si apre tutto da sé, in silenzio.
 
-// L'ora locale, non UTC: le 7 del mattino in Sardegna sono le 7 sul
-// telefono di chi è lì, ed è quello che conta.
-export const APERTURA = '2026-08-12T07:00:00'
+// L'ora locale, non UTC: le 19 sono le 19 sul telefono di chi c'è, ed è
+// quello che conta.
+export const APERTURA = '2026-08-11T19:00:00'
 
 // ⚠️ Lo stesso istante, ma col fuso scritto dentro.
 //
@@ -51,7 +51,7 @@ export const APERTURA = '2026-08-12T07:00:00'
 // È lo stesso identico istante del taglio dentro `supabase/azzera.sql`,
 // ed è controllato da `prove/rilascio.mjs`: se i due si separano, punti
 // e statistiche raccontano due storie diverse.
-export const APERTURA_ASSOLUTA = '2026-08-12T07:00:00+02:00'
+export const APERTURA_ASSOLUTA = '2026-08-11T19:00:00+02:00'
 
 // ⚠️ Per provarla senza aspettare il 12. Va lasciata a `null` quando si
 // pubblica: messa a `true` l'app esce già aperta, e il primo che gioca
@@ -65,7 +65,7 @@ export function viaggioCominciato(adesso = new Date()) {
 
 // Quello che si legge toccando una cosa coperta. Una riga sola: non c'è
 // niente da spiegare, c'è una data da sapere.
-export const COPERTO = 'Si sblocca il 12'
+export const COPERTO = 'Si sblocca stasera'
 
 // ⚠️ Quali giochi restano coperti fino al 12. Gli altri sono aperti.
 //

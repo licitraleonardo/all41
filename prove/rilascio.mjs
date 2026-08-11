@@ -26,20 +26,21 @@ function prova(nome, condizione, dettaglio) {
   }
 }
 
-console.log('\nprima delle 7 del 12 e tutto coperto')
+console.log('\nprima delle 19 dell 11 e tutto coperto')
 {
   prova('il 10 sera', !viaggioCominciato(new Date('2026-08-10T23:59:00')))
-  prova("l'11, tutto il giorno", !viaggioCominciato(new Date('2026-08-11T14:00:00')))
+  prova("l'11 di pomeriggio", !viaggioCominciato(new Date('2026-08-11T14:00:00')))
   // ⚠️ Il minuto prima. E' il caso che una data scritta storta sbaglia.
-  // ⚠️ La notte in aeroporto a Palermo, col volo delle 5:45: e' il motivo
-  // per cui l'apertura e' passata dalle 6 alle 7. Alle 6 erano in volo.
-  prova('alle 3 di notte, in aeroporto', !viaggioCominciato(new Date('2026-08-12T03:00:00')))
-  prova('e perfino alle 6:59 del 12', !viaggioCominciato(new Date('2026-08-12T06:59:00')))
+  prova("e perfino alle 18:59 dell'11", !viaggioCominciato(new Date('2026-08-11T18:59:00')))
 }
 
-console.log('\ndalle 7 in poi si apre da solo')
+console.log('\ndalle 19 in poi si apre da solo')
 {
-  prova('alle 7 in punto', viaggioCominciato(new Date('2026-08-12T07:00:00')))
+  prova('alle 19 in punto', viaggioCominciato(new Date('2026-08-11T19:00:00')))
+  // ⚠️ La notte in aeroporto a Palermo, col volo delle 5:45 del 12: e' il
+  // motivo per cui l'apertura e' scesa alla sera dell'11. Il viaggio
+  // comincia quando si esce di casa, non quando si atterra.
+  prova('alle 3 di notte, in aeroporto', viaggioCominciato(new Date('2026-08-12T03:00:00')))
   prova('a mezzogiorno del 12', viaggioCominciato(new Date('2026-08-12T12:00:00')))
   prova('e per tutto il viaggio', viaggioCominciato(new Date('2026-08-16T20:00:00')))
   // ⚠️ E dopo resta aperto: a viaggio finito si guardano le foto, il
@@ -50,16 +51,20 @@ console.log('\ndalle 7 in poi si apre da solo')
 
 console.log('\nnon tutti i giochi sono coperti allo stesso modo')
 {
-  const prima = new Date('2026-08-11T21:00:00')
+  // ⚠️ «Prima» adesso vuol dire il pomeriggio dell'11, non la sera.
+  // L'apertura e' scesa alle 19 dell'11, quindi alle 21 non e' piu'
+  // coperto niente — Impostore compreso. Chi si gioca in otto attorno a
+  // un tavolo si apre proprio quando siete tutti seduti in aeroporto.
+  const prima = new Date('2026-08-11T15:00:00')
   const dopo = new Date('2026-08-12T10:00:00')
 
-  prova("l'Impostore e coperto la sera prima", giocoCoperto('impostore', prima))
+  prova("l'Impostore e coperto il pomeriggio dell'11", giocoCoperto('impostore', prima))
   prova('la Dama no', !giocoCoperto('dama', prima))
   prova('All nemmeno', !giocoCoperto('pecora', prima))
   // ⚠️ Il 12 non resta coperto niente. Un gioco dimenticato dentro
   // `GIOCHI_COPERTI` con una condizione sbagliata resterebbe chiuso per
   // tutto il viaggio, e nessuno vedrebbe un errore: vedrebbe un lucchetto.
-  prova('dalle 7 del 12 e aperto tutto', GIOCHI_COPERTI.every((id) => !giocoCoperto(id, dopo)), {
+  prova('dopo l apertura e aperto tutto', GIOCHI_COPERTI.every((id) => !giocoCoperto(id, dopo)), {
     ancoraCoperti: GIOCHI_COPERTI.filter((id) => giocoCoperto(id, dopo)),
   })
 
@@ -204,11 +209,14 @@ console.log('\nl orario e quello del viaggio, non un altro')
 {
   // Una data scritta a mano in due posti diversi e' una data che prima o
   // poi litiga con se stessa.
-  prova("apre il giorno d'inizio del viaggio", APERTURA.slice(0, 10) === VIAGGIO.dataInizio, {
+  // ⚠️ Non piu' il giorno d'inizio: l'app apre **la sera prima**, quando
+  // si esce di casa per andare in aeroporto. Quello che deve restare
+  // vero e' che apra entro il giorno d'inizio, mai dopo.
+  prova('apre entro il giorno d inizio', APERTURA.slice(0, 10) <= VIAGGIO.dataInizio, {
     apertura: APERTURA,
     viaggio: VIAGGIO.dataInizio,
   })
-  prova('alle 7 del mattino', APERTURA.slice(11, 16) === '07:00')
+  prova('alle 19', APERTURA.slice(11, 16) === '19:00')
 }
 
 console.log('\nl interruttore per provarla e spento')
@@ -252,13 +260,13 @@ console.log('\nil taglio della classifica e lo stesso istante dell apertura')
   prova('il cron dell azzeramento c e', Boolean(azzera), cron)
 
   const [minuto, ora] = (azzera?.schedule ?? '').split(' ')
-  const quando = new Date(Date.UTC(2026, 7, 12, Number(ora), Number(minuto)))
+  const quando = new Date(Date.UTC(2026, 7, 11, Number(ora), Number(minuto)))
   const aRoma = new Intl.DateTimeFormat('it-IT', {
     timeZone: 'Europe/Rome',
     hour: '2-digit',
     minute: '2-digit',
   }).format(quando)
-  prova('e a Roma sono le 07:00', aRoma === '07:00', aRoma)
+  prova('e a Roma sono le 19:00', aRoma === '19:00', aRoma)
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)

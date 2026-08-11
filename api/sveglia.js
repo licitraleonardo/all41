@@ -15,6 +15,19 @@ import { chiaviPush, mandaATutti } from './_manda.js'
 // Il giorno in cui deve suonare, e nient'altro.
 export const GIORNO = '2026-08-12'
 
+// ⚠️ E il giorno in cui si azzera la classifica, che **non e' lo stesso**.
+//
+// Fino a poche ore fa lo era: l'app si apriva e la classifica ripartiva
+// tutti e due il 12 mattina. Poi l'apertura e' passata alla sera dell'11
+// — il volo spostato a Palermo, la notte in aeroporto — mentre la
+// sveglia «All41 vi aspetta» resta il 12, che e' il primo giorno vero in
+// Sardegna. Due date diverse per due cose diverse.
+//
+// ⚠️ Tenerne una sola voleva dire spegnere l'altra in silenzio: con
+// `GIORNO` a '2026-08-11' la sveglia non sarebbe mai suonata, perche'
+// le 12:30 dell'11 erano gia' passate quando e' cambiata.
+export const GIORNO_AZZERAMENTO = '2026-08-11'
+
 // ⚠️ L'ora italiana, non quella del server. Vercel gira in UTC: a metà
 // agosto l'Italia è avanti di due ore, quindi alle 00:30 di Roma il
 // server crede sia ancora il giorno prima e la sveglia salterebbe.
