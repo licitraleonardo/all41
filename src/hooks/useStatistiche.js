@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { VIAGGIO } from '../config/viaggio.js'
 import { leggiMembri } from '../lib/membri.js'
+import { APERTURA_ASSOLUTA } from '../config/rilascio.js'
 import { contaPerMembro, massimoPerMembro, tabella, titoli } from '../lib/statistiche.js'
 import { descriviErrore } from '../lib/errori.js'
 
@@ -20,9 +21,22 @@ const TETTI = {
   pecora: 500,
 }
 
+// ⚠️ Si conta **solo dal viaggio in poi**.
+//
+// Il link è andato al gruppo due giorni prima di partire, e in quelle due
+// sere si scrive parecchio: senza questo filtro, il 12 mattina «Il
+// chiacchierone» sarebbe già assegnato a chi ha scritto di più mentre
+// preparava la valigia. I punti si azzerano da soli il 12 (vedi
+// `azzera_prima_del_viaggio`), le statistiche no — perché non si
+// cancellano messaggi, foto e vocali per far tornare un conteggio: si
+// smette di contarli.
 async function colonna(tabella_, campi, tetto, filtri = (q) => q) {
   const { data, error } = await filtri(
-    supabase.from(tabella_).select(campi).eq('trip_id', VIAGGIO.id)
+    supabase
+      .from(tabella_)
+      .select(campi)
+      .eq('trip_id', VIAGGIO.id)
+      .gte('created_at', APERTURA_ASSOLUTA)
   ).limit(tetto)
 
   if (error) throw error
@@ -40,7 +54,15 @@ export function useStatistiche(attivo) {
       colonna('quick_actions', 'author_id, kind', TETTI.azioni, (q) => q.is('deleted_at', null)),
       colonna('photos', 'author_id', TETTI.foto, (q) => q.is('deleted_at', null)),
       colonna('voice_messages', 'author_id', TETTI.vocali, (q) => q.is('deleted_at', null)),
-      colonna('sheep_records', 'member_id, punteggio', TETTI.pecora),
+      // ⚠️ `sheep_records` non ha `created_at`, quindi non si può
+      // filtrare per data. Non serve: All è coperto fino al 12, quindi
+      // prima del viaggio non esiste nessun record.
+      supabase
+        .from('sheep_records')
+        .select('member_id, punteggio')
+        .eq('trip_id', VIAGGIO.id)
+        .limit(TETTI.pecora)
+        .then(({ data }) => data ?? []),
     ])
 
     // Le Leggi scattate si contano dai punti: ogni evento con una regola
@@ -50,6 +72,10 @@ export function useStatistiche(attivo) {
       .select('member_id, rule_id')
       .eq('trip_id', VIAGGIO.id)
       .not('rule_id', 'is', null)
+      // Ridondante — l'azzeramento del 12 cancella gli eventi di prima —
+      // ma se un giorno quel cron non partisse, le statistiche non
+      // racconterebbero comunque il viaggio sbagliato.
+      .gte('created_at', APERTURA_ASSOLUTA)
       .limit(2000)
     if (error) throw error
 

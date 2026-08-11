@@ -30,6 +30,19 @@
 // telefono di chi è lì, ed è quello che conta.
 export const APERTURA = '2026-08-12T06:00:00'
 
+// ⚠️ Lo stesso istante, ma col fuso scritto dentro.
+//
+// `APERTURA` qui sopra la legge il telefono con il proprio fuso, ed è
+// giusto per rispondere a «il viaggio è cominciato **qui**?». Ma quando
+// serve a filtrare una query — le statistiche contano solo dal viaggio
+// in poi — il confronto avviene nel database, e una data senza fuso
+// verrebbe interpretata da lui in un altro modo.
+//
+// È lo stesso identico istante del taglio dentro `supabase/azzera.sql`,
+// ed è controllato da `prove/rilascio.mjs`: se i due si separano, punti
+// e statistiche raccontano due storie diverse.
+export const APERTURA_ASSOLUTA = '2026-08-12T06:00:00+02:00'
+
 // ⚠️ Per provarla senza aspettare il 12. Va lasciata a `null` quando si
 // pubblica: messa a `true` l'app esce già aperta, e il primo che gioca
 // si porta via le Leggi per tutti.

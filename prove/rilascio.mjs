@@ -5,7 +5,12 @@
 // primo che gioca si porta via le Leggi per tutti. Non c'e' nessun
 // sintomo intermedio, ed e' per questo che ha una prova sua.
 
-import { APERTURA, FORZA_APERTA, viaggioCominciato } from '../src/config/rilascio.js'
+import {
+  APERTURA,
+  APERTURA_ASSOLUTA,
+  FORZA_APERTA,
+  viaggioCominciato,
+} from '../src/config/rilascio.js'
 import { VIAGGIO } from '../src/config/viaggio.js'
 import { readFileSync } from 'node:fs'
 
@@ -72,6 +77,15 @@ console.log('\nil taglio della classifica e lo stesso istante dell apertura')
     'ed e lo stesso istante in cui l app si apre',
     new Date(trovato).getTime() === new Date(APERTURA).getTime(),
     { sql: trovato, app: APERTURA }
+  )
+
+  // ⚠️ E lo stesso istante con cui si filtrano le statistiche. Sono tre
+  // scritture della stessa ora in tre posti: se una si sposta, i punti
+  // ripartono da zero in un momento e le statistiche in un altro.
+  prova(
+    'e lo stesso con cui si contano le statistiche',
+    new Date(APERTURA_ASSOLUTA).getTime() === new Date(APERTURA).getTime(),
+    { assoluta: APERTURA_ASSOLUTA, app: APERTURA }
   )
 
   // Il cron: 04:00 UTC sono le 06:00 a Roma a meta' agosto.
