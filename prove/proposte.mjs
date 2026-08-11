@@ -241,6 +241,20 @@ console.log('\nuna proposta lo dice in chat, o non la sente nessuno')
   // non sa niente nessuno.
   prova('e non passa dal limite della chat', !/inviaAzione|verificaLimite/.test(annuncio))
 
+  // ⚠️ E fa suonare i telefoni. La riga con i denti di questo blocco.
+  //
+  // E' mancata per un'ora senza che niente lo dicesse: `inviaAzione`
+  // chiama `faiSuonare` subito dopo l'inserimento; qui l'inserimento e'
+  // scritto a mano per saltare il limite anti-spam della chat, e insieme
+  // al limite si era portato via anche quella chiamata. La riga compariva
+  // in chat e i telefoni restavano muti — cioe' esattamente la cosa che
+  // questo pezzo esiste per fare, e nessun errore da nessuna parte.
+  prova('e fa suonare i telefoni', /faiSuonare\(/.test(annuncio))
+
+  // E il nome di chi riceve i punti sta nel payload: il service worker
+  // non ha il database e non puo' risolvere un id.
+  prova('e la notifica sa per chi', /perNome/.test(annuncio))
+
   // ⚠️ E la proposta non deve poter fallire per colpa dell'annuncio.
   // E' la riga con i denti: senza il `.catch`, una chat che non risponde
   // farebbe fallire l'assegnazione dei punti, che e' la cosa vera.

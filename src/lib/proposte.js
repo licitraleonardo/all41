@@ -4,6 +4,7 @@ import { OPZIONI_PROPOSTA, PROPOSTA } from '../config/proposte.js'
 import { assegnaPunti, faiScattareLegge } from './punti.js'
 import { PER_ID, etichetta } from '../config/leggi.js'
 import { dataDiOggi } from './giorni.js'
+import { faiSuonare } from './notifiche.js'
 import {
   contaNoConsecutivi,
   esitoProposta,
@@ -213,6 +214,7 @@ async function annunciaInChat({ proponenteId, destinatarioId, punti, votoId }) {
   // telefoni con la versione vecchia. Se la lettura va storta si scrive
   // una frase generica invece di non scrivere niente.
   let testo = `🗳️ ha proposto ${segno(punti)} per qualcuno`
+  let perNome = null
   const { data: nomi } = await supabase
     .from('members')
     .select('id, name')
@@ -220,17 +222,37 @@ async function annunciaInChat({ proponenteId, destinatarioId, punti, votoId }) {
     .limit(2)
 
   if (nomi?.length) {
-    const per = nomi.find((n) => n.id === destinatarioId)?.name
-    if (per) testo = `🗳️ ha proposto ${segno(punti)} per ${per}`
+    perNome = nomi.find((n) => n.id === destinatarioId)?.name ?? null
+    if (perNome) testo = `🗳️ ha proposto ${segno(punti)} per ${perNome}`
   }
 
-  const { error } = await supabase.from('quick_actions').insert({
-    trip_id: VIAGGIO.id,
-    author_id: proponenteId,
-    kind: 'free_text',
-    payload: { propostaVoto: votoId, per: destinatarioId, punti, testo },
-  })
+  const { data, error } = await supabase
+    .from('quick_actions')
+    .insert({
+      trip_id: VIAGGIO.id,
+      author_id: proponenteId,
+      kind: 'free_text',
+      // ⚠️ `per` e' l'id e `perNome` il nome, e servono a due lettori
+      // diversi: la chat risolve l'id — cosi' un nome cambiato si
+      // aggiorna da solo — mentre il service worker non puo' risolvere
+      // niente, non ha il database. Senza il nome scritto dentro, la
+      // notifica non potrebbe dire per chi.
+      payload: { propostaVoto: votoId, per: destinatarioId, perNome, punti, testo },
+    })
+    .select('id')
+    .single()
   if (error) throw error
+
+  // ⚠️ Questa riga era la cosa piu' importante del giro, ed e' mancata
+  // per un'ora senza che niente lo dicesse.
+  //
+  // `inviaAzione` la chiama subito dopo l'inserimento; qui l'inserimento
+  // e' scritto a mano per saltare il limite anti-spam della chat, e
+  // insieme al limite si era portato via anche questa. Risultato: la
+  // riga compariva in chat e i telefoni restavano muti — cioe' esattamente
+  // la cosa che questo pezzo esiste per fare, e nessun errore da nessuna
+  // parte. E' la famiglia dei difetti che non falliscono.
+  faiSuonare(data.id)
 }
 
 // Le proposte ancora aperte, con dentro tutto quello che serve a

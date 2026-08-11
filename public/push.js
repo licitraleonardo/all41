@@ -30,7 +30,7 @@ self.__all41 = self.__all41 || {}
  *     durante una cena si mette in silenzioso, e da quel momento non
  *     arriva piu' nemmeno l'SOS.
  */
-self.__all41.decidi = function decidi({ tipo, id, appAperta, giaMostrata }) {
+self.__all41.decidi = function decidi({ tipo, id, appAperta, giaMostrata, payload }) {
   if (appAperta) return null
 
   switch (tipo) {
@@ -43,6 +43,18 @@ self.__all41.decidi = function decidi({ tipo, id, appAperta, giaMostrata }) {
       return { tag: tipo, renotify: true, tab: 'gruppo' }
 
     case 'free_text':
+      /* ⚠️ Una proposta non divide l'unica notifica della chat.
+       *
+       * La regola «una sola finche' non riapri» esiste per non far vibrare
+       * un telefono venti volte a cena, e va tenuta. Ma con un solo posto
+       * per tutto, un messaggio delle 20:10 zittiva la proposta delle
+       * 20:12 — e una proposta ha un voto da dare e una scadenza, un
+       * messaggio no. Tag suo, cosi' non si fanno la fila a vicenda; e la
+       * regola del «una sola» resta, dentro il suo tag.
+       */
+      if (payload && payload.propostaVoto) {
+        return giaMostrata ? null : { tag: 'proposta', renotify: false, tab: 'gioco' }
+      }
       return giaMostrata ? null : { tag: 'chat', renotify: false, tab: 'gruppo' }
 
     case 'vocale':
@@ -86,6 +98,24 @@ self.__all41.descrivi = function descrivi({ tipo, chi, payload }) {
     case 'dove_siete':
       return { titolo: nome + ' chiede dove siete', corpo: 'Vuole sapere dove sei' }
     case 'free_text':
+      /* ⚠️ Una proposta di punti passa da una riga di chat, e senza questo
+       * caso si annuncerebbe come «qualcuno ha scritto»: chi la legge non
+       * saprebbe che c'e' un voto da dare, ne' entro quando.
+       *
+       * Sta dentro `free_text` e NON e' un tipo suo, ed e' la ragione per
+       * cui funziona: un tipo nuovo lo scarterebbe il `default` qui sotto
+       * su ogni telefono fermo a una versione precedente di questo file —
+       * e questo file si aggiorna solo insieme all'app. Cosi' invece chi
+       * ha la versione vecchia legge la frase generica e chi ha la nuova
+       * legge quella giusta. Nessuno resta senza notifica.
+       */
+      if (p.propostaVoto) {
+        var q = typeof p.punti === 'number' ? (p.punti > 0 ? '+' + p.punti : '' + p.punti) : 'punti'
+        return {
+          titolo: nome + ' propone ' + q + (p.perNome ? ' per ' + p.perNome : ''),
+          corpo: 'Apri per votare',
+        }
+      }
       return { titolo: 'Qualcuno ha scritto nel gruppo', corpo: 'Apri per leggere' }
     case 'vocale':
       return { titolo: 'Qualcuno ha mandato un vocale', corpo: 'Apri per ascoltarlo' }
@@ -128,6 +158,7 @@ self.addEventListener('push', function (evento) {
         id: roba.id,
         appAperta: appAperta,
         giaMostrata: false,
+        payload: roba.payload,
       })
       if (!provvisorio) return
 
@@ -137,6 +168,7 @@ self.addEventListener('push', function (evento) {
         id: roba.id,
         appAperta: appAperta,
         giaMostrata: esistenti.length > 0,
+        payload: roba.payload,
       })
       if (!scelta) return
 

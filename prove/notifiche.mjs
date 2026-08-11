@@ -66,6 +66,41 @@ console.log('\nchat e vocali: una sola, e poi basta')
 {
   // Un telefono che vibra venti volte durante una cena si mette in
   // silenzioso, e da quel momento non arriva piu' nemmeno l'SOS.
+  // ⚠️ Una proposta non divide l'unica notifica della chat.
+  //
+  // «Una sola finche' non riapri» esiste per non far vibrare un telefono
+  // venti volte a cena, e va tenuta. Ma con un posto solo per tutto, un
+  // messaggio delle 20:10 zittiva la proposta delle 20:12 — e una
+  // proposta ha un voto da dare e una scadenza, un messaggio no.
+  const conProposta = { propostaVoto: 'v1' }
+  const laProposta = decidi({
+    tipo: 'free_text',
+    appAperta: false,
+    giaMostrata: false,
+    payload: conProposta,
+  })
+  const laChat = decidi({ tipo: 'free_text', appAperta: false, giaMostrata: false })
+  prova('la proposta suona', laProposta !== null)
+  prova('e non condivide il posto con la chat', laProposta.tag !== laChat.tag, {
+    proposta: laProposta.tag,
+    chat: laChat.tag,
+  })
+  // Ma dentro il suo posto la regola del «una sola» resta.
+  prova(
+    'e due proposte di fila non vibrano due volte',
+    decidi({ tipo: 'free_text', appAperta: false, giaMostrata: true, payload: conProposta }) === null
+  )
+
+  // ⚠️ E il payload deve arrivarci davvero.
+  //
+  // Se il punto in cui si chiama `decidi` smette di passarlo, il ramo qui
+  // sopra non si accende **mai**: le proposte tornano a dividere il posto
+  // con la chat e nessun errore lo dice. E' la stessa forma del difetto
+  // che ha tenuto muta la proposta per un'ora.
+  const sorgente = readFileSync('public/push.js', 'utf8')
+  const quante = (sorgente.match(/payload: roba\.payload/g) ?? []).length
+  prova('e chi chiama decidi lo passa, tutte e due le volte', quante === 2, quante)
+
   const primo = decidi({ tipo: 'free_text', appAperta: false, giaMostrata: false })
   prova('il primo messaggio suona', primo !== null)
   prova('e non insiste', primo.renotify === false)
@@ -116,6 +151,32 @@ console.log('\nquello che c e scritto sopra')
   prova('e non dice cosa', !chat.corpo.includes('alle 8'))
 
   // Senza nome non si rompe: succede con chi e' appena entrato.
+  // ⚠️ Una proposta di punti passa da una riga di chat, e senza un caso
+  // suo si annuncerebbe come «qualcuno ha scritto»: chi la legge non
+  // saprebbe che c'e' un voto da dare.
+  const prop = descrivi({
+    tipo: 'free_text',
+    chi: 'Marco',
+    payload: { propostaVoto: 'v1', perNome: 'Diego', punti: 3, testo: 'ripiego' },
+  })
+  prova('una proposta dice chi propone', prop.titolo.includes('Marco'))
+  prova('quanti punti', prop.titolo.includes('+3'))
+  prova('e per chi', prop.titolo.includes('Diego'))
+  prova('e non la frase della chat', !prop.titolo.includes('ha scritto'))
+
+  // I punti negativi non diventano «+-2».
+  const giu = descrivi({
+    tipo: 'free_text',
+    chi: 'Marco',
+    payload: { propostaVoto: 'v1', perNome: 'Diego', punti: -2 },
+  })
+  prova('e un meno resta un meno', giu.titolo.includes('-2') && !giu.titolo.includes('+-'))
+
+  // ⚠️ E un messaggio normale resta com'era: il caso nuovo non deve
+  // rubarsi anche la chat.
+  const normale = descrivi({ tipo: 'free_text', chi: 'Marco', payload: { testo: 'ciao' } })
+  prova('un messaggio normale resta quello di prima', normale.titolo.includes('ha scritto'))
+
   prova('senza nome dice Qualcuno', descrivi({ tipo: 'sos', payload: {} }).titolo.includes('Qualcuno'))
   prova('e senza motivo dice qualcosa', descrivi({ tipo: 'sos', payload: {} }).corpo.length > 0)
 }
