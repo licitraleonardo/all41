@@ -12,6 +12,7 @@ import {
   sogliaCoppia,
 } from '../src/lib/punteggioProposte.js'
 import { PER_ID } from '../src/config/leggi.js'
+import { readFileSync } from 'node:fs'
 
 let passate = 0
 let fallite = 0
@@ -206,6 +207,49 @@ console.log('Il bilanciamento regge')
     PER_ID['primo-sveglio'].punti + PER_ID['paparazzo'].punti +
     PER_ID['telegrafico'].punti + PER_ID['suspense'].punti
   prova('una giornata pulita rende', giornataPulita >= 4)
+}
+
+console.log('\nuna proposta lo dice in chat, o non la sente nessuno')
+{
+  // ⚠️ Una proposta scade in **un'ora**, e prima non faceva suonare
+  // niente: chi non apriva l'app in quell'ora non votava e non lo sapeva
+  // nemmeno. I sondaggi sono esclusi apposta dalle notifiche perche' ti
+  // aspettano; una proposta no.
+  const senzaCommenti = (f) =>
+    readFileSync(f, 'utf8')
+      .split('\n')
+      .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+      .join('\n')
+
+  const lib = senzaCommenti('src/lib/proposte.js')
+  const annuncio = lib.match(/async function annunciaInChat[\s\S]*?\n\}/)?.[0] ?? ''
+
+  prova("l'annuncio esiste", annuncio.length > 0)
+
+  // ⚠️ E' una riga di chat normale, non un tipo di notifica nuovo: un
+  // tipo nuovo `decidi()` lo scarta in silenzio sui telefoni che non
+  // hanno ancora aggiornato l'app, e il service worker si aggiorna solo
+  // insieme all'app. Cambiare questa riga vuol dire smettere di far
+  // suonare i telefoni senza che nessun errore lo dica.
+  prova("passa da una riga di chat", /kind: 'free_text'/.test(annuncio))
+  prova('col contrassegno che la distingue', /propostaVoto/.test(annuncio))
+
+  // ⚠️ E non passa dal limite anti-spam della chat: tre secondi fra un
+  // messaggio e l'altro. Chi ha appena scritto si vedrebbe rifiutare
+  // l'annuncio della propria proposta, e resterebbe una proposta di cui
+  // non sa niente nessuno.
+  prova('e non passa dal limite della chat', !/inviaAzione|verificaLimite/.test(annuncio))
+
+  // ⚠️ E la proposta non deve poter fallire per colpa dell'annuncio.
+  // E' la riga con i denti: senza il `.catch`, una chat che non risponde
+  // farebbe fallire l'assegnazione dei punti, che e' la cosa vera.
+  const chiamata = lib.match(/annunciaInChat\([^\n]*\n?[^\n]*/)?.[0] ?? ''
+  prova('e se non parte la proposta regge lo stesso', /\.catch\(/.test(chiamata))
+
+  // E chi la disegna la riconosce, se no resta un messaggio scritto da
+  // un umano che non l'ha scritto.
+  const feed = senzaCommenti('src/components/Feed.jsx')
+  prova('e la chat la disegna a modo suo', /payload\.propostaVoto/.test(feed))
 }
 
 console.log('')

@@ -160,6 +160,26 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
     ).catch(() => {})
   }
 
+  // ⚠️ E lo dice in chat, che e' l'unico modo di far suonare i telefoni.
+  //
+  // Una proposta non faceva suonare niente. Non era una notifica persa:
+  // non e' mai partita. `proposte.js` scrive su `votes` e `point_events`
+  // e non chiama niente; `api/notifica.js` sa leggere due tabelle sole, i
+  // vocali e le azioni della chat; `_regole.js` non elenca le proposte; e
+  // il service worker le scarterebbe comunque.
+  //
+  // I sondaggi sono esclusi apposta — hanno il cartello dentro l'app e
+  // non vale la pena svegliare nessuno. Per le proposte lo stesso
+  // ragionamento non regge: **una proposta scade in un'ora**. Chi non
+  // apre l'app entro quell'ora non vota, e non lo sa nemmeno. Un
+  // sondaggio ti aspetta, una proposta no.
+  //
+  // Passa da una riga di chat e non da un tipo di notifica nuovo: un
+  // tipo nuovo `decidi()` lo scarta in silenzio sui telefoni fermi alla
+  // versione di ieri, e il service worker si aggiorna solo con l'app.
+  // Cosi' invece suona su tutti i telefoni come sono adesso.
+  annunciaInChat({ proponenteId, destinatarioId, punti, votoId: voto.id }).catch(() => {})
+
   return {
     ok: true,
     votoId: voto.id,
@@ -170,6 +190,41 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
     autoElogio: trappole[0] ?? null,
     restano: PROPOSTA.alGiorno - fatte - 1,
   }
+}
+
+// La riga in chat che annuncia una proposta.
+//
+// ⚠️ Non passa da `inviaAzione`, e quindi non passa da `verificaLimite`.
+// La chat ha tre secondi di attesa fra un messaggio e l'altro: chi ha
+// appena scritto si vedrebbe rifiutare l'annuncio della propria
+// proposta, e resterebbe una proposta di cui nessuno sa niente.
+//
+// ⚠️ E non solleva mai. Se questa riga non parte, la proposta e' aperta
+// lo stesso e dentro l'app si vede: e' un di piu', mai la via
+// principale — la stessa regola delle notifiche dell'SOS.
+async function annunciaInChat({ proponenteId, destinatarioId, punti, votoId }) {
+  // I nomi servono solo al testo di ripiego, quello che leggono i
+  // telefoni con la versione vecchia. Se la lettura va storta si scrive
+  // una frase generica invece di non scrivere niente.
+  let testo = `🗳️ ha proposto ${segno(punti)} per qualcuno`
+  const { data: nomi } = await supabase
+    .from('members')
+    .select('id, name')
+    .in('id', [proponenteId, destinatarioId])
+    .limit(2)
+
+  if (nomi?.length) {
+    const per = nomi.find((n) => n.id === destinatarioId)?.name
+    if (per) testo = `🗳️ ha proposto ${segno(punti)} per ${per}`
+  }
+
+  const { error } = await supabase.from('quick_actions').insert({
+    trip_id: VIAGGIO.id,
+    author_id: proponenteId,
+    kind: 'free_text',
+    payload: { propostaVoto: votoId, per: destinatarioId, punti, testo },
+  })
+  if (error) throw error
 }
 
 // Le proposte ancora aperte, con dentro tutto quello che serve a

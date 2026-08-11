@@ -71,6 +71,24 @@ function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
   // il suo effetto lo hai già sentito. In cartello grosso riempiva la
   // chat di scatole verdi fra un messaggio e l'altro. Una riga sottile e
   // grigia basta a dire chi è stato.
+  // Una proposta di punti: riga sottile come le altre. Il cartello per
+  // votarla ce l'ha gia', e sta sopra ogni schermata; questa serve a far
+  // suonare i telefoni e a lasciare traccia di chi ha proposto cosa.
+  if (azione.tipo === 'free_text' && azione.payload.propostaVoto) {
+    const per = membri?.[azione.payload.per]?.nome
+    const p = azione.payload.punti
+    return (
+      <li className="voce sussurro">
+        <span>
+          🗳️ <strong>{autore?.nome ?? 'Qualcuno'}</strong> ha proposto{' '}
+          {typeof p === 'number' ? (p > 0 ? `+${p}` : String(p)) : 'dei punti'}
+          {per ? ` per ${per}` : ''}
+        </span>
+        <span className="sussurro-ora">{ora(azione.creatoIl)}</span>
+      </li>
+    )
+  }
+
   // La ricevuta di un SOS: una riga sottile come quella dei suoni, non un
   // cartello. Dice una cosa sola — chi si e' mosso — e chi ha chiesto
   // aiuto la legge scorrendo la chat dove ha appena mandato l'SOS.
