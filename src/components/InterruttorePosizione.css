@@ -1,0 +1,84 @@
+/* L'interruttore della posizione automatica, sotto le notifiche.
+   Stessa sobrietà del resto di Info: niente colori accesi, che quella
+   schermata è stata rifatta apposta per non essere un pugno in un
+   occhio. */
+
+.posizione-auto {
+  margin-top: 10px;
+}
+
+.posizione-riga {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.posizione-riga:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.posizione-testo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.posizione-sotto {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+/* 44 px di larghezza: la leva è anche il bersaglio, e tutta la riga è
+   toccabile comunque. */
+.posizione-leva {
+  flex: none;
+  display: block;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--line);
+  transition: background 0.15s ease;
+}
+
+.posizione-leva.accesa {
+  background: var(--sea);
+}
+
+.posizione-pallina {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 3px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.posizione-leva.accesa .posizione-pallina {
+  transform: translateX(18px);
+}
+
+.posizione-esito {
+  margin: 6px 2px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.posizione-riga:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}

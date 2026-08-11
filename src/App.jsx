@@ -42,6 +42,8 @@ import { useMvp } from './hooks/useMvp.js'
 import { useSfideDama } from './hooks/useSfideDama.js'
 import { useSchedaRicordata } from './hooks/useSchedaRicordata.js'
 import { CHIAVE_TAB, CHIAVE_VISTA, VISTE_CON_CRONOLOGIA, vaiAlTab } from './lib/navigazione.js'
+import { eUnNoDefinitivo, impostaPosizioneAutomatica, posizioneAutomatica } from './lib/posizioneAutomatica.js'
+import { chiediPosizione, condividiPosizione } from './lib/posizione.js'
 import { useLeggiDaLeggere } from './hooks/useLeggiDaLeggere.js'
 import { risolviDama } from './lib/puntiDama.js'
 import Celebrazione from './components/Celebrazione.jsx'
@@ -187,6 +189,74 @@ export default function App() {
   // L'MVP della giornata finita si fissa alla prima apertura dopo
   // mezzanotte, e i coriandoli partono su tutti i telefoni: sta qui e non
   // nel tab Gioco perché non si deve dipendere da dove stavi guardando.
+  // ⚠️ Toccare una notifica adesso porta dove la notifica dice.
+  //
+  // Il service worker manda `{all41: 'vaiA', tab}` alla finestra e apre
+  // `/?tab=...` se non ce n'e' una — e **nessuno dei due lo ascoltava**.
+  // Una notifica che dice «Apri per votare» lasciava sul programma della
+  // giornata, e il voto bisognava andarselo a cercare. Vale per tutte, e
+  // per la proposta e' peggio, perche' quella scade.
+  useEffect(() => {
+    const daIndirizzo = new URLSearchParams(window.location.search).get('tab')
+    if (daIndirizzo) {
+      vaiAlTab(daIndirizzo)
+      // Via dall'indirizzo, o ricaricando si torna li' per sempre.
+      window.history.replaceState(window.history.state, '', window.location.pathname)
+    }
+
+    if (!('serviceWorker' in navigator)) return undefined
+    const ascolta = (e) => {
+      if (e.data?.all41 === 'vaiA' && e.data.tab) vaiAlTab(e.data.tab)
+    }
+    navigator.serviceWorker.addEventListener('message', ascolta)
+    return () => navigator.serviceWorker.removeEventListener('message', ascolta)
+  }, [])
+
+  // ⚠️ La posizione che si aggiorna da sola, per chi l'ha acceso.
+  //
+  // Parte solo se l'interruttore e' acceso (spento di default), e **lo
+  // dice ogni volta**: un aggiornamento che non si vede sarebbe la cosa
+  // che il 10 agosto era stata tolta. Se il telefono nega il permesso
+  // l'interruttore si spegne da solo, invece di riprovare in silenzio a
+  // ogni apertura.
+  useEffect(() => {
+    if (vista !== 'dentro' || !membro?.id) return undefined
+    if (!posizioneAutomatica()) return undefined
+
+    let vivo = true
+    let ultima = 0
+
+    const forse = async () => {
+      if (document.visibilityState !== 'visible') return
+      // Una volta per apertura, non a ogni sfarfallio di `focus`.
+      if (Date.now() - ultima < 60000) return
+      ultima = Date.now()
+      try {
+        const dove = await chiediPosizione()
+        await condividiPosizione(membro.id, dove)
+        if (vivo) setToast('📍 La tua posizione è stata aggiornata')
+      } catch (e) {
+        if (!vivo) return
+        if (eUnNoDefinitivo(e)) {
+          impostaPosizioneAutomatica(false)
+          setToast('📍 Il telefono non dà la posizione: l’aggiornamento automatico si è spento')
+        }
+        // Un errore passeggero — GPS lento, niente campo — non dice
+        // niente e non spegne niente: si riprova alla prossima apertura.
+      }
+    }
+
+    document.addEventListener('visibilitychange', forse)
+    window.addEventListener('focus', forse)
+    forse()
+
+    return () => {
+      vivo = false
+      document.removeEventListener('visibilitychange', forse)
+      window.removeEventListener('focus', forse)
+    }
+  }, [vista, membro?.id])
+
   const mvp = useMvp(membro?.id, vista === 'dentro')
 
   // I pallini stanno qui perché devono accendersi mentre guardi

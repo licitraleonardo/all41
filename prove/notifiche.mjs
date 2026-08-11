@@ -85,11 +85,21 @@ console.log('\nchat e vocali: una sola, e poi basta')
     proposta: laProposta.tag,
     chat: laChat.tag,
   })
-  // Ma dentro il suo posto la regola del «una sola» resta.
-  prova(
-    'e due proposte di fila non vibrano due volte',
-    decidi({ tipo: 'free_text', appAperta: false, giaMostrata: true, payload: conProposta }) === null
-  )
+  // ⚠️ E dentro il suo posto «una sola» vuol dire «una vibrazione sola»,
+  // non «una notifica sola».
+  //
+  // Questa prova prima chiedeva che la seconda proposta sparisse — e
+  // fissava il difetto invece della regola: restava a schermo la prima,
+  // e chi guardava il telefono andava a votare la proposta sbagliata. La
+  // seconda si mostra, prende il posto della prima, e non fa vibrare.
+  const seconda = decidi({
+    tipo: 'free_text',
+    appAperta: false,
+    giaMostrata: true,
+    payload: conProposta,
+  })
+  prova('due proposte di fila: la seconda si vede', seconda !== null)
+  prova('e non fa vibrare una seconda volta', seconda?.renotify === false, seconda)
 
   // ⚠️ E il payload deve arrivarci davvero.
   //
@@ -179,6 +189,84 @@ console.log('\nquello che c e scritto sopra')
 
   prova('senza nome dice Qualcuno', descrivi({ tipo: 'sos', payload: {} }).titolo.includes('Qualcuno'))
   prova('e senza motivo dice qualcosa', descrivi({ tipo: 'sos', payload: {} }).corpo.length > 0)
+}
+
+console.log('\nle notifiche vecchie si chiudono quando riapri')
+{
+  // ⚠️ Il difetto che questa famiglia sorveglia e' costato tutte le
+  // notifiche dopo la prima.
+  //
+  // «Una notifica di chat sola finche' non riapri» e' la regola giusta:
+  // un telefono che vibra venti volte a cena si mette in silenzioso, e da
+  // li' non arriva piu' nemmeno l'SOS. Ma l'unico posto che ne chiudeva
+  // una era il tocco sulla notifica stessa. Chi apre l'app dall'icona
+  // sulla home — cioe' quasi sempre — si lascia dietro quella vecchia, e
+  // da quel momento il controllo la trova ancora li' e sta zitto per
+  // sempre. Nessun errore: solo un telefono che smette di avvisarti.
+  const pulizia = readFileSync('src/lib/notificheAperte.js', 'utf8')
+
+  prova('si chiudono al ritorno in primo piano', /visibilitychange/.test(pulizia))
+  prova('e si chiudono dalla pagina, non dal service worker', /getNotifications\(\)/.test(pulizia))
+
+  // ⚠️ Dalla pagina e non dal service worker apposta: cosi' funziona su
+  // ogni telefono com'e' adesso, senza aspettare che il service worker si
+  // aggiorni insieme all'app.
+  prova('e non passa da un messaggio al service worker', !/postMessage/.test(pulizia))
+
+  // ⚠️ Ma l'SOS resta. Chi si e' perso non smette di esserlo perche' tu
+  // hai guardato il telefono.
+  // ⚠️ E si guarda che la regola sia **usata**, non che esista.
+  // Scritta come `/\^sos-/.test(pulizia)` restava verde anche togliendo
+  // la riga che la applica: la costante rimaneva li' dichiarata e
+  // inutilizzata. E' il terzo controllo di presenza che mi frega.
+  prova("l'SOS ha la sua eccezione", /DA_TENERE = /.test(pulizia))
+  prova('e l eccezione viene applicata davvero', /DA_TENERE\.test\([^)]*\)\)\s*continue/.test(pulizia))
+
+  // E l'attesa ha una scadenza: `serviceWorker.ready` non rifiuta mai, e
+  // senza tetto ogni apertura lascerebbe una promessa appesa.
+  prova('e l attesa del service worker ha una scadenza', /conScadenza\(/.test(pulizia))
+
+  // Ed e' agganciata davvero: un modulo che nessuno chiama non chiude
+  // niente.
+  const avvio = readFileSync('src/main.jsx', 'utf8')
+  prova('e qualcuno la aggancia all avvio', /tieniPulite\(\)/.test(avvio))
+}
+
+console.log('\nuna proposta nuova sostituisce quella vecchia')
+{
+  // Prima la seconda proposta veniva scartata perche' ce n'era gia' una a
+  // schermo: niente vibrazione — accettabile — ma nemmeno il testo veniva
+  // aggiornato. Restava scritta la prima, e chi guardava il telefono
+  // andava a votare la proposta sbagliata.
+  const conProposta = { propostaVoto: 'v2' }
+  const seconda = decidi({
+    tipo: 'free_text',
+    appAperta: false,
+    giaMostrata: true,
+    payload: conProposta,
+  })
+  prova('la seconda proposta si mostra lo stesso', seconda !== null, seconda)
+  prova('e prende il posto della prima', seconda?.tag === 'proposta', seconda)
+  prova('senza far vibrare una seconda volta', seconda?.renotify === false, seconda)
+
+  // ⚠️ E la chat normale resta com'era: la regola del «una sola» non si
+  // tocca, che e' quella che tiene i telefoni fuori dal silenzioso.
+  prova(
+    'ma un messaggio di chat resta zitto',
+    decidi({ tipo: 'free_text', appAperta: false, giaMostrata: true }) === null
+  )
+}
+
+console.log('\ntoccare la notifica porta dove dice')
+{
+  // Il service worker manda `{all41: 'vaiA', tab}` alla finestra e apre
+  // `/?tab=...` se non ce n'e' una. Nessuno dei due veniva ascoltato: una
+  // notifica che diceva «Apri per votare» lasciava sul programma della
+  // giornata.
+  const app = readFileSync('src/App.jsx', 'utf8')
+  prova('l app ascolta il messaggio del service worker', /all41 === 'vaiA'/.test(app))
+  prova("e legge anche il tab dall'indirizzo", /searchParams.*'tab'|get\('tab'\)/.test(app))
+  prova('e poi lo toglie dall indirizzo', /replaceState/.test(app))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)

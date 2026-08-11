@@ -5,6 +5,7 @@ import { leggiMembri } from '../lib/membri.js'
 import { daComporre } from '../lib/telefono.js'
 import Targhetta from './Targhetta.jsx'
 import ChiediNotifiche from './ChiediNotifiche.jsx'
+import InterruttorePosizione from './InterruttorePosizione.jsx'
 import Guida from './Guida.jsx'
 
 // Dove si dorme e chi si chiama. Sta nel codice, non sul database: è
@@ -147,6 +148,7 @@ export default function Info({ membroId }) {
           volta e non si guarda piu'. */}
       <p className="info-etichetta">Impostazioni</p>
       <ChiediNotifiche membroId={membroId} />
+      <InterruttorePosizione membroId={membroId} />
 
       {/* ⚠️ La versione dell'app sta QUI, e non solo sulla schermata
           d'ingresso dov'era.

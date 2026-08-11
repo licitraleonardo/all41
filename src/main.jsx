@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.jsx'
 import Installa from './components/Installa.jsx'
 import { controllaNelleOreMorte, tieniAggiornata } from './lib/aggiornamento.js'
+import { tieniPulite } from './lib/notificheAperte.js'
 
 // /installa è una pagina a sé: la guida per mettersi l'app sulla home, e
 // nient'altro. Niente codice, niente onboarding, niente database.
@@ -26,6 +27,10 @@ createRoot(document.getElementById('root')).render(
 // installata non ha senso.
 if (!installazione) {
   tieniAggiornata()
+  // ⚠️ E le notifiche gia' lette si chiudono quando torni nell'app.
+  // Senza, la prima notifica non letta zittisce tutte quelle dopo: vedi
+  // il commento in `lib/notificheAperte.js`.
+  tieniPulite()
   // E l'altra meta': due volte al giorno, nelle ore in cui una ricarica
   // non porta via niente a nessuno, l'app controlla da sola di non essere
   // rimasta indietro. Vedi lib/finestreAggiornamento.js.

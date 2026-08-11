@@ -53,7 +53,21 @@ self.__all41.decidi = function decidi({ tipo, id, appAperta, giaMostrata, payloa
        * regola del «una sola» resta, dentro il suo tag.
        */
       if (payload && payload.propostaVoto) {
-        return giaMostrata ? null : { tag: 'proposta', renotify: false, tab: 'gioco' }
+        /* ⚠️ Non si zittisce, si sostituisce.
+         *
+         * Prima la seconda proposta veniva scartata perche' ce n'era gia'
+         * una a schermo: niente vibrazione — accettabile — ma nemmeno il
+         * testo veniva aggiornato, quindi restava scritta la prima. Chi
+         * guardava il telefono leggeva «Marco propone -3 per Leo» mentre
+         * la proposta da votare era un'altra, e andava a votare la cosa
+         * sbagliata.
+         *
+         * Una proposta ha un voto da dare e una scadenza: la piu' recente
+         * deve poter prendere il posto della precedente. `renotify: false`
+         * fa esattamente questo — il testo si aggiorna, il telefono non
+         * vibra una seconda volta.
+         */
+        return { tag: 'proposta', renotify: false, tab: 'gioco' }
       }
       return giaMostrata ? null : { tag: 'chat', renotify: false, tab: 'gruppo' }
 
