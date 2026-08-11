@@ -1,12 +1,120 @@
 # Da fare
 
 Coda di lavoro decisa, in ordine. Diversa da `IDEE.md`, che è il parcheggio
-delle cose non decise. Aggiornata prima della partenza.
+delle cose non decise.
+
+---
+
+# ✅ Coda viva — 12 agosto, viaggio in corso
+
+**Questa è la parte da leggere.** Tutto quello che sta sotto la riga
+doppia è di prima della partenza e serve solo da contesto.
+
+L'app è in mano a otto persone e ogni pubblicazione arriva sui loro
+telefoni. Quindi l'ordine qui sotto è per **rischio**, non per voglia:
+prima le cose che se si rompono si rompono da sole, in fondo quelle che
+possono impedire di aprire l'app.
+
+## 1. Dama: «Gioca contro Allan»
+
+Un avversario automatico, per giocare da soli. È il lavoro più isolato
+di tutta la coda e **funziona offline per costruzione**, senza fare
+niente di speciale: `src/lib/dama.js` è già puro — 218 righe, zero
+database — e ha dentro tutto quello che serve a una macchina per
+giocare (`mosseLegali`, `applicaMossa`, `esito`).
+
+**Da scrivere:** un file nuovo `src/lib/allanDama.js` con la ricerca a
+qualche mossa di profondità e una valutazione semplice (pezzi, dame,
+avanzamento, centro), più il tasto in `src/components/Dama.jsx`.
+
+⚠️ **Tre vincoli, e il primo non è negoziabile:**
+
+1. **Le partite contro Allan non finiscono in `dama_games`.** Se ci
+   finissero, chiunque potrebbe farsi la classifica battendo una
+   macchina, e il Trofeo della Dama smetterebbe di voler dire qualcosa.
+   Restano tutte sul telefono, come il record di All.
+2. **«Medio» va preso alla lettera.** Un motore perfetto è imbattibile e
+   si smette di giocarci dopo due partite; uno a caso non è un
+   avversario. Serve profondità bassa più una imperfezione voluta — ogni
+   tanto la seconda mossa migliore invece della prima.
+3. **Deve rispondere in fretta.** La ricerca gira sul telefono di chi
+   gioca, e una mossa che ci mette due secondi rende il gioco noioso.
+   Meglio poco profondo e istantaneo.
+
+**Prove:** `prove/dama-allan.mjs`. Le proprietà che contano — non fa mai
+una mossa illegale, mangia sempre quando è obbligatorio, vince quasi
+sempre contro uno che gioca a caso, e sta dentro il tempo massimo.
+
+## 2. Lo switch della posizione
+
+Sotto le notifiche, **spento di default**. Chi lo accende: a ogni
+apertura la posizione parte da sola e compare «📍 La tua posizione è
+stata aggiornata», che sparisce da sola ma si vede. Chi non ce l'ha:
+niente invio automatico, ma il banner che c'è già dice che la posizione
+è vecchia.
+
+⚠️ Se il GPS è spento o il permesso negato, lo switch **si spegne da
+solo** invece di far finta. E resta spento di default: è la condizione
+che tiene insieme questa richiesta con la decisione del 10 agosto —
+«la posizione si condivide con un tasto, mai da sola».
+
+## 3. L'Impostore con un telefono solo
+
+Si sceglie all'avvio: «Un telefono» o «Uno a testa», e nella guida si
+spiega che il primo è la versione offline.
+
+⚠️ **Non è un secondo gioco, è un selettore di «chi sta guardando».** Il
+motore, i punti e le Leggi restano quelli. Quello che c'è già: la parola
+si vede tenendo premuto e si nasconde staccando il dito, il turno è già
+«TOCCA A TE» leggibile da tre metri, `assegnazioni` tiene già la parola
+di ognuno. Cambia solo il giro dei nomi — «Passa a Marco» prima di ogni
+rivelazione.
+
+**La votazione:** conta di tre, tutti puntano il dito insieme, e chi ha
+il telefono tocca gli otto nomi. ⚠️ Obbligatorio, non è stile: nel
+database si salva **chi ha votato chi**, ed è da lì che escono la Legge
+XXIV, l'impostore impunito e lo smascheratore. Registrando solo l'esito,
+l'Impostore smette di dare punti.
+
+⚠️ «Offline» qui è mezzo vero: la partita si gioca senza rete, ma il
+risultato va scritto per i punti. Va in coda, come le foto.
+
+## 4. L'offline diventa una scelta, non un guasto
+
+Senza campo l'avvio resta su «Un attimo.» su fondo blu, senza rotella e
+senza un tasto da toccare. Deve comparire **«Usa offline»** ed entrare
+con quello che è già in `localStorage`. Quando la rete torna: **«Sei di
+nuovo online → vai»** accanto a **«continuo offline»**, e la scelta si
+ricorda.
+
+⚠️ **Questo è l'ultimo della coda apposta.** Tocca l'avvio, che è
+l'unico pezzo dell'app senza una rete di sicurezza sopra — perché è
+quello che le monta. Un errore lì non degrada niente: impedisce di
+aprire l'app, a tutti. Non si pubblica di corsa: si prova in aereo mode
+su un telefono vero, con qualcuno che può dire se parte.
+
+## In fondo, quando c'è tempo
+
+- **Le foto brevi in chat** — piano intero già scritto e approvato,
+  fermato il 10 agosto: «è consistente e non mi va di deployare senza
+  test profondo»
+- **Rispondere a un singolo messaggio** tenendo premuto — due file,
+  nessuna migrazione. La trappola è che tenere premuto litiga con la
+  selezione del testo del telefono
+- **Le 9 Leggi dormienti** da accendere
+- **I sondaggi che notificano**, con lo stesso ragionamento delle
+  proposte: anche loro scadono, e chi non apre l'app non vota
+- **La coda delle mosse della Dama** senza campo, per non perdere una
+  partita quando la rete cade un minuto
+
+---
+---
+
+## Tutto quello che segue è di prima della partenza
 
 > 📋 **9 agosto — l'elenco aggiornato sta in `SESSIONE-9-AGOSTO.md`.** Quel
 > giorno sono stati chiusi 45 difetti su 46, e cinque delle cose scritte qui
-> sotto non ci sono più. Questo file resta per il contesto: **per sapere cosa
-> manca adesso, guarda quello.**
+> sotto non ci sono più.
 
 ⚠️ **SQL da lanciare**: **`supabase/DA-LANCIARE.sql`**, uno solo, da
 incollare nell'SQL Editor di Supabase. Contiene tutto quello che manca e
