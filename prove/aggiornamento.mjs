@@ -9,6 +9,7 @@
 //
 // La ricarica non si annulla: si rimanda a quando lo schermo e' libero.
 
+import { readFileSync } from 'node:fs'
 import { tieniOccupato, siPuoRicaricare } from '../src/lib/aggiornamento.js'
 
 let falliti = 0
@@ -63,6 +64,45 @@ console.log('\nlo stesso motivo due volte conta una volta sola')
   prova('liberato una volta, e libero', siPuoRicaricare())
   via2()
   prova('e resta libero', siPuoRicaricare())
+}
+
+console.log('\nil tasto Aggiorna non resta mai appeso')
+{
+  // ⚠️ Questa prova nasce da un difetto trovato usando l'app, non da una
+  // prova: premendo «Aggiorna» il tasto restava su «Cerco…» per sempre.
+  //
+  // La causa era banale e invisibile. La funzione poteva restituire
+  // quattro esiti diversi; il tasto ne gestiva due. Su quello non
+  // gestito non veniva impostato nessuno stato, il tasto restava
+  // disabilitato, e l'unica via d'uscita dell'app diventava lei stessa un
+  // vicolo cieco. Nessun errore, da nessuna parte — e' la famiglia dei
+  // difetti che non falliscono.
+  const senzaCommenti = (f) =>
+    readFileSync(f, 'utf8')
+      .split('\n')
+      .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+      .join('\n')
+
+  const lib = senzaCommenti('src/lib/aggiornamento.js')
+  const tasto = senzaCommenti('src/components/Targhetta.jsx')
+
+  const puoRestituire = [...new Set([...lib.matchAll(/return '([a-z-]+)'/g)].map((m) => m[1]))]
+  prova('la funzione ha piu di un esito', puoRestituire.length >= 2, puoRestituire)
+
+  const nominati = [...new Set([...tasto.matchAll(/esito === '([a-z-]+)'/g)].map((m) => m[1]))]
+  const scoperti = puoRestituire.filter((e) => !nominati.includes(e))
+  prova('il tasto li nomina tutti', scoperti.length === 0, { scoperti, nominati })
+
+  // ⚠️ E un ramo finale che prende tutto. Nominarli tutti oggi non basta:
+  // ne aggiungi uno domani e il tasto torna ad appendersi. Col ramo
+  // finale, un esito sconosciuto produce un messaggio impreciso invece di
+  // un vicolo cieco.
+  prova('e ha un ramo finale per quelli che non conosce', /else setStato/.test(tasto))
+
+  // ⚠️ E nessuna attesa senza scadenza dentro la via d'uscita: sarebbe
+  // l'attesa infinita dentro la funzione che serve a uscire dalle attese
+  // infinite. Il `fetch` di controllo deve passare da `conScadenza`.
+  prova('e il controllo alla rete ha una scadenza', /conScadenza\(/.test(lib))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)

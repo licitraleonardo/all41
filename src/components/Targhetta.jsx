@@ -30,13 +30,27 @@ const buildTime = __BUILD_TIME__
 export default function Targhetta() {
   const [stato, setStato] = useState('fermo')
 
+  // ⚠️ Ogni esito deve spegnere «Cerco…», nessuno escluso.
+  //
+  // Prima ne gestiva due su quattro: con `in-arrivo` non veniva impostato
+  // niente, il tasto restava disabilitato su «Cerco…» **per sempre**, e
+  // l'unica via d'uscita dell'app diventava lei stessa un vicolo cieco.
+  // Segnalato dall'uso, non da una prova: non c'era nessun errore da
+  // nessuna parte.
+  //
+  // Adesso c'e' un ramo finale che prende tutto quello che non e' stato
+  // riconosciuto: un esito nuovo aggiunto domani fara' comparire un
+  // messaggio impreciso, non un tasto appeso.
   async function aggiorna() {
     setStato('cerco')
-    const esito = await forzaAggiornamento()
-    // Se ha trovato qualcosa la pagina si ricarica da sola e questo stato
-    // non lo vede nessuno.
+    const esito = await forzaAggiornamento().catch(() => 'guasto')
+
+    // La pagina se ne sta andando: lasciare «Cerco…» e' giusto.
+    if (esito === 'ricarico') return
+
     if (esito === 'gia-aggiornata') setStato('gia')
-    if (esito === 'niente-da-fare') setStato('niente')
+    else if (esito === 'niente-da-fare') setStato('niente')
+    else setStato('niente')
   }
 
   return (

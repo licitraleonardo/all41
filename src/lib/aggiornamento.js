@@ -1,4 +1,12 @@
 import { attesaACaso, segnalibro, vaControllato } from './finestreAggiornamento.js'
+import { conScadenza } from './scadenza.js'
+
+// Quanto si aspetta che il service worker nuovo prenda il comando da
+// solo, prima di forzargli la mano.
+const ATTESA_COMANDO = 4000
+
+// Quanto si aspetta il server prima di dire «non lo so».
+const ATTESA_RETE = 8000
 
 // Tenere aggiornata l'app installata sulla home.
 //
@@ -34,6 +42,36 @@ export function tieniOccupato(motivo) {
 
 export function siPuoRicaricare() {
   return occupati.size === 0
+}
+
+// Aspetta che il service worker nuovo prenda il comando, ma non per
+// sempre. Restituisce `true` se e' successo entro il tempo dato.
+function aspettaIlComando(ms) {
+  return new Promise((risolvi) => {
+    let fatto = false
+    const chiudi = (esito) => {
+      if (fatto) return
+      fatto = true
+      navigator.serviceWorker.removeEventListener('controllerchange', alCambio)
+      risolvi(esito)
+    }
+    const alCambio = () => chiudi(true)
+    navigator.serviceWorker.addEventListener('controllerchange', alCambio)
+    setTimeout(() => chiudi(false), ms)
+  })
+}
+
+// Il martello: si butta via la registrazione e tutte le cache, e si
+// ricarica. Si usa solo quando le vie gentili non hanno funzionato —
+// ma quando serve, funziona sempre.
+async function ricominciaDaCapo(registrazione) {
+  if (registrazione) await registrazione.unregister().catch(() => {})
+  if ('caches' in window) {
+    const nomi = await caches.keys().catch(() => [])
+    await Promise.all(nomi.map((n) => caches.delete(n).catch(() => {})))
+  }
+  window.location.reload()
+  return 'ricarico'
 }
 
 // ⚠️ La via d'uscita a mano, per quando l'automatismo qui sotto non parte.
@@ -76,7 +114,20 @@ export async function forzaAggiornamento() {
     // verificato cercandolo in `dist/sw.js`, non c'è. Mandarglielo
     // sarebbe una riga che sembra fare qualcosa e non fa niente, e la
     // prossima persona che legge questo file ci crederebbe.
-    if (registrazione.waiting || registrazione.installing) return 'in-arrivo'
+    if (registrazione.waiting || registrazione.installing) {
+      // ⚠️ Qui prima si usciva e basta, fidandosi che `controllerchange`
+      // ricaricasse da solo. Non sempre arriva: un service worker in
+      // `waiting` prende il comando solo quando **tutte** le pagine
+      // aperte lo lasciano, e se una resta aperta da qualche parte quel
+      // momento non viene mai. Il tasto restava su «Cerco…» per sempre,
+      // cioe' proprio l'app bloccata che questo tasto esiste per
+      // sbloccare.
+      //
+      // Adesso gli si da' un tempo, e poi gli si forza la mano.
+      const preso = await aspettaIlComando(ATTESA_COMANDO)
+      if (preso) return 'ricarico'
+      return await ricominciaDaCapo(registrazione)
+    }
   }
 
   // Niente di nuovo dal service worker. Può voler dire due cose: che siamo
@@ -92,9 +143,15 @@ export async function forzaAggiornamento() {
   // cioè esattamente la bugia che questo tasto esiste per smontare.
   // Un indirizzo che il service worker non ha in elenco non lo tocca, e
   // la richiesta arriva al server.
-  const fresca = await fetch(`/index.html?controllo=${Date.now()}`, { cache: 'reload' })
-    .then((r) => (r.ok ? r.text() : null))
-    .catch(() => null)
+  // ⚠️ Con una scadenza. Senza, su rete cattiva questa richiesta resta
+  // appesa e il tasto non risponde piu': sarebbe l'attesa infinita dentro
+  // la funzione che serve a uscire dalle attese infinite.
+  const fresca = await conScadenza(
+    fetch(`/index.html?controllo=${Date.now()}`, { cache: 'reload' }).then((r) =>
+      r.ok ? r.text() : null
+    ),
+    ATTESA_RETE
+  ).catch(() => null)
 
   if (fresca) {
     // Gli script hanno il nome col codice del contenuto: se quello che il
@@ -106,15 +163,7 @@ export async function forzaAggiornamento() {
     )
     const indietro = suoi.length > 0 && !suoi.some((s) => nostri.includes(s))
 
-    if (indietro) {
-      if (registrazione) await registrazione.unregister().catch(() => {})
-      if ('caches' in window) {
-        const nomi = await caches.keys().catch(() => [])
-        await Promise.all(nomi.map((n) => caches.delete(n).catch(() => {})))
-      }
-      window.location.reload()
-      return 'ricarico'
-    }
+    if (indietro) return await ricominciaDaCapo(registrazione)
     return 'gia-aggiornata'
   }
 
