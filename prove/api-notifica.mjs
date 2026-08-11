@@ -170,5 +170,52 @@ console.log('\nla sveglia del 12 suona una volta sola')
   prova('e un anno dopo neanche', oggiARoma(new Date('2027-08-12T10:30:00Z')) !== GIORNO)
 }
 
+console.log('\nil mittente della firma e un indirizzo vero')
+{
+  // ⚠️ Il difetto piu' costoso del progetto, e il piu' silenzioso.
+  //
+  // Il mittente era `mailto:all41@example.invalid`. `.invalid` e' un
+  // dominio riservato che per definizione non esiste (RFC 2606), e i due
+  // servizi di push non lo trattano allo stesso modo:
+  //
+  //   - Google non guarda il mittente e consegna lo stesso
+  //   - Apple lo valida e rifiuta con 403 BadJwtToken
+  //
+  // Quattro persone su sette erano su iPhone e non hanno ricevuto una
+  // notifica per tre giorni. Le prove si facevano su Android, quindi
+  // risultava tutto a posto — ed e' esattamente perche' e' durato tanto:
+  // il sintomo, «a me non arrivano», assomiglia a un permesso negato sul
+  // telefono, che e' la prima cosa che uno va a guardare.
+  const manda = readFileSync('api/_manda.js', 'utf8')
+  const tolti = manda
+    .split('\n')
+    .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+    .join('\n')
+  const mittente = (tolti.match(/const MITTENTE = '([^']+)'/) ?? [])[1] ?? ''
+
+  prova('il mittente c e', mittente.length > 0, mittente)
+  prova(
+    'ed e una mail o un indirizzo web',
+    /^(mailto:[^@\s]+@[^@\s]+|https:\/\/\S+)$/.test(mittente),
+    mittente
+  )
+
+  // ⚠️ E non un dominio riservato. Sono quelli che NON esistono per
+  // definizione, e sono esattamente quelli che uno scrive quando mette un
+  // segnaposto: Apple li rifiuta tutti.
+  const finti = ['.invalid', '.example', '.test', '.localhost', 'example.com', 'example.org']
+  const usato = finti.filter((f) => mittente.includes(f))
+  prova('e non un dominio finto', usato.length === 0, { mittente, usato })
+
+  // ⚠️ E lo strumento delle prove deve usare **lo stesso** mittente.
+  //
+  // E' la riga con i denti. Se qui fosse valido e in produzione no,
+  // `npm run notifica` direbbe «mandate 5 su 5» mentre gli iPhone del
+  // gruppo restano muti — cioe' lo strumento che serve a scoprire il
+  // difetto diventerebbe la ragione per cui non lo si scopre.
+  const strumento = readFileSync('strumenti/manda-notifica.mjs', 'utf8')
+  prova('e la prova a mano usa lo stesso mittente', strumento.includes("'" + mittente + "'"), mittente)
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)
 process.exit(falliti === 0 ? 0 : 1)

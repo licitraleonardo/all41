@@ -100,7 +100,10 @@ if (!vai) {
   process.exit(0)
 }
 
-webpush.setVapidDetails('mailto:all41@example.invalid', CHIAVE_PUBBLICA, daEnv('VAPID_PRIVATE_KEY'))
+// ⚠️ Lo stesso mittente di `api/_manda.js`, e deve restare lo stesso: se
+// qui fosse valido e la' no, questa prova direbbe che funziona tutto
+// mentre in produzione gli iPhone restano muti. Vedi il commento la'.
+webpush.setVapidDetails('https://all41.vercel.app', CHIAVE_PUBBLICA, daEnv('VAPID_PRIVATE_KEY'))
 
 // Lo stesso pacchetto che manderebbe `api/notifica.js`: se cambia la
 // forma là, questa prova smette di provare la cosa vera.
