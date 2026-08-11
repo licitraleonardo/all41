@@ -433,17 +433,23 @@
    giornata. Adesso sta accanto al conto alla rovescia, dove l'occhio
    passa gia'. */
 
+/* ⚠️ In colonna, non in riga: il mondino sta SOTTO il conto alla rovescia.
+   Non e' un ripensamento su quello che c'e' scritto sopra — il mondino
+   non torna a prendersi una riga intera, resta un tondo da 44 px
+   allineato a sinistra sotto il cronometro — ma libera la meta' destra,
+   che oggi e' vuota e serve a quello che verra'. */
 .oggi-testa {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
   margin-bottom: 22px;
 }
 
-/* Il conto alla rovescia si prende quello che resta, e non ha piu' il suo
+/* Il conto alla rovescia si prende la riga intera, e non ha piu' il suo
    margine sotto: ce l'ha il contenitore. */
 .oggi-testa .attesa {
-  flex: 1;
+  align-self: stretch;
   min-width: 0;
   margin-bottom: 0;
 }

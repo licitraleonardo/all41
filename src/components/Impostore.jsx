@@ -1057,10 +1057,16 @@ function Colpo({ partita, puo, membro, nome, onTenta, onChiedi, onChiudi }) {
           appena vinto. */}
       {tocca ? (
         <>
+          {/* ⚠️ Il titolo dice cosa fare, non com'è drammatico.
+              Era «Ultima carta»: bello, ma chi ci arriva per la prima
+              volta ha tre secondi per capire che deve **scrivere una
+              parola**, e un'etichetta evocativa quei tre secondi se li
+              prende. La frase che spiega viene dopo, non prima. */}
           <p className="imp-etichetta">Ti hanno beccato</p>
-          <h2 className="imp-titolo">Ultima carta</h2>
+          <h2 className="imp-titolo">Prova a indovinare la parola</h2>
           <p className="imp-spiega">
-            Scrivi la parola che aveva il gruppo. Se la indovini vinci lo stesso, e
+            Scrivi la parola che aveva il gruppo. Se la indovini <strong>ribalti tutto</strong>:
+            vinci lo stesso, ti prendi {PER_ID['impostore-impunito'].punti} punti, e
             tutta la loro indagine non è servita a niente.
           </p>
 
@@ -1102,8 +1108,9 @@ function Colpo({ partita, puo, membro, nome, onTenta, onChiedi, onChiudi }) {
             {puo.length === 1 ? `${nome(puo[0])} ci prova` : 'Ci provano'}
           </h2>
           <p className="imp-spiega">
-            {puo.length === 1 ? 'Sta scrivendo' : 'Stanno scrivendo'} la parola che
-            avevate voi. Se la indovina, avete perso lo stesso.
+            {puo.length === 1 ? 'Sta provando a indovinare' : 'Stanno provando a indovinare'}{' '}
+            la parola che avevate voi. Se ci {puo.length === 1 ? 'riesce' : 'riescono'},
+            avete perso lo stesso.
           </p>
           <Rotella testo="Un attimo di silenzio" />
 

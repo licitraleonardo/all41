@@ -120,9 +120,17 @@ self.__all41.descrivi = function descrivi({ tipo, chi, payload }) {
     case 'vocale':
       return { titolo: 'Qualcuno ha mandato un vocale', corpo: 'Apri per ascoltarlo' }
     case 'sveglia':
-      // Il corpo dice perche' adesso funziona tutto: chi ha provato
-      // l'app nei due giorni prima l'ha trovata mezza coperta.
-      return { titolo: 'All41 vi aspetta', corpo: 'Da stamattina funziona tutto.' }
+      /* Il corpo dice cosa si e' aperto: chi ha provato l'app nei giorni
+       * prima l'ha trovata mezza coperta.
+       *
+       * ⚠️ Diceva «Da stamattina funziona tutto», e ha smesso di essere
+       * vero quando l'apertura e' scesa alla sera dell'11 — il volo
+       * spostato a Palermo, la notte in aeroporto. La sveglia suona il 12
+       * a mezzogiorno e mezzo, cioe' quasi un giorno dopo: «da stamattina»
+       * era la frase di un piano che non esiste piu'. Adesso non nomina
+       * nessun momento, cosi' non puo' invecchiare di nuovo.
+       */
+      return { titolo: 'All41 vi aspetta', corpo: 'Leggi, Trofei e giochi: e\' tutto aperto.' }
     default:
       return null
   }
