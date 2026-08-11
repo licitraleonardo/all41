@@ -93,6 +93,11 @@ function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
   // cartello. Dice una cosa sola — chi si e' mosso — e chi ha chiesto
   // aiuto la legge scorrendo la chat dove ha appena mandato l'SOS.
   if (azione.tipo === 'free_text' && azione.payload.ricevutaSos) {
+    // ⚠️ «Francy ha ricevuto l'SOS di Francy» non vuol dire niente: la
+    // riga c'e' — serve a ricordare che ha chiuso il proprio cartello —
+    // ma non si disegna.
+    if (azione.payload.sosDi === azione.autoreId) return null
+
     const di = membri?.[azione.payload.sosDi]?.nome
     return (
       <li className="voce sussurro">

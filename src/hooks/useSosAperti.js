@@ -110,10 +110,21 @@ export function useSosAperti(ioId) {
       }
       setRicevute((p) => [finto, ...p])
 
-      // ⚠️ Il proprio SOS si chiude e basta: «Diego ha ricevuto l'SOS di
-      // Diego» in chat non vuol dire niente.
-      if (sos.autoreId === ioId) return true
-
+      // ⚠️ La ricevuta si scrive **sempre**, anche sul proprio SOS.
+      //
+      // Prima il proprio si chiudeva e basta, senza scrivere niente: in
+      // chat «Francy ha ricevuto l'SOS di Francy» non vuol dire niente,
+      // e sembrava di risparmiare una riga inutile. Ma la riga era anche
+      // l'unica **memoria** del fatto che l'avevi chiuso: la riga finta
+      // vive solo dentro questo schermo, e la prima rilettura — un
+      // evento dal database, l'app che torna avanti, la rete che
+      // rientra — la spazzava via e il cartello tornava su. Chi aveva
+      // mandato l'SOS non riusciva piu' a togliersi il proprio cartello.
+      //
+      // Adesso la riga si scrive sempre e a non farla vedere ci pensa la
+      // chat, che salta le ricevute del proprio SOS (`Feed.jsx`).
+      // Nascondere e non scrivere sono due cose diverse, e qui serviva
+      // la prima.
       try {
         await mandaRicevuta({
           sosId: sos.id,

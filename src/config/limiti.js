@@ -22,12 +22,19 @@ export const LIMITI = {
   // raffiche di vocali sono il punto, non l'abuso. Resta solo la durata
   // massima, che si impone in registrazione e non è un limite di invio.
   voice: { cooldown: 0, raffica: null, finestra: null, giorno: null, durataMax: 60 },
-  // Cinque al giorno a testa nell'album. La raffica resta larga perché
-  // caricarne otto di fila dopo una giornata in spiaggia è uso normale,
-  // non spam: è il totale della giornata che tiene l'album leggibile.
-  // Il tetto vale solo per l'album — le foto mandate a una sfida non lo
-  // consumano — e una foto eliminata libera il posto.
-  photo: { cooldown: 0, raffica: 20, finestra: 600, giorno: 5 },
+  // Quindici al giorno a testa nell'album. Erano cinque, ed era un conto
+  // fatto sullo spazio: cinque giorni per otto persone a 3-5 MB l'una.
+  // Alla prova dei fatti cinque sono poche — una giornata in spiaggia,
+  // una cena e una gita in barca stanno strette — e lo spazio non si e'
+  // rivelato il vincolo che sembrava, perche' le foto si comprimono
+  // prima di partire.
+  //
+  // La raffica resta larga perché caricarne otto di fila dopo una
+  // giornata al mare è uso normale, non spam: è il totale della giornata
+  // che tiene l'album leggibile. Il tetto vale solo per l'album — le foto
+  // mandate a una sfida non lo consumano — e una foto eliminata libera il
+  // posto.
+  photo: { cooldown: 0, raffica: 20, finestra: 600, giorno: 15 },
   dove_siete: { cooldown: 60, raffica: null, finestra: null, giorno: null },
   si_riparte: { cooldown: 60, raffica: null, finestra: null, giorno: null },
   poll: { cooldown: 60, raffica: null, finestra: null, giorno: null },

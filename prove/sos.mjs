@@ -127,6 +127,42 @@ console.log('\n«Ricevuto» lo puo premere chiunque, e lascia traccia')
   const lettura = azioni.match(/export async function leggiRicevute[\s\S]*?\n\}/)?.[0] ?? ''
   prova('la lettura delle ricevute ha un limite', /\.limit\(/.test(lettura))
 
+  // ⚠️ E chiudere il **proprio** cartello si scrive, come tutti gli altri.
+  //
+  // Prima no: sul proprio SOS il tasto usciva prima di scrivere qualsiasi
+  // cosa, perche' «Francy ha ricevuto l'SOS di Francy» in chat non vuol
+  // dire niente e sembrava una riga sprecata. Ma quella riga era anche
+  // l'unica **memoria** della chiusura: la riga finta vive solo dentro lo
+  // schermo, e la prima rilettura — un evento dal database, l'app che
+  // torna avanti, la rete che rientra — la spazzava via e il cartello
+  // tornava su. Chi aveva mandato l'SOS non riusciva piu' a toglierselo.
+  //
+  // Quindi: fra il momento in cui sparisce dallo schermo e la scrittura
+  // non ci deve essere nessuna uscita.
+  // ⚠️ Niente `slice` fra due indici, e niente `\b` nella regex.
+  //
+  // La prima versione tagliava il file fra due indici e cercava
+  // `/\breturn\b/`. Rimettendo il difetto dentro il codice restava
+  // verde, ed e' il terzo strumento di misura che mi mente in questo
+  // progetto. La causa era invisibile: passando la regex da una shell,
+  // `\b` era diventato un vero carattere di **backspace** — la prova
+  // cercava un carattere di controllo che non esiste in nessun file, e
+  // quindi era falsa sempre.
+  //
+  // Una condizione diretta sul sorgente, senza tagli e senza scorciatoie
+  // di regex, non ha finestre in cui sbagliare.
+  prova('il tasto scrive la ricevuta', /await mandaRicevuta\(/.test(gancio))
+  prova(
+    'e non esce prima quando l SOS e il tuo',
+    !/autoreId === ioId\) return/.test(gancio),
+    (gancio.match(/.*autoreId === ioId\).*/g) ?? []).join(' | ')
+  )
+
+  // E a non farla vedere ci pensa la chat: nascondere e non scrivere sono
+  // due cose diverse, e qui serviva la prima.
+  const feed = senzaCommenti(readFileSync('src/components/Feed.jsx', 'utf8'))
+  prova('e la chat non disegna la ricevuta del proprio SOS', /sosDi === azione\.autoreId/.test(feed))
+
   // Se l'invio non riesce il cartello TORNA SU: meglio uno di troppo che
   // uno di meno.
   const corpo = gancio.match(/const ricevuto = useCallback[\s\S]*?\n  \)/)?.[0] ?? ''
