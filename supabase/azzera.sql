@@ -8,11 +8,18 @@
 -- ⚠️ Il taglio e' una data FISSA, non «adesso».
 --
 -- E' la cosa che rende questa funzione sicura da chiamare in ritardo, o
--- due volte, o tre. Cancella solo quello che sta **prima delle 6 del 12**
--- e ricalcola i punteggi da quello che resta: se parte alle 6:40 invece
--- che alle 6:00 — i cron del piano Hobby non sono puntuali — i punti
--- guadagnati fra le 6:00 e le 6:40 restano dove sono. Con un taglio a
+-- due volte, o tre. Cancella solo quello che sta **prima delle 7 del 12**
+-- e ricalcola i punteggi da quello che resta: se parte alle 7:40 invece
+-- che alle 7:00 — i cron del piano Hobby non sono puntuali — i punti
+-- guadagnati fra le 7:00 e le 7:40 restano dove sono. Con un taglio a
 -- «adesso» sarebbero spariti, e nessuno avrebbe capito perche'.
+--
+-- ⚠️ Erano le 6, sono diventate le 7 la notte del 12. L'Etna ha chiuso
+-- Fontanarossa, il volo e' partito da Palermo alle 5:45 e il gruppo e'
+-- atterrato a Cagliari verso le 7: alle 6 erano in volo. La notte
+-- passata in aeroporto — le partite, i punti, i selfie per ammazzare
+-- l'attesa — deve stare tutta dalla parte delle prove, e con il taglio
+-- alle 6 sarebbe stata mezza di qua e mezza di la'.
 --
 -- ⚠️ Gli eventi si cancellano, non si nascondono. La Classifica mostra
 -- lo storico accanto al punteggio: lasciando gli eventi vecchi con i
@@ -38,7 +45,7 @@ security definer
 set search_path = public
 as $$
 declare
-  taglio timestamptz := '2026-08-12 06:00:00+02';
+  taglio timestamptz := '2026-08-12 07:00:00+02';
   primo_giorno date := date '2026-08-12';
   quanti integer;
   quanti_membri integer;

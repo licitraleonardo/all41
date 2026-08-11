@@ -1,6 +1,16 @@
 // Quando l'app si apre davvero.
 //
-// ⚠️ L'app esce **coperta**, e si scopre da sola alle 6 del 12.
+// ⚠️ L'app esce **coperta**, e si scopre da sola alle 7 del 12.
+//
+// ⚠️ Erano le 6, e sono diventate le 7 la notte stessa. L'Etna ha chiuso
+// Fontanarossa e il volo e' stato spostato a Palermo: il gruppo ha
+// passato la notte in aeroporto e atterra a Cagliari verso le 7. Alle 6
+// erano in volo. Aprire l'app e azzerare la classifica mentre otto
+// telefoni sono in modalita' aereo vuol dire farlo succedere nel vuoto —
+// e soprattutto vuol dire che le partite e i punti fatti in aeroporto
+// alle tre di notte, per ammazzare l'attesa, sarebbero **sopravvissuti**
+// al taglio delle 6 solo se fatti dopo. Con il taglio alle 7 la notte in
+// aeroporto sta tutta dalla parte delle prove, dove deve stare.
 //
 // Il link va al gruppo due giorni prima di partire, e due giorni di
 // prove bruciano cose che si possono scoprire una volta sola: le Leggi
@@ -24,11 +34,11 @@
 //     subito e non consumano niente
 //
 // ⚠️ Niente cron e niente deploy per aprire: ogni telefono guarda il
-// proprio orologio. Alle 6 del 12 si apre tutto da sé, in silenzio.
+// proprio orologio. Alle 7 del 12 si apre tutto da sé, in silenzio.
 
-// L'ora locale, non UTC: le 6 del mattino in Sardegna sono le 6 sul
+// L'ora locale, non UTC: le 7 del mattino in Sardegna sono le 7 sul
 // telefono di chi è lì, ed è quello che conta.
-export const APERTURA = '2026-08-12T06:00:00'
+export const APERTURA = '2026-08-12T07:00:00'
 
 // ⚠️ Lo stesso istante, ma col fuso scritto dentro.
 //
@@ -41,7 +51,7 @@ export const APERTURA = '2026-08-12T06:00:00'
 // È lo stesso identico istante del taglio dentro `supabase/azzera.sql`,
 // ed è controllato da `prove/rilascio.mjs`: se i due si separano, punti
 // e statistiche raccontano due storie diverse.
-export const APERTURA_ASSOLUTA = '2026-08-12T06:00:00+02:00'
+export const APERTURA_ASSOLUTA = '2026-08-12T07:00:00+02:00'
 
 // ⚠️ Per provarla senza aspettare il 12. Va lasciata a `null` quando si
 // pubblica: messa a `true` l'app esce già aperta, e il primo che gioca
