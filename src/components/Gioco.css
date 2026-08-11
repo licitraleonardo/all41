@@ -225,10 +225,14 @@
   padding: 0;
 }
 
+/* ⚠️ Si dividono la riga, come le schede del Gruppo.
+   Erano larghe quanto il testo e ammucchiate a sinistra: con due o tre
+   voci lasciavano mezza riga vuota, e la fila sembrava finita a meta'. */
 .segmenti.minori .segmento {
-  flex: none;
+  flex: 1;
   display: inline-flex;
   align-items: baseline;
+  justify-content: center;
   gap: 6px;
   font-size: 13px;
   border: 1px solid var(--line);
@@ -935,7 +939,11 @@
   gap: 14px;
   border-bottom: 1px solid var(--line);
 }
+/* Il terzo livello no: e' testo con una riga sotto, e allargarlo
+   spingerebbe le due voci ai due estremi dello schermo, lontane dal
+   contenuto che stanno etichettando. */
 .segmenti.minori.dentro .segmento {
+  flex: none;
   border: 0;
   border-radius: 0;
   padding: 6px 0 8px;
