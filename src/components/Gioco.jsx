@@ -97,8 +97,14 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
       {/* La guida non sta più qui. Una card in cima alla schermata più
           usata del tab era troppo invadente: adesso Allan dice due righe
           la prima volta che entri, e la guida intera vive in Info. */}
-      {/* Sotto-schede in alto: pattern standard, non aggiunge profondità */}
-      <div className="segmenti scorrevoli" role="tablist">
+      {/* ⚠️ Non piu' `scorrevoli`, e non e' una dimenticanza.
+          Quella classe rende i bottoni larghi quanto il testo e lascia
+          scorrere la fila di lato: serviva quando le voci erano sei. Con
+          tre si dividono la riga come le schede del Gruppo, e a destra
+          non resta mezza riga vuota.
+          Se un giorno tornassero a essere piu' di quattro, `scorrevoli`
+          va rimessa: quattro nomi lunghi a 320 px non ci stanno. */}
+      <div className="segmenti" role="tablist">
         {SCHEDE.map(([id, etichetta]) => (
           <button
             key={id}

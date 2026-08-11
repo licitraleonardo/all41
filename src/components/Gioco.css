@@ -909,6 +909,22 @@
 
    Chi scorre trova le ultime; la prima -- la Classifica -- resta sempre
    visibile, ed e' quella da cui si passa piu' spesso. */
+/* ⚠️ Sugli schermi stretti il testo si stringe un po'.
+   Misurato: a 320 px «Testamento» e «Sala giochi» ci stanno con margine
+   **zero** — cioe' su un telefono con un font leggermente piu' largo
+   andrebbero a capo, e la fila diventerebbe alta il doppio solo per una
+   parola. Due decimi di font tolti valgono piu' di quella riga in piu'. */
+@media (max-width: 360px) {
+  .segmenti .segmento {
+    font-size: 12.5px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+}
+
+/* ⚠️ Non la usa piu' nessuno da quando il Gioco ha tre voci, e resta
+   scritta apposta: e' quello che serve il giorno in cui una fila torna
+   ad avere piu' voci di quante ne stiano in larghezza. */
 .segmenti.scorrevoli {
   overflow-x: auto;
   scrollbar-width: none;
