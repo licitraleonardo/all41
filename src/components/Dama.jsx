@@ -5,11 +5,14 @@ import {
   BIANCO,
   NERO,
   casellaScura,
+  esito,
   mossaInTesto,
   mosseLegali,
   ricostruisci,
 } from '../lib/dama.js'
 import { classificaDama, comeEFinita, inCorsoPerMe } from '../lib/classificaDama.js'
+import { scegliMossa } from '../lib/allanDama.js'
+import { ALLAN, ALLAN_ID } from '../config/dama.js'
 import { dopoUnaVittoria, eLaPrimaVittoria } from '../lib/puntiDama.js'
 import { urlAvatar } from '../config/avatar.js'
 import Rotella from './Rotella.jsx'
@@ -24,6 +27,20 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
   const [sfidando, setSfidando] = useState(false)
   const [avviso, setAvviso] = useState(null)
 
+  // ⚠️ La partita contro Allan vive QUI, in memoria, e non tocca il
+  // database nemmeno per un istante.
+  //
+  // Non è pigrizia ed è la decisione che tiene in piedi il resto: se
+  // finisse in `dama_games`, la coppa della Dama la vincerebbe chi ha più
+  // tempo libero e una macchina da battere, e smetterebbe di voler dire
+  // qualcosa. Per lo stesso motivo `Scacchiera` riceve `allenamento` e
+  // non assegna punti.
+  //
+  // Effetto collaterale gradito: **funziona senza rete**. Non perché
+  // qualcuno abbia scritto qualcosa per l'offline, ma perché non c'è
+  // nessuna rete da cui dipendere.
+  const [conAllan, setConAllan] = useState(null)
+
   // Accettando una sfida dal banner si arriva qui con la partita già
   // scelta: si apre quella e si dice al banner che è stata presa in
   // carico, o resterebbe acceso.
@@ -33,8 +50,53 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
     onAperta?.()
   }, [apriPartita, onAperta])
 
-  const nome = (id) => membri[id]?.nome ?? 'Qualcuno'
+  const nome = (id) => (id === ALLAN_ID ? 'Allan' : (membri[id]?.nome ?? 'Qualcuno'))
+
+  function partitaControAllan() {
+    return { id: ALLAN_ID, bianco: membro.id, nero: ALLAN_ID, mosse: [], stato: 'in-corso' }
+  }
+
+  // La mossa di chi gioca, e subito dopo la risposta di Allan.
+  //
+  // ⚠️ La pausa non è finta cortesia: una mossa che compare nell'istante
+  // in cui stacchi il dito non sembra una risposta, sembra che il gioco
+  // stia giocando da solo. Sta in `config/dama.js` con le altre manopole.
+  async function muoviControAllan(partita, testo) {
+    const dopoDiMe = { ...partita, mosse: [...partita.mosse, testo] }
+    setConAllan(dopoDiMe)
+
+    const stato = ricostruisci(dopoDiMe.mosse)
+    if (esito(stato).finita) return
+
+    await new Promise((r) => setTimeout(r, ALLAN.pausa))
+    const sua = scegliMossa(stato)
+    if (!sua) return
+    setConAllan((p) =>
+      p && p.mosse.length === dopoDiMe.mosse.length
+        ? { ...p, mosse: [...p.mosse, mossaInTesto(sua)] }
+        : p
+    )
+  }
   const aperta = partite.find((p) => p.id === apertaId) ?? null
+
+  // ⚠️ Prima del caricamento e prima del guasto: contro Allan si gioca
+  // anche se il database non risponde, ed è tutto il punto.
+  if (conAllan) {
+    return (
+      <Scacchiera
+        partita={conAllan}
+        partite={[]}
+        membro={membro}
+        nome={nome}
+        allenamento
+        onMuovi={muoviControAllan}
+        onAbbandona={() => setConAllan(null)}
+        onSfida={() => setConAllan(partitaControAllan())}
+        onApri={() => {}}
+        onChiudi={() => setConAllan(null)}
+      />
+    )
+  }
 
   if (stato === 'caricamento') return <Rotella />
   if (stato === 'guasto') {
@@ -106,6 +168,18 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
           che si viene a fare qui quando non hai partite aperte. */}
       <button type="button" className="dama-sfida" onClick={() => setSfidando((s) => !s)}>
         {sfidando ? 'Lascia stare' : '⚔ Sfida qualcuno'}
+      </button>
+
+      {/* Sotto la sfida vera e non sopra: l'avversario preferito resta una
+          persona. Ma quando non c'è nessuno sveglio — in macchina, la
+          mattina presto, in fila da qualche parte — questo è l'unico
+          gioco a due che si può fare da soli. */}
+      <button
+        type="button"
+        className="dama-allan"
+        onClick={() => setConAllan(partitaControAllan())}
+      >
+        🤖 Gioca contro Allan
       </button>
 
       {sfidando && (
@@ -265,6 +339,9 @@ export function Scacchiera({
   onSfida,
   onApri,
   onChiudi,
+  // Contro Allan: stessa scacchiera, ma non assegna punti e non scrive
+  // niente da nessuna parte.
+  allenamento = false,
 }) {
   const [scelto, setScelto] = useState(null)
   const [inCorso, setInCorso] = useState(false)
@@ -284,11 +361,18 @@ export function Scacchiera({
   // vede finire: nessun server, come per tutto il resto. La chiave di
   // deduplica fa il resto se la vedono in due.
   useEffect(() => {
+    // ⚠️ La riga che tiene onesta la classifica della Dama.
+    //
+    // Contro Allan non si prendono punti. Senza questa riga vincere
+    // contro una macchina varrebbe quanto vincere contro una persona, e
+    // il Trofeo lo prenderebbe chi ha più tempo libero. Sta per prima
+    // apposta: qualunque cosa cambi qui sotto, questa resta davanti.
+    if (allenamento) return
     if (!fine.finita || !fine.vincitore) return
     if (fine.vincitore !== membro.id) return
     if (!eLaPrimaVittoria(partite ?? [], membro.id, partita)) return
     dopoUnaVittoria(membro.id).catch(() => {})
-  }, [fine.finita, fine.vincitore, membro.id, partita, partite])
+  }, [allenamento, fine.finita, fine.vincitore, membro.id, partita, partite])
 
   const legali = useMemo(() => (toccaAMe ? mosseLegali(stato) : []), [toccaAMe, stato])
   const dalScelto = legali.filter((m) => m.da === scelto)
@@ -347,6 +431,12 @@ export function Scacchiera({
     try {
       // I colori si scambiano: chi era bianco fa il nero, e il vantaggio
       // della prima mossa gira da solo.
+      // Contro Allan «rivincita» vuol dire una partita nuova e basta:
+      // non c'è nessuno da sfidare e niente da scrivere.
+      if (allenamento) {
+        onSfida()
+        return
+      }
       const avversarioId = partita.bianco === membro.id ? partita.nero : partita.bianco
       const nuova = await onSfida(avversarioId, mioColore === BIANCO)
       onApri(nuova.id)

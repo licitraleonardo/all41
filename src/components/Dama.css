@@ -331,7 +331,30 @@
   background: #b23a26;
 }
 
+/* Allan sta sotto la sfida vera, e si vede che è un ripiego: contorno
+   invece che pieno. L'avversario preferito resta una persona, e il tasto
+   lo dice senza scriverlo. */
+.dama-allan {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sea);
+  background: transparent;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.dama-allan:active {
+  transform: scale(0.99);
+}
+
 .dama-sfida:focus-visible,
+.dama-allan:focus-visible,
 .dama-indietro:focus-visible,
 .dama-avversario:focus-visible,
 .dama-carta:focus-visible,
