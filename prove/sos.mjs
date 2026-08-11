@@ -79,16 +79,58 @@ console.log('\nchi legge gli SOS sopravvive a un buco di rete')
   prova('e non rilegge alla prima iscrizione', /if \(giaCollegato && vivo\)/.test(gancio))
 }
 
-console.log('\n«Rientrato» lo puo premere chiunque')
+console.log('\n«Ricevuto» lo puo premere chiunque, e lascia traccia')
 {
-  // Chi si e' perso ha il telefono in mano per orientarsi, non per
-  // chiudere cartelli, e spesso e' un altro ad averlo trovato.
-  prova('nessun controllo su chi l ha mandato', !/autoreId\s*===|mio|membroId\s*===/.test(gancio))
+  const azioni = senzaCommenti(readFileSync('src/lib/azioni.js', 'utf8'))
+  const striscia = senzaCommenti(readFileSync('src/components/StrisciaSOS.jsx', 'utf8'))
 
-  // Se l'eliminazione non riesce il cartello RESTA: meglio uno di troppo
-  // che uno di meno.
-  const corpo = gancio.match(/const rientrato = useCallback[\s\S]*?\}, \[\]\)/)?.[0] ?? ''
-  prova('e se non riesce il cartello resta', /catch/.test(corpo) && /return false/.test(corpo))
+  // Chi si e' perso ha il telefono in mano per orientarsi, non per
+  // chiudere cartelli. Nessuno deve avere il permesso di ricevere.
+  prova("il tasto dice «Ricevuto»", /'Ricevuto'/.test(striscia))
+  // E l'unica ragione per cui e' spento e' che sta partendo: mai perche'
+  // l'SOS e' di qualcun altro.
+  const spento = striscia.match(/disabled=\{([^}]*)\}/)?.[1] ?? ''
+  prova('e nessuno ha il permesso di riceverlo', !/ioId|autoreId/.test(spento), spento)
+
+  // ⚠️ E l'SOS non si cancella piu'.
+  //
+  // Prima «Rientrato» chiamava `eliminaAzione`, cioe' marcava la riga
+  // come eliminata — e il feed nasconde le righe eliminate. Vuol dire che
+  // chiudere un SOS lo faceva **sparire dalla chat**: dell'unica funzione
+  // di sicurezza dell'app non restava nessuna traccia da nessuna parte.
+  // Adesso resta li' per sempre e se ne va dalla striscia da solo dopo
+  // `ORE_SOS`.
+  prova('e non si cancella piu quando lo si riceve', !/eliminaAzione/.test(gancio), gancio.match(/eliminaAzione/g))
+
+  // ⚠️ La ricevuta NON passa dal limite della chat.
+  //
+  // `inviaAzione` chiama `verificaLimite`, e `free_text` ha tre secondi
+  // di attesa fra un messaggio e l'altro e dieci in cinque minuti.
+  // Passando di li', chi ha appena scritto molto si sentirebbe dire
+  // «aspetta» mentre cerca di dire che ha visto un SOS. Un limite
+  // anti-spam non deve poter stare in mezzo a quello.
+  const invio = azioni.match(/export async function mandaRicevuta[\s\S]*?\n\}/)?.[0] ?? ''
+  prova('la ricevuta esiste', invio.length > 0)
+  prova('e non passa dal limite della chat', !/inviaAzione|verificaLimite/.test(invio))
+
+  // ⚠️ Ed e' un `free_text`, non un tipo nuovo. Un tipo nuovo vorrebbe una
+  // migrazione del vincolo `kind`, e verrebbe scartato in silenzio da
+  // `decidi()` sui telefoni fermi alla versione di ieri.
+  prova("e' una riga di chat normale", /kind: 'free_text'/.test(invio))
+  prova('col contrassegno che la distingue', /ricevutaSos/.test(invio))
+
+  // ⚠️ E porta un testo di ripiego: su un telefono con la versione
+  // vecchia la ricevuta si legge come un messaggio invece di sparire.
+  prova('e un testo per chi ha la versione vecchia', /testo:/.test(invio))
+
+  // Verifica bloccante n.4 dello spec: ogni lettura ha il suo tetto.
+  const lettura = azioni.match(/export async function leggiRicevute[\s\S]*?\n\}/)?.[0] ?? ''
+  prova('la lettura delle ricevute ha un limite', /\.limit\(/.test(lettura))
+
+  // Se l'invio non riesce il cartello TORNA SU: meglio uno di troppo che
+  // uno di meno.
+  const corpo = gancio.match(/const ricevuto = useCallback[\s\S]*?\n  \)/)?.[0] ?? ''
+  prova('e se non riesce il cartello torna su', /catch/.test(corpo) && /setRicevute/.test(corpo))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)

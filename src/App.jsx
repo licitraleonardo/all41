@@ -203,7 +203,7 @@ export default function App() {
   const posizione = useRinfrescaPosizione(membro?.id, vista === 'dentro')
   // ⚠️ Qui e non dentro la chat: un SOS lo devono vedere anche i sette
   // che in quel momento stanno guardando le foto.
-  const sos = useSosAperti()
+  const sos = useSosAperti(membro?.id)
   const avviso = useAvvisoRapido(membro?.id, vista === 'dentro')
   const feedback = useFeedback()
 
@@ -637,7 +637,8 @@ export default function App() {
           <StrisciaSOS
             aperti={sos.aperti}
             nome={(id) => membriPerId[id]?.nome ?? 'Qualcuno'}
-            onRientrato={sos.rientrato}
+            ioId={membro?.id}
+            onRicevuto={sos.ricevuto}
           />
         </Riparo>
 

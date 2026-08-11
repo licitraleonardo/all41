@@ -71,6 +71,22 @@ function Riga({ azione, autore, mio, ioId, membri, onElimina, voti, onVota }) {
   // il suo effetto lo hai già sentito. In cartello grosso riempiva la
   // chat di scatole verdi fra un messaggio e l'altro. Una riga sottile e
   // grigia basta a dire chi è stato.
+  // La ricevuta di un SOS: una riga sottile come quella dei suoni, non un
+  // cartello. Dice una cosa sola — chi si e' mosso — e chi ha chiesto
+  // aiuto la legge scorrendo la chat dove ha appena mandato l'SOS.
+  if (azione.tipo === 'free_text' && azione.payload.ricevutaSos) {
+    const di = membri?.[azione.payload.sosDi]?.nome
+    return (
+      <li className="voce sussurro">
+        <span>
+          🆘 <strong>{autore?.nome ?? 'Qualcuno'}</strong> ha ricevuto l’SOS
+          {di ? ` di ${di}` : ''}
+        </span>
+        <span className="sussurro-ora">{ora(azione.creatoIl)}</span>
+      </li>
+    )
+  }
+
   if (azione.tipo === 'soundboard') {
     return (
       <li className="voce sussurro">

@@ -12,7 +12,7 @@ import { useAltezzaBanner } from '../hooks/useAltezzaBanner.js'
 // ⚠️ E poi questa striscia stava **dentro la chat**, quindi la vedeva
 // solo chi era già nel posto giusto. Adesso sta in `App`, sopra tutto, e
 // chi legge gli SOS è `useSosAperti`: questo componente disegna e basta.
-export default function StrisciaSOS({ aperti, nome, onRientrato }) {
+export default function StrisciaSOS({ aperti, nome, ioId, onRicevuto }) {
   const [inCorso, setInCorso] = useState(null)
   const [riquadro, setRiquadro] = useState(null)
 
@@ -22,10 +22,10 @@ export default function StrisciaSOS({ aperti, nome, onRientrato }) {
 
   if (aperti.length === 0) return null
 
-  async function rientrato(id) {
-    setInCorso(id)
+  async function ricevuto(sos) {
+    setInCorso(sos.id)
     try {
-      await onRientrato(id)
+      await onRicevuto(sos, nome(sos.autoreId))
     } finally {
       setInCorso(null)
     }
@@ -39,13 +39,19 @@ export default function StrisciaSOS({ aperti, nome, onRientrato }) {
             <strong>{nome(a.autoreId)}</strong> ha chiesto aiuto
             <span>{a.payload?.motivo ?? 'Serve una mano'}</span>
           </div>
+          {/* ⚠️ «Ricevuto», non «Rientrato».
+              «Rientrato» chiudeva il cartello a tutti, cancellava l'SOS
+              dalla chat e non lasciava traccia: chi si era perso non
+              sapeva se l'avesse visto qualcuno. Questo invece chiude il
+              cartello **solo a chi lo preme** e lo scrive in chat.
+              Sul proprio SOS dice «Chiudi»: non si riceve il proprio. */}
           <button
             type="button"
             className="sos-rientrato"
-            onClick={() => rientrato(a.id)}
+            onClick={() => ricevuto(a)}
             disabled={inCorso === a.id}
           >
-            {inCorso === a.id ? '…' : 'Rientrato'}
+            {inCorso === a.id ? '…' : a.autoreId === ioId ? 'Chiudi' : 'Ricevuto'}
           </button>
         </div>
       ))}

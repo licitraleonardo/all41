@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { eliminaAzione, leggiSosAperti } from '../lib/azioni.js'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { leggiRicevute, leggiSosAperti, mandaRicevuta } from '../lib/azioni.js'
 import { supabase } from '../lib/supabase.js'
 
 // Gli SOS aperti. Vive qui e non dentro la striscia perché **lo deve
@@ -15,8 +15,9 @@ import { supabase } from '../lib/supabase.js'
 // che non arriva a chi non sta guardando il posto giusto — ma senza
 // bisogno che cada la rete: bastava essere in un altro tab. Ed è l'unica
 // funzione di sicurezza dell'app.
-export function useSosAperti() {
-  const [aperti, setAperti] = useState([])
+export function useSosAperti(ioId) {
+  const [tutti, setTutti] = useState([])
+  const [ricevute, setRicevute] = useState([])
 
   useEffect(() => {
     let vivo = true
@@ -24,10 +25,16 @@ export function useSosAperti() {
     // poi, cioè quando il canale si è ricollegato dopo essere caduto.
     let giaCollegato = false
 
-    const carica = () =>
+    const carica = () => {
       leggiSosAperti()
-        .then((elenco) => vivo && setAperti(elenco))
+        .then((elenco) => vivo && setTutti(elenco))
         .catch(() => {})
+      // Separata: se la lettura delle ricevute va storta, gli SOS si
+      // vedono lo stesso. La ricevuta e' un di piu', l'SOS no.
+      leggiRicevute()
+        .then((elenco) => vivo && setRicevute(elenco))
+        .catch(() => {})
+    }
 
     carica()
 
@@ -69,20 +76,61 @@ export function useSosAperti() {
     }
   }, [])
 
-  // «Rientrato» lo può premere chiunque, non solo chi l'ha mandato: chi
-  // si è perso ha il telefono in mano per orientarsi, non per chiudere
-  // cartelli, e spesso è un altro ad averlo trovato. Stesso principio del
-  // turno dell'Impostore, che può far avanzare chiunque.
-  const rientrato = useCallback(async (id) => {
-    try {
-      await eliminaAzione(id)
-      setAperti((precedenti) => precedenti.filter((a) => a.id !== id))
-      return true
-    } catch {
-      // Resta lì: meglio un cartello di troppo che uno di meno.
-      return false
+  // ⚠️ La striscia mostra gli SOS che **tu** non hai ancora ricevuto.
+  //
+  // Prima c'era «Rientrato», che chiudeva il cartello per tutti e
+  // cancellava l'SOS: chiunque poteva premerlo, non restava traccia da
+  // nessuna parte, e chi si era perso non sapeva se qualcuno l'avesse
+  // visto. Adesso ognuno chiude il suo, e il fatto di averlo visto resta
+  // scritto in chat.
+  //
+  // Un SOS non si chiude piu': resta in chat per sempre e se ne va dalla
+  // striscia da solo dopo `ORE_SOS`. ⚠️ Vuol dire che se nessuno preme
+  // «Ricevuto» il cartello resta su otto ore — ed e' voluto: un cartello
+  // su uno che si e' perso deve essere insistente.
+  const miei = useMemo(() => {
+    const s = new Set()
+    for (const r of ricevute) {
+      if (r.autoreId === ioId && r.payload?.ricevutaSos) s.add(r.payload.ricevutaSos)
     }
-  }, [])
+    return s
+  }, [ricevute, ioId])
 
-  return { aperti, rientrato }
+  const aperti = useMemo(() => tutti.filter((a) => !miei.has(a.id)), [tutti, miei])
+
+  const ricevuto = useCallback(
+    async (sos, nomeDi) => {
+      // Sparisce subito dallo schermo: chi preme ha appena letto un SOS e
+      // non deve restare a guardare una rotella. La riga vera arriva
+      // dopo, e il realtime la rimette a posto su tutti i telefoni.
+      const finto = {
+        id: `locale-${sos.id}`,
+        autoreId: ioId,
+        payload: { ricevutaSos: sos.id },
+      }
+      setRicevute((p) => [finto, ...p])
+
+      // ⚠️ Il proprio SOS si chiude e basta: «Diego ha ricevuto l'SOS di
+      // Diego» in chat non vuol dire niente.
+      if (sos.autoreId === ioId) return true
+
+      try {
+        await mandaRicevuta({
+          sosId: sos.id,
+          sosDi: sos.autoreId,
+          nomeDi,
+          memberId: ioId,
+        })
+        return true
+      } catch {
+        // Non e' andata: il cartello torna su, cosi' si puo' ripremere.
+        // Meglio un cartello di troppo che uno di meno.
+        setRicevute((p) => p.filter((r) => r.id !== finto.id))
+        return false
+      }
+    },
+    [ioId]
+  )
+
+  return { aperti, ricevute, ricevuto }
 }

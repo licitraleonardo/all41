@@ -97,6 +97,86 @@ export async function leggiSosAperti() {
   return data.map(daRiga)
 }
 
+// Quante ricevute si leggono in un colpo. Tre SOS aperti al massimo per
+// otto persone fanno ventiquattro: quaranta e' largo e resta un tetto.
+// Verifica bloccante n.4 dello spec: ogni lettura ne ha uno.
+export const TETTO_RICEVUTE = 40
+
+// «L'ho visto, mi muovo.»
+//
+// ⚠️ Una ricevuta e' una riga di chat `free_text` e non un tipo suo, e le
+// ragioni sono tre, tutte pratiche:
+//
+//   - il vincolo `kind` di `quick_actions` ammette sei valori e basta. Un
+//     tipo nuovo vuole una migrazione, e una migrazione lanciata **dopo**
+//     il deploy vuol dire ogni ricevuta rifiutata dal database, di notte,
+//     mentre qualcuno si e' perso.
+//   - `decidi()` in `public/push.js` scarta in silenzio i tipi che non
+//     conosce, e il service worker si aggiorna solo insieme all'app: sui
+//     telefoni fermi a ieri una ricevuta non esisterebbe proprio.
+//   - **ogni ricevuta e' una riga sua.** Otto persone che premono nello
+//     stesso istante non possono sovrascriversi a vicenda — che e'
+//     esattamente quello che sarebbe successo tenendo l'elenco dentro il
+//     payload dell'SOS, letto e riscritto da otto telefoni insieme.
+//
+// E il `testo` c'e' per chi ha ancora la versione vecchia: li' la
+// ricevuta si legge come un messaggio normale invece di sparire.
+export async function mandaRicevuta({ sosId, sosDi, nomeDi, memberId }) {
+  // ⚠️ Niente `inviaAzione`, e quindi niente `verificaLimite`.
+  //
+  // La chat ha un limite: tre secondi fra un messaggio e l'altro, dieci
+  // in cinque minuti. Passando di li', chi ha appena scritto molto si
+  // sentirebbe rispondere «aspetta» mentre cerca di dire che ha visto un
+  // SOS. Un limite anti-spam non deve poter stare in mezzo a quello.
+  const { data, error } = await supabase
+    .from('quick_actions')
+    .insert({
+      trip_id: VIAGGIO.id,
+      author_id: memberId,
+      kind: 'free_text',
+      payload: {
+        ricevutaSos: sosId,
+        sosDi,
+        testo: `🆘 ho ricevuto l’SOS di ${nomeDi}`,
+      },
+    })
+    .select(CAMPI)
+    .single()
+
+  if (error) throw error
+
+  // ⚠️ E non fa suonare niente, di proposito. L'SOS ha gia' fatto vibrare
+  // otto telefoni; sette ricevute che ne fanno vibrare altri sette
+  // trasformano una cosa importante in rumore, e un telefono che vibra
+  // troppo finisce in silenzioso — da li' non arriva piu' nemmeno l'SOS
+  // dopo. Chi ha chiesto aiuto ha l'app aperta: la legge dentro.
+  return daRiga(data)
+}
+
+// Le ricevute degli SOS aperti.
+//
+// Si leggono tutte quelle che hanno il contrassegno e si scelgono qui,
+// invece di filtrare sul database per `payload->>ricevutaSos`: sono
+// poche, il tetto le tiene, e una `in()` su un campo dentro il JSON e' un
+// punto in cui un errore di sintassi non si vedrebbe fino a quando serve.
+export async function leggiRicevute() {
+  const da = new Date(Date.now() - ORE_SOS * 3600 * 1000).toISOString()
+
+  const { data, error } = await supabase
+    .from('quick_actions')
+    .select(CAMPI)
+    .eq('trip_id', VIAGGIO.id)
+    .eq('kind', 'free_text')
+    .is('deleted_at', null)
+    .gte('created_at', da)
+    .not('payload->>ricevutaSos', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(TETTO_RICEVUTE)
+
+  if (error) throw error
+  return data.map(daRiga)
+}
+
 export async function eliminaAzione(id) {
   const { error } = await supabase
     .from('quick_actions')
