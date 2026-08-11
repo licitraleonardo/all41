@@ -12,6 +12,12 @@
 //   node strumenti/manda-notifica.mjs                 # dice chi, e basta
 //   node strumenti/manda-notifica.mjs --vai           # manda un SOS di prova
 //   node strumenti/manda-notifica.mjs --vai --tipo si_riparte
+//   node strumenti/manda-notifica.mjs --vai --solo Leonardo
+//
+// ⚠️ `--solo` esiste perche' provare la catena e svegliare tutto il
+// gruppo erano la stessa cosa. All'una di notte, con la sveglia alle tre
+// e mezza, una notifica di prova che dice «ha chiesto aiuto» non e' una
+// prova: e' un danno. Con `--solo` si prova su un telefono solo.
 
 import { readFileSync } from 'node:fs'
 import webpush from 'web-push'
@@ -36,6 +42,8 @@ function daEnv(nome) {
 const vai = process.argv.includes('--vai')
 const i = process.argv.indexOf('--tipo')
 const tipo = i >= 0 ? process.argv[i + 1] : 'sos'
+const s = process.argv.indexOf('--solo')
+const solo = s >= 0 ? process.argv[s + 1] : null
 
 const testi = {
   sos: { motivo: 'Prova delle notifiche' },
@@ -56,9 +64,19 @@ const cliente = new pg.Client({
 })
 await cliente.connect()
 
-const { rows } = await cliente.query(
+const { rows: tutte } = await cliente.query(
   'select p.endpoint, p.chiavi, m.name from push_subscriptions p join members m on m.id = p.member_id'
 )
+
+// ⚠️ Se `--solo` non trova nessuno ci si ferma, invece di mandare a tutti.
+// Un nome scritto storto non deve poter diventare «a tutti quanti».
+const rows = solo ? tutte.filter((r) => r.name.toLowerCase() === solo.toLowerCase()) : tutte
+if (solo && rows.length === 0) {
+  console.log(`\nNessun telefono iscritto si chiama «${solo}».`)
+  console.log(`Iscritti: ${tutte.map((r) => r.name).join(', ')}\n`)
+  await cliente.end()
+  process.exit(1)
+}
 
 if (rows.length === 0) {
   console.log('\nNessun telefono iscritto.')
@@ -72,7 +90,11 @@ console.log(`\nTelefoni iscritti: ${rows.length}`)
 for (const r of rows) console.log(` - ${r.name}`)
 
 if (!vai) {
-  console.log(`\nCon --vai parte una notifica di tipo «${tipo}» a tutti quelli qui sopra.`)
+  console.log(
+    solo
+      ? `\nCon --vai parte una notifica di tipo «${tipo}» solo a ${rows[0].name}.`
+      : `\nCon --vai parte una notifica di tipo «${tipo}» a tutti quelli qui sopra.`
+  )
   console.log('Senza, non è partito niente.\n')
   await cliente.end()
   process.exit(0)
