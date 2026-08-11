@@ -19,11 +19,29 @@ function daContare(kind, memberId) {
   if (kind === 'voice') {
     return supabase.from('voice_messages').select('created_at').eq('author_id', memberId)
   }
+  // ⚠️ Le righe che l'app scrive per conto tuo non contano contro di te.
+  //
+  // Le ricevute degli SOS e gli annunci delle proposte sono righe
+  // `free_text` con il tuo nome sopra, scritte a mano per saltare questo
+  // limite — un anti-spam non deve poter stare in mezzo a «ho visto il
+  // tuo SOS». Ma saltarlo in **scrittura** non bastava: restavano contate
+  // in **lettura**, e mangiavano la tua quota di messaggi veri.
+  //
+  // Lo scenario, che è il peggiore possibile: durante un SOS si scrive
+  // fitto. Premi «Ricevuto», poi scrivi «arrivo, dove sei?» e ti senti
+  // rispondere «Aspetta 3s» per colpa di una riga che non hai scritto.
+  // E i rifiuti non sono gratis: al terzo scatta la Legge XIX e ti toglie
+  // punti — mentre qualcuno è perso.
+  //
+  // Si escludono dal conto, non dalla chat: restano visibili, non
+  // pesano.
   return supabase
     .from('quick_actions')
     .select('created_at')
     .eq('author_id', memberId)
     .eq('kind', kind)
+    .is('payload->>ricevutaSos', null)
+    .is('payload->>propostaVoto', null)
 }
 
 export async function verificaLimite(kind, memberId) {

@@ -43,6 +43,61 @@ export default function Album({ membro }) {
   const campoFile = useRef(null)
   const campoFoto = useRef(null)
   const sfide = useSfide(membro.id)
+
+  // ⚠️ Riprova a chiudere le collettive appena si guarda l'Album.
+  //
+  // Senza questa riga una sfida collettiva completata **resta aperta per
+  // sempre**, ed è successo davvero: la sera dell'11 tutti e otto hanno
+  // caricato il selfie di «Ci siamo tutti» prima delle 19, quando il
+  // viaggio non era ancora cominciato. `forseChiudiCollettiva` rimanda —
+  // giusto — ma l'unico posto che la chiamava era il ramo di un
+  // caricamento **riuscito**, e chi ha già caricato non ricarica. Nessuno
+  // ha preso i tre punti a testa e la Legge XXIX non è mai stata
+  // scoperta: nessun errore, da nessuna parte, solo una sfida che non si
+  // chiudeva.
+  //
+  // Il commento che stava accanto alla guardia diceva «a quel punto la fa
+  // il primo che apre l'Album». Non era vero, e adesso lo è.
+  //
+  // Costa una lettura già fatta: gira solo quando i dati delle sfide sono
+  // arrivati, e `chiudi_sfida` è idempotente — se l'ha già chiusa un
+  // altro telefono, questa non fa niente.
+  useEffect(() => {
+    if (!sfide.membriIds?.length) return
+
+    const daChiudere = [...sfide.diOggi, ...sfide.aperte].filter(
+      (s) =>
+        s.tipo === 'collettiva' &&
+        !sfide.vinte[s.id] &&
+        sfide.membriIds.every((id) =>
+          (sfide.partecipazioni[s.id] ?? []).some((f) => f.autoreId === id)
+        )
+    )
+    if (daChiudere.length === 0) return
+
+    let vivo = true
+    Promise.all(
+      daChiudere.map((s) =>
+        forseChiudiCollettiva(s.id, sfide.partecipazioni[s.id] ?? [], sfide.membriIds).catch(
+          () => null
+        )
+      )
+    ).then((esiti) => {
+      if (!vivo) return
+      if (esiti.some((r) => r?.appena)) {
+        setAvviso('🏆 Ci siete tutti.')
+        sfide.ricarica()
+      }
+    })
+
+    return () => {
+      vivo = false
+    }
+    // `partecipazioni` cambia oggetto a ogni ricarica: si guarda quante
+    // foto ci sono, non l'identità dell'oggetto, o si riproverebbe in
+    // continuazione.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sfide.membriIds?.length, sfide.diOggi.length, sfide.aperte.length, JSON.stringify(sfide.vinte)])
   const [vista, setVista] = useSchedaRicordata('scheda.foto', 'album', ['album', 'sfide'])
   const [grande, setGrande] = useState(null)
   const [bloccato, setBloccato] = useState(false)

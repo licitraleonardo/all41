@@ -272,7 +272,15 @@ export async function leggiProposteAperte() {
     .eq('category', 'point-proposal')
     .is('closed_at', null)
     .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: true })
+    // ⚠️ Le piu' RECENTI, non le piu' vecchie.
+    //
+    // Erano crescenti, e con le proposte che duravano un'ora non faceva
+    // differenza: aperte insieme ce n'erano due o tre. Da quando durano
+    // un giorno possono essercene ventiquattro — otto persone per tre al
+    // giorno — e il tetto di dieci tagliava via **le nuove**: quella
+    // fatta a cena non compariva nel cartello di nessuno, e nessuno
+    // capiva perche'.
+    .order('created_at', { ascending: false })
     .limit(10)
   if (error) throw error
   if (voti.length === 0) return []
