@@ -61,8 +61,14 @@ export async function creaProposta({ proponenteId, destinatarioId, punti, motivo
   const fatte = await proposteDiOggi(proponenteId)
   if (fatte >= PROPOSTA.alGiorno) return { ok: false, motivo: 'giorno', restano: 0 }
 
+  // ⚠️ «Recente», non «aperta». Vedi `minutiPrimaDiRiproporre`: da quando
+  // una proposta resta in voto un giorno intero, «ne hai già una aperta»
+  // avrebbe bloccato le altre due proposte della giornata.
   const aperte = await leggiProposteAperte()
-  const miaAperta = aperte.some((p) => p.proponenteId === proponenteId)
+  const daQuando = Date.now() - PROPOSTA.minutiPrimaDiRiproporre * 60000
+  const miaAperta = aperte.some(
+    (p) => p.proponenteId === proponenteId && Date.parse(p.apertaIl) > daQuando
+  )
   if (miaAperta && !insisto) {
     return { ok: false, motivo: 'in-voto', restano: PROPOSTA.alGiorno - fatte }
   }
@@ -236,7 +242,10 @@ export async function leggiProposteAperte() {
     // anonymous:false, quindi il database la riempie già da sempre: qui
     // si smette solo di ignorarla. Chi la mostra decide poi a chi e
     // quando — vedi PropostaInAttesa.
-    .select('id, question, options, tally, voted, ballots, expires_at, closed_at')
+    // `created_at` serve a sapere **da quanto** è aperta, che non si
+    // ricava da `expires_at` senza dare per scontata la durata: il giorno
+    // che la durata cambia, il conto sarebbe sbagliato in silenzio.
+    .select('id, question, options, tally, voted, ballots, created_at, expires_at, closed_at')
     .eq('trip_id', VIAGGIO.id)
     .eq('category', 'point-proposal')
     .is('closed_at', null)
@@ -267,6 +276,7 @@ export async function leggiProposteAperte() {
       hannoVotato: v.voted ?? [],
       schede: v.ballots ?? {},
       scadeIl: v.expires_at,
+      apertaIl: v.created_at,
       punti: perVoto[v.id].points,
       motivo: perVoto[v.id].reason,
       destinatarioId: perVoto[v.id].member_id,

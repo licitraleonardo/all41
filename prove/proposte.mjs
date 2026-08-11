@@ -13,6 +13,7 @@ import {
 } from '../src/lib/punteggioProposte.js'
 import { PER_ID } from '../src/config/leggi.js'
 import { readFileSync } from 'node:fs'
+import { PROPOSTA } from '../src/config/proposte.js'
 
 let passate = 0
 let fallite = 0
@@ -250,6 +251,53 @@ console.log('\nuna proposta lo dice in chat, o non la sente nessuno')
   // un umano che non l'ha scritto.
   const feed = senzaCommenti('src/components/Feed.jsx')
   prova('e la chat la disegna a modo suo', /payload\.propostaVoto/.test(feed))
+}
+
+console.log('\nuna proposta dura un giorno, ma non blocca la giornata')
+{
+  const senzaCommenti = (f) =>
+    readFileSync(f, 'utf8')
+      .split('\n')
+      .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+      .join('\n')
+  const lib = senzaCommenti('src/lib/proposte.js')
+
+  // Un'ora presuppone che tutti guardino il telefono nell'ora giusta, e
+  // in vacanza non succede: una proposta scadeva prima che qualcuno
+  // l'avesse letta.
+  prova('il voto dura almeno un giorno', PROPOSTA.minutiDiVoto >= 1440)
+
+  // ⚠️ La riga con i denti.
+  //
+  // «Ne hai gia' una in voto» e la scadenza erano lo stesso numero finche'
+  // la scadenza era un'ora. Portata la scadenza a un giorno, senza
+  // separarle, la prima proposta del mattino bloccherebbe le altre due —
+  // o le farebbe pagare con la Legge XIII, che punisce chi insiste. Tre
+  // proposte al giorno diventerebbero una, e nessun errore lo direbbe:
+  // si vedrebbe solo gente che si prende penalita' senza capire perche'.
+  prova('e il blocco fra due proposte dura molto meno', PROPOSTA.minutiPrimaDiRiproporre < PROPOSTA.minutiDiVoto)
+  prova('e resta nell ordine di un ora', PROPOSTA.minutiPrimaDiRiproporre <= 120)
+
+  // E il blocco guarda **da quanto** e' aperta, non solo se lo e'.
+  //
+  // ⚠️ Si guarda **dentro l'espressione** e non nel file: cercando la
+  // costante nel file intero, questa prova restava verde anche togliendo
+  // il filtro, perche' la riga che la calcola restava li' inutilizzata.
+  // L'ho scoperto rompendo il codice apposta, ed e' la stessa forma della
+  // cronologia finta che non sapeva fallire.
+  const da = lib.indexOf('const miaAperta =')
+  const espressione = da < 0 ? '' : lib.slice(da, lib.indexOf('if (miaAperta', da))
+  prova('il blocco esiste', espressione.length > 0)
+  prova('e guarda l ora, non solo la presenza', /apertaIl/.test(espressione), espressione)
+
+  // ⚠️ E la proposta aperta deve portarsi dietro quando e' nata.
+  //
+  // Senza `apertaIl`, `Date.parse(undefined)` fa NaN, ogni confronto con
+  // NaN e' falso, e il blocco non scatta **mai**: si potrebbero fare tre
+  // proposte di fila nello stesso minuto e la Legge XIII non scatterebbe
+  // piu'. Sparirebbe una regola intera senza un errore.
+  prova('e la proposta aperta dice quando e nata', /apertaIl: v\.created_at/.test(lib))
+  prova('e il campo viene chiesto al database', /created_at, expires_at/.test(lib))
 }
 
 console.log('')
