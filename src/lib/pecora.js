@@ -31,6 +31,26 @@ function prossimoCaso(seme) {
 export const TEMPO_DI_VOLO = (2 * FISICA.spintaSalto) / FISICA.gravita
 export const ALTEZZA_SALTO = FISICA.spintaSalto ** 2 / (2 * FISICA.gravita)
 
+// Quanto va veloce dopo `tempo` secondi di corsa.
+//
+// ⚠️ Cresce **sempre**, e non in linea retta: il secondo termine fa sì
+// che l'accelerazione stessa aumenti. Prima era `v0 + a·t`, cioè una
+// retta che dopo un minuto aveva già dato tutto, e il gioco restava
+// uguale a sé stesso fino alla noia.
+//
+// Il tetto resta, e non è prudenza: sopra quella velocità un ostacolo si
+// vede per meno di quanto ci mette una persona a decidere. Un gioco che
+// uccide senza scampo non è difficile, è rotto — è la stessa regola che
+// tiene lo stacco minimo fra gli ostacoli.
+export function velocitaDi(tempo) {
+  const t = Math.max(0, tempo)
+  const cresciuta =
+    FISICA.velocitaIniziale +
+    FISICA.accelerazione * t +
+    FISICA.accelerazioneCrescente * t * t
+  return Math.min(FISICA.velocitaMax, cresciuta)
+}
+
 export function distanzaMinima(velocita) {
   return velocita * TEMPO_DI_VOLO * RITMO.stacco
 }
@@ -290,10 +310,7 @@ export function passo(mondo, dt) {
   const d = Math.min(Math.max(dt, 0), 0.05)
 
   const tempo = mondo.tempo + d
-  const velocita = Math.min(
-    FISICA.velocitaMax,
-    FISICA.velocitaIniziale + FISICA.accelerazione * tempo
-  )
+  const velocita = velocitaDi(tempo)
   const avanzamento = velocita * d
   const distanza = mondo.distanza + avanzamento
 

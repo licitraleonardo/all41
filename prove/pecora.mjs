@@ -18,12 +18,16 @@ import {
   riquadroGiocatore,
   staccoExtra,
   probabilitaVolante,
+  velocitaDi,
   ALTEZZA_SALTO,
   TEMPO_DI_VOLO,
 } from '../src/lib/pecora.js'
-import { FISICA, MURO, NAVICELLA, RITMO, SAGOME, TEMA, muroDi } from '../src/config/pecora.js'
+import { FISICA, MURO, NAVICELLA, RITMO, MONDO, SAGOME, TEMA, muroDi } from '../src/config/pecora.js'
 
 let falliti = 0
+const SCENA_LARGA = MONDO.larghezza
+const SCENA_X = MONDO.giocatoreX
+
 function prova(nome, condizione, dettaglio) {
   console.log(`  ${condizione ? 'ok  ' : 'NO  '} ${nome}`)
   if (!condizione) {
@@ -150,6 +154,46 @@ prova(
   'saltando ci si sbatte contro',
   ALTEZZA_SALTO + pecora.altezza > gabbiano.quota
 )
+
+console.log('\nla corsa non smette mai di accelerare')
+{
+  // Prima era una retta: `v0 + a*t`. Dopo il primo minuto non cambiava
+  // piu' niente e il gioco restava uguale a se' stesso per sempre — «e'
+  // troppo facile» nasce li'. Adesso l'accelerazione stessa cresce.
+  const campioni = [0, 5, 10, 20, 30, 40]
+  const cresce = campioni.every((s, i) => i === 0 || velocitaDi(s) > velocitaDi(campioni[i - 1]))
+  prova('accelera sempre, finche non tocca il tetto', cresce, campioni.map(velocitaDi))
+
+  // E accelera in modo **crescente**: il guadagno del secondo mezzo
+  // minuto deve essere maggiore di quello del primo. E' la differenza
+  // fra una retta e una curva, ed e' quello che si sente giocando.
+  const primoTratto = velocitaDi(15) - velocitaDi(0)
+  const secondoTratto = velocitaDi(30) - velocitaDi(15)
+  prova('e accelera sempre di piu', secondoTratto > primoTratto, { primoTratto, secondoTratto })
+
+  prova('ma non supera mai il tetto', velocitaDi(10000) === FISICA.velocitaMax)
+  prova('e il tetto lo tocca davvero', velocitaDi(60) === FISICA.velocitaMax)
+
+  // ⚠️ La riga con i denti, e vale piu' di tutte le altre di questo
+  // blocco.
+  //
+  // La scena e' larga 500 unita' e Allan corre a 52: un ostacolo entra
+  // in campo e gli arriva addosso dopo (500-52)/velocita secondi. Quello
+  // e' tutto il tempo che una persona ha per vederlo, decidere e saltare.
+  // Il tempo di reazione umano sta sui 0,25 s: sotto quella soglia il
+  // gioco non e' difficile, e' un dado — e la regola di questo file, da
+  // sempre, e' che un gioco che uccide senza scampo e' rotto.
+  //
+  // Alzando `velocitaMax` per rendere il gioco piu' duro si passa quella
+  // soglia senza nessun errore: si vede solo gente che muore e non capisce
+  // perche'. Questa riga e' l'unico posto che se ne accorge.
+  const REAZIONE = 0.35
+  const visto = (SCENA_LARGA - SCENA_X) / FISICA.velocitaMax
+  prova('e al massimo un ostacolo si vede abbastanza a lungo', visto >= REAZIONE, {
+    secondi: Number(visto.toFixed(3)),
+    minimo: REAZIONE,
+  })
+}
 
 console.log('\nla difficoltà cresce')
 prova(

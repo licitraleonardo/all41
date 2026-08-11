@@ -49,8 +49,27 @@ export const FISICA = {
   gravita: 2200, // unità al secondo quadrato
   spintaSalto: 640,
   velocitaIniziale: 260,
-  velocitaMax: 700,
-  accelerazione: 7, // quanto accelera ogni secondo
+
+  // ⚠️ Il tetto non è un capriccio: è dove il gioco smetterebbe di essere
+  // difficile e comincerebbe a essere rotto.
+  //
+  // La scena è larga 500 unità e Allan corre a 52: un ostacolo si vede
+  // per (500-52)/velocità secondi prima di arrivargli addosso. A 700 fa
+  // 0,64 s — comodissimo, ed è il motivo per cui era troppo facile. A
+  // 1150 fa 0,39 s, che è duro ma sta sopra il tempo di reazione umano
+  // (~0,25 s) con margine per decidere. Oltre i 1400 (0,32 s) non è più
+  // una sfida: è un dado.
+  velocitaMax: 1150,
+
+  // Quanto accelera al secondo, e quanto **cresce** quell'accelerazione.
+  //
+  // Prima era una sola costante e la corsa saliva in linea retta: dopo il
+  // primo minuto non cambiava più niente e restava uguale a sé stessa per
+  // sempre. Il secondo termine è quello che si sente — la corsa non
+  // smette mai di stringere, e il tetto arriva verso i 50 secondi invece
+  // che al minuto e mezzo.
+  accelerazione: 9,
+  accelerazioneCrescente: 0.25,
   // Un salto dura 2·spinta/gravità ≈ 0,58s e arriva a spinta²/(2·gravità)
   // ≈ 93 unità: sopra ogni ostacolo di terra, che è ciò che conta.
 }
