@@ -181,6 +181,10 @@ export default function Album({ membro }) {
           )
           .then((r) => {
             if (r?.appena) setAvviso(`🏆 Ci siete tutti. +${r.punti} a testa.`)
+            // ⚠️ Ci siete tutti ma il viaggio non è cominciato. Senza
+            // questa riga il gruppo carica otto selfie, li vede tutti
+            // caricati e non succede niente: sembra rotta.
+            else if (r?.aspetta) setAvviso('🏆 Ci siete tutti. Si chiude il 12.')
           })
           .then(() => sfide.ricarica())
           .catch(() => {})

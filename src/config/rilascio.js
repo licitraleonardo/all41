@@ -12,7 +12,7 @@
 //
 //   - le Leggi e i Trofei (`lib/punti.js`)
 //   - i tasti speciali della chat e i suoni (`components/ChatRapida.jsx`)
-//   - i tre giochi (`components/Gioco.jsx`)
+//   - i giochi elencati in `GIOCHI_COPERTI` qui sotto
 //
 // ⚠️ Quello che NON si copre, e sono scelte:
 //
@@ -56,3 +56,33 @@ export function viaggioCominciato(adesso = new Date()) {
 // Quello che si legge toccando una cosa coperta. Una riga sola: non c'è
 // niente da spiegare, c'è una data da sapere.
 export const COPERTO = 'Si sblocca il 12'
+
+// ⚠️ Quali giochi restano coperti fino al 12. Gli altri sono aperti.
+//
+// All'inizio era coperta la Sala intera, una guardia sola invece di tre.
+// L'11 il gruppo era già dentro l'app da una sera e non aveva niente da
+// fare insieme, e la copertura è passata da porta a stanza: aperti la
+// Dama e All, coperto l'Impostore.
+//
+// **La distinzione non è «quanto è divertente», è cosa si consuma.**
+//
+//   - **All** è tutto locale: nessuna partita, nessun avversario. Il
+//     record del giorno finisce in `sheep_records`, che il 12 si azzera.
+//   - **Dama** crea partite vere sul database, ma una partita giocata
+//     l'11 è solo una partita giocata l'11: le Leggi sono congelate,
+//     quindi non dà punti, e `dama_games` il 12 si azzera.
+//   - **Impostore** no, e non per prudenza: si gioca **in otto, di
+//     persona**, e ognuno vede la sua parola una volta sola. Giocarlo
+//     l'11 da casa, in tre, con cinque parole bruciate e nessuno
+//     seduto attorno a un tavolo, non è una prova — è la prima serata
+//     spesa male.
+//
+// ⚠️ Un gioco messo qui dentro non viene **costruito**, non solo
+// nascosto: vedi `SalaGiochi.jsx`. Coprire un gioco che apre ascoltatori
+// lasciandolo montato non è coprirlo.
+export const GIOCHI_COPERTI = ['impostore']
+
+export function giocoCoperto(id, adesso = new Date()) {
+  if (viaggioCominciato(adesso)) return false
+  return GIOCHI_COPERTI.includes(id)
+}

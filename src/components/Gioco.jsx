@@ -9,8 +9,6 @@ import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
 import { descriviErrore } from '../lib/errori.js'
 import Rotella from './Rotella.jsx'
-import Pellicola from './Pellicola.jsx'
-import { viaggioCominciato } from '../config/rilascio.js'
 
 // Tre schede, non quattro: "Proponi" non era una sezione, era un gesto —
 // e adesso vive dove ha senso, toccando qualcuno nella classifica.
@@ -45,23 +43,23 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
 
   const membri = Object.fromEntries(classifica.map((m) => [m.id, m]))
 
-  // ⚠️ Prima del 12 i tre giochi non si costruiscono affatto.
+  // ⚠️ La Sala non e' piu' coperta in blocco: decide dentro, gioco per
+  // gioco, guardando `GIOCHI_COPERTI` in `config/rilascio.js`.
   //
-  // Non e' un velo steso sopra: l'Impostore e la Dama, appena montati,
-  // aprono ascoltatori sul database e possono creare partite. Un velo li
-  // lascerebbe girare, e si vedrebbero partite create prima di partire.
-  // Al loro posto c'e' una `Pellicola`, che e' solo un disegno.
+  // Prima la guardia stava qui, sulla porta: prima del 12 la Sala non si
+  // apriva affatto e i tre giochi non venivano costruiti. Era una
+  // guardia sola invece di sei ed era giusta finche' erano coperti
+  // tutti e tre. L'11 se ne sono aperti due, e una guardia sulla porta
+  // non sa distinguere: o entrano tutti o non entra nessuno.
   //
-  // Allbo e Testamento restano aperti: sono da guardare, non da giocare,
-  // e con le Leggi congelate non hanno niente da mostrare che non sia
-  // zero.
-  // ⚠️ Una guardia sola invece di sei.
+  // La regola non e' cambiata, si e' spostata di un piano. Un gioco
+  // coperto continua a **non venire costruito** — vedi `SalaGiochi.jsx`
+  // — che e' l'unica copertura che regge per l'Impostore e la Dama:
+  // appena montati aprono ascoltatori e possono creare partite.
   //
-  // Prima ogni gioco aveva la sua pellicola e ogni riga di render la sua
-  // condizione `aperto &&`: sei posti da ricordarsi, e sei modi di
-  // dimenticarsene aggiungendo un gioco. Adesso e' coperta la porta —
-  // la Sala — e dentro non ci si entra proprio.
-  const aperto = viaggioCominciato()
+  // Allbo e Testamento restano aperti come sempre: sono da guardare, non
+  // da giocare, e con le Leggi congelate non hanno niente da mostrare
+  // che non sia zero.
 
   async function crea(dati) {
     setInCorso(true)
@@ -122,9 +120,7 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
         ))}
       </div>
 
-      {!aperto && vista === 'sala' && <Pellicola nome="Sala giochi" />}
-
-      {aperto && vista === 'sala' && (
+      {vista === 'sala' && (
         <SalaGiochi
           membro={membro}
           membri={membri}

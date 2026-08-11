@@ -11,6 +11,7 @@ import {
 import { dataDiOggi } from './giorni.js'
 import { faiScattareLegge } from './punti.js'
 import { chiudiVoto } from './voti.js'
+import { viaggioCominciato } from '../config/rilascio.js'
 
 export const leggiSfideVinte = conCache('sfideVinte', async function leggiSfideVinte() {
   const { data, error } = await supabase
@@ -199,6 +200,22 @@ export async function forseChiudiCollettiva(sfidaId, partecipanti, membriIds) {
   const autori = new Set(partecipanti.map((p) => p.autoreId))
   const mancano = membriIds.filter((id) => !autori.has(id))
   if (mancano.length > 0) return { chiusa: false, mancano: mancano.length }
+
+  // ⚠️ Ci siete tutti, ma il viaggio no: si aspetta.
+  //
+  // Il selfie di gruppo è comparso l'11, la sera prima di partire, ed è
+  // l'unica sfida che si può fare da casa. Chiuderla lì avrebbe voluto
+  // dire tre danni in una riga: il 12 la si sarebbe trovata già fatta,
+  // la Legge XXIX sarebbe scattata **congelata** — cioè annunciando tre
+  // punti a testa e assegnandone zero, che è la bugia che questa app non
+  // racconta — e una Legge che scatta congelata non viene nemmeno
+  // scoperta, quindi sarebbe rimasta invisibile nel Testamento per tutto
+  // il viaggio.
+  //
+  // Le foto caricate prima non si buttano: restano lì e valgono. È solo
+  // la chiusura che aspetta il 12, e a quel punto la fa il primo che apre
+  // l'Album.
+  if (!viaggioCominciato()) return { chiusa: false, aspetta: true }
 
   // Il primo client che se ne accorge la chiude; gli altri trovano la
   // riga già lì e non riassegnano niente.

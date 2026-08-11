@@ -78,12 +78,34 @@ export function scadenzaDelVoto(oggi, chiude = CACCIA.chiude) {
 
 export const SFIDE = [
   // ——— 12 agosto: arrivo, Poetto, Molentargius ———
+  // ⚠️ Anticipata all'11: è l'unica sfida che compare prima che il
+  // viaggio cominci.
+  //
+  // Il gruppo è entrato nell'app la sera prima di partire e non aveva
+  // niente da fare insieme. Questa è il rompighiaccio, e si può fare da
+  // casa: è un selfie a testa, non richiede di essere in Sardegna.
+  //
+  // ⚠️ Ma anticipare la comparsa **non** anticipa la chiusura, ed è la
+  // differenza che tiene in piedi tutto il resto: la sfida si vede e si
+  // può fare stasera, e si chiude il 12. Vedi `sfidaChiudibile` in
+  // `lib/sfide.js`.
+  //
+  // La prima versione la faceva valere zero punti, e sembrava la cosa
+  // ovvia — «anticipata senza punti». Costava tre cose che non si
+  // vedevano da qui: il 12, giorno vero dell'arrivo, si sarebbe trovata
+  // già chiusa e una delle tre sfide del giorno sparita; la Legge XXIX
+  // prende il suo valore da questa riga (`config/leggi.js`) e a zero
+  // sarebbe scivolata dai Trofei alle Punizioni del Testamento; e la
+  // Legge non sarebbe mai stata **scoperta**, perché una Legge si scopre
+  // scattando e questa sarebbe scattata a viaggio non ancora cominciato,
+  // cioè congelata. Rimandare la chiusura non costa niente di tutto ciò.
   {
     id: 'ci-siamo-tutti',
     tipo: 'collettiva',
+    anticipata: true,
     giorno: 12,
     titolo: 'Ci siamo tutti',
-    testo: 'Un selfie a testa. Si chiude quando l’ha caricato ognuno.',
+    testo: 'Un selfie a testa. Si chiude quando ci siamo tutti.',
     // Tre e non dieci: paga a testa e non a un vincitore solo, quindi in
     // otto vale ventiquattro punti. A dieci ne valeva ottanta, cioè più
     // di tutte le Leggi messe insieme — per un selfie.
@@ -223,7 +245,20 @@ export function sfideDelGiorno(giorno) {
 // trofeo. Fuori dal viaggio si vede tutto quello che era gia' comparso.
 export function sfideDaMostrare(vinte, adesso = new Date()) {
   const oggi = giornoCorrente(adesso)
-  const diOggi = oggi ? sfideDelGiorno(oggi.giorno) : []
+
+  // ⚠️ Prima che il viaggio cominci «oggi» non è nessun giorno del
+  // viaggio, e senza questa riga l'unica sfida visibile finiva sotto
+  // «Ancora aperte» — che vuol dire *l'avevi già vista e non l'hai
+  // ancora fatta*, e la sera prima di partire non l'aveva vista nessuno.
+  //
+  // Dopo il 16 no: fuori dal viaggio, dalla parte finita, non c'è
+  // nessun «oggi» e le sfide comparse tornano dove stanno le altre.
+  const primaDiPartire = dataDiOggi(adesso) < VIAGGIO.dataInizio
+  const diOggi = oggi
+    ? sfideDelGiorno(oggi.giorno)
+    : primaDiPartire
+      ? SFIDE.filter((s) => s.anticipata)
+      : []
 
   // Una sfida e' "comparsa" se il suo giorno e' arrivato. Prima del
   // viaggio non ce n'e' nessuna; dopo, ci sono tutte.
@@ -237,6 +272,17 @@ export function sfideDaMostrare(vinte, adesso = new Date()) {
 
 export function sfidaComparsa(sfida, adesso = new Date()) {
   const data = dataDiOggi(adesso)
+
+  // ⚠️ Le anticipate ci sono anche prima che il viaggio cominci, e sono
+  // l'unica eccezione: tutto il resto della caccia compare il suo
+  // giorno.
+  //
+  // Comparire, però, non è chiudersi. Una sfida anticipata si vede e si
+  // può fare la sera prima, ma **non si chiude** finché il viaggio non
+  // comincia — e la ragione sta in `forseChiudiCollettiva`
+  // (`lib/sfide.js`), che è dove va guardata.
+  if (sfida.anticipata) return true
+
   if (data < VIAGGIO.dataInizio) return false
   if (data > VIAGGIO.dataFine) return true
 

@@ -9,8 +9,11 @@ import {
   APERTURA,
   APERTURA_ASSOLUTA,
   FORZA_APERTA,
+  GIOCHI_COPERTI,
+  giocoCoperto,
   viaggioCominciato,
 } from '../src/config/rilascio.js'
+import { SFIDE, sfidaComparsa, sfideDaMostrare } from '../src/config/sfide.js'
 import { VIAGGIO } from '../src/config/viaggio.js'
 import { readFileSync } from 'node:fs'
 
@@ -40,6 +43,158 @@ console.log('\ndalle 6 in poi si apre da solo')
   // Testamento e la classifica. Chiudere a fine viaggio sarebbe togliere
   // il ricordo insieme al gioco.
   prova('e anche dopo, per guardare', viaggioCominciato(new Date('2026-09-01T10:00:00')))
+}
+
+console.log('\nnon tutti i giochi sono coperti allo stesso modo')
+{
+  const prima = new Date('2026-08-11T21:00:00')
+  const dopo = new Date('2026-08-12T10:00:00')
+
+  prova("l'Impostore e coperto la sera prima", giocoCoperto('impostore', prima))
+  prova('la Dama no', !giocoCoperto('dama', prima))
+  prova('All nemmeno', !giocoCoperto('pecora', prima))
+  // ⚠️ Il 12 non resta coperto niente. Un gioco dimenticato dentro
+  // `GIOCHI_COPERTI` con una condizione sbagliata resterebbe chiuso per
+  // tutto il viaggio, e nessuno vedrebbe un errore: vedrebbe un lucchetto.
+  prova('dalle 6 del 12 e aperto tutto', GIOCHI_COPERTI.every((id) => !giocoCoperto(id, dopo)), {
+    ancoraCoperti: GIOCHI_COPERTI.filter((id) => giocoCoperto(id, dopo)),
+  })
+
+  // ⚠️ Un nome scritto storto qui non copre niente e non dice niente.
+  //
+  // `GIOCHI_COPERTI = ['impostora']` e' una lista valida, `includes`
+  // risponde `false`, e l'Impostore si apre due giorni prima senza che un
+  // solo errore compaia da nessuna parte. L'unico modo di accorgersene e'
+  // confrontare i nomi con quelli veri della Sala.
+  const sala = readFileSync('src/components/SalaGiochi.jsx', 'utf8')
+  const nomiVeri = [...sala.matchAll(/\['([a-z]+)', '[^']+'\]/g)].map((m) => m[1])
+  prova('la Sala ha i suoi giochi', nomiVeri.length >= 3, nomiVeri)
+  const inventati = GIOCHI_COPERTI.filter((id) => !nomiVeri.includes(id))
+  prova('e ogni gioco coperto e uno di quelli', inventati.length === 0, { inventati, nomiVeri })
+
+  // ⚠️ E un gioco coperto non deve essere **costruito**, solo nascosto.
+  //
+  // E' la ragione per cui esiste la `Pellicola`: l'Impostore e la Dama,
+  // appena montati, aprono ascoltatori sul database e possono creare
+  // partite. Nascosti con un velo continuerebbero a girare, e si
+  // vedrebbero partite create prima di partire.
+  const guardia = sala.indexOf('{!coperto && (')
+  prova('la Sala ha la sua guardia', guardia > 0, guardia)
+  for (const gioco of ['<Impostore', '<Dama', '<Pecora']) {
+    prova(`${gioco} sta dentro la guardia`, sala.indexOf(gioco) > guardia, {
+      gioco: sala.indexOf(gioco),
+      guardia,
+    })
+  }
+}
+
+console.log('\nuna sfida anticipata compare prima, ma non si chiude prima')
+{
+  // ⚠️ Questa e' la famiglia con i denti di tutto il file.
+  //
+  // L'11 il gruppo era gia' dentro l'app e non aveva niente da fare
+  // insieme, e la sfida del selfie e' stata anticipata di un giorno. La
+  // prima versione la faceva valere **zero punti**, che sembrava la cosa
+  // ovvia da fare, e costava tre danni invisibili da li': il 12, giorno
+  // vero dell'arrivo, la si sarebbe trovata gia' chiusa; la Legge XXIX
+  // prende il suo valore da quella riga e a zero sarebbe scivolata dai
+  // Trofei alle Punizioni; e la Legge sarebbe scattata **congelata**,
+  // quindi mai scoperta, invisibile nel Testamento per tutto il viaggio.
+  //
+  // La regola che regge tutto e' una sola: **comparire e chiudersi sono
+  // due cose diverse**, e solo la prima si anticipa.
+  const anticipate = SFIDE.filter((s) => s.anticipata)
+  prova('ce n e almeno una', anticipate.length >= 1, anticipate.map((s) => s.id))
+
+  // E si vede davvero prima che il viaggio cominci, altrimenti
+  // «anticipata» sarebbe solo una parola scritta dentro un oggetto.
+  const laSera = new Date('2026-08-11T21:00:00')
+  for (const s of anticipate) prova(`${s.id} si vede l 11`, sfidaComparsa(s, laSera))
+
+  // ⚠️ Ma vale i suoi punti, e questo va tenuto fermo. Portarla a zero
+  // per «non dare punti in anticipo» e' esattamente lo sbaglio di sopra:
+  // il punteggio della sfida non e' solo suo, ci pende attaccata una
+  // Legge del Testamento.
+  const aZero = anticipate.filter((s) => s.punti === 0)
+  prova('e vale ancora i suoi punti', aZero.length === 0, aZero.map((s) => s.id))
+
+  // ⚠️ E la chiusura aspetta il viaggio. E' la riga che tiene separate le
+  // due cose: senza, la sfida si chiude la sera prima e i tre danni
+  // tornano tutti insieme.
+  //
+  // Si guarda **dentro** `forseChiudiCollettiva` e non nel file intero:
+  // `chiudi_sfida` viene chiamata anche dalle competitive, prima nel
+  // file, e cercandola alla cieca la prova falliva confrontando la
+  // guardia con la chiamata sbagliata.
+  const lib = readFileSync('src/lib/sfide.js', 'utf8')
+  const dentro = lib.slice(lib.indexOf('export async function forseChiudiCollettiva'))
+  const guardia = dentro.indexOf('if (!viaggioCominciato()) return')
+  const chiude = dentro.indexOf("rpc('chiudi_sfida'")
+  prova('la chiusura ha la sua guardia', guardia > 0, guardia)
+  prova('e la guardia viene prima di chiudere', guardia > 0 && guardia < chiude, {
+    guardia,
+    chiude,
+  })
+
+  // ⚠️ E chi sta a schermo deve saperlo. Otto selfie caricati, tutti
+  // presenti e niente che succede e' indistinguibile da una cosa rotta:
+  // l'Album dice che ci siete tutti e che si chiude il 12.
+  const album = readFileSync('src/components/Album.jsx', 'utf8')
+  prova('e l Album lo dice invece di stare zitto', /aspetta\b/.test(album))
+
+  // ⚠️ E sono le uniche a comparire in anticipo. La porta aperta per una
+  // sfida non deve aprirsi per tutte: il resto della caccia compare il
+  // suo giorno, e vederla tutta in anticipo vorrebbe dire bruciarla
+  // tutta in anticipo.
+  const soloLeAnticipate = (quando) => {
+    const viste = sfideDaMostrare({}, quando)
+    return [...viste.diOggi, ...viste.aperte].map((s) => s.id)
+  }
+  // ⚠️ E sta fra le sfide **di oggi**, non fra le «ancora aperte».
+  // «Ancora aperte» vuol dire *l'avevi già vista e non l'hai fatta*, e
+  // la sera prima di partire non l'aveva vista nessuno.
+  const dellaSera = sfideDaMostrare({}, laSera)
+  prova(
+    'e sta fra quelle di oggi, non fra le aperte',
+    dellaSera.diOggi.length === anticipate.length && dellaSera.aperte.length === 0,
+    { diOggi: dellaSera.diOggi.map((s) => s.id), aperte: dellaSera.aperte.map((s) => s.id) }
+  )
+
+  // Ma solo prima di partire: a viaggio finito non esiste piu' nessun
+  // «oggi», e restare li' vorrebbe dire una sfida di oggi per sempre.
+  const dopoTutto = sfideDaMostrare({}, new Date('2026-09-01T10:00:00'))
+  prova('e a viaggio finito non e piu di oggi', dopoTutto.diOggi.length === 0, {
+    diOggi: dopoTutto.diOggi.map((s) => s.id),
+  })
+
+  const laSeraSiVede = soloLeAnticipate(laSera)
+  prova(
+    'e prima del 12 non se ne vedono altre',
+    laSeraSiVede.every((id) => anticipate.some((s) => s.id === id)),
+    laSeraSiVede
+  )
+
+  // ⚠️ E la stessa domanda al 14 **luglio**, che non e' un capriccio.
+  //
+  // L'11 agosto la riga qui sopra non sa fallire, e l'ho scoperto
+  // rompendo il codice apposta: tolto il controllo sulla data del
+  // viaggio la prova restava verde, perche' l'altro confronto — «il
+  // giorno della sfida e' arrivato?» — legge solo il **numero** del
+  // giorno, e nessuna sfida arriva prima del 12. Undici e' piu' piccolo
+  // di dodici e copriva il buco per conto suo.
+  //
+  // Il 14 luglio no: quattordici e' maggiore di dodici, e senza quel
+  // controllo comparirebbero tre sfide con un mese d'anticipo. E' l'unico
+  // momento in cui si vede lavorare, quindi e' l'unico momento in cui ha
+  // senso guardarlo — e adesso serve doppiamente, perche' l'eccezione
+  // delle anticipate sta scritta **sopra** di lui e una scritta sopra
+  // puo' scavalcarlo.
+  const aLuglio = soloLeAnticipate(new Date('2026-07-14T21:00:00'))
+  prova(
+    'e nemmeno un mese prima, quando il numero del giorno inganna',
+    aLuglio.every((id) => anticipate.some((s) => s.id === id)),
+    aLuglio
+  )
 }
 
 console.log('\nl orario e quello del viaggio, non un altro')
