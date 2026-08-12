@@ -11,7 +11,7 @@
 //   4. lo stesso identico elenco di passaggi esce su ogni telefono, in
 //      qualunque ordine arrivino i dati dal database
 
-import { calcolaSaldi, chiDeveAChi, chiPagaChi } from '../src/lib/saldi.js'
+import { calcolaSaldi, chiDeveAChi } from '../src/lib/saldi.js'
 
 // Generatore con seme: se un caso fallisce, si rilancia identico invece
 // di sperare che ricapiti.
@@ -98,47 +98,6 @@ for (let giro = 0; giro < GIRI; giro += 1) {
   const passaggi = chiDeveAChi(saldi)
   if (passaggi.length > 0) conPassaggi += 1
   maxPassaggi = Math.max(maxPassaggi, passaggi.length)
-
-  // ⚠️ Le stesse proprieta', ma sui passaggi che l'app mostra davvero:
-  // quelli a coppie, dove si rende a chi ha messo i soldi per te.
-  //
-  // Il modo di chiudere i conti e' cambiato dopo tre giri di «non mi
-  // torna»: le cifre erano giuste e le istruzioni non erano ricavabili
-  // — «dai 3,20 a Marco» a uno che con Marco non aveva diviso niente.
-  // Cambiando il modello queste proprieta' vanno riverificate da zero:
-  // un modo diverso di chiudere gli stessi conti puo' benissimo perdere
-  // un centesimo per strada, e non lo direbbe nessuno.
-  const aCoppie = chiPagaChi(spese, pagamenti, membri)
-
-  const dopoCoppie = { ...saldi }
-  for (const p of aCoppie) {
-    dopoCoppie[p.da] += p.centesimi
-    dopoCoppie[p.a] -= p.centesimi
-  }
-  controlla(
-    'a coppie: tutti finiscono a zero',
-    membri.every((id) => dopoCoppie[id] === 0),
-    { dopoCoppie, aCoppie, spese, pagamenti }
-  )
-  controlla(
-    'a coppie: nessuno paga se stesso, e mai zero',
-    aCoppie.every((p) => p.da !== p.a && p.centesimi > 0 && Number.isInteger(p.centesimi)),
-    { aCoppie }
-  )
-  controlla(
-    'a coppie: solo gente del gruppo',
-    aCoppie.every((p) => membri.includes(p.da) && membri.includes(p.a)),
-    { aCoppie, membri }
-  )
-
-  // ⚠️ E la lista esce identica su ogni telefono, in qualunque ordine
-  // arrivino le spese dal database. Senza, due persone vedrebbero due
-  // conti diversi per le stesse spese e avrebbero ragione tutte e due.
-  controlla(
-    'a coppie: stesso elenco in qualunque ordine',
-    JSON.stringify(aCoppie) === JSON.stringify(chiPagaChi(mescola(spese), pagamenti, membri)),
-    { aCoppie }
-  )
 
   // 3. passaggi sensati
   controlla(

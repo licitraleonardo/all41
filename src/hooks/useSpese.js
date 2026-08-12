@@ -10,7 +10,7 @@ import {
 } from '../lib/spese.js'
 import { inCache } from '../lib/cache.js'
 import { leggiMembri } from '../lib/membri.js'
-import { calcolaSaldi, chiPagaChi, dettaglioSaldo } from '../lib/saldi.js'
+import { calcolaSaldi, chiDeveAChi, dettaglioSaldo } from '../lib/saldi.js'
 import { descriviErrore } from '../lib/errori.js'
 
 // Il `catch` che c'era qui era vuoto. Una ricarica che fallisce non deve
@@ -75,14 +75,7 @@ export function useSpese(ioId) {
     [spese, rimborsi, membri]
   )
 
-  // ⚠️ `chiPagaChi` e non `chiDeveAChi`: si rendono i soldi a chi li ha
-  // messi per te. Il secondo faceva meno bonifici e mandava a pagare
-  // gente con cui non avevi diviso niente — cifre giuste, istruzioni non
-  // ricavabili. Vedi il commento in `lib/saldi.js`.
-  const passaggi = useMemo(
-    () => chiPagaChi(spese, rimborsi, membri.map((m) => m.id)),
-    [spese, rimborsi, membri]
-  )
+  const passaggi = useMemo(() => chiDeveAChi(saldi), [saldi])
 
   // Da dove viene il proprio saldo, riga per riga. Le righe sommano
   // esattamente al saldo — c'è una prova che lo tiene fermo — ed è tutto il
