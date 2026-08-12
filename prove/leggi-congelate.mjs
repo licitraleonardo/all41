@@ -100,5 +100,20 @@ console.log('\ne assegnare punti non scopre niente')
   })
 }
 
+console.log('\nil Primo sveglio conta i messaggi, non le righe dell app')
+{
+  // ⚠️ Le ricevute degli SOS e gli annunci delle proposte sono righe
+  // `free_text` che scrive l'app per conto tuo. Contandole, bastava che
+  // alle 8:10 uno proponesse dei punti perche' il Primo sveglio non lo
+  // prendesse piu' nessuno: chi scriveva davvero alle 8:20 era gia' il
+  // secondo. E una Legge si scopre scattando, quindi in quei giorni
+  // spariva anche il +1 di chi la scopre.
+  const regole = readFileSync('src/lib/regole.js', 'utf8')
+  const conteggio = regole.slice(regole.indexOf('const delGruppo'), regole.indexOf('primo-sveglio'))
+  prova('il conteggio del gruppo esiste', conteggio.length > 0)
+  prova('e salta le ricevute degli SOS', /ricevutaSos/.test(conteggio), conteggio)
+  prova('e gli annunci delle proposte', /propostaVoto/.test(conteggio), conteggio)
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)
 process.exit(falliti === 0 ? 0 : 1)

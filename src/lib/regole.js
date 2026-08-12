@@ -124,8 +124,21 @@ export async function dopoTesto(memberId, testo, azioneId, adesso = new Date()) 
 
   // Il primo messaggio della giornata di tutto il gruppo. Si guarda il
   // conteggio del gruppo, non il proprio: "il primo sveglio" è uno solo.
+  // ⚠️ Si contano i messaggi **scritti da qualcuno**, non tutte le righe.
+  //
+  // Le ricevute degli SOS e gli annunci delle proposte sono righe
+  // `free_text` che scrive l'app per conto tuo. Contandole, bastava che
+  // alle 8:10 uno proponesse dei punti perché il Primo sveglio della
+  // giornata non lo prendesse più nessuno: chi scriveva davvero alle 8:20
+  // era già il secondo. E non è solo il punto — una Legge si scopre
+  // scattando, quindi in quei giorni spariva anche il +1 di chi la scopre
+  // e la Legge restava invisibile nel Testamento.
   const delGruppo = await conta('quick_actions', (q) =>
-    q.eq('kind', 'free_text').is('deleted_at', null)
+    q
+      .eq('kind', 'free_text')
+      .is('deleted_at', null)
+      .is('payload->>ricevutaSos', null)
+      .is('payload->>propostaVoto', null)
   ).catch(() => null)
   if (delGruppo === 1) {
     const esito = await faiScattareLegge(

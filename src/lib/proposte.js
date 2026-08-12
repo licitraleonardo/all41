@@ -356,7 +356,26 @@ export async function risolviProposte(membriIds = []) {
     // di nasconderlo.
     if (erroreRpc || !evento?.id) continue // non è ancora ora, o l'ha già fatto un altro telefono
 
-    await applicaLeggiDellEsito(v, evento, membriIds).catch(() => {})
+    // ⚠️ Si rilegge il voto **dopo** che l'RPC l'ha chiuso.
+    //
+    // `v` è la copia letta all'inizio del giro, e fra quella lettura e
+    // questa riga c'è un giro di rete: a cena, con otto persone che
+    // votano insieme, ci sta comodamente un voto in più. L'RPC decide
+    // dentro la transazione, sulla riga bloccata e aggiornata; applicare
+    // le Leggi sulla copia vecchia vuol dire deciderle su un conteggio
+    // che il database ha già superato.
+    //
+    // Il caso vero: settimo voto, 4 a 3. Il telefono legge, parte, e nel
+    // frattempo l'ottavo vota No. L'RPC chiude 4 a 4 — pareggio — ma le
+    // Leggi si applicavano su 4 a 3, che è «approvata»: la Legge XI non
+    // scattava per nessuno, e nessun errore lo diceva.
+    const { data: fresco } = await supabase
+      .from('votes')
+      .select('id, tally, voted, ballots, closed_at, expires_at')
+      .eq('id', v.id)
+      .single()
+
+    await applicaLeggiDellEsito(fresco ?? v, evento, membriIds).catch(() => {})
     risolte.push(evento)
   }
 
@@ -407,12 +426,28 @@ async function forseBastianContrario(membriIds) {
   if (!data || data.length === 0) return
 
   const schedePerVoto = data.map((v) => v.ballots ?? {})
-  const ultimo = data[0].id
 
   for (const id of membriIds) {
-    if (contaNoConsecutivi(schedePerVoto, id) >= 4) {
-      await faiScattareLegge('bastian-contrario', id, `bastian_${id}_${ultimo}`).catch(() => {})
-    }
+    if (contaNoConsecutivi(schedePerVoto, id) < 4) continue
+
+    // ⚠️ La chiave è il voto in cui hai detto l'ultimo No, non l'ultimo
+    // voto che si è chiuso. Sembra la stessa cosa e non lo è.
+    //
+    // Prima era `data[0].id`, cioè la proposta chiusa più di recente. Ma
+    // `contaNoConsecutivi` **salta** le proposte che non hai votato: chi
+    // aveva quattro No alle spalle e poi andava in spiaggia senza votare
+    // continuava a risultare a quota quattro, e a ogni proposta che si
+    // chiudeva la chiave cambiava — quindi il database la accettava e la
+    // Legge pagava di nuovo. Una serie sola poteva costare -3 cinque o
+    // sei volte, e per smettere bisognava votare un Sì.
+    //
+    // Legata al proprio ultimo No la chiave non si muove finché la serie
+    // non cambia davvero: la stessa serie paga una volta, che è quello
+    // che il commento diceva già e il codice non faceva.
+    const suoUltimoNo = data.find((v) => (v.ballots ?? {})[id] === 1)?.id
+    if (!suoUltimoNo) continue
+
+    await faiScattareLegge('bastian-contrario', id, `bastian_${id}_${suoUltimoNo}`).catch(() => {})
   }
 }
 

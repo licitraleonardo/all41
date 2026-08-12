@@ -340,6 +340,40 @@ console.log('\nuna proposta non risolta non deve applicare niente')
   prova('e non la sola verita dell oggetto', !/\|\|\s*!evento\s*\)/.test(guardia))
 }
 
+console.log('\nle Leggi delle proposte non pagano due volte ne a vuoto')
+{
+  const senza = (f) =>
+    readFileSync(f, 'utf8')
+      .split('\n')
+      .filter((r) => !/^\s*(\/\/|\*|\/\*)/.test(r))
+      .join('\n')
+  const lib = senza('src/lib/proposte.js')
+
+  // ⚠️ La Legge XLV pagava piu' volte la stessa serie di No.
+  //
+  // La chiave era `bastian_<chi>_<ultimo voto chiuso>`. Ma
+  // `contaNoConsecutivi` **salta** le proposte che non hai votato: chi
+  // aveva quattro No alle spalle e poi andava in spiaggia restava a
+  // quota quattro, e a ogni proposta che si chiudeva la chiave cambiava
+  // — quindi il database la accettava e toglieva altri -3. Per smettere
+  // bisognava votare un Si'. Legata al proprio ultimo No, la chiave non
+  // si muove finche' la serie non cambia davvero.
+  const bastian = lib.slice(lib.indexOf('async function forseBastianContrario'))
+  const chiave = bastian.slice(bastian.indexOf('bastian_'), bastian.indexOf('bastian_') + 60)
+  prova('la chiave della Legge XLV esiste', chiave.length > 0)
+  prova('e non e legata all ultimo voto chiuso', !/data\[0\]\.id/.test(bastian), chiave)
+  prova('ma al proprio ultimo No', /suoUltimoNo/.test(chiave), chiave)
+
+  // ⚠️ E le Leggi dell'esito si decidono sul voto **appena chiuso**, non
+  // sulla copia letta prima: fra le due c'e' un giro di rete, e a cena ci
+  // sta comodamente un voto in piu'. Con 4-3 letto e 4-4 chiuso, il
+  // pareggio non scattava per nessuno e nessun errore lo diceva.
+  const risolvi = lib.slice(lib.indexOf('export async function risolviProposte'))
+  const finoAllApplica = risolvi.slice(0, risolvi.indexOf('applicaLeggiDellEsito'))
+  prova('dopo aver chiuso si rilegge il voto', /from\('votes'\)/.test(finoAllApplica), finoAllApplica.slice(-200))
+  prova('e le Leggi si applicano sulla copia fresca', /applicaLeggiDellEsito\(fresco/.test(risolvi))
+}
+
 console.log('')
 if (fallite > 0) {
   console.error(`${fallite} prove fallite, ${passate} passate.`)

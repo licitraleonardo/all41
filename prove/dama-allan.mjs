@@ -309,5 +309,26 @@ console.log('\ncontro Allan non si prendono punti')
   prova('e viene prima di assegnare la vittoria', distanza > 0 && distanza < 900, distanza)
 }
 
+console.log('\nuna sfida vera scavalca la partita con Allan')
+{
+  // ⚠️ Il ramo `if (conAllan)` sta sopra tutto il resto, quindi
+  // accettando una sfida dal banner non succedeva **niente**: lo stato
+  // veniva impostato, il banner si spegneva, e sullo schermo restava la
+  // scacchiera di Allan. Si ritoccava «Vediamo» e di nuovo niente.
+  const dama = readFileSync('src/components/Dama.jsx', 'utf8')
+  const effetto = dama.slice(dama.indexOf('if (!apriPartita) return'))
+  const finoAlSet = effetto.slice(0, effetto.indexOf('onAperta?.()'))
+  prova('accettare una sfida chiude la partita con Allan', /setConAllan\(null\)/.test(finoAlSet), finoAlSet.slice(0, 200))
+
+  // ⚠️ E le due scacchiere hanno chiavi diverse: sono lo stesso
+  // componente nella stessa posizione dell'albero, e senza chiave React
+  // ne riusa l'istanza — uscendo da Allan per entrare in una partita
+  // vera ci si portava dietro la casella selezionata e il «Abbandoni?
+  // Vince l'altro» lasciato aperto, che sarebbe comparso su una partita
+  // con una persona.
+  prova('la scacchiera di Allan ha la sua chiave', /key="allan"/.test(dama))
+  prova('e quella vera ha la sua', /key=\{aperta\.id\}/.test(dama))
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)
 process.exit(falliti === 0 ? 0 : 1)

@@ -46,6 +46,14 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
   // carico, o resterebbe acceso.
   useEffect(() => {
     if (!apriPartita) return
+    // ⚠️ Una sfida vera scavalca la partita con Allan.
+    //
+    // Il ramo `if (conAllan)` sta sopra tutto il resto, quindi accettando
+    // una sfida dal banner non succedeva **niente**: lo stato veniva
+    // impostato, `onAperta` spegneva il banner, e sullo schermo restava
+    // la scacchiera di Allan. Si ritoccava «Vediamo» e di nuovo niente:
+    // la sfida sembrava rotta.
+    setConAllan(null)
     setApertaId(apriPartita)
     onAperta?.()
   }, [apriPartita, onAperta])
@@ -84,6 +92,15 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
   if (conAllan) {
     return (
       <Scacchiera
+        // ⚠️ La chiave separa le due scacchiere.
+        //
+        // Sono lo stesso componente nella stessa posizione dell'albero:
+        // senza chiavi diverse React ne riusa l'istanza, e uscendo da
+        // Allan per entrare in una partita vera ci si porta dietro la
+        // casella selezionata e — peggio — il «Abbandoni? Vince l'altro»
+        // lasciato aperto, che comparirebbe su una partita con una
+        // persona.
+        key="allan"
         partita={conAllan}
         partite={[]}
         membro={membro}
@@ -114,6 +131,8 @@ export default function Dama({ membro, membri, apriPartita, onAperta }) {
   if (aperta) {
     return (
       <Scacchiera
+        // La chiave dell'altra sta sopra, e spiega perche'.
+        key={aperta.id}
         partita={aperta}
         partite={partite}
         membro={membro}

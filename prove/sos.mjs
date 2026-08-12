@@ -152,11 +152,23 @@ console.log('\n«Ricevuto» lo puo premere chiunque, e lascia traccia')
   // Una condizione diretta sul sorgente, senza tagli e senza scorciatoie
   // di regex, non ha finestre in cui sbagliare.
   prova('il tasto scrive la ricevuta', /await mandaRicevuta\(/.test(gancio))
-  prova(
-    'e non esce prima quando l SOS e il tuo',
-    !/autoreId === ioId\) return/.test(gancio),
-    (gancio.match(/.*autoreId === ioId\).*/g) ?? []).join(' | ')
-  )
+
+  // ⚠️ Si guarda il **tratto** fra «sparisce dallo schermo» e «si
+  // scrive», e ci si chiede se dentro c'è un'uscita. Qualunque.
+  //
+  // Scritta come `!/autoreId === ioId\) return/` chiedeva tre cose
+  // insieme: l'ordine degli operandi, la parentesi attaccata e il
+  // `return` sulla stessa riga. Bastava invertire il confronto o mettere
+  // le graffe per passarci in mezzo, e il difetto tornava con la prova
+  // verde — provato rimettendolo dentro.
+  //
+  // Niente regex: due `indexOf` e una ricerca di sottostringa non hanno
+  // finestre in cui sbagliare.
+  const daSchermo = gancio.indexOf('setRicevute((p) => [finto')
+  const aScrittura = gancio.indexOf('mandaRicevuta(', daSchermo)
+  const inMezzo = daSchermo >= 0 && aScrittura > daSchermo ? gancio.slice(daSchermo, aScrittura) : ''
+  prova('il tratto fra schermo e scrittura esiste', inMezzo.length > 0)
+  prova('e non c e nessuna uscita in mezzo', !inMezzo.includes('return'), inMezzo)
 
   // E a non farla vedere ci pensa la chat: nascondere e non scrivere sono
   // due cose diverse, e qui serviva la prima.
@@ -166,7 +178,45 @@ console.log('\n«Ricevuto» lo puo premere chiunque, e lascia traccia')
   // Se l'invio non riesce il cartello TORNA SU: meglio uno di troppo che
   // uno di meno.
   const corpo = gancio.match(/const ricevuto = useCallback[\s\S]*?\n  \)/)?.[0] ?? ''
-  prova('e se non riesce il cartello torna su', /catch/.test(corpo) && /setRicevute/.test(corpo))
+  // ⚠️ Si guarda **dentro il `catch`**, non dentro tutta la funzione.
+  //
+  // Scritta come `/setRicevute/.test(corpo)` su tutto il corpo era sempre
+  // vera: `setRicevute` c'è già nella riga ottimistica in cima, quella
+  // che il cartello lo toglie. Cancellando il rimedio dentro il `catch`
+  // la prova restava verde — provato — mentre in app premere «Ricevuto»
+  // senza campo faceva sparire il cartello senza aver scritto niente:
+  // chi si è perso non vede nessuna ricevuta, e chi ha premuto crede di
+  // aver risposto e non può nemmeno ripremere.
+  const dopoIlTry = corpo.slice(corpo.indexOf('} catch'))
+  prova('il rimedio esiste', dopoIlTry.length > 0)
+  prova(
+    'e se non riesce il cartello torna su',
+    dopoIlTry.includes('setRicevute') && dopoIlTry.includes('return false'),
+    dopoIlTry.slice(0, 200)
+  )
+}
+
+console.log('\nuna lettura in ritardo non puo scrivere sopra a una piu recente')
+{
+  // ⚠️ `carica()` parte a ogni evento su `quick_actions`, e durante un
+  // SOS quegli eventi sono tanti: sette ricevute piu' i messaggi. Le
+  // letture partono in parallelo, e senza numerarle vince **l'ultima che
+  // arriva**, non l'ultima che parte. Bastava che una lettura partita
+  // prima del tuo «Ricevuto» atterrasse dopo, e la tua ricevuta spariva:
+  // il cartello ti tornava su gia' chiuso, lo ripremevi, e in chat
+  // comparivano due righe.
+  prova('le letture sono numerate', /let giro = 0/.test(gancio))
+  prova('e solo la piu recente puo scrivere', /mio === giro/.test(gancio))
+
+  const dentroCarica = gancio.slice(gancio.indexOf('const carica = ()'), gancio.indexOf('carica()\n'))
+  prova('la numerazione e dentro carica', /giro \+= 1/.test(dentroCarica), dentroCarica.slice(0, 120))
+  const scritture = (dentroCarica.match(/attuale\(\)/g) ?? []).length
+  prova('e la guardia copre tutte e due le letture', scritture === 2, scritture)
+
+  // E la riga vera prende il posto di quella finta senza aspettare il
+  // realtime: fra l'una e l'altro c'era una finestra in cui una
+  // rilettura non conteneva ne' la finta ne' la vera.
+  prova('la riga vera sostituisce quella finta', /r\.id !== finto\.id/.test(gancio))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)

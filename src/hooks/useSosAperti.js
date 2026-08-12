@@ -21,18 +21,34 @@ export function useSosAperti(ioId) {
 
   useEffect(() => {
     let vivo = true
+    // ⚠️ Le letture si numerano, e le risposte in ritardo si buttano.
+    //
+    // `carica()` parte a ogni evento su `quick_actions`, e durante un SOS
+    // quegli eventi sono tanti e ravvicinati: sette ricevute piu' i
+    // messaggi. Le letture partono in parallelo e vince **l'ultima che
+    // arriva**, non l'ultima che parte. Bastava che una lettura vecchia —
+    // partita prima che tu premessi «Ricevuto» — atterrasse dopo, e la
+    // tua ricevuta spariva dallo stato: il cartello dell'SOS ti tornava
+    // su gia' chiuso, lo ripremevi, e in chat comparivano due righe.
+    let giro = 0
     // La prima iscrizione non è un ritorno: si rilegge dalla seconda in
     // poi, cioè quando il canale si è ricollegato dopo essere caduto.
     let giaCollegato = false
 
     const carica = () => {
+      giro += 1
+      const mio = giro
+      // Solo la lettura piu' recente puo' scrivere: `mio === giro` e'
+      // falso per tutte quelle che nel frattempo sono state superate.
+      const attuale = () => vivo && mio === giro
+
       leggiSosAperti()
-        .then((elenco) => vivo && setTutti(elenco))
+        .then((elenco) => attuale() && setTutti(elenco))
         .catch(() => {})
       // Separata: se la lettura delle ricevute va storta, gli SOS si
       // vedono lo stesso. La ricevuta e' un di piu', l'SOS no.
       leggiRicevute()
-        .then((elenco) => vivo && setRicevute(elenco))
+        .then((elenco) => attuale() && setRicevute(elenco))
         .catch(() => {})
     }
 
@@ -126,12 +142,19 @@ export function useSosAperti(ioId) {
       // Nascondere e non scrivere sono due cose diverse, e qui serviva
       // la prima.
       try {
-        await mandaRicevuta({
+        const vera = await mandaRicevuta({
           sosId: sos.id,
           sosDi: sos.autoreId,
           nomeDi,
           memberId: ioId,
         })
+        // ⚠️ La riga vera prende subito il posto di quella finta, invece
+        // di aspettare che torni dal realtime: fra l'una e l'altro c'e'
+        // una finestra in cui una rilettura poteva non contenere ne' la
+        // finta (l'ha tolta lei) ne' la vera (non era ancora scritta).
+        if (vera?.id) {
+          setRicevute((p) => [vera, ...p.filter((r) => r.id !== finto.id)])
+        }
         return true
       } catch {
         // Non e' andata: il cartello torna su, cosi' si puo' ripremere.
