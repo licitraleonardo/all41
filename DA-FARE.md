@@ -15,50 +15,26 @@ telefoni. Quindi l'ordine qui sotto è per **rischio**, non per voglia:
 prima le cose che se si rompono si rompono da sole, in fondo quelle che
 possono impedire di aprire l'app.
 
-## 1. Dama: «Gioca contro Allan»
+## ✅ Fatti la notte del 12 (non c'è più niente da fare qui)
 
-Un avversario automatico, per giocare da soli. È il lavoro più isolato
-di tutta la coda e **funziona offline per costruzione**, senza fare
-niente di speciale: `src/lib/dama.js` è già puro — 218 righe, zero
-database — e ha dentro tutto quello che serve a una macchina per
-giocare (`mosseLegali`, `applicaMossa`, `esito`).
+- **Dama: «Gioca contro Allan»** — avversario automatico, funziona senza
+  rete, non tocca `dama_games` e non dà punti
+- **Lo switch della posizione** — in Info sotto le notifiche, spento di
+  default, e lo dice ogni volta che parte
+- **L'enfasi sul colpo di coda dell'Impostore**, il mondino sotto il
+  conto alla rovescia, il testo della sveglia
+- **Quindici difetti** trovati da una revisione avversariale con 25
+  agenti, tutti chiusi. Fra questi tre che stavano già facendo danno:
+  - la sfida del selfie era rimasta aperta per sempre — 24 punti mai
+    arrivati, recuperati
+  - le notifiche smettevano di arrivare dopo la prima non letta
+  - la Legge XLV pagava più volte la stessa serie di No
+- **Cinque prove che non sapevano fallire**, riscritte e verificate
+  rimettendo i difetti dentro il codice
 
-**Da scrivere:** un file nuovo `src/lib/allanDama.js` con la ricerca a
-qualche mossa di profondità e una valutazione semplice (pezzi, dame,
-avanzamento, centro), più il tasto in `src/components/Dama.jsx`.
+---
 
-⚠️ **Tre vincoli, e il primo non è negoziabile:**
-
-1. **Le partite contro Allan non finiscono in `dama_games`.** Se ci
-   finissero, chiunque potrebbe farsi la classifica battendo una
-   macchina, e il Trofeo della Dama smetterebbe di voler dire qualcosa.
-   Restano tutte sul telefono, come il record di All.
-2. **«Medio» va preso alla lettera.** Un motore perfetto è imbattibile e
-   si smette di giocarci dopo due partite; uno a caso non è un
-   avversario. Serve profondità bassa più una imperfezione voluta — ogni
-   tanto la seconda mossa migliore invece della prima.
-3. **Deve rispondere in fretta.** La ricerca gira sul telefono di chi
-   gioca, e una mossa che ci mette due secondi rende il gioco noioso.
-   Meglio poco profondo e istantaneo.
-
-**Prove:** `prove/dama-allan.mjs`. Le proprietà che contano — non fa mai
-una mossa illegale, mangia sempre quando è obbligatorio, vince quasi
-sempre contro uno che gioca a caso, e sta dentro il tempo massimo.
-
-## 2. Lo switch della posizione
-
-Sotto le notifiche, **spento di default**. Chi lo accende: a ogni
-apertura la posizione parte da sola e compare «📍 La tua posizione è
-stata aggiornata», che sparisce da sola ma si vede. Chi non ce l'ha:
-niente invio automatico, ma il banner che c'è già dice che la posizione
-è vecchia.
-
-⚠️ Se il GPS è spento o il permesso negato, lo switch **si spegne da
-solo** invece di far finta. E resta spento di default: è la condizione
-che tiene insieme questa richiesta con la decisione del 10 agosto —
-«la posizione si condivide con un tasto, mai da sola».
-
-## 3. L'Impostore con un telefono solo
+## 1. L'Impostore con un telefono solo
 
 Si sceglie all'avvio: «Un telefono» o «Uno a testa», e nella guida si
 spiega che il primo è la versione offline.
@@ -79,7 +55,7 @@ l'Impostore smette di dare punti.
 ⚠️ «Offline» qui è mezzo vero: la partita si gioca senza rete, ma il
 risultato va scritto per i punti. Va in coda, come le foto.
 
-## 4. L'offline diventa una scelta, non un guasto
+## 2. L'offline diventa una scelta, non un guasto
 
 Senza campo l'avvio resta su «Un attimo.» su fondo blu, senza rotella e
 senza un tasto da toccare. Deve comparire **«Usa offline»** ed entrare
