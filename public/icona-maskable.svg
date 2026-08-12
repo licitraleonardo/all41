@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Maskable: Android può ritagliare fino al 20% per lato, quindi il
+       fondo arriva ai bordi e il marchio sta nella zona sicura centrale. -->
+  <rect width="512" height="512" fill="#0B3550"/>
+  <text x="256" y="212" fill="#F7F4EC" text-anchor="middle"
+        font-family="Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="70" font-weight="700" letter-spacing="10">ALL</text>
+  <text x="256" y="330" fill="#F2A93B" text-anchor="middle"
+        font-family="Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="118" font-weight="700" letter-spacing="4">41</text>
+</svg>
