@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import { supabaseConfigurato, assicuraSessione } from './lib/supabase.js'
 import {
@@ -26,6 +26,7 @@ import BarraTab from './components/BarraTab.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
 import { useProposteAperte } from './hooks/useProposteAperte.js'
+import { useConnessione } from './hooks/useConnessione.js'
 import Celebrazione from './components/Celebrazione.jsx'
 import BannerProposta from './components/BannerProposta.jsx'
 
@@ -48,6 +49,22 @@ export default function App() {
   // Una Legge scoperta si celebra su tutti i telefoni, qualunque tab sia
   // aperta: è il momento di paga di tutto il sistema di punti.
   const { celebrazione, chiudi: chiudiCelebrazione } = useScoperte(vista === 'dentro')
+
+  // Quando torna il segnale si riprova da soli: chi era offline non deve
+  // accorgersi del momento giusto per premere un bottone.
+  const inLinea = useConnessione()
+  const eraOffline = useRef(false)
+
+  useEffect(() => {
+    if (!inLinea) {
+      eraOffline.current = true
+      return
+    }
+    if (eraOffline.current && vista === 'guasto') {
+      eraOffline.current = false
+      window.location.reload()
+    }
+  }, [inLinea, vista])
 
   // Le proposte aperte vivono qui e non dentro una scheda: il banner deve
   // raggiungerti su qualunque tab, come la celebrazione delle Leggi.
@@ -216,7 +233,20 @@ export default function App() {
 
       {vista === 'nonConfigurato' && <NonConfigurato />}
 
-      {vista === 'guasto' && (
+      {/* Senza rete non è un guasto, ed è inutile dare la colpa a
+          Supabase: l'app si è aperta lo stesso, ed è già qualcosa. Qui
+          arriverà la Pecora, al punto 11. */}
+      {vista === 'guasto' && !inLinea && (
+        <div className="pannello">
+          <h1 className="titolo">Niente rete.</h1>
+          <p className="allan">Mi annoio.</p>
+          <p className="istruzioni">
+            L&rsquo;app c&rsquo;è, i dati no. Torna il segnale e riprende da sola.
+          </p>
+        </div>
+      )}
+
+      {vista === 'guasto' && inLinea && (
         <div className="pannello">
           <h1 className="titolo">Non funziona</h1>
           <p className="errore">{errore}</p>
