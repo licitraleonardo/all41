@@ -13,6 +13,7 @@ globalThis.localStorage = {
   setItem: (k, v) => deposito.set(k, v),
 }
 
+const { readFileSync } = await import('node:fs')
 const { vaChiesto, daQuanto, VECCHIA_DOPO_MINUTI, haDettoNoOggi, segnaRifiuto } = await import(
   '../src/lib/rinfrescaPosizione.js'
 )
@@ -106,6 +107,41 @@ console.log('\nil «no» di oggi vale anche dove non c era quando l hai detto')
 
   // Il giorno dopo e' un'altra tappa, e la risposta puo' cambiare.
   prova('ma non il giorno dopo', !haDettoNoOggi(new Date('2026-08-14T09:00:00')))
+}
+
+console.log('\nchi ha acceso l automatico non se lo sente chiedere')
+{
+  // ⚠️ Nel caso normale questa regola non serve: con l'automatico acceso
+  // la posizione e' sempre fresca e la soglia non arriva mai. Serve al
+  // caso di bordo, che e' quello che rompeva: app chiusa per piu' di due
+  // ore, la riapri, e partono insieme il banner e l'aggiornamento
+  // automatico. Il banner non se ne va — chi lo disegna non sa niente
+  // dell'invio appena fatto — e ti chiede di aggiornare una posizione
+  // mandata due secondi prima.
+  const vecchia = { quando: new Date(adesso.getTime() - 5 * 3600 * 1000).toISOString() }
+
+  prova('senza automatico, dopo cinque ore si chiede', vaChiesto({ mia: vecchia, adesso }))
+  prova(
+    'con l automatico acceso non si chiede',
+    !vaChiesto({ mia: vecchia, automatica: true, adesso })
+  )
+
+  // E resta una promessa che si puo' ritirare: se il telefono nega il
+  // permesso l'interruttore si spegne da solo, e da li' il banner torna
+  // a comparire come per tutti gli altri.
+  prova(
+    'e spegnendolo il banner torna',
+    vaChiesto({ mia: vecchia, automatica: false, adesso })
+  )
+
+  // ⚠️ E chi chiama la regola deve passarle davvero l'interruttore.
+  //
+  // Il valore ha un default a `false`: smettendo di passarlo, la regola
+  // continua a funzionare senza lamentarsi, risponde «chiedi» a tutti, e
+  // il banner torna esattamente com'era. Nessun errore da nessuna parte
+  // — solo il difetto che torna.
+  const gancio = readFileSync('src/hooks/useRinfrescaPosizione.js', 'utf8')
+  prova('il gancio passa l interruttore alla regola', gancio.includes('automatica: posizioneAutomatica()'))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)

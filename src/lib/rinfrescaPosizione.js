@@ -16,10 +16,28 @@ export function vaChiesto({
   rifiutatoIl = null,
   rimandato = false,
   dentroIlViaggio = true,
+  automatica = false,
   adesso = new Date(),
 }) {
   // Fuori dalle date del viaggio non interessa a nessuno dove sei.
   if (!dentroIlViaggio) return false
+
+  // ⚠️ Chi ha acceso l'aggiornamento automatico non va interrotto per
+  // chiedergli di fare a mano quello che l'app sta già facendo.
+  //
+  // Nel caso normale non cambia niente: con l'automatico acceso la
+  // posizione è sempre fresca, e la soglia delle due ore non arriva mai.
+  // Il caso che rompeva è quello di bordo — l'app chiusa per più di due
+  // ore. Riaprendola partono insieme il banner e l'aggiornamento, e il
+  // banner **non se ne va**: chi lo disegna legge la posizione caricata
+  // al montaggio e non sa niente dell'invio appena fatto. Risultato: ti
+  // si chiede di aggiornare una posizione mandata due secondi prima.
+  //
+  // L'interruttore è una promessa — «ci penso io» — e questa riga la
+  // mantiene. Se il telefono nega il permesso l'interruttore si spegne
+  // da solo (`lib/posizioneAutomatica.js`), e da lì il banner torna a
+  // comparire come per tutti gli altri.
+  if (automatica) return false
 
   // Chi non l'ha mai condivisa non ha detto di sì una prima volta: non
   // si insiste. La sezione c'è, e chi la vuole la trova.

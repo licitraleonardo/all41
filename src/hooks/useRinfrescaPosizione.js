@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { chiediPosizione, condividiPosizione, leggiPosizioni } from '../lib/posizione.js'
 import { rifiutatoIl, segnaRifiuto, vaChiesto } from '../lib/rinfrescaPosizione.js'
 import { dataDiOggi, statoDelViaggio } from '../lib/giorni.js'
+import { posizioneAutomatica } from '../lib/posizioneAutomatica.js'
 
 export function useRinfrescaPosizione(membroId, attivo) {
   const [mia, setMia] = useState(null)
@@ -44,6 +45,10 @@ export function useRinfrescaPosizione(membroId, attivo) {
       rimandato,
       rifiutatoIl: rifiutatoIl(),
       dentroIlViaggio: statoDelViaggio(dataDiOggi()) === 'durante',
+      // Si legge a ogni disegno e non una volta sola: l'interruttore si
+      // può spegnere da solo mentre l'app è aperta, se il telefono nega
+      // il permesso.
+      automatica: posizioneAutomatica(),
     })
 
   return { mia, daChiedere, aggiorna, no, nonOra }
