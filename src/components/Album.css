@@ -124,7 +124,132 @@
   cursor: pointer;
 }
 
+.segmento-pallino {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  margin-left: 5px;
+  padding: 0 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--coral);
+  border-radius: 100px;
+}
+
 /* --------------------------------------------------------------- sfide */
+
+/* ------------------------------------------------------- voto fra foto */
+
+.voto-sfida {
+  margin-top: 10px;
+  padding: 10px 11px;
+  background: var(--sand);
+  border-radius: 10px;
+}
+
+.voto-sfida-testa {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.gara {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.gara-foto {
+  position: relative;
+  margin: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e8e3d6;
+}
+
+.gara-foto.vince {
+  outline: 3px solid var(--juniper);
+  outline-offset: -3px;
+}
+
+.gara-foto img,
+.gara-vuota {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.gara-mia {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sea);
+  background: rgba(247, 244, 236, 0.92);
+  border-radius: 100px;
+  padding: 2px 7px;
+}
+
+.gara-vota {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--sea);
+  background: rgba(242, 169, 59, 0.95);
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 4px;
+  cursor: pointer;
+}
+
+.gara-vota:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.gara-vota:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
+.gara-conto {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--font-titoli);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  padding: 12px 6px 5px;
+  background: linear-gradient(transparent, rgba(11, 53, 80, 0.78));
+}
+
+.gara-quota {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.voto-sfida-esito {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
 
 .sfide {
   margin-top: 18px;

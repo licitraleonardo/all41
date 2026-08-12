@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import './Album.css'
 import { useFoto } from '../hooks/useFoto.js'
 import { caricaFoto, eliminaFoto } from '../lib/foto.js'
@@ -20,7 +20,22 @@ export default function Album({ membro }) {
   const [inCoda, setInCoda] = useState([])
   const campoFile = useRef(null)
   const campoFoto = useRef(null)
-  const sfide = useSfide()
+  const sfide = useSfide(membro.id)
+  const [vista, setVista] = useState('album')
+
+  // Quante sfide di oggi aspettano ancora qualcosa da te: serve solo a
+  // mettere il pallino sulla scheda, così non bisogna aprirla per sapere
+  // se c'è qualcosa da fare.
+  const daFare = useMemo(
+    () =>
+      sfide.diOggi.filter((s) => {
+        if (sfide.vinte[s.id]) return false
+        const voto = sfide.voti[s.id]
+        if (voto && !voto.hannoVotato.includes(membro.id)) return true
+        return !(sfide.partecipazioni[s.id] ?? []).some((f) => f.autoreId === membro.id)
+      }).length,
+    [sfide.diOggi, sfide.vinte, sfide.voti, sfide.partecipazioni, membro.id]
+  )
 
   async function carica(file, sfidaId = null) {
     setInCorso(true)
@@ -43,11 +58,11 @@ export default function Album({ membro }) {
         })
         .catch(() => {})
 
-      // Una sfida collettiva si chiude quando l'ha fatta tutto il
-      // gruppo: si controlla dopo ogni caricamento.
+      // Le collettive si chiudono quando l'ha fatta tutto il gruppo; le
+      // competitive aprono il voto appena le foto in gara sono due.
       if (sfidaId) {
         sfide
-          .ricarica()
+          .aggiornaGara(sfidaId)
           .then(() =>
             forseChiudiCollettiva(
               sfidaId,
@@ -93,6 +108,54 @@ export default function Album({ membro }) {
 
   return (
     <div className="album-schermo">
+      <div className="segmenti" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={vista === 'album'}
+          className={vista === 'album' ? 'segmento attivo' : 'segmento'}
+          onClick={() => setVista('album')}
+        >
+          Album
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={vista === 'sfide'}
+          className={vista === 'sfide' ? 'segmento attivo' : 'segmento'}
+          onClick={() => setVista('sfide')}
+        >
+          Sfide
+          {daFare > 0 && <span className="segmento-pallino">{daFare}</span>}
+        </button>
+      </div>
+
+      {avviso && <p className="album-avviso">{avviso}</p>}
+
+      {vista === 'sfide' && (
+        <Sfide
+          diOggi={sfide.diOggi}
+          conquistate={sfide.conquistate}
+          vinte={sfide.vinte}
+          partecipazioni={sfide.partecipazioni}
+          voti={sfide.voti}
+          membri={sfide.membri}
+          ioId={membro.id}
+          totaleMembri={sfide.membriIds.length}
+          onScegli={carica}
+          onVota={sfide.vota}
+          inCorso={inCorso}
+        />
+      )}
+
+      {vista === 'sfide' && sfide.diOggi.length === 0 && sfide.conquistate.length === 0 && (
+        <p className="album-vuoto">
+          Nessuna sfida oggi. Compaiono nei giorni del viaggio, una tappa per volta.
+        </p>
+      )}
+
+      {vista === 'album' && (
+      <>
       <div className="album-testata">
         <h1 className="album-titolo">Album</h1>
 
@@ -136,19 +199,7 @@ export default function Album({ membro }) {
         />
       </div>
 
-      {avviso && <p className="album-avviso">{avviso}</p>}
 
-      <Sfide
-        diOggi={sfide.diOggi}
-        conquistate={sfide.conquistate}
-        vinte={sfide.vinte}
-        partecipazioni={sfide.partecipazioni}
-        membri={sfide.membri}
-        ioId={membro.id}
-        totaleMembri={sfide.membriIds.length}
-        onScegli={carica}
-        inCorso={inCorso}
-      />
 
       {inCoda.length > 0 && (
         <ul className="coda">
@@ -218,6 +269,8 @@ export default function Album({ membro }) {
             </button>
           )}
         </>
+      )}
+      </>
       )}
     </div>
   )

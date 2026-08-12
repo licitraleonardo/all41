@@ -185,6 +185,12 @@ create index if not exists photos_sfida_idx
 
 alter table votes add column if not exists ballots jsonb not null default '{}'::jsonb;
 
+-- A quale sfida appartiene un voto foto-del-giorno.
+alter table votes add column if not exists challenge_id text;
+
+create index if not exists votes_sfida_idx
+  on votes (trip_id, challenge_id) where challenge_id is not null;
+
 -- ------------------------------------------------------------------ seed
 
 insert into trips (id, name, start_date, end_date)
@@ -303,6 +309,71 @@ end $$;
 
 revoke execute on function chiudi_sfida(text, uuid, uuid) from public;
 grant execute on function chiudi_sfida(text, uuid, uuid) to authenticated;
+
+-- Apre il voto di una sfida quando le foto in gara diventano due, e ci
+-- aggiunge quelle che arrivano dopo.
+--
+-- Le opzioni si accodano in fondo e mai in mezzo: gli indici già votati
+-- non si spostano, quindi chi ha votato prima non si ritrova il voto su
+-- una foto diversa.
+--
+-- anonymous = true: si salvano solo i conteggi e l'elenco di chi ha
+-- votato, mai chi ha votato cosa. È l'unico modo perché l'anonimato sia
+-- vero e non solo nascosto dall'interfaccia.
+create or replace function assicura_voto_sfida(
+  p_sfida text,
+  p_foto uuid[],
+  p_scadenza timestamptz,
+  p_membro uuid
+)
+returns votes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v votes;
+  viaggio text;
+  f uuid;
+begin
+  select trip_id into viaggio from members where id = p_membro;
+  if not found then raise exception 'Questa persona non esiste.'; end if;
+
+  select * into v from votes
+   where trip_id = viaggio and challenge_id = p_sfida and closed_at is null
+     for update;
+
+  if not found then
+    if coalesce(array_length(p_foto, 1), 0) < 2 then return null; end if;
+
+    insert into votes (trip_id, category, question, options, anonymous, tally,
+                       challenge_id, expires_at)
+    values (viaggio, 'photo-of-day', 'Quale vince?',
+            (select array_agg(x::text) from unnest(p_foto) as x),
+            true,
+            (select array_agg(0) from unnest(p_foto)),
+            p_sfida, p_scadenza)
+    returning * into v;
+
+    return v;
+  end if;
+
+  -- Voto già aperto: si accodano solo le foto che non ci sono ancora.
+  foreach f in array p_foto loop
+    if not (f::text = any(v.options)) then
+      update votes
+         set options = options || f::text,
+             tally = tally || 0
+       where id = v.id
+      returning * into v;
+    end if;
+  end loop;
+
+  return v;
+end $$;
+
+revoke execute on function assicura_voto_sfida(text, uuid[], timestamptz, uuid) from public;
+grant execute on function assicura_voto_sfida(text, uuid[], timestamptz, uuid) to authenticated;
 
 -- Il motore punti: scrive l'evento e aggiorna il punteggio nella stessa
 -- transazione, così storico e totale non possono divergere.

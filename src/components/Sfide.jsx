@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { TIPI_ACCETTATI } from '../config/foto.js'
 import { SFIDE_PER_ID } from '../config/sfide.js'
+import VotoSfida from './VotoSfida.jsx'
 
 // Le sfide del giorno, e sotto quelle già vinte come trofeo. Mai
 // l'elenco completo: quelle degli altri giorni non esistono finché non
@@ -10,10 +11,12 @@ export default function Sfide({
   conquistate,
   vinte,
   partecipazioni,
+  voti,
   membri,
   ioId,
   totaleMembri,
   onScegli,
+  onVota,
   inCorso,
 }) {
   if (diOggi.length === 0 && conquistate.length === 0) return null
@@ -30,7 +33,9 @@ export default function Sfide({
                 sfida={s}
                 vinta={vinte[s.id]}
                 foto={partecipazioni[s.id] ?? []}
+                voto={voti[s.id]}
                 membri={membri}
+                onVota={onVota}
                 ioId={ioId}
                 totaleMembri={totaleMembri}
                 onScegli={onScegli}
@@ -62,7 +67,18 @@ export default function Sfide({
   )
 }
 
-function Sfida({ sfida, vinta, foto, membri, ioId, totaleMembri, onScegli, inCorso }) {
+function Sfida({
+  sfida,
+  vinta,
+  foto,
+  voto,
+  membri,
+  ioId,
+  totaleMembri,
+  onScegli,
+  onVota,
+  inCorso,
+}) {
   const campo = useRef(null)
   const mia = foto.some((f) => f.autoreId === ioId)
   const collettiva = sfida.tipo === 'collettiva'
@@ -99,10 +115,22 @@ function Sfida({ sfida, vinta, foto, membri, ioId, totaleMembri, onScegli, inCor
               <span>
                 {foto.length === 0
                   ? 'Nessuno ci ha ancora provato.'
-                  : `${foto.length} in gara.`}
+                  : foto.length === 1
+                    ? 'Una in gara. Se resta sola, vince.'
+                    : `${foto.length} in gara.`}
               </span>
             )}
           </div>
+
+          {voto && (
+            <VotoSfida
+              voto={voto}
+              foto={foto}
+              ioId={ioId}
+              membri={membri}
+              onVota={onVota}
+            />
+          )}
 
           <button
             type="button"
