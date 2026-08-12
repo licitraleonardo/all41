@@ -1,10 +1,71 @@
 # Da fare
 
 Coda di lavoro decisa, in ordine. Diversa da `IDEE.md`, che è il parcheggio
-delle cose non decise. Aggiornata il 31 luglio 2026.
+delle cose non decise. Aggiornata il 12 agosto 2026, primo giorno di
+viaggio.
 
-Stato: punti 1-5 dello spec completi (minimo spedibile), più il punto 6
-(motore punti) e il 7 (classifica, MVP, Maglia Nera, Il Testamento).
+## Dove siamo
+
+Fatti i punti **1-8** dello spec: setup e deploy, onboarding col codice,
+itinerario, Chat Rapida col soundboard, Album Foto, motore punti,
+classifica con MVP e Maglia Nera e Il Testamento, caccia al tesoro con
+voto anonimo. Più le proposte di punti votate dal gruppo.
+
+Restano, tutti facoltativi: **9** Chat Vocale, **10** Spese, **11** la
+Pecora offline, **12** Mappa e meteo, **13** Documenti, **14** PWA,
+**15** L'Impostore.
+
+Delle 27 Leggi ne sono vive 11: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
+XIX, XXII, XXVI, XXVII. Le altre aspettano le sezioni che le alimentano.
+
+**Verifica bloccante ancora aperta**: la n.3 dello spec, i formati audio
+su iPhone. Non è mai stata fatta perché in casa c'è solo un Android.
+Serve prima del punto 9.
+
+## Trappole già incontrate
+
+Costate tempo una volta; sarebbe stupido ripagarle.
+
+- **`create table if not exists` non aggiunge colonne.** Su un database
+  dove la tabella esiste già, una colonna nuova nel file non compare mai.
+  Ogni colonna aggiunta dopo va dichiarata nella sezione "adeguamenti" di
+  `supabase/schema.sql`.
+- **PostgREST tiene in memoria le firme delle funzioni.** Dopo averle
+  cambiate risponde "function does not exist" anche se la funzione c'è.
+  Lo schema finisce con `notify pgrst, 'reload schema'` apposta.
+- **Lo storage sta in fondo allo schema apposta.** Su progetti dove
+  `storage` appartiene a un altro utente quelle istruzioni falliscono, e
+  l'SQL Editor si ferma al primo errore: se stessero in mezzo, tutto il
+  resto non verrebbe creato.
+- **Contesto sicuro.** `crypto.randomUUID`, appunti, microfono, posizione
+  e service worker esistono solo su HTTPS o localhost. Dal telefono su
+  `http://192.168.x.x` mancano, e sembra tutto rotto. Per questo il dev
+  server è in HTTPS (`SENZA_HTTPS=1` lo riporta in chiaro).
+- **L'attributo `hidden` perde contro `display: flex`.** Per nascondere
+  un blocco, non disegnarlo.
+- **Le classi `.campo` sono nate per le schermate scure.** Riusate su
+  fondo chiaro scrivono color sabbia su crema: testo invisibile. Succede
+  ogni volta che si porta un campo di testo in una sezione nuova.
+- **I messaggi d'errore tradotti nascondono la verità.** Hanno mandato a
+  cercare tabelle mancanti che c'erano, per tre giri. L'errore grezzo
+  finisce sempre in console con `[all41]`.
+- **Le funzioni pure vanno tenute fuori dai file che importano Supabase**,
+  o non si possono provare da riga di comando. Vedi `regoleLimiti.js` e
+  `sfideDaMostrare` in `config/sfide.js`.
+- **Il Write converte le sequenze di escape in caratteri veri.** Per
+  byte zero e segni di accento, filtrare i codici numericamente invece di
+  scriverli in un'espressione regolare.
+
+## Come si verifica
+
+Ogni pezzo di logica sta in una funzione pura provata con `node
+--input-type=module`. Le schermate si controllano montando il singolo
+componente nel browser con dati finti, senza scrivere nel database.
+
+⚠️ Nel pannello di anteprima **`requestAnimationFrame` non scatta**: la
+scheda non compone fotogrammi. Coriandoli, animazioni e `ResizeObserver`
+lì non funzionano, e non è un bug del codice. Dove serve una misura, farla
+in modo sincrono.
 
 ---
 
