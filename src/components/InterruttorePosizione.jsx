@@ -35,8 +35,11 @@ export default function InterruttorePosizione({ membroId }) {
     try {
       const dove = await chiediPosizione()
       await condividiPosizione(membroId, dove)
+      // ⚠️ Niente messaggio quando va bene: la leva si sposta, e si vede.
+      // Un «Fatto!» sotto un interruttore che ha appena cambiato colore è
+      // esattamente il suggerimentino di troppo. Resta il messaggio
+      // quando **non** va, che quello non si vede da nessun'altra parte.
       setAcceso(impostaPosizioneAutomatica(true))
-      setEsito('Fatto: da adesso parte a ogni apertura.')
     } catch (e) {
       // Resta spento. ⚠️ Accenderlo comunque vorrebbe dire un
       // interruttore che dice «acceso» mentre non succede niente.
@@ -60,13 +63,14 @@ export default function InterruttorePosizione({ membroId }) {
         aria-pressed={acceso}
         disabled={inCorso}
       >
+        {/* ⚠️ Solo il titolo: niente sottotitolo che spiega.
+            Un interruttore con due righe di didascalia sotto si legge una
+            volta e poi diventa rumore, e questa schermata è stata rifatta
+            apposta per smettere di spiegare. Cosa fa lo dice il nome, e
+            se non parte lo dice l'errore qui sotto — che invece resta,
+            perché quello non è un suggerimento, è un fatto. */}
         <span className="posizione-testo">
           <strong>Posizione all’apertura</strong>
-          <span className="posizione-sotto">
-            {acceso
-              ? 'Parte da sola quando apri l’app, e te lo dice'
-              : 'Spenta: la condividi solo col tasto sulla mappa'}
-          </span>
         </span>
         <span className={acceso ? 'posizione-leva accesa' : 'posizione-leva'} aria-hidden="true">
           <span className="posizione-pallina" />

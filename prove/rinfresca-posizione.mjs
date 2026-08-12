@@ -144,5 +144,35 @@ console.log('\nchi ha acceso l automatico non se lo sente chiedere')
   prova('il gancio passa l interruttore alla regola', gancio.includes('automatica: posizioneAutomatica()'))
 }
 
+console.log('\nla mappa e l interruttore sono la stessa decisione')
+{
+  // ⚠️ Condividere la posizione **e'** dire di si' all'aggiornamento
+  // automatico: una volta che l'hai data, tenerla vecchia non serve a
+  // nessuno. Non e' l'automatismo di nascosto tolto il 10 agosto —
+  // quello partiva da un tocco che voleva dire «guardo dove sono gli
+  // altri», questo dal tasto che dice «condividi la mia posizione».
+  const mappa = readFileSync('src/components/Posizioni.jsx', 'utf8')
+
+  const condividi = mappa.slice(mappa.indexOf('async function condividi'), mappa.indexOf('async function smetti'))
+  prova('condividere accende l automatico', /impostaPosizioneAutomatica\(true\)/.test(condividi))
+  prova('e lo dice a schermo invece di lasciarlo sottinteso', /a ogni apertura/.test(condividi), condividi.slice(-200))
+
+  // ⚠️ E toglierla lo spegne, o «Togli la mia posizione» sarebbe un tasto
+  // che non fa niente per piu' di un minuto: alla prima apertura la
+  // posizione tornerebbe su da sola.
+  const smetti = mappa.slice(mappa.indexOf('async function smetti'))
+  prova('e toglierla lo spegne', /impostaPosizioneAutomatica\(false\)/.test(smetti.slice(0, 700)))
+
+  // La nota in fondo alla mappa diceva «non si aggiorna da sola» sempre.
+  // Da quando esiste l'aggiornamento all'apertura, per chi ce l'ha acceso
+  // e' falso — e una schermata che dice una cosa falsa sulla posizione
+  // degli altri e' peggio di una che non dice niente.
+  prova('e la nota in fondo cambia con l interruttore', /posizioneAutomatica\(\)\s*\?/.test(mappa))
+
+  // Il tasto resta pulito: niente sottotitoli che spiegano.
+  const interruttore = readFileSync('src/components/InterruttorePosizione.jsx', 'utf8')
+  prova('e l interruttore non ha didascalie', !/posizione-sotto/.test(interruttore))
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
 process.exit(falliti === 0 ? 0 : 1)
