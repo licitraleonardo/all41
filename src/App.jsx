@@ -42,8 +42,6 @@ import { useMvp } from './hooks/useMvp.js'
 import { useSfideDama } from './hooks/useSfideDama.js'
 import { useSchedaRicordata } from './hooks/useSchedaRicordata.js'
 import { CHIAVE_TAB, CHIAVE_VISTA, VISTE_CON_CRONOLOGIA, vaiAlTab } from './lib/navigazione.js'
-import { eUnNoDefinitivo, impostaPosizioneAutomatica, posizioneAutomatica } from './lib/posizioneAutomatica.js'
-import { chiediPosizione, condividiPosizione } from './lib/posizione.js'
 import { useLeggiDaLeggere } from './hooks/useLeggiDaLeggere.js'
 import { risolviDama } from './lib/puntiDama.js'
 import Celebrazione from './components/Celebrazione.jsx'
@@ -212,51 +210,6 @@ export default function App() {
     return () => navigator.serviceWorker.removeEventListener('message', ascolta)
   }, [])
 
-  // ⚠️ La posizione che si aggiorna da sola, per chi l'ha acceso.
-  //
-  // Parte solo se l'interruttore e' acceso (spento di default), e **lo
-  // dice ogni volta**: un aggiornamento che non si vede sarebbe la cosa
-  // che il 10 agosto era stata tolta. Se il telefono nega il permesso
-  // l'interruttore si spegne da solo, invece di riprovare in silenzio a
-  // ogni apertura.
-  useEffect(() => {
-    if (vista !== 'dentro' || !membro?.id) return undefined
-    if (!posizioneAutomatica()) return undefined
-
-    let vivo = true
-    let ultima = 0
-
-    const forse = async () => {
-      if (document.visibilityState !== 'visible') return
-      // Una volta per apertura, non a ogni sfarfallio di `focus`.
-      if (Date.now() - ultima < 60000) return
-      ultima = Date.now()
-      try {
-        const dove = await chiediPosizione()
-        await condividiPosizione(membro.id, dove)
-        if (vivo) setToast('📍 La tua posizione è stata aggiornata')
-      } catch (e) {
-        if (!vivo) return
-        if (eUnNoDefinitivo(e)) {
-          impostaPosizioneAutomatica(false)
-          setToast('📍 Il telefono non dà la posizione: l’aggiornamento automatico si è spento')
-        }
-        // Un errore passeggero — GPS lento, niente campo — non dice
-        // niente e non spegne niente: si riprova alla prossima apertura.
-      }
-    }
-
-    document.addEventListener('visibilitychange', forse)
-    window.addEventListener('focus', forse)
-    forse()
-
-    return () => {
-      vivo = false
-      document.removeEventListener('visibilitychange', forse)
-      window.removeEventListener('focus', forse)
-    }
-  }, [vista, membro?.id])
-
   const mvp = useMvp(membro?.id, vista === 'dentro')
 
   // I pallini stanno qui perché devono accendersi mentre guardi
@@ -271,6 +224,16 @@ export default function App() {
   // "La tua posizione è ferma lì da tre ore, la aggiorno?" — solo a chi
   // l'ha già condivisa almeno una volta, e solo quando è vecchia davvero.
   const posizione = useRinfrescaPosizione(membro?.id, vista === 'dentro')
+
+  // ⚠️ Si dice ogni volta che riparte da sola.
+  //
+  // Una posizione che si condivide senza dirlo e' esattamente quello che
+  // il 10 agosto e' stato tolto. Qui e' voluta — l'hai condivisa tu — ma
+  // resta una cosa che gli altri vedono, quindi va detta a chi la manda.
+  useEffect(() => {
+    if (!posizione.appenaAggiornata) return
+    setToast('📍 Posizione aggiornata')
+  }, [posizione.appenaAggiornata])
   // ⚠️ Qui e non dentro la chat: un SOS lo devono vedere anche i sette
   // che in quel momento stanno guardando le foto.
   const sos = useSosAperti(membro?.id)

@@ -1,55 +1,51 @@
-// La posizione che si aggiorna da sola a ogni apertura, per chi lo
-// sceglie.
+// La posizione si riaggiorna da sola, per chi l'ha già condivisa.
 //
-// ⚠️ Questa cosa ribalta una decisione, e va scritto qui perché il
-// perché non si perda.
+// ⚠️ Non c'è nessuna preferenza da salvare, ed è la correzione che conta.
 //
-// Il 10 agosto l'aggiornamento automatico è stato **tolto**: il mondino
-// si toccava per *guardare* dove fossero gli altri, e come effetto
-// pubblicava dov'eri a sette persone. In `Itinerario.jsx` c'è ancora
-// scritto: «la posizione si condivide con un tasto, mai da sola».
+// La prima versione teneva un interruttore in `localStorage`. Sembrava
+// giusto — «scegli tu» — ed era sbagliato per un motivo che si è visto
+// solo usandolo: chi aveva condiviso la posizione **prima** che
+// l'interruttore esistesse ce l'aveva spento, quindi continuava a
+// ricevere il cartello «la tua posizione è vecchia» e non si aggiornava
+// niente. Cioè tutti.
 //
-// Quella regola regge ancora, e questa non la viola: quello che era
-// sbagliato non era l'automatismo, era **l'automatismo di nascosto**,
-// attaccato a un gesto che voleva dire un'altra cosa. Qui invece:
+// La regola vera l'aveva già detta Leonardo: **una volta condivisa la
+// posizione, è sottinteso che si vuole tenerla aggiornata.** Quindi lo
+// stato non va salvato da nessuna parte, va **dedotto**:
 //
-//   - si accende a mano, una volta, da un interruttore che dice cosa fa
-//   - è **spenta** finché non la accendi
-//   - ogni volta che parte lo dice a schermo
-//   - se il telefono nega il permesso si spegne da sola, invece di
-//     riprovare in silenzio a ogni apertura
+//   hai una posizione condivisa  +  il telefono dà il permesso
+//   ────────────────────────────────────────────────────────────
+//                    si aggiorna da sola
 //
-// Vive nel telefono e non sul database perché è una scelta di *questo*
-// telefono: lo stesso profilo aperto sul portatile non deve mettersi a
-// mandare la posizione del portatile.
+// Uno stato dedotto non può disallinearsi da quello che vedi: togliendo
+// la posizione dalla mappa smette, ricondividendola riparte, e non c'è
+// nessun terzo posto che possa dire una cosa diversa.
 
-const CHIAVE = 'all41.posizione.automatica'
-
-export function posizioneAutomatica() {
+// ⚠️ Il permesso si **guarda**, non si chiede.
+//
+// Chiederlo a ogni apertura farebbe comparire il cartello del telefono a
+// chi ha detto di no, quaranta volte al giorno. Qui si legge soltanto: se
+// è già concesso si procede, altrimenti si sta zitti e resta il tasto
+// sulla mappa.
+export async function permessoGiaDato() {
   try {
-    return window.localStorage.getItem(CHIAVE) === 'si'
+    if (!navigator?.permissions?.query) {
+      // ⚠️ Safari su iPhone non sa rispondere a questa domanda. Lì si
+      // ripiega su «ha una posizione condivisa», che vuol dire che il
+      // permesso l'ha dato almeno una volta: il caso peggiore è un
+      // tentativo che fallisce in silenzio, non un cartello di troppo.
+      return true
+    }
+    const esito = await navigator.permissions.query({ name: 'geolocation' })
+    return esito.state === 'granted'
   } catch {
-    return false
+    return true
   }
 }
 
-export function impostaPosizioneAutomatica(accesa) {
-  try {
-    if (accesa) window.localStorage.setItem(CHIAVE, 'si')
-    else window.localStorage.removeItem(CHIAVE)
-  } catch {
-    // Spazio finito o navigazione privata: resta spenta, che è il verso
-    // giusto in cui sbagliare.
-  }
-  return posizioneAutomatica()
-}
-
-// ⚠️ Quando il telefono dice di no, si smette di chiedere.
-//
-// Un permesso negato non cambia da solo: continuare a provarci a ogni
-// apertura vuol dire un errore silenzioso quaranta volte al giorno, e
-// soprattutto un interruttore che dice «acceso» mentre non succede
-// niente — che è il tipo di bugia che questa app non racconta.
+// ⚠️ Un no definitivo si riconosce, e da lì non si insiste più per
+// questa apertura: un permesso negato non cambia da solo, e riprovare
+// vuol dire un errore silenzioso a ogni ritorno in primo piano.
 export function eUnNoDefinitivo(errore) {
   if (!errore) return false
   // GeolocationPositionError.PERMISSION_DENIED === 1

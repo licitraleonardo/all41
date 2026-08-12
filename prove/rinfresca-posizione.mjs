@@ -109,69 +109,48 @@ console.log('\nil «no» di oggi vale anche dove non c era quando l hai detto')
   prova('ma non il giorno dopo', !haDettoNoOggi(new Date('2026-08-14T09:00:00')))
 }
 
-console.log('\nchi ha acceso l automatico non se lo sente chiedere')
+console.log('\nnon c e nessuna preferenza da salvare')
 {
-  // ⚠️ Nel caso normale questa regola non serve: con l'automatico acceso
-  // la posizione e' sempre fresca e la soglia non arriva mai. Serve al
-  // caso di bordo, che e' quello che rompeva: app chiusa per piu' di due
-  // ore, la riapri, e partono insieme il banner e l'aggiornamento
-  // automatico. Il banner non se ne va — chi lo disegna non sa niente
-  // dell'invio appena fatto — e ti chiede di aggiornare una posizione
-  // mandata due secondi prima.
-  const vecchia = { quando: new Date(adesso.getTime() - 5 * 3600 * 1000).toISOString() }
-
-  prova('senza automatico, dopo cinque ore si chiede', vaChiesto({ mia: vecchia, adesso }))
-  prova(
-    'con l automatico acceso non si chiede',
-    !vaChiesto({ mia: vecchia, automatica: true, adesso })
-  )
-
-  // E resta una promessa che si puo' ritirare: se il telefono nega il
-  // permesso l'interruttore si spegne da solo, e da li' il banner torna
-  // a comparire come per tutti gli altri.
-  prova(
-    'e spegnendolo il banner torna',
-    vaChiesto({ mia: vecchia, automatica: false, adesso })
-  )
-
-  // ⚠️ E chi chiama la regola deve passarle davvero l'interruttore.
+  // ⚠️ La prima versione teneva un interruttore in `localStorage`.
+  // Sembrava giusto — «scegli tu» — ed era sbagliato per un motivo che si
+  // e' visto solo usandolo: chi aveva condiviso la posizione **prima** che
+  // l'interruttore esistesse ce l'aveva spento, quindi continuava a
+  // ricevere il cartello «la tua posizione e' vecchia» e non si
+  // aggiornava niente. Cioe' tutti.
   //
-  // Il valore ha un default a `false`: smettendo di passarlo, la regola
-  // continua a funzionare senza lamentarsi, risponde «chiedi» a tutti, e
-  // il banner torna esattamente com'era. Nessun errore da nessuna parte
-  // — solo il difetto che torna.
+  // Lo stato adesso e' dedotto — hai una posizione condivisa piu' il
+  // permesso del telefono — e uno stato dedotto non puo' disallinearsi da
+  // quello che vedi, ne' ha bisogno di essere migrato per chi c'era prima.
+  const auto = readFileSync('src/lib/posizioneAutomatica.js', 'utf8')
+  // Si guarda l'**uso**, non la parola: qui sopra localStorage e' citato
+  // nel commento che spiega perche' non c'e' piu'.
+  prova(
+    'niente preferenza salvata',
+    !auto.includes('localStorage.getItem') && !auto.includes('localStorage.setItem')
+  )
+  prova('e il permesso si guarda, non si chiede', auto.includes('permissions.query'))
+
   const gancio = readFileSync('src/hooks/useRinfrescaPosizione.js', 'utf8')
-  prova('il gancio passa l interruttore alla regola', gancio.includes('automatica: posizioneAutomatica()'))
-}
+  prova('si riaggiorna solo se hai gia condiviso', gancio.includes('mia?.quando'))
+  prova('e solo col permesso gia dato', gancio.includes('permessoGiaDato()'))
+  prova('e lo dice ogni volta', gancio.includes('setAppenaAggiornata'))
 
-console.log('\nla mappa e l interruttore sono la stessa decisione')
-{
-  // ⚠️ Condividere la posizione **e'** dire di si' all'aggiornamento
-  // automatico: una volta che l'hai data, tenerla vecchia non serve a
-  // nessuno. Non e' l'automatismo di nascosto tolto il 10 agosto —
-  // quello partiva da un tocco che voleva dire «guardo dove sono gli
-  // altri», questo dal tasto che dice «condividi la mia posizione».
+  // ⚠️ E il cartello resta solo per chi al telefono ha detto di no. A
+  // tutti gli altri si chiedeva di fare a mano una cosa che stava gia'
+  // succedendo: il cartello compariva mentre la posizione ripartiva, e
+  // non se ne andava.
+  prova(
+    'il cartello resta solo a chi ha negato il permesso',
+    gancio.includes('automatica: !telefonoHaDettoNo')
+  )
+
+  // Il comando e' la mappa, e uno solo: l'interruttore in Info non c'e' piu'.
+  const info = readFileSync('src/components/Info.jsx', 'utf8')
+  prova('niente interruttore in Info', !info.includes('InterruttorePosizione'))
+
   const mappa = readFileSync('src/components/Posizioni.jsx', 'utf8')
-
-  const condividi = mappa.slice(mappa.indexOf('async function condividi'), mappa.indexOf('async function smetti'))
-  prova('condividere accende l automatico', /impostaPosizioneAutomatica\(true\)/.test(condividi))
-  prova('e lo dice a schermo invece di lasciarlo sottinteso', /a ogni apertura/.test(condividi), condividi.slice(-200))
-
-  // ⚠️ E toglierla lo spegne, o «Togli la mia posizione» sarebbe un tasto
-  // che non fa niente per piu' di un minuto: alla prima apertura la
-  // posizione tornerebbe su da sola.
-  const smetti = mappa.slice(mappa.indexOf('async function smetti'))
-  prova('e toglierla lo spegne', /impostaPosizioneAutomatica\(false\)/.test(smetti.slice(0, 700)))
-
-  // La nota in fondo alla mappa diceva «non si aggiorna da sola» sempre.
-  // Da quando esiste l'aggiornamento all'apertura, per chi ce l'ha acceso
-  // e' falso — e una schermata che dice una cosa falsa sulla posizione
-  // degli altri e' peggio di una che non dice niente.
-  prova('e la nota in fondo cambia con l interruttore', /posizioneAutomatica\(\)\s*\?/.test(mappa))
-
-  // Il tasto resta pulito: niente sottotitoli che spiegano.
-  const interruttore = readFileSync('src/components/InterruttorePosizione.jsx', 'utf8')
-  prova('e l interruttore non ha didascalie', !/posizione-sotto/.test(interruttore))
+  prova('e la mappa non salva nessuna preferenza', !mappa.includes('impostaPosizioneAutomatica'))
+  prova('ma dice che da li in poi riparte', mappa.includes('riparte a ogni apertura'))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)

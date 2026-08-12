@@ -16,7 +16,6 @@ import {
 } from '../lib/posizione.js'
 import { urlAvatar } from '../config/avatar.js'
 import { descriviErrore } from '../lib/errori.js'
-import { impostaPosizioneAutomatica, posizioneAutomatica } from '../lib/posizioneAutomatica.js'
 import { useConnessione } from '../hooks/useConnessione.js'
 import FoglioPosizione from './FoglioPosizione.jsx'
 
@@ -66,17 +65,10 @@ export default function Posizioni({ membro }) {
       await condividiPosizione(membro.id, dove)
       await ricarica()
 
-      // ⚠️ Condividere la posizione **è** dire di sì all'aggiornamento
-      // automatico: una volta che l'hai data, tenerla vecchia non serve a
-      // nessuno. L'interruttore in Info resta, e serve a spegnerlo.
-      //
-      // Non è l'automatismo di nascosto tolto il 10 agosto: quello
-      // partiva da un tocco che voleva dire «guardo dove sono gli
-      // altri». Questo parte dal tasto che dice «condividi la mia
-      // posizione», che vuol dire esattamente questa cosa qui — e la
-      // riga sotto lo dice a schermo, invece di lasciarlo sottinteso.
-      impostaPosizioneAutomatica(true)
-      setAvviso('Detto. Da adesso parte a ogni apertura.')
+      // ⚠️ Non c'è niente da accendere: da qui in poi si riaggiorna da
+      // sola perché **hai una posizione condivisa**, e basta quello. Lo
+      // stato è dedotto, non salvato — vedi `lib/posizioneAutomatica.js`.
+      setAvviso('Detto. Da adesso riparte a ogni apertura.')
     } catch (e) {
       setAvviso(e?.message ?? descriviErrore(e))
     } finally {
@@ -91,10 +83,8 @@ export default function Posizioni({ membro }) {
       await smettiDiCondividere(membro.id)
       await ricarica()
 
-      // ⚠️ E toglierla spegne l'automatico, o alla prossima apertura
-      // tornerebbe su da sola: «Togli la mia posizione» diventerebbe un
-      // tasto che non fa niente per più di un minuto.
-      impostaPosizioneAutomatica(false)
+      // ⚠️ E qui non c'è niente da spegnere: senza posizione condivisa
+      // non c'è niente da riaggiornare, e l'automatismo si ferma da sé.
     } catch (e) {
       setAvviso(descriviErrore(e))
     } finally {
@@ -173,9 +163,9 @@ export default function Posizioni({ membro }) {
       <p className="pos-nota">
         È l&rsquo;ultima posizione che ognuno ha condiviso, non dove si trova
         adesso.{' '}
-        {posizioneAutomatica()
+        {mia
           ? 'La tua riparte a ogni apertura dell’app; quella degli altri quando la mandano loro.'
-          : 'Non si aggiorna da sola, e su iPhone nemmeno con l’app chiusa.'}
+          : 'Si aggiorna solo quando la mandi, e su iPhone nemmeno con l’app chiusa.'}
       </p>
 
       {scelto && <FoglioPosizione persona={scelto} onChiudi={() => setScelto(null)} />}
