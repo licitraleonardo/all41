@@ -8,23 +8,32 @@ delle cose non decise. Aggiornata prima della partenza.
 Fatti i punti **1-8** dello spec: setup e deploy, onboarding col codice,
 itinerario, Chat Rapida col soundboard, Album Foto, motore punti,
 classifica con MVP e Maglia Nera e Il Testamento, caccia al tesoro con
-voto anonimo. Più le proposte di punti votate dal gruppo.
+voto anonimo. Più le proposte di punti votate dal gruppo, il **meteo
+della tappa** (punto 12 senza la mappa) e la **PWA** (punto 14 senza il
+tutorial).
 
-Restano, tutti facoltativi: **9** Chat Vocale, **10** Spese, **11** la
-Pecora offline, **12** Mappa e meteo, **13** Documenti, **14** PWA,
-**15** L'Impostore.
-
-Delle 27 Leggi ne sono vive 11: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
+Delle 27 Leggi ne sono vive 13: I, II, IV, VIII, XI, XII, XIII, XIV, XVI,
 XIX, XXII, XXVI, XXVII. Le altre aspettano le sezioni che le alimentano.
 
+### Offline: a metà
+
+Lo spec vuole tre cose in aereo mode. L'app **si apre** (service worker
+attivo) e senza rete **parla Allan** invece di dare un errore tecnico, e
+riprende da sola quando torna il segnale. Mancano le altre due:
+
+- **mostrare i dati già scaricati** — con Supabase la cache va scritta a
+  mano, non è una riga di configurazione come dice lo spec (quello vale
+  per Firestore). Qualche ora di lavoro
+- **la Pecora** — punto 11, e il posto dove va è esattamente quella
+  schermata
+
 **Verifica bloccante ancora aperta**: la n.3 dello spec, i formati audio
-su iPhone. Non è mai stata fatta perché in casa c'è solo un Android.
-Serve prima del punto 9. Il modo più semplice: mandare il link del deploy
-a qualcuno del gruppo che ha un iPhone.
+su iPhone. Mai fatta perché in casa c'è solo un Android. Serve prima del
+punto 9. Il modo più semplice: mandare il link del deploy a qualcuno del
+gruppo che ha un iPhone.
 
 ⚠️ Per provare le sfide e il giorno corrente si sposta l'orologio del PC.
-Se un file o un commit sembra datato in mezzo al viaggio, probabilmente
-viene da lì.
+Se un file o un commit sembra datato in mezzo al viaggio, viene da lì.
 
 ## Trappole già incontrate
 
@@ -111,16 +120,16 @@ tipografia dei numeri romani — che texture e fondi scuri insieme.
 
 In ordine di quanto servono davvero, non di numero:
 
-1. **Meteo della tappa** (punto 12, senza mappa) — mezz'ora, e il vento
-   del 14 è l'unica informazione che può far cambiare i piani per la
-   barca. Coordinate già pronte in `sardegna-itinerario.html`
-2. **PWA** (14) — icona sulla home e schermo intero, è quella che fa
-   sembrare l'app un'app
-3. **Spese** (10) — modello a due fatti, `expenses` meno `payments`, mai
-   un flag "pagato" da preservare
+1. **Cache offline dei dati** — è la metà mancante dell'offline, e si
+   sente ogni volta che manca il segnale. Qualche ora
+2. **Spese** (10) — modello a due fatti, `expenses` meno `payments`, mai
+   un flag "pagato" da preservare. È l'unica sezione fuori dal sistema
+   punti e dalle battute di Allan
+3. **Pecora offline** (11) — va nella schermata senza rete
 4. **Chat Vocale** (9) — prima serve la verifica bloccante n.3
-5. **Pecora offline** (11), **Documenti** (13), **Mappa** (12),
+5. **Documenti** (13), **Mappa** (12), **Tutorial** (14),
    **L'Impostore** (15)
 
 Lo spec dice esplicitamente che dal punto 6 in poi tutto può arrivare
-**durante** il viaggio, con un deploy la sera. Vale ancora.
+**durante** il viaggio, con un deploy la sera. Vale ancora: mancano nove
+giorni e il minimo spedibile è chiuso da un pezzo.
