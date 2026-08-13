@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import './Celebrazione.css'
 import { etichetta } from '../config/leggi.js'
+import { TESTAMENTO_ARRABBIATO } from '../config/eventi.js'
 
 const COLORI = ['#F2A93B', '#E8604A', '#3F6E5C', '#F7F4EC']
 const DURATA = 3200
@@ -11,7 +12,9 @@ export default function Celebrazione({ celebrazione, onChiudi }) {
   useEffect(() => {
     if (!celebrazione) return
 
-    const chiusura = setTimeout(onChiudi, 6000)
+    // L'evento del Testamento resta più a lungo: sotto c'è una classifica
+    // da leggere, non un nome solo.
+    const chiusura = setTimeout(onChiudi, celebrazione.evento ? TESTAMENTO_ARRABBIATO.secondi * 1000 : 6000)
     const fermaCoriandoli = coriandoli(tela.current)
 
     return () => {
@@ -22,15 +25,36 @@ export default function Celebrazione({ celebrazione, onChiudi }) {
 
   if (!celebrazione) return null
 
-  const { legge, chi, mvp } = celebrazione
+  const { legge, chi, mvp, evento, classifica } = celebrazione
 
   return (
     <div className="celebrazione" role="alert" onClick={onChiudi}>
       <canvas ref={tela} className="coriandoli" aria-hidden="true" />
 
-      {/* Due cose da festeggiare, stessi coriandoli: una Legge scoperta e
-          l'MVP della giornata appena finita. */}
-      {mvp ? (
+      {/* Tre cose, stessi coriandoli: una Legge scoperta, l'MVP della
+          giornata, e l'arrabbiatura del Testamento — che non è una cosa
+          da festeggiare ma va guardata da tutti allo stesso modo. */}
+      {evento ? (
+        <div className="pergamena">
+          <p className="celebrazione-occhiello">{TESTAMENTO_ARRABBIATO.occhiello}</p>
+          <p className="celebrazione-numero">{TESTAMENTO_ARRABBIATO.titolo}</p>
+          <p className="celebrazione-testo">{TESTAMENTO_ARRABBIATO.testo}</p>
+
+          {/* La classifica nuova qui dentro, o l'annuncio resta una
+              frase: la cosa che si vuole vedere è chi è finito dove. */}
+          {classifica?.length > 0 && (
+            <ol className="evento-classifica">
+              {classifica.slice(0, 8).map((r, i) => (
+                <li key={r.id}>
+                  <span className="evento-posto">{i + 1}</span>
+                  <span className="evento-chi">{r.nome}</span>
+                  <span className="evento-punti">{r.punteggio}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      ) : mvp ? (
         <div className="pergamena">
           <p className="celebrazione-occhiello">👑 MVP di ieri</p>
           <p className="celebrazione-numero">{mvp.nome}</p>

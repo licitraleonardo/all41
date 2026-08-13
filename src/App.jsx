@@ -33,6 +33,7 @@ import Riparo from './components/Riparo.jsx'
 import Targhetta from './components/Targhetta.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
+import { useEventoTestamento } from './hooks/useEventoTestamento.js'
 import { useDerisione } from './hooks/useDerisione.js'
 import { useProposteAperte } from './hooks/useProposteAperte.js'
 import { useConnessione } from './hooks/useConnessione.js'
@@ -156,6 +157,9 @@ export default function App() {
   // Una Legge scoperta si celebra su tutti i telefoni, qualunque tab sia
   // aperta: è il momento di paga di tutto il sistema di punti.
   const { celebrazione, chiudi: chiudiCelebrazione } = useScoperte(vista === 'dentro')
+
+  // L'arrabbiatura del Testamento: una volta a testa, appena apri l'app.
+  const testamento = useEventoTestamento(vista === 'dentro')
 
   // Chi si propone punti da solo lo scopre tutto il gruppo, subito e
   // dovunque sia: il momento va visto mentre succede.
@@ -791,6 +795,16 @@ export default function App() {
 
         <Riparo zitto>
           <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
+
+          {/* ⚠️ Prima dell'MVP: se capitassero nello stesso momento, quella
+              che spiega perché i punti di tutti sono cambiati vale più di
+              quella che dice chi ha vinto ieri. */}
+          {testamento.evento && (
+            <Celebrazione
+              celebrazione={{ evento: true, classifica: testamento.evento.classifica }}
+              onChiudi={testamento.chiudi}
+            />
+          )}
 
           {mvp.festa && (
             <Celebrazione

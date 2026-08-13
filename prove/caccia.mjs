@@ -26,9 +26,19 @@ const [A, B, C] = competitive
 const foto = (id, autoreId) => ({ id, autoreId })
 
 console.log('\nle date')
-prova('durante il viaggio non si vota', !votiAperti('2026-08-15'))
-prova('nemmeno l’ultimo giorno', !votiAperti('2026-08-16'))
-prova('il 17 si apre', votiAperti('2026-08-17'))
+// ⚠️ Regola cambiata il 13 agosto: si vota **dal primo giorno**, non dal
+// 17. Prima le foto si raccoglievano e basta, e il voto si apriva a
+// rientro fatto -- nasceva da un timore giusto («una gara che si chiude a
+// mezzanotte la vince chi era sveglio»), ma alla prova dei fatti mandare
+// una foto e non veder succedere niente per cinque giorni faceva sembrare
+// la sfida un modulo, non un gioco.
+//
+// Il timore si e' risolto altrove: il voto si puo' **cambiare** finche' la
+// sfida e' aperta, quindi chi vota il primo giorno non resta incastrato
+// sull'unica foto che c'era.
+prova('si vota gia durante il viaggio', votiAperti('2026-08-15'))
+prova('e anche l’ultimo giorno', votiAperti('2026-08-16'))
+prova('il 17 si vota ancora', votiAperti('2026-08-17'))
 prova('e non è ancora chiusa', !cacciaChiusa('2026-08-17'))
 
 // ⚠️ Regola cambiata il 9 agosto, per decisione di Leonardo: `CACCIA.chiude`
@@ -44,19 +54,25 @@ prova('e resta chiusa dopo', cacciaChiusa('2026-09-01'))
 console.log('\nquali sfide vanno ai voti')
 const conDue = { [A]: [foto('f1', 'x'), foto('f2', 'y')], [B]: [foto('f3', 'x')] }
 
+// ⚠️ Una foto basta. Con due, una sfida a cui aveva risposto una persona
+// sola restava invisibile finche' non ne arrivava un'altra -- e spesso non
+// arrivava mai. Le foto che vengono dopo si aggiungono alle opzioni del
+// voto gia' aperto: `assicura_voto_sfida` lo fa gia'.
+let daVotare = sfideDaMettereAiVoti(conDue, {}, {}, '2026-08-14')
+prova('gia durante il viaggio si vota', daVotare.length === 2, daVotare)
+prova('e basta una foto sola', daVotare.includes(B), daVotare)
+
 prova(
-  'durante il viaggio nessuna',
-  sfideDaMettereAiVoti(conDue, {}, {}, '2026-08-14').length === 0
+  'ma una senza nemmeno una foto no',
+  !sfideDaMettereAiVoti(conDue, {}, {}, '2026-08-14').includes(C)
 )
-let daVotare = sfideDaMettereAiVoti(conDue, {}, {}, '2026-08-17')
-prova('dal 17 solo quelle con due foto', daVotare.length === 1 && daVotare[0] === A)
 prova(
   'non si riapre un voto già aperto',
-  sfideDaMettereAiVoti(conDue, {}, { [A]: { id: 'v1' } }, '2026-08-17').length === 0
+  !sfideDaMettereAiVoti(conDue, {}, { [A]: { id: 'v1' } }, '2026-08-14').includes(A)
 )
 prova(
   'né una già vinta',
-  sfideDaMettereAiVoti(conDue, { [A]: { membroId: 'x' } }, {}, '2026-08-17').length === 0
+  !sfideDaMettereAiVoti(conDue, { [A]: { membroId: 'x' } }, {}, '2026-08-14').includes(A)
 )
 
 console.log('\nchi vince un voto')

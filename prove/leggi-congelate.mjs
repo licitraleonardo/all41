@@ -115,5 +115,34 @@ console.log('\nil Primo sveglio conta i messaggi, non le righe dell app')
   prova('e gli annunci delle proposte', /propostaVoto/.test(conteggio), conteggio)
 }
 
+console.log('\nl arrabbiatura del Testamento la sorteggia il database')
+{
+  // ⚠️ La proprietà che regge tutto l'evento.
+  //
+  // I punti nuovi si estraggono UNA volta, in SQL, e si scrivono. Se li
+  // estraesse l'app, otto persone vedrebbero otto classifiche diverse e
+  // ognuna sarebbe convinta della sua — senza che nessun errore lo dica,
+  // perché ogni singolo telefono sarebbe coerente con sé stesso. È il
+  // difetto peggiore possibile per una classifica: invisibile da dentro.
+  const gancio = readFileSync('src/hooks/useEventoTestamento.js', 'utf8')
+  prova('l app non sorteggia niente', !/Math\.random|random\(\)/.test(gancio))
+  prova('legge e basta', gancio.includes("from('point_events')"))
+  prova('e la lettura ha il suo tetto', gancio.includes('.limit('))
+
+  const sql = readFileSync('supabase/testamento-arrabbiato.sql', 'utf8')
+  prova('il sorteggio sta in SQL', sql.includes('order by random()'))
+
+  // ⚠️ E non cancella niente: aggiunge una riga a testa. Il punteggio di
+  // questa app è «la somma degli eventi», e ogni schermata ci conta
+  // sopra: riscrivere lo storico romperebbe l'invariante in venti punti,
+  // e nella Classifica comparirebbero venti numeri cambiati di nascosto
+  // invece di una riga sola che spiega il salto.
+  prova('non cancella lo storico', !sql.includes('delete from point_events'))
+  prova('e ricalcola i punteggi dalla somma', sql.includes('sum(p.points)'))
+
+  // E si può rilanciare senza raddoppiare niente.
+  prova('rilanciarlo non fa danno', sql.includes('on conflict (dedupe_key) do nothing'))
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} cose non vanno.\n`)
 process.exit(falliti === 0 ? 0 : 1)

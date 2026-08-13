@@ -55,7 +55,11 @@ export const LEGGI = [
     testo: 'Unico ad aver votato in un sondaggio scaduto' },
   { n: 11, id: 'poll-tie', punti: -1, bersaglio: 'tutti', attiva: true,
     testo: 'Una proposta di punti è finita in pareggio' },
-  { n: 12, id: 'unanimous', punti: 5, attiva: true,
+  // ⚠️ Cinque, poi due. Era il premio più alto del gioco per una cosa
+  // che non costa niente: proporre. Al terzo giorno di viaggio uno solo
+  // l'aveva preso tre volte — quindici punti, mentre il secondo in
+  // classifica ne aveva dieci in tutto.
+  { n: 12, id: 'unanimous', punti: 2, attiva: true,
     testo: 'Una tua proposta è passata con voto unanime' },
   { n: 13, id: 'proposal-rejected', punti: -2, attiva: true,
     testo: 'Una tua proposta è stata bocciata dal gruppo' },
@@ -83,7 +87,21 @@ export const LEGGI = [
     testo: 'Detieni il record della pecora a fine giornata' },
   { n: 21, id: 'double-mvp', punti: 5, attiva: true,
     testo: 'Sei stato MVP di giornata due volte' },
-  { n: 22, id: 'discoverer', punti: 1, attiva: true,
+  // ⚠️ Spenta, e non messa a zero.
+  //
+  // Il Testamento decide se una Legge è un Trofeo o una Punizione dal
+  // segno del punteggio (`verso`, più sotto): a zero questa sarebbe
+  // scivolata fra le punizioni, che è l'ultimo posto dove ha senso
+  // leggere «hai scoperto una Legge».
+  //
+  // Perché si spegne: premiava chi inciampa per primo in una Legge nuova,
+  // e il primo è sempre chi apre l'app di più. Al terzo giorno erano
+  // diciassette scoperte, nove di una persona sola. Non era una gara fra
+  // otto: era una gara a chi guarda il telefono.
+  //
+  // Le scoperte continuano a segnarsi nel Testamento — quello resta il
+  // bello — e smettono soltanto di dare punti.
+  { n: 22, id: 'discoverer', punti: 1, attiva: false,
     testo: 'Hai fatto scattare una Legge mai vista prima' },
   { n: 23, id: 'riscatto', punti: 3, attiva: false,
     testo: 'Eri Maglia Nera e non lo sei più' },

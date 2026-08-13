@@ -913,15 +913,50 @@ set search_path = public
 as $$
 declare
   v votes;
+  prima int;
 begin
   select * into v from votes where id = p_voto for update;
 
   if not found then raise exception 'Questo sondaggio non esiste.'; end if;
   if v.closed_at is not null then raise exception 'Il sondaggio è chiuso.'; end if;
   if now() >= v.expires_at then raise exception 'Il sondaggio è scaduto.'; end if;
-  if p_membro = any(v.voted) then raise exception 'Hai già votato.'; end if;
   if p_opzione < 0 or p_opzione >= array_length(v.options, 1) then
     raise exception 'Opzione inesistente.';
+  end if;
+
+  -- ⚠️ Sulle sfide fotografiche si puo' cambiare voto. Altrove no.
+  --
+  -- Le votazioni delle sfide si aprono alla PRIMA foto, durante il
+  -- viaggio: mandare una foto e non veder succedere niente per cinque
+  -- giorni non e' un gioco. Ma con «un voto e non si torna indietro»
+  -- diventava una gara truccata -- la prima foto caricata raccoglieva i
+  -- voti di chi non aveva altro da votare, e le quattro migliori del
+  -- giorno dopo non contavano niente.
+  --
+  -- ⚠️ Solo `photo-of-day`, e non e' prudenza: nel voto dell'Impostore
+  -- si accusa mentre gli altri accusano, e poter spostare il voto dopo
+  -- aver visto dove va la maggioranza trasformerebbe una scommessa in un
+  -- inseguimento. Li' cambiare idea rompe il gioco.
+  if p_membro = any(v.voted) then
+    if v.category <> 'photo-of-day' then
+      raise exception 'Hai già votato.';
+    end if;
+
+    prima := (v.ballots ->> p_membro::text)::int;
+
+    -- Senza scheda non si sa da dove togliere, e togliere a caso vuol
+    -- dire un conteggio che non torna piu' con le schede. Succede solo
+    -- sui voti anonimi, che le sfide non usano.
+    if prima is null or prima = p_opzione then return v; end if;
+
+    update votes
+       set tally[prima + 1] = tally[prima + 1] - 1,
+           tally[p_opzione + 1] = tally[p_opzione + 1] + 1,
+           ballots = ballots || jsonb_build_object(p_membro::text, p_opzione)
+     where id = p_voto
+    returning * into v;
+
+    return v;
   end if;
 
   -- Gli array in Postgres partono da 1, il client conta da 0.

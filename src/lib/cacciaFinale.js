@@ -14,8 +14,21 @@ import { CACCIA, SFIDE, SFIDE_PER_ID } from '../config/sfide.js'
 
 const competitive = () => SFIDE.filter((s) => s.tipo === 'competitiva')
 
-export function votiAperti(oggi) {
-  return oggi >= CACCIA.apreIlVoto
+// ⚠️ Si vota dal primo giorno, non dal 17.
+//
+// La regola di prima -- si raccoglie e basta, si vota a rientro fatto --
+// nasceva da un timore giusto: «una gara che si chiude a mezzanotte la
+// vince chi era sveglio, non chi ha fatto la foto migliore». Ma alla
+// prova dei fatti il costo era più alto del rischio: mandi la foto per
+// una sfida e per cinque giorni non succede niente, quindi la sfida non
+// sembra un gioco, sembra un modulo.
+//
+// Il timore resta vero e si risolve altrove: il voto adesso **si può
+// cambiare** finché la sfida è aperta (`supabase/voto-che-si-cambia.sql`),
+// quindi chi vota il primo giorno non resta incastrato sull'unica foto
+// che c'era.
+export function votiAperti() {
+  return true
 }
 
 // ⚠️ `>` e non `>=`: `CACCIA.chiude` è **l'ultimo giorno in cui si vota**,
@@ -38,7 +51,13 @@ export function sfideDaMettereAiVoti(partecipazioni, vinte, voti, oggi) {
 
   return competitive()
     .filter((s) => !vinte[s.id] && !voti[s.id])
-    .filter((s) => (partecipazioni[s.id] ?? []).length >= 2)
+    // ⚠️ Una foto basta, non due.
+    //
+    // Con due, una sfida a cui aveva risposto una persona sola restava
+    // invisibile fino a che non ne arrivava un'altra -- e spesso non
+    // arrivava. Con una, il voto si apre subito e le foto che vengono
+    // dopo si aggiungono alle opzioni: `assicura_voto_sfida` lo fa già.
+    .filter((s) => (partecipazioni[s.id] ?? []).length >= 1)
     .map((s) => s.id)
 }
 

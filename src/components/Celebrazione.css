@@ -79,3 +79,47 @@
     animation: none;
   }
 }
+
+/* La classifica dentro la pergamena, per l'arrabbiatura del Testamento.
+   Compatta: otto righe devono starci su un telefono senza scorrere, o
+   l'annuncio diventa una cosa da esplorare invece che da leggere. */
+.evento-classifica {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.evento-classifica li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.evento-posto {
+  flex: none;
+  width: 16px;
+  text-align: right;
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+
+.evento-chi {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.evento-punti {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
