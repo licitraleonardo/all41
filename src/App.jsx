@@ -10,6 +10,7 @@ import {
   leggiMembri,
 } from './lib/membri.js'
 import { dimenticaMemberId, memberIdSalvato, salvaMemberId } from './lib/sessione.js'
+import { agganciaDispositivo } from './lib/aggancio.js'
 import { negliAppunti, negliAppuntiQuandoPronto } from './lib/appunti.js'
 import { descriviErrore } from './lib/errori.js'
 import { sembraRete } from './lib/cache.js'
@@ -365,6 +366,17 @@ export default function App() {
         setMembro(trovato)
         setVista('dentro')
         segnaVisita(trovato.id).catch(() => {})
+
+        // Dice al database che questa sessione è questo membro. Non si
+        // vede, non chiede niente, e oggi non cambia niente: serve a
+        // rendere scrivibile «solo gli otto possono leggere», che adesso
+        // il database non sa esprimere perché non sa chi sei.
+        //
+        // ⚠️ Sta dopo `setVista('dentro')` e non prima, apposta: l'avvio
+        // non deve aspettarla né poterci inciampare. Se fallisce si
+        // riprova alla prossima apertura, e il conto in fondo a
+        // `supabase/account.sql` dice chi manca ancora.
+        agganciaDispositivo().catch(() => {})
 
         // Chi apre l'app alle quattro di notte lo sta facendo apposta.
         allApertura(trovato.id).catch(() => {})
