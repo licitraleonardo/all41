@@ -122,6 +122,28 @@ const senzaProtezione = await q(
 console.log(`  tabelle senza protezione: ${senzaProtezione.length} ${senzaProtezione.length === 0 ? '✓' : '⚠️'}`)
 for (const t of senzaProtezione) console.log(`      ⚠️  ${t.relname}`)
 
+// ⚠️ I permessi sull'archivio, che il controllo qui sopra non vede: sta
+// in un altro schema, quindi `pg_policies` filtrato su `public` lo salta
+// del tutto — ed è dove sono nascoste le foto, i documenti e i vocali.
+//
+// E soprattutto: le regole di scrittura vanno aperte a mano quando
+// serve spostare o togliere un file, e richiuse subito dopo. Una lasciata
+// aperta non si vede da nessuna parte e non dà nessun errore: l'app
+// funziona identica, e chiunque può scrivere nell'archivio del gruppo.
+const archivio = await q(
+  `select policyname, cmd from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+    order by cmd, policyname`
+)
+const PREVISTE = new Set(['SELECT', 'INSERT'])
+const inPiu = archivio.filter((p) => !PREVISTE.has(p.cmd))
+console.log(`  permessi sull archivio: ${archivio.length} (${[...new Set(archivio.map((p) => p.cmd))].join(', ')})`)
+console.log(`  e nessuno di troppo: ${inPiu.length === 0 ? 'giusto ✓' : '⚠️'}`)
+for (const p of inPiu) console.log(`      ⚠️  «${p.policyname}» (${p.cmd}) — aperta e mai richiusa?`)
+
+const senzaRegole = archivio.filter((p) => /true/i.test(p.policyname))
+if (senzaRegole.length) console.log(`      ⚠️  ${senzaRegole.length} sospette`)
+
 const ponte = await q(
   `select has_function_privilege('authenticated', p.oid, 'execute') as puo
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace

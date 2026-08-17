@@ -39,3 +39,6 @@ CHIAVE-PUSH-DA-METTERE-SU-VERCEL.txt
 
 #questionari
 Questionario
+# Il registro degli spostamenti dei file: e' cronaca di una macchina, non
+# codice, e cita percorsi veri dell'archivio.
+supabase/spostamenti.log

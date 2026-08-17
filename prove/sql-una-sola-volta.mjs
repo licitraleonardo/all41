@@ -213,6 +213,57 @@ console.log('\nnessuna regola di accesso definita in due file')
   )
 }
 
+console.log('\nnessun permesso concesso da un file e tolto da un altro')
+{
+  // ⚠️ La terza forma della stessa trappola, e mi ha fregato davvero il
+  // 18 agosto: `account.sql` concedeva a `authenticated` il permesso di
+  // eseguire `aggancia_dispositivo`, e `regole-chiuse.sql` glielo
+  // toglieva. Rilanciando il primo per una ragione che non c'entrava
+  // niente, il ponte verso l'app si e' riaperto - senza nessun errore.
+  //
+  // Vale come per le funzioni e per le regole: due file che dicono cose
+  // opposte sulla stessa riga non litigano, vince quello lanciato per
+  // ultimo. Qui pero' il verso conta, quindi non basta contare i file:
+  // si guarda **chi concede e chi toglie**.
+  const RITORNO = 'regole-aperte.sql'
+  const concede = new Map()
+  const toglie = new Map()
+
+  for (const nome of file) {
+    if (nome === RITORNO) continue // esiste apposta per riaprire
+    const codice = readFileSync(new URL(nome, cartella), 'utf8')
+      .split('\n')
+      .map((r) => r.replace(/--.*$/, ''))
+      .join('\n')
+
+    for (const m of codice.matchAll(/grant\s+execute\s+on\s+function\s+([a-z_][a-z0-9_]*)/gi)) {
+      if (!concede.has(m[1])) concede.set(m[1], new Set())
+      concede.get(m[1]).add(nome)
+    }
+    for (const m of codice.matchAll(
+      /revoke\s+execute\s+on\s+function\s+([a-z_][a-z0-9_]*)\s*\([^)]*\)\s+from\s+([^;]+)/gi
+    )) {
+      // Solo se toglie proprio a chi usa l'app.
+      if (!/authenticated/i.test(m[2])) continue
+      if (!toglie.has(m[1])) toglie.set(m[1], new Set())
+      toglie.get(m[1]).add(nome)
+    }
+  }
+
+  const contesi = [...toglie.entries()]
+    .filter(([f]) => concede.has(f))
+    .map(([f, chiToglie]) => ({
+      funzione: f,
+      concessa_da: [...concede.get(f)],
+      tolta_da: [...chiToglie],
+      aiuto:
+        'un file la concede e un altro la toglie: rilanciando quello sbagliato il permesso ' +
+        'torna, senza nessun errore. Decidi da che parte sta, e scrivilo in un posto solo',
+    }))
+
+  prova('nessuna funzione concessa e tolta insieme', contesi.length === 0, contesi)
+}
+
 console.log('\nschema.sql dice che da solo non basta')
 {
   const testo = readFileSync(new URL('schema.sql', cartella), 'utf8')

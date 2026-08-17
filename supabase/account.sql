@@ -161,8 +161,22 @@ begin
   return p_membro;
 end $$;
 
-revoke execute on function aggancia_dispositivo(uuid) from public, anon;
-grant execute on function aggancia_dispositivo(uuid) to authenticated;
+-- ⚠️ REVOCATA A TUTTI, e questo file non la concede più a nessuno.
+--
+-- Serviva alla migrazione silenziosa degli otto telefoni, che è finita
+-- l'8 su 8 il 17 agosto. Da allora le basta l'id di un membro — e quegli
+-- id sono stati leggibili dal mondo per cinque settimane.
+--
+-- ⚠️ Qui c'era un `grant`, e mi ha fregato la notte stessa. La revoca
+-- stava in `regole-chiuse.sql`; rilanciando questo file per un'altra
+-- ragione, il ponte si è riaperto — **senza nessun errore**, e me ne sono
+-- accorto solo perché il controllo generale lo guarda. Due file che
+-- dicono cose opposte sulla stessa riga non litigano: vince quello
+-- lanciato per ultimo. È la terza volta stanotte, in tre forme diverse.
+--
+-- Chi arriva da un telefono nuovo passa dalla porta col codice. Se un
+-- giorno servisse riaprire, è una riga sola e sta in `regole-aperte.sql`.
+revoke execute on function aggancia_dispositivo(uuid) from public, anon, authenticated;
 
 -- ——————————————————————————————————————————————— quante volte puoi bussare
 
