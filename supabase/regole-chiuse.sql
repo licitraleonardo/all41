@@ -249,6 +249,40 @@ create policy "feedback: scrittura del viaggio" on feedback
 
 commit;
 
+-- ————————————————————————————————————— e le tabelle che nessuno ricorda
+
+-- ⚠️ Questo blocco ha trovato un buco vero il 17 agosto, subito dopo aver
+-- chiuso tutto: `point_events_prima_del_13`, la copia di sicurezza dei
+-- punti fatta prima del rimescolamento. **88 righe, leggibili da fuori a
+-- porte chiuse.**
+--
+-- Ed è istruttivo *perché* era sfuggita: il controllo in fondo a questo
+-- file cerca le regole troppo permissive, e quella tabella non aveva
+-- **nessuna regola**. Rispondeva «zero regole aperte», che era vero e
+-- non voleva dire niente. Una tabella senza protezione non ha regole da
+-- trovare: è aperta e basta.
+--
+-- Quindi non si nomina la tabella: si accende la protezione su
+-- **qualunque** tabella non ce l'abbia, adesso e in futuro. Una copia di
+-- sicurezza fatta di fretta fra sei mesi sarà coperta senza che nessuno
+-- se lo debba ricordare.
+--
+-- Protezione accesa e nessuna regola = nessuno ci arriva dall'app. I dati
+-- restano, e si leggono da qui con la chiave di servizio.
+do $$
+declare t record;
+begin
+  for t in
+    select c.relname
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity
+  loop
+    execute format('alter table public.%I enable row level security', t.relname);
+    raise notice 'protezione accesa su %', t.relname;
+  end loop;
+end $$;
+
 -- ——————————————————————————————————————————————————————— si toglie il ponte
 
 -- ⚠️ `aggancia_dispositivo` era la migrazione silenziosa: serviva a far
