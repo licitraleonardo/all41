@@ -95,6 +95,19 @@ console.log('\nla configurazione')
   prova('non parla col database', !/supabase|from\('/.test(testo))
   prova('il testo del tasto viene dalla configurazione', /PROSSIMO\.tasto/.test(testo))
   prova('e il tasto ha un testo', typeof PROSSIMO.tasto === 'string' && PROSSIMO.tasto.length > 0)
+
+  // ⚠️ I due tasti tondi sono fatti di un simbolo solo, quindi chi non
+  // vede lo schermo non ha NIENTE da leggere se manca l'etichetta. Un
+  // tasto senza nome non e' un tasto brutto: e' un tasto che non esiste.
+  for (const [quale, verso] of [['indietro', PROSSIMO.indietro], ['avanti', PROSSIMO.avanti]]) {
+    prova(`il tasto ${quale} ha un simbolo`, typeof verso?.segno === 'string' && verso.segno.length > 0)
+    prova(`e dice dove porta`, typeof verso?.dove === 'string' && verso.dove.length > 3, verso)
+  }
+
+  const tondo = readFileSync(new URL('../src/components/TastoRadio.jsx', import.meta.url), 'utf8')
+  prova('e l etichetta arriva davvero al tasto', /aria-label=\{verso\.dove\}/.test(tondo))
+  prova('anche tenendo il puntatore fermo', /title=\{verso\.dove\}/.test(tondo))
+  prova('il simbolo invece e nascosto al lettore vocale', /aria-hidden="true">\{verso\.segno\}/.test(tondo))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)

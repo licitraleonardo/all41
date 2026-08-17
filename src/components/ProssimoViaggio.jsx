@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './ProssimoViaggio.css'
+import TastoRadio from './TastoRadio.jsx'
 import { PROSSIMO } from '../config/prossimoViaggio.js'
 
 // La pagina su cui l'app si apre adesso che il viaggio è finito.
@@ -18,9 +19,7 @@ export default function ProssimoViaggio({ onIndietro }) {
 
   return (
     <div className="prossimo">
-      <button type="button" className="prossimo-indietro" onClick={onIndietro}>
-        <span aria-hidden="true">←</span> {PROSSIMO.indietro}
-      </button>
+      <TastoRadio verso={PROSSIMO.indietro} onClick={onIndietro} />
 
       <div className="prossimo-centro">
         <h2 className="prossimo-titolo">{PROSSIMO.titolo}</h2>

@@ -18,13 +18,19 @@ export const PROSSIMO = {
   // qualcosa: dice che non c'è ancora niente da caricare.
   dopoIlTasto: 'Non ancora. Prima bisogna decidere dove si va.',
 
-  // La freccia che riporta al viaggio fatto.
+  // I due tasti tondi in sovraimpressione, tipo i comandi di una radio.
   //
-  // ⚠️ Porta un'etichetta accanto e non è una freccia sola, per quanto
-  // «un'iconcina» fosse la richiesta: su una pagina quasi vuota una
-  // freccia nuda non dice **dove** porta, e l'unica cosa che c'è dietro è
-  // la memoria di cinque giorni. Vale una parola.
-  indietro: 'Sardegna 2026',
+  // ⚠️ Senza etichetta accanto, e ci ho ripensato apposta. Prima ne aveva
+  // una, col ragionamento che una freccia nuda non dice dove porta. Vale
+  // in generale, non qui: le pagine sono **due**, e ognuna delle due dice
+  // in grande dove sei. Da «Il prossimo viaggio», ⏮ può portare in un
+  // posto solo.
+  //
+  // Il nome del posto resta, ma per chi non vede lo schermo: è l'etichetta
+  // che legge il lettore vocale, ed è anche quella che compare tenendo
+  // premuto sul computer.
+  indietro: { segno: '⏮', dove: 'Torna al viaggio in Sardegna' },
+  avanti: { segno: '⏭', dove: 'Vai al prossimo viaggio' },
 }
 
 export const TORNATI = {

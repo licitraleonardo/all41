@@ -1,0 +1,59 @@
+/* Il tasto tondo in sovraimpressione. */
+
+.tasto-radio {
+  position: fixed;
+  /* Appoggiato sopra la barra dei tab, che si porta dietro la sua safe
+     area: la misura sta in `index.css` e qui si somma soltanto. */
+  bottom: calc(var(--altezza-tab) + 14px);
+  right: 16px;
+  z-index: 20;
+
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+
+  /* Sfondo semitrasparente col contenuto sfocato dietro: cosi' si legge
+     anche sopra una foto o una scheda chiara, senza coprirla del tutto. */
+  background: rgba(11, 53, 80, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(247, 244, 236, 0.16);
+
+  color: var(--sand);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+
+  /* ⚠️ Il tocco deve fare 44px almeno, ed e' gia' 52: sotto quella misura
+     un tasto tondo sul telefono si manca una volta su tre. */
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease-out, background 160ms ease-out;
+}
+
+.tasto-radio:active {
+  transform: scale(0.92);
+  background: rgba(11, 53, 80, 0.9);
+}
+
+/* Quello che torna indietro sta a sinistra, quello che va avanti a
+   destra: e' la disposizione di qualunque comando di riproduzione, e
+   metterli entrambi a destra li renderebbe due tasti uguali in due
+   schermate diverse. */
+.tasto-radio-indietro {
+  left: 16px;
+  right: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tasto-radio {
+    transition: none;
+  }
+  .tasto-radio:active {
+    transform: none;
+  }
+}

@@ -7,6 +7,7 @@ import Meteo from './Meteo.jsx'
 import RigaAttesa from './RigaAttesa.jsx'
 import ProssimoViaggio from './ProssimoViaggio.jsx'
 import TempoPassato from './TempoPassato.jsx'
+import TastoRadio from './TastoRadio.jsx'
 import { PROSSIMO } from '../config/prossimoViaggio.js'
 import { GIORNI } from '../config/itinerario.js'
 import { giornoPerData } from '../lib/giorni.js'
@@ -112,13 +113,7 @@ export default function Itinerario({ membro, onProfilo }) {
         </div>
       ) : (
       <div className="wrap">
-        <button
-          type="button"
-          className="torna-prossimo"
-          onClick={() => vaiA('prossimo')}
-        >
-          <span aria-hidden="true">←</span> {PROSSIMO.titolo}
-        </button>
+        <TastoRadio verso={PROSSIMO.avanti} onClick={() => vaiA('prossimo')} />
         <TempoPassato />
         <p className="oggi-viaggio">{VIAGGIO.etichetta}</p>
         {/* Il mondino sta qui, accanto al conto alla rovescia, dove
