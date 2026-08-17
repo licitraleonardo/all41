@@ -35,6 +35,8 @@ import Targhetta from './components/Targhetta.jsx'
 import { useSoundboard } from './hooks/useSoundboard.js'
 import { useScoperte } from './hooks/useScoperte.js'
 import { useEventoTestamento } from './hooks/useEventoTestamento.js'
+import { usePodio } from './hooks/usePodio.js'
+import Podio from './components/Podio.jsx'
 import { useDerisione } from './hooks/useDerisione.js'
 import { useProposteAperte } from './hooks/useProposteAperte.js'
 import { useConnessione } from './hooks/useConnessione.js'
@@ -161,6 +163,7 @@ export default function App() {
 
   // L'arrabbiatura del Testamento: una volta a testa, appena apri l'app.
   const testamento = useEventoTestamento(vista === 'dentro')
+  const podio = usePodio()
 
   // Chi si propone punti da solo lo scopre tutto il gruppo, subito e
   // dovunque sia: il momento va visto mentre succede.
@@ -812,6 +815,13 @@ export default function App() {
 
 
         <Riparo zitto>
+          {/* ⚠️ Prima di tutte le altre, e non per gerarchia: è l'unica
+              che chiude una cosa invece di aprirla. Se comparisse dopo un
+              MVP o una Legge scoperta, il gruppo festeggerebbe un punto
+              appena preso e un secondo dopo leggerebbe che i punti sono
+              fermi da ieri. */}
+          <Podio tre={podio.tre} onChiudi={podio.chiudi} />
+
           <Celebrazione celebrazione={celebrazione} onChiudi={chiudiCelebrazione} />
 
           {/* ⚠️ Prima dell'MVP: se capitassero nello stesso momento, quella

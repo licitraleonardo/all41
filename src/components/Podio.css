@@ -1,0 +1,126 @@
+/* La premiazione: schermo pieno, e si chiude toccando. */
+
+.podio {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  background: radial-gradient(120% 90% at 50% 0%, var(--sea-light), var(--sea) 70%);
+  text-align: center;
+  animation: podio-entra 400ms ease-out;
+}
+
+@keyframes podio-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.podio-occhiello {
+  margin: 0;
+  color: rgba(247, 244, 236, 0.6);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.podio-titolo {
+  margin: 0 0 20px;
+  font-family: var(--font-titoli);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+/* I tre gradini stanno in colonna e non affiancati: a 375px tre facce in
+   fila diventano tre bollini, e la faccia è tutto il punto. */
+.podio-gradini {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.podio-gradino {
+  display: grid;
+  grid-template-columns: 34px 56px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(247, 244, 236, 0.07);
+  text-align: left;
+
+  /* Prima di essere scoperto un gradino non si vede ma occupa già il suo
+     posto: senza, la lista salterebbe a ogni rivelazione e i nomi già
+     letti si sposterebbero sotto gli occhi. */
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 420ms ease-out, transform 420ms ease-out;
+}
+
+.podio-gradino.visibile {
+  opacity: 1;
+  transform: none;
+}
+
+/* Il primo posto pesa di più: oro, e un filo più grande. */
+.podio-gradino.posto-1 {
+  background: rgba(242, 169, 59, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(242, 169, 59, 0.5);
+}
+
+.podio-medaglia {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.podio-faccia {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(247, 244, 236, 0.1);
+}
+
+.podio-nome {
+  font-family: var(--font-titoli);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.podio-punti {
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.podio-chiusura {
+  margin: 22px 0 0;
+  max-width: 26ch;
+  color: rgba(247, 244, 236, 0.65);
+  font-size: 14px;
+  line-height: 1.45;
+  animation: podio-entra 600ms ease-out;
+}
+
+/* Chi ha chiesto meno movimento non se lo prende: le facce compaiono e
+   basta, senza scorrere. */
+@media (prefers-reduced-motion: reduce) {
+  .podio,
+  .podio-chiusura {
+    animation: none;
+  }
+  .podio-gradino {
+    transition: opacity 200ms linear;
+    transform: none;
+  }
+}

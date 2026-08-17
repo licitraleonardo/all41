@@ -7,6 +7,7 @@ import Testamento from './Testamento.jsx'
 import SalaGiochi from './SalaGiochi.jsx'
 import { useGioco } from '../hooks/useGioco.js'
 import { creaProposta } from '../lib/proposte.js'
+import { CLASSIFICA_CHIUSA } from '../config/podio.js'
 import { descriviErrore } from '../lib/errori.js'
 import Rotella from './Rotella.jsx'
 
@@ -72,6 +73,14 @@ export default function Gioco({ membro, proposteAperte = [], onVotaProposta, non
       // suggerimento — quindi passa di qui senza messaggio d'errore.
       if (!esito.ok) {
         if (esito.motivo === 'in-voto') return esito
+        // ⚠️ Non è un limite superato: è che il gioco è finito. Senza
+        // questa riga si sentirebbe rispondere «tre proposte al giorno,
+        // riprova domani» — cioè una bugia, e per giunta una che promette
+        // che domani si può.
+        if (esito.motivo === 'chiusa') {
+          setErroreProposta(CLASSIFICA_CHIUSA.rifiuto)
+          return { ok: false }
+        }
         setErroreProposta(`Tre proposte al giorno. Le hai finite: riprova domani.`)
         return { ok: false }
       }

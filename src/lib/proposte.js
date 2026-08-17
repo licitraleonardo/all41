@@ -5,6 +5,7 @@ import { assegnaPunti, faiScattareLegge } from './punti.js'
 import { PER_ID, etichetta } from '../config/leggi.js'
 import { dataDiOggi } from './giorni.js'
 import { faiSuonare } from './notifiche.js'
+import { classificaChiusa } from './classificaChiusa.js'
 import {
   contaNoConsecutivi,
   esitoProposta,
@@ -59,6 +60,12 @@ async function proposteVerso(proponenteId, destinatarioId, adesso = new Date()) 
 // annunciata. È il pattern trappola: il suggerimento invita ad
 // aspettare, non rivela cosa costa non farlo.
 export async function creaProposta({ proponenteId, destinatarioId, punti, motivo, insisto = false }) {
+  // ⚠️ `.fresca()` e non la copia: qui si DECIDE, e una copia vecchia
+  // lascerebbe passare una proposta che il database poi rifiuta in
+  // silenzio — la riga del voto comparirebbe a tutti e i punti non
+  // arriverebbero mai.
+  if (await classificaChiusa.fresca()) return { ok: false, motivo: 'chiusa' }
+
   const fatte = await proposteDiOggi(proponenteId)
   if (fatte >= PROPOSTA.alGiorno) return { ok: false, motivo: 'giorno', restano: 0 }
 

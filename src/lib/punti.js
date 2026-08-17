@@ -10,6 +10,13 @@ const CAMPI =
 export const TETTO_STORICO = 40
 
 function daRiga(riga) {
+  // ⚠️ Il guardiano che mancava. `assegna_punti` può non restituire
+  // niente — a classifica chiusa, o quando la chiave di deduplica ha già
+  // vinto — e senza questa riga si costruirebbe un evento con tutti i
+  // campi a `null`: un oggetto che in JavaScript è **vero**, quindi che
+  // chi chiama scambia per un punto assegnato.
+  if (!riga) return null
+
   return {
     id: riga.id,
     membroId: riga.member_id,
@@ -45,7 +52,9 @@ export async function assegnaPunti({
     p_proposto_da: propostoDa,
   })
   if (error) throw error
-  return daRiga(data)
+  // Torna una lista: vuota vuol dire «non assegnato», e non somiglia a
+  // niente altro. Vedi il commento in `daRiga` e in `assegna_punti`.
+  return daRiga(data?.[0] ?? null)
 }
 
 // Fa scattare una Legge: assegna i suoi punti, la svela al gruppo se
@@ -86,6 +95,13 @@ export async function faiScattareLegge(leggeId, memberId, dedupeKey, puntiEsplic
     leggeId,
     dedupeKey,
   })
+
+  // ⚠️ Niente evento = la classifica è chiusa, e allora si ferma tutto
+  // qui: senza questa riga la Legge verrebbe **scoperta lo stesso** — con
+  // la sua pergamena, i coriandoli e la notifica — per zero punti. Il
+  // gruppo vedrebbe il gioco continuare sopra una classifica ferma, che è
+  // il modo più confuso di chiudere una cosa.
+  if (!evento) return null
 
   const { data: nuova, error } = await supabase.rpc('scopri_legge', {
     p_legge: leggeId,

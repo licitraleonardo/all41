@@ -88,9 +88,24 @@ console.log('\ne assegnare punti non scopre niente')
   // L'altra meta': la funzione del database che assegna i punti non deve
   // toccare la tabella delle scoperte. Se lo facesse, la separazione
   // scritta in JavaScript non varrebbe niente.
-  const inizio = schema.indexOf('function assegna_punti')
-  const fine = schema.indexOf('function ', inizio + 20)
-  const corpo = schema.slice(inizio, fine > inizio ? fine : inizio + 3000)
+  // ⚠️ I commenti si tolgono prima di guardare.
+  //
+  // Senza, questo controllo e' rimasto rosso su codice giusto: dentro
+  // `assegna_punti` c'e' un commento che spiega perche' non solleva, e
+  // quel commento nomina «le Leggi». La prova ha letto la parola e ha
+  // concluso che la funzione tocca la tabella delle scoperte.
+  //
+  // E' la terza volta in una notte che un controllo sul testo inciampa
+  // in un commento. La regola e' sempre la stessa: si prova il codice,
+  // non quello che ci si e' scritto intorno.
+  const pulito = schema
+    .split('\n')
+    .map((r) => r.replace(/--.*$/, ''))
+    .join('\n')
+
+  const inizio = pulito.indexOf('function assegna_punti')
+  const fine = pulito.indexOf('function ', inizio + 20)
+  const corpo = pulito.slice(inizio, fine > inizio ? fine : inizio + 3000)
 
   prova('assegna_punti esiste', inizio > 0)
   prova('scrive su point_events', /insert into\s+point_events/i.test(corpo))

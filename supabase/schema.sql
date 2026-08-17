@@ -627,7 +627,25 @@ grant execute on function assicura_voto_sfida(text, uuid[], timestamptz, uuid) t
 -- diventerebbe ambigua.
 drop function if exists assegna_punti(uuid, int, text, text, text, uuid, text);
 
-create or replace function assegna_punti(
+-- Il viaggio è finito e la classifica si chiude: da qui in poi i punti
+-- non si muovono più.
+alter table trips
+  add column if not exists punti_chiusi boolean not null default false;
+
+-- ⚠️ `setof point_events` e non `point_events`, e la riga vale mezz'ora
+-- di danno.
+--
+-- Scritta per restituire una riga sola, una funzione che fa `return null`
+-- non restituisce niente: restituisce **una riga di soli `null`**. In
+-- JavaScript quell'oggetto è **vero**, quindi chi chiama crede di aver
+-- ricevuto un evento e va avanti — con un punteggio `null`, un id `null`
+-- e nessun errore da nessuna parte.
+--
+-- In questo progetto è già successo due volte, ed è la prima riga di
+-- `SVILUPPO.md`. Con `setof`, «niente» è una lista vuota — e una lista
+-- vuota non somiglia a niente.
+drop function if exists assegna_punti(uuid, int, text, text, text, uuid, text, uuid);
+create function assegna_punti(
   p_membro uuid,
   p_punti int,
   p_motivo text,
@@ -637,7 +655,7 @@ create or replace function assegna_punti(
   p_stato text default 'approved',
   p_proposto_da uuid default null
 )
-returns point_events
+returns setof point_events
 language plpgsql
 security definer
 set search_path = public
@@ -648,6 +666,21 @@ declare
 begin
   select trip_id into viaggio from members where id = p_membro;
   if not found then raise exception 'Questa persona non esiste.'; end if;
+
+  -- ⚠️ La chiusura sta QUI e non nell'app, ed è tutta la differenza.
+  --
+  -- Il service worker si aggiorna solo quando l'app si aggiorna: un
+  -- telefono fermo alla versione di ieri continuerebbe ad assegnare punti
+  -- per giorni, e la classifica si muoverebbe sotto un podio già
+  -- festeggiato. Chiusa sul database, non c'è versione dell'app — né
+  -- chiamata fatta a mano — che possa aggiungerne uno.
+  --
+  -- Non solleva: le Leggi scattano da sole, in sottofondo, e quasi tutte
+  -- le chiamate non guardano nemmeno la risposta. Un errore lì sarebbe
+  -- rumore. Qui «chiuso» vuol dire esattamente «non succede niente».
+  if (select punti_chiusi from trips where id = viaggio) then
+    return;
+  end if;
 
   insert into point_events
     (trip_id, member_id, points, reason, rule_id, vote_id, status, dedupe_key, proposed_by)
@@ -661,7 +694,12 @@ begin
   -- il punteggio una seconda volta.
   if not found then
     select * into e from point_events where dedupe_key = p_chiave;
-    return e;
+    -- ⚠️ Se anche quella non c'è (chiave nulla, o riga sparita), `e` è
+    -- vuota: con `setof` si restituisce una lista vuota invece di una
+    -- riga di `null` travestita da evento.
+    if e.id is null then return; end if;
+    return next e;
+    return;
   end if;
 
   -- Le proposte in attesa di voto non muovono ancora la classifica.
@@ -669,7 +707,7 @@ begin
     update members set score = score + p_punti where id = p_membro;
   end if;
 
-  return e;
+  return next e;
 end $$;
 
 -- Una Legge si scopre quando scatta, e da quel momento è svelata per

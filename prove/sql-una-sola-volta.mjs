@@ -44,10 +44,17 @@ prova('ce ne sono almeno cinque', file.length >= 5, { file })
 prova('i generati restano fuori', !file.some((n) => GENERATI.includes(n)))
 
 // Dove viene definita ogni funzione, e con quanti argomenti.
+// ⚠️ `create or replace` OPPURE `create` e basta.
+//
+// Per anni qui c'era solo la prima forma, e una funzione definita con
+// `drop function` seguito da `create function` - che e' l'unico modo di
+// cambiarle il tipo di ritorno - era **invisibile a questa prova**. Cioe'
+// proprio la prova che esiste per trovare le definizioni doppie non
+// vedeva meta' dei modi di definirne una.
 const dove = new Map()
 for (const nome of file) {
   const testo = readFileSync(new URL(nome, cartella), 'utf8')
-  const re = /create\s+or\s+replace\s+function\s+([a-z_][a-z0-9_]*)\s*\(([^)]*)\)/gi
+  const re = /create\s+(?:or\s+replace\s+)?function\s+([a-z_][a-z0-9_]*)\s*\(([^)]*)\)/gi
   let m
   while ((m = re.exec(testo)) !== null) {
     const funzione = m[1]
@@ -93,7 +100,7 @@ console.log('\nschema.sql non da permessi a funzioni che non definisce')
   // creato. Il realtime sta dopo.
   const testo = readFileSync(new URL('schema.sql', cartella), 'utf8')
   const definite = new Set(
-    [...testo.matchAll(/create\s+or\s+replace\s+function\s+([a-z_][a-z0-9_]*)/gi)].map((m) => m[1])
+    [...testo.matchAll(/create\s+(?:or\s+replace\s+)?function\s+([a-z_][a-z0-9_]*)/gi)].map((m) => m[1])
   )
   const permessi = [
     ...testo.matchAll(/(?:revoke|grant)\s+execute\s+on\s+function\s+([a-z_][a-z0-9_]*)/gi),
