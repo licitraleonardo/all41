@@ -1,0 +1,128 @@
+/* La pagina del prossimo viaggio: quasi vuota apposta. */
+
+.prossimo {
+  display: flex;
+  flex-direction: column;
+  /* La barra dei tab in fondo e la barra di stato in cima: le due misure
+     stanno in `index.css`, qui si sommano e basta. */
+  min-height: calc(100dvh - var(--altezza-tab) - 44px - var(--spazio-alto));
+  padding: 12px 16px calc(var(--altezza-tab) + 16px);
+}
+
+/* La freccia sta in alto a sinistra, dove il pollice la trova senza
+   cercarla, e porta il nome del viaggio accanto: su una pagina vuota una
+   freccia nuda non dice dove porta. */
+.prossimo-indietro {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 10px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(247, 244, 236, 0.08);
+  color: var(--sand);
+  font-family: var(--font-testo);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.prossimo-indietro span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.prossimo-indietro:active {
+  background: rgba(247, 244, 236, 0.16);
+}
+
+.prossimo-centro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  /* Non esattamente al centro: un po' più in alto sta meglio, perché in
+     fondo c'è la barra dei tab che pesa. */
+  padding-bottom: 8%;
+}
+
+.prossimo-titolo {
+  margin: 0;
+  font-family: var(--font-titoli);
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.prossimo-sotto {
+  margin: 0;
+  max-width: 22ch;
+  color: rgba(247, 244, 236, 0.7);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.prossimo-carica {
+  margin-top: 12px;
+  padding: 14px 22px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--gold);
+  color: var(--sea);
+  font-family: var(--font-testo);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prossimo-carica:active {
+  transform: scale(0.98);
+}
+
+.prossimo-nota {
+  margin: 0;
+  max-width: 24ch;
+  color: rgba(247, 244, 236, 0.65);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* La riga del tempo passato, in cima all'itinerario della Sardegna. */
+.tempo-passato {
+  margin: 0 0 14px;
+  color: rgba(247, 244, 236, 0.72);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.tempo-passato strong {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* La freccia per tornare al prossimo viaggio, dall'itinerario. */
+.torna-prossimo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 14px 8px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(247, 244, 236, 0.08);
+  color: var(--sand);
+  font-family: var(--font-testo);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.torna-prossimo span {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.torna-prossimo:active {
+  background: rgba(247, 244, 236, 0.16);
+}
