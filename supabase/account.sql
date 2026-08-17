@@ -164,6 +164,36 @@ end $$;
 revoke execute on function aggancia_dispositivo(uuid) from public, anon;
 grant execute on function aggancia_dispositivo(uuid) to authenticated;
 
+-- ——————————————————————————————————————————————— quante volte puoi bussare
+
+-- ⚠️ Chiuse le porte, il codice di 5 lettere è rimasto **l'unica chiave**,
+-- e questo lo rende il punto debole di tutto il resto.
+--
+-- Il conto: l'alfabeto ha 31 caratteri (niente I L O 0 1, per non
+-- confondersi dettandolo), quindi le combinazioni sono 31^5 = 28.629.151,
+-- e i codici validi sono 8. Una macchina che prova codici a raffica ha
+-- una probabilità concreta di trovarne uno in qualche ora — che è tanto
+-- per una persona e niente per un programma.
+--
+-- Qui si conta quante volte una sessione sbaglia, e dopo qualche
+-- tentativo la porta smette di rispondere per un quarto d'ora.
+--
+-- ⚠️ Il conto è **per sessione** e non per tutti insieme, e la ragione è
+-- che il contrario sarebbe peggio del problema: un contatore unico si
+-- riempirebbe di apposta, e a quel punto sarebbero gli otto a restare
+-- fuori. Meglio un limite che si aggira cambiando sessione — cosa che
+-- costa comunque una registrazione ogni pochi tentativi — che uno che si
+-- può usare per chiudere fuori il gruppo.
+create table if not exists tentativi_codice (
+  auth_id   uuid primary key references auth.users (id) on delete cascade,
+  sbagliati int not null default 0,
+  ultimo    timestamptz not null default now()
+);
+
+-- Protezione accesa e nessuna regola: ci arriva solo la funzione qui
+-- sotto. Sapere quante volte qualcuno ha sbagliato non serve a nessuno.
+alter table tentativi_codice enable row level security;
+
 -- ————————————————————————————————————————————————————————————— la porta
 
 -- ⚠️ Questa funzione è **l'unico modo di rientrare a porte chiuse**, e
@@ -204,23 +234,64 @@ security definer
 set search_path = public
 as $$
 declare
+  -- Quante volte si può sbagliare, e quanto si aspetta dopo.
+  --
+  -- Otto tentativi sono generosi per cinque lettere: chi le sbaglia otto
+  -- volte di fila non sta ricordando male, sta provando. E un quarto
+  -- d'ora è niente per una persona e un muro per un programma.
+  LIMITE  constant int := 8;
+  PAUSA   constant interval := interval '15 minutes';
   m members;
+  t tentativi_codice;
 begin
+  -- Senza sessione non si bussa. La funzione è concessa solo a chi è
+  -- entrato, quindi non dovrebbe capitare: se capita, non si prova
+  -- nemmeno a contare i tentativi di un anonimo che non esiste.
+  if auth.uid() is null then
+    return;
+  end if;
+
+  select * into t from tentativi_codice where auth_id = auth.uid();
+
+  -- ⚠️ Qui si **solleva**, e in tutto il resto di questo file non si fa
+  -- mai. La differenza è chi sta dall'altra parte: le altre funzioni
+  -- girano da sole in sottofondo, questa risponde a una persona che ha
+  -- appena premuto «Entra».
+  --
+  -- Se rispondesse «codice non riconosciuto» come a un codice sbagliato,
+  -- chi ha davvero sbagliato otto volte penserebbe di aver perso il
+  -- profilo per sempre — e non avrebbe nessun modo di scoprire che
+  -- bastava aspettare.
+  if found and t.sbagliati >= LIMITE and t.ultimo > now() - PAUSA then
+    raise exception 'Troppi tentativi sbagliati. Riprova fra 15 minuti.';
+  end if;
+
   select * into m from members where access_code = upper(trim(p_codice));
+
   if not found then
+    -- Il conto sale. E riparte da uno se l'ultimo errore è vecchio: chi
+    -- sbaglia due volte oggi e due domani non deve trovarsi murato fuori
+    -- al quarto tentativo di una settimana.
+    insert into tentativi_codice (auth_id, sbagliati, ultimo)
+         values (auth.uid(), 1, now())
+    on conflict (auth_id) do update
+       set sbagliati = case
+             when tentativi_codice.ultimo < now() - PAUSA then 1
+             else tentativi_codice.sbagliati + 1
+           end,
+           ultimo = now();
+
     -- Qui il «non riconosciuto» è vero, e si può dire: lista vuota.
     return;
   end if;
 
-  -- ⚠️ Si aggancia solo se c'è una sessione. Senza, si restituisce
-  -- comunque il profilo: l'app deve poter dire «codice giusto» anche a
-  -- chi ha la rete che balla, e riproverà ad agganciarsi da sola alla
-  -- prossima apertura.
-  if auth.uid() is not null then
-    insert into member_devices (auth_id, member_id)
-         values (auth.uid(), m.id)
-    on conflict (auth_id) do update set member_id = excluded.member_id;
-  end if;
+  -- Codice giusto: il conto si azzera. Senza, uno che sbaglia sette volte
+  -- e poi indovina resterebbe a un tentativo dal muro per sempre.
+  delete from tentativi_codice where auth_id = auth.uid();
+
+  insert into member_devices (auth_id, member_id)
+       values (auth.uid(), m.id)
+  on conflict (auth_id) do update set member_id = excluded.member_id;
 
   return next m;
 end $$;

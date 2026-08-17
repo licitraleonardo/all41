@@ -152,6 +152,64 @@ console.log('\nil database: una domanda, una risposta')
   // Una tabella e non una colonna: Leonardo entra da telefono e computer,
   // e con una colonna sola il secondo dispositivo spegnerebbe il primo.
   prova('un membro puo avere piu telefoni', /member_id\s+uuid not null references members/.test(sql) && !/member_id\s+uuid[^\n]*unique/.test(sql))
+
+  // ————————————————————————————————————————————— quante volte puoi bussare
+
+  // ⚠️ A porte chiuse il codice di 5 lettere e' l'unica chiave, e le
+  // combinazioni sono 31^5 = 28.629.151 con 8 codici validi: per una
+  // persona e' irraggiungibile, per un programma sono ore.
+  prova('c e il conto dei tentativi', /create table if not exists tentativi_codice/.test(sql))
+  prova('e nessuno lo puo leggere', /alter table tentativi_codice enable row level security/.test(sql)
+    && !/create policy[\s\S]*?on tentativi_codice/.test(sql))
+
+  const porta = sql.slice(sql.indexOf('function entra_col_codice'))
+  const corpoPorta = porta.slice(0, porta.indexOf('revoke execute'))
+
+  // ⚠️ L'ORDINE e' tutto: il muro va guardato PRIMA di cercare il codice.
+  // Controllandolo dopo, chi ha gia' sbagliato otto volte entrerebbe lo
+  // stesso appena indovina - cioe' il limite fermerebbe solo chi sbaglia
+  // e lascerebbe passare chi ha ragione a forza di provare, che e'
+  // esattamente il contrario di quello che serve.
+  //
+  // ⚠️ E si cerca la condizione INTERA, non il pezzo `sbagliati >=
+  // LIMITE`. La prima versione cercava quel pezzo, e rompendo la funzione
+  // apposta — `if false and t.sbagliati >= LIMITE` — restava verde: il
+  // frammento c'era ancora, il muro no. Un controllo che cerca un pezzo
+  // di condizione non sa dire se quella condizione puo' mai essere vera.
+  const CONDIZIONE =
+    /if\s+found\s+and\s+t\.sbagliati\s*>=\s*LIMITE\s+and\s+t\.ultimo\s*>\s*now\(\)\s*-\s*PAUSA\s+then/
+  const muro = corpoPorta.search(CONDIZIONE)
+  const cerca = corpoPorta.indexOf('from members where access_code')
+  prova('il muro c e per intero', muro >= 0)
+  prova('e si guarda prima di cercare il codice', muro > 0 && muro < cerca, { muro, cerca })
+
+  // ⚠️ E i due numeri devono voler dire qualcosa. Un `LIMITE := 999999`
+  // lascerebbe passare ogni controllo qui sopra e non fermerebbe niente:
+  // il muro ci sarebbe, alto zero.
+  const limite = Number((corpoPorta.match(/LIMITE\s+constant int := (\d+)/) ?? [])[1])
+  prova('e il limite e un numero che ferma davvero', limite > 0 && limite <= 20, { limite })
+  const pausa = Number((corpoPorta.match(/PAUSA\s+constant interval := interval '(\d+) minutes'/) ?? [])[1])
+  prova('e la pausa si sente', pausa >= 5, { pausa })
+
+  // ⚠️ Qui si solleva, ed e' l'unico posto di questo file dove si fa:
+  // dall'altra parte c'e' una persona che ha appena premuto «Entra», non
+  // una Legge che scatta in sottofondo. Rispondendo «codice non
+  // riconosciuto» come a un codice sbagliato, chi ha sbagliato davvero
+  // penserebbe di aver perso il profilo, senza modo di sapere che
+  // bastava aspettare.
+  prova('e chi lo trova se lo sente dire', /raise exception 'Troppi tentativi/.test(corpoPorta))
+
+  // Entrare azzera il conto: senza, chi sbaglia sette volte e poi
+  // indovina resterebbe a un tentativo dal muro per sempre.
+  prova('entrare azzera il conto', /delete from tentativi_codice where auth_id = auth\.uid\(\)/.test(corpoPorta))
+
+  // E il conto riparte da uno quando l'ultimo errore e' vecchio: due
+  // sbagli oggi e due domani non devono sommarsi.
+  prova('e il conto non si somma nel tempo', /when tentativi_codice\.ultimo < now\(\) - PAUSA then 1/.test(corpoPorta))
+
+  // I due numeri stanno in cima alla funzione con un nome, non sparsi
+  // dentro le condizioni: e' la stessa regola dei limiti in `config/`.
+  prova('i due numeri hanno un nome', /LIMITE\s+constant int/.test(corpoPorta) && /PAUSA\s+constant interval/.test(corpoPorta))
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
