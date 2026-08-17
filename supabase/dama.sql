@@ -30,14 +30,14 @@ create index if not exists dama_recenti_idx
 
 alter table dama_games enable row level security;
 
-drop policy if exists "dama: lettura per autenticati"   on dama_games;
-drop policy if exists "dama: creazione per autenticati" on dama_games;
-
-create policy "dama: lettura per autenticati"
-  on dama_games for select to authenticated using (true);
-
-create policy "dama: creazione per autenticati"
-  on dama_games for insert to authenticated with check (true);
+-- ⚠️ Le regole di accesso di questa tabella NON stanno piu qui: stanno
+-- in `regole-chiuse.sql`, insieme a tutte le altre.
+--
+-- Ci stavano, e dicevano `true`: chiunque avesse una sessione. Rilanciare
+-- questo file dopo la chiusura del 17 agosto avrebbe rimesso quella regola
+-- **accanto** a quella stretta, senza nessun errore — e Postgres le valuta
+-- in OR, quindi avrebbe vinto la piu larga. La sorveglia
+-- `prove/sql-una-sola-volta.mjs`.
 
 -- Nessuna policy di update: le mosse passano SOLO dalla funzione qui
 -- sotto. Due telefoni che muovono insieme non devono poter scrivere due

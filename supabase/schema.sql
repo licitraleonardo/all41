@@ -474,165 +474,28 @@ alter table voice_messages enable row level security;
 alter table impostore_games enable row level security;
 alter table mvp_days      enable row level security;
 
-drop policy if exists "trips: lettura per autenticati"    on trips;
-drop policy if exists "members: lettura per autenticati"  on members;
-drop policy if exists "members: creazione per autenticati" on members;
-drop policy if exists "members: modifica per autenticati"  on members;
-drop policy if exists "azioni: lettura per autenticati"    on quick_actions;
-drop policy if exists "azioni: creazione per autenticati"  on quick_actions;
-drop policy if exists "azioni: modifica per autenticati"   on quick_actions;
-drop policy if exists "voti: lettura per autenticati"      on votes;
-drop policy if exists "voti: creazione per autenticati"    on votes;
-drop policy if exists "foto: lettura per autenticati"      on photos;
-drop policy if exists "foto: creazione per autenticati"    on photos;
-drop policy if exists "foto: modifica per autenticati"     on photos;
-drop policy if exists "punti: lettura per autenticati"     on point_events;
-drop policy if exists "leggi: lettura per autenticati"     on leggi;
-drop policy if exists "sfide: lettura per autenticati"     on challenges;
-drop policy if exists "spese: lettura per autenticati"     on expenses;
-drop policy if exists "spese: creazione per autenticati"   on expenses;
-drop policy if exists "spese: modifica per autenticati"    on expenses;
-drop policy if exists "rimborsi: lettura per autenticati"  on payments;
-drop policy if exists "rimborsi: creazione per autenticati" on payments;
-drop policy if exists "rimborsi: modifica per autenticati" on payments;
-drop policy if exists "pecora: lettura per autenticati"    on sheep_records;
-drop policy if exists "documenti: lettura per autenticati"   on documents;
-drop policy if exists "documenti: creazione per autenticati" on documents;
-drop policy if exists "documenti: modifica per autenticati"  on documents;
-drop policy if exists "vocali: lettura per autenticati"     on voice_messages;
-drop policy if exists "vocali: creazione per autenticati"   on voice_messages;
-drop policy if exists "vocali: modifica per autenticati"    on voice_messages;
-drop policy if exists "impostore: lettura per autenticati"   on impostore_games;
-drop policy if exists "impostore: creazione per autenticati" on impostore_games;
-drop policy if exists "impostore: modifica per autenticati"  on impostore_games;
-drop policy if exists "mvp: lettura per autenticati"         on mvp_days;
-drop policy if exists "mvp: creazione per autenticati"       on mvp_days;
-
-create policy "trips: lettura per autenticati"
-  on trips for select to authenticated using (true);
-
-create policy "members: lettura per autenticati"
-  on members for select to authenticated using (true);
-
-create policy "members: creazione per autenticati"
-  on members for insert to authenticated with check (true);
-
-create policy "members: modifica per autenticati"
-  on members for update to authenticated using (true) with check (true);
-
-create policy "azioni: lettura per autenticati"
-  on quick_actions for select to authenticated using (true);
-
-create policy "azioni: creazione per autenticati"
-  on quick_actions for insert to authenticated with check (true);
-
--- Serve per il "elimina" dell'autore, che è un deleted_at e non una
--- cancellazione vera: il feed di chi era offline non deve avere buchi.
-create policy "azioni: modifica per autenticati"
-  on quick_actions for update to authenticated using (true) with check (true);
-
-create policy "voti: lettura per autenticati"
-  on votes for select to authenticated using (true);
-
-create policy "voti: creazione per autenticati"
-  on votes for insert to authenticated with check (true);
-
-create policy "foto: lettura per autenticati"
-  on photos for select to authenticated using (true);
-
-create policy "foto: creazione per autenticati"
-  on photos for insert to authenticated with check (true);
-
--- Serve per il "elimina" dell'autore: cancellazione morbida, non vera.
-create policy "foto: modifica per autenticati"
-  on photos for update to authenticated using (true) with check (true);
-
--- Punti e Leggi si leggono, non si scrivono da fuori: passano solo dalle
--- funzioni qui sotto. Altrimenti chiunque potrebbe regalarsi cento punti
--- lasciando lo storico muto, ed è proprio quello che il motore deve
--- impedire.
-create policy "punti: lettura per autenticati"
-  on point_events for select to authenticated using (true);
-
-create policy "leggi: lettura per autenticati"
-  on leggi for select to authenticated using (true);
-
-create policy "sfide: lettura per autenticati"
-  on challenges for select to authenticated using (true);
-
--- L'Impostore: chiunque apre una partita e chiunque la fa avanzare, che
--- e' il punto — se a chi e' di turno si scarica il telefono, la partita
--- non si blocca. L'avanzamento vero passa comunque dalla funzione, che
--- controlla di non saltare un turno.
-create policy "impostore: lettura per autenticati"
-  on impostore_games for select to authenticated using (true);
-
-create policy "impostore: creazione per autenticati"
-  on impostore_games for insert to authenticated with check (true);
-
-create policy "impostore: modifica per autenticati"
-  on impostore_games for update to authenticated using (true) with check (true);
-
--- L'MVP lo fissa il primo telefono che apre l'app dopo mezzanotte. Non
--- si modifica e non si cancella: una giornata chiusa resta chiusa, ed e'
--- la chiave primaria a impedire che due telefoni ne scrivano due diversi.
-create policy "mvp: lettura per autenticati"
-  on mvp_days for select to authenticated using (true);
-
-create policy "mvp: creazione per autenticati"
-  on mvp_days for insert to authenticated with check (true);
-
--- Le spese non passano da nessuna funzione: qui non c'è niente da
--- proteggere dal furbo di turno, perché non danno punti e non entrano in
--- classifica. È l'unica sezione dove il database è solo un quaderno.
--- La modifica serve al "elimina" dell'autore, che resta morbido come
--- altrove: un importo sbagliato si toglie, non si riscrive la storia.
-create policy "spese: lettura per autenticati"
-  on expenses for select to authenticated using (true);
-
-create policy "spese: creazione per autenticati"
-  on expenses for insert to authenticated with check (true);
-
-create policy "spese: modifica per autenticati"
-  on expenses for update to authenticated using (true) with check (true);
-
-create policy "rimborsi: lettura per autenticati"
-  on payments for select to authenticated using (true);
-
-create policy "rimborsi: creazione per autenticati"
-  on payments for insert to authenticated with check (true);
-
-create policy "rimborsi: modifica per autenticati"
-  on payments for update to authenticated using (true) with check (true);
-
--- Il record della pecora si legge, non si scrive da fuori: passa dalla
--- funzione qui sotto, che non lo lascia mai scendere. Da questo record
--- dipendono due Leggi, quindi vale la stessa regola dei punti.
-create policy "pecora: lettura per autenticati"
-  on sheep_records for select to authenticated using (true);
-
--- I documenti si leggono tutti: il "solo per me" e' un filtro nella
--- schermata, non una serratura, e i testi dell'app lo dicono. Nascondere
--- qui sarebbe promettere una privacy che questo modello di sicurezza non
--- puo' mantenere comunque — chi apre il database li vedrebbe lo stesso.
-create policy "documenti: lettura per autenticati"
-  on documents for select to authenticated using (true);
-
-create policy "documenti: creazione per autenticati"
-  on documents for insert to authenticated with check (true);
-
-create policy "documenti: modifica per autenticati"
-  on documents for update to authenticated using (true) with check (true);
-
-create policy "vocali: lettura per autenticati"
-  on voice_messages for select to authenticated using (true);
-
-create policy "vocali: creazione per autenticati"
-  on voice_messages for insert to authenticated with check (true);
-
--- Serve per il "elimina" dell'autore, morbido come altrove.
-create policy "vocali: modifica per autenticati"
-  on voice_messages for update to authenticated using (true) with check (true);
+-- ⚠️ LE REGOLE DI ACCESSO NON STANNO PIÙ QUI.
+--
+-- Stanno in `regole-chiuse.sql`, e la ragione è che tenerle anche qui
+-- era una trappola silenziosa: questo file dichiara di potersi
+-- rilanciare, e rilanciandolo avrebbe ricreato le regole vecchie —
+-- quelle che dicevano `using (true)`, cioè «legge chiunque».
+--
+-- E non avrebbe dato nessun errore. I nomi vecchi non esistono più,
+-- quindi le `create policy` sarebbero andate a buon fine, aggiungendo
+-- una regola permissiva **accanto** a quella stretta. Postgres le mette
+-- in OR: una sola regola larga riapre tutto. Nessun messaggio, nessuna
+-- riga rossa, e la fortezza smontata da un comando che si credeva sicuro.
+--
+-- È lo stesso identico difetto per cui è nata `prove/sql-una-sola-volta.mjs`
+-- — due file che definiscono la stessa cosa, e vince chi parte per ultimo —
+-- solo applicato alle regole invece che alle funzioni. Adesso quella prova
+-- guarda anche queste.
+--
+--   le regole:   supabase/regole-chiuse.sql
+--   i file:      supabase/file-chiusi.sql
+--   chi sei:     supabase/account.sql
+--   tornare indietro: supabase/regole-aperte.sql
 
 -- Tiene solo il meglio della giornata: due partite di fila non si
 -- sovrascrivono l'una con l'altra, e un punteggio più basso non abbassa
@@ -1275,19 +1138,6 @@ exception when others then
   raise notice 'Bucket non creato (%). Crealo a mano: Storage -> New bucket, nome foto, Public.', sqlerrm;
 end $$;
 
-do $$
-begin
-  drop policy if exists "storage foto: lettura"     on storage.objects;
-  drop policy if exists "storage foto: caricamento" on storage.objects;
-
-  create policy "storage foto: lettura"
-    on storage.objects for select using (bucket_id = 'foto');
-
-  create policy "storage foto: caricamento"
-    on storage.objects for insert to authenticated with check (bucket_id = 'foto');
-exception when others then
-  raise notice 'Permessi sul bucket non impostati (%). Se le foto si caricano, va bene cosi.', sqlerrm;
-end $$;
 
 -- Bucket dei documenti, separato dalle foto: qui dentro ci sono anche
 -- PDF, e i due posti hanno regole diverse su cosa si accetta.
@@ -1300,19 +1150,6 @@ exception when others then
   raise notice 'Bucket documenti non creato (%). Crealo a mano: Storage -> New bucket, nome documenti, Public.', sqlerrm;
 end $$;
 
-do $$
-begin
-  drop policy if exists "storage documenti: lettura"     on storage.objects;
-  drop policy if exists "storage documenti: caricamento" on storage.objects;
-
-  create policy "storage documenti: lettura"
-    on storage.objects for select using (bucket_id = 'documenti');
-
-  create policy "storage documenti: caricamento"
-    on storage.objects for insert to authenticated with check (bucket_id = 'documenti');
-exception when others then
-  raise notice 'Permessi sul bucket documenti non impostati (%). Se si caricano, va bene cosi.', sqlerrm;
-end $$;
 
 -- Bucket dei vocali.
 do $$
@@ -1324,19 +1161,10 @@ exception when others then
   raise notice 'Bucket vocali non creato (%). Crealo a mano: Storage -> New bucket, nome vocali, Public.', sqlerrm;
 end $$;
 
-do $$
-begin
-  drop policy if exists "storage vocali: lettura"     on storage.objects;
-  drop policy if exists "storage vocali: caricamento" on storage.objects;
 
-  create policy "storage vocali: lettura"
-    on storage.objects for select using (bucket_id = 'vocali');
-
-  create policy "storage vocali: caricamento"
-    on storage.objects for insert to authenticated with check (bucket_id = 'vocali');
-exception when others then
-  raise notice 'Permessi sul bucket vocali non impostati (%). Se si caricano, va bene cosi.', sqlerrm;
-end $$;
+-- ⚠️ Anche i permessi sui bucket stanno in `file-chiusi.sql`, per la
+-- stessa ragione: qui dicevano solo «è il bucket foto», cioè elenco e
+-- caricamento aperti a chiunque avesse una sessione.
 
 -- PostgREST tiene in memoria le firme delle funzioni: dopo averle
 -- cambiate va avvisato, altrimenti continua a cercare quella vecchia e

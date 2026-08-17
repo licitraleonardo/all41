@@ -106,6 +106,106 @@ console.log('\nschema.sql non da permessi a funzioni che non definisce')
   })
 }
 
+console.log('\nnessuna regola di accesso definita in due file')
+{
+  // ⚠️ Stessa trappola delle funzioni, applicata alle regole di accesso —
+  // e il 17 agosto c'era davvero, viva, sotto una fortezza appena chiusa.
+  //
+  // `schema.sql` conteneva 39 `create policy`, 23 delle quali dicevano
+  // `using (true)`: legge chiunque. Quel file dichiara di potersi
+  // rilanciare, e rilanciandolo avrebbe ricreato quelle regole.
+  //
+  // Senza dare NESSUN errore, ed e' la parte che conta: i nomi vecchi
+  // erano stati rinominati, quindi le `create policy` sarebbero andate a
+  // buon fine e avrebbero aggiunto una regola larga ACCANTO a quella
+  // stretta. Postgres le valuta in OR: una sola regola larga riapre
+  // tutto. La fortezza smontata da un comando che si credeva sicuro.
+  const dovePolitica = new Map()
+  for (const nome of file) {
+    const testo = readFileSync(new URL(nome, cartella), 'utf8')
+    // Solo le righe vere: dentro i commenti (`-- ...`) si parla di regole
+    // per spiegarle, e un controllo che legge i commenti risponde a
+    // domande che non gli hai fatto.
+    const codice = testo
+      .split('\n')
+      .map((r) => r.replace(/--.*$/, ''))
+      .join('\n')
+    const re = /create\s+policy\s+"([^"]+)"/gi
+    let m
+    while ((m = re.exec(codice)) !== null) {
+      if (!dovePolitica.has(m[1])) dovePolitica.set(m[1], [])
+      dovePolitica.get(m[1]).push(nome)
+    }
+  }
+
+  const doppie = [...dovePolitica.entries()].filter(([, posti]) => new Set(posti).size > 1)
+  prova(
+    'ogni regola sta in un file solo',
+    doppie.length === 0,
+    doppie.map(([n, posti]) => ({
+      regola: n,
+      definita_in: [...new Set(posti)],
+      aiuto:
+        'toglila da tutti i file tranne uno. Due regole con lo stesso scopo ma condizioni ' +
+        'diverse non litigano: Postgres le mette in OR, quindi vince la piu larga',
+    }))
+  )
+
+  // ⚠️ E il controllo che avrebbe fermato la cosa da solo: nessun file
+  // scrive `using (true)`, tranne quello che serve apposta a riaprire.
+  const RITORNO = 'regole-aperte.sql'
+  const larghe = file
+    .filter((n) => n !== RITORNO)
+    .map((n) => {
+      const codice = readFileSync(new URL(n, cartella), 'utf8')
+        .split('\n')
+        .map((r) => r.replace(/--.*$/, ''))
+        .join('\n')
+      const quante = (codice.match(/(using|with check)\s*\(\s*true\s*\)/gi) ?? []).length
+      return { file: n, quante }
+    })
+    .filter((r) => r.quante > 0)
+
+  prova(
+    `nessun file riapre le porte, tranne ${RITORNO}`,
+    larghe.length === 0,
+    { larghe, aiuto: 'una regola `using (true)` lasciata in giro riapre tutto senza dare errore' }
+  )
+
+  // E il file del ritorno deve continuare a saper riaprire: se qualcuno lo
+  // svuota o lo "sistema", la rete di sicurezza sparisce in silenzio e se
+  // ne accorge solo chi ci si butta sopra in emergenza.
+  //
+  // ⚠️ Contare quante condizioni larghe ci sono non basta, e l'ho scoperto
+  // rompendolo apposta: togliendo solo le `using (true)` e lasciando le
+  // `with check (true)`, il conto restava sopra soglia e la prova diceva
+  // di si'. Il controllo giusto non e' quanti sono: e' che il file
+  // riapra **tutto quello che la chiusura aveva chiuso**, e che non gli
+  // sia rimasto attaccato addosso nessun controllo di appartenenza.
+  const ritorno = readFileSync(new URL(RITORNO, cartella), 'utf8')
+    .split('\n')
+    .map((r) => r.replace(/--.*$/, ''))
+    .join('\n')
+  const chiuse = readFileSync(new URL('regole-chiuse.sql', cartella), 'utf8')
+    .split('\n')
+    .map((r) => r.replace(/--.*$/, ''))
+    .join('\n')
+
+  const quanteRiapre = (ritorno.match(/create\s+policy/gi) ?? []).length
+  const quanteChiude = (chiuse.match(/create\s+policy/gi) ?? []).length
+  prova(
+    'il ritorno riapre tutto quello che la chiusura chiude',
+    quanteRiapre >= quanteChiude,
+    { riapre: quanteRiapre, chiude: quanteChiude },
+  )
+
+  prova(
+    'e non e rimasto nessun controllo di appartenenza nel ritorno',
+    !/sono_del_viaggio/.test(ritorno),
+    { aiuto: 'un `sono_del_viaggio` qui dentro vuol dire che il file non riapre piu niente' },
+  )
+}
+
 console.log('\nschema.sql dice che da solo non basta')
 {
   const testo = readFileSync(new URL('schema.sql', cartella), 'utf8')

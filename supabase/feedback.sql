@@ -28,14 +28,11 @@ alter table feedback enable row level security;
 
 -- Solo insert. Nessun select, nessun update, nessun delete: quello che è
 -- stato scritto non si ritira e non si legge dall'app.
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'feedback'
-      and policyname = 'feedback: scrittura per autenticati'
-  ) then
-    create policy "feedback: scrittura per autenticati"
-      on feedback for insert to authenticated with check (true);
-  end if;
-end $$;
+-- ⚠️ Le regole di accesso di questa tabella NON stanno piu qui: stanno
+-- in `regole-chiuse.sql`, insieme a tutte le altre.
+--
+-- Ci stavano, e dicevano `true`: chiunque avesse una sessione. Rilanciare
+-- questo file dopo la chiusura del 17 agosto avrebbe rimesso quella regola
+-- **accanto** a quella stretta, senza nessun errore — e Postgres le valuta
+-- in OR, quindi avrebbe vinto la piu larga. La sorveglia
+-- `prove/sql-una-sola-volta.mjs`.
