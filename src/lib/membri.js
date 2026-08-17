@@ -52,14 +52,35 @@ export const leggiMembri = conCache('membri', async function leggiMembri() {
   return data.map(daRiga)
 })
 
+// ⚠️ Questa non è una lettura, ed è l'unica di tutto il file: è **la
+// porta**.
+//
+// Prima cercava il codice leggendo `members` da fuori. Funzionava perché
+// chiunque poteva leggere quella tabella — cioè funzionava per la stessa
+// ragione per cui l'app non era al sicuro. A porte chiuse quella lettura
+// torna **vuota** a chi non è ancora agganciato, e chi ha svuotato la
+// cache o cambiato telefono si sentirebbe dire «Codice non riconosciuto»:
+// una frase falsa, definitiva, e senza nessun errore da nessuna parte.
+//
+// `entra_col_codice` gira sul database coi permessi di chi l'ha scritta:
+// trova il profilo, aggancia il telefono e lo restituisce. È il momento
+// in cui uno dimostra di essere del viaggio — e l'unico posto in cui il
+// codice di 5 lettere serve ancora a qualcosa.
+// ⚠️ Torna una **lista**, e non è un dettaglio di forma.
+//
+// Scritta per restituire una riga sola, una funzione SQL che non trova
+// niente non restituisce `null`: restituisce una riga di **soli `null`**.
+// In JavaScript quell'oggetto è vero, quindi `daRiga` lo prenderebbe per
+// un profilo e farebbe entrare chi ha sbagliato codice — dentro un
+// profilo senza nome. È successo davvero provando questa funzione, ed è
+// la seconda volta in questo progetto. Con una lista, «non trovato» è
+// una lista vuota, e una lista vuota non somiglia a niente.
 export async function trovaPerCodice(codice) {
-  const { data, error } = await supabase
-    .from('members')
-    .select(CAMPI)
-    .eq('access_code', codice)
-    .maybeSingle()
+  const { data, error } = await supabase.rpc('entra_col_codice', {
+    p_codice: codice,
+  })
   if (error) throw error
-  return daRiga(data)
+  return daRiga(data?.[0] ?? null)
 }
 
 // Il codice che si sta provando a usare, messo da parte prima di mandarlo.

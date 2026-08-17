@@ -353,6 +353,23 @@ export default function App() {
           return
         }
 
+        // ⚠️ L'aggancio va PRIMA della lettura, non dopo, e a porte chiuse
+        // è la differenza fra entrare e restare fuori.
+        //
+        // Il telefono si ricorda chi è (`all41.memberId`) più a lungo di
+        // quanto duri la sessione: basta che la sessione si rinnovi male,
+        // o che il telefono sia stato spento a lungo, e ci si ritrova con
+        // l'identità giusta in tasca e un lasciapassare nuovo. Leggendo
+        // prima di agganciare, quella lettura torna vuota, l'app conclude
+        // «profilo cancellato dal database» e ributta fuori una persona
+        // che era dentro — chiedendole il codice che probabilmente non
+        // ricorda.
+        //
+        // Non blocca niente: se non risponde si va avanti lo stesso, e al
+        // massimo si finisce sul codice invece che dentro.
+        await agganciaDispositivo().catch(() => {})
+        if (annullato) return
+
         const trovato = await trovaPerId(id)
         if (annullato) return
 
@@ -366,17 +383,6 @@ export default function App() {
         setMembro(trovato)
         setVista('dentro')
         segnaVisita(trovato.id).catch(() => {})
-
-        // Dice al database che questa sessione è questo membro. Non si
-        // vede, non chiede niente, e oggi non cambia niente: serve a
-        // rendere scrivibile «solo gli otto possono leggere», che adesso
-        // il database non sa esprimere perché non sa chi sei.
-        //
-        // ⚠️ Sta dopo `setVista('dentro')` e non prima, apposta: l'avvio
-        // non deve aspettarla né poterci inciampare. Se fallisce si
-        // riprova alla prossima apertura, e il conto in fondo a
-        // `supabase/account.sql` dice chi manca ancora.
-        agganciaDispositivo().catch(() => {})
 
         // Chi apre l'app alle quattro di notte lo sta facendo apposta.
         allApertura(trovato.id).catch(() => {})

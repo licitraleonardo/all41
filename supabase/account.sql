@@ -164,6 +164,70 @@ end $$;
 revoke execute on function aggancia_dispositivo(uuid) from public, anon;
 grant execute on function aggancia_dispositivo(uuid) to authenticated;
 
+-- ————————————————————————————————————————————————————————————— la porta
+
+-- ⚠️ Questa funzione è **l'unico modo di rientrare a porte chiuse**, e
+-- senza di lei chiudere sarebbe murare.
+--
+-- Chi svuota la cache, cambia telefono o apre in navigazione privata
+-- perde `all41.memberId` e si ritrova davanti al campo del codice. Fino a
+-- ieri il codice si cercava leggendo `members` da fuori; a porte chiuse
+-- quella lettura torna **vuota**, perché chi non è ancora agganciato non
+-- è del viaggio. E l'app, che riceve zero righe, dice «Codice non
+-- riconosciuto» — una frase falsa, definitiva, e senza nessun errore
+-- da nessuna parte.
+--
+-- Quindi la ricerca del codice smette di essere una lettura e diventa
+-- questa funzione, che gira coi permessi di chi l'ha scritta: trova il
+-- profilo, aggancia il telefono e lo restituisce. È il momento esatto in
+-- cui uno **dimostra di essere del viaggio**, ed è l'unico posto dove il
+-- codice di 5 lettere serve ancora a qualcosa.
+-- ⚠️ `setof members` e non `members`, ed è una riga che vale mezz'ora di
+-- danno. Scritta come `returns members`, una funzione che fa `return
+-- null` non restituisce niente: restituisce **una riga di soli `null`**
+-- — `{"id":null,"name":null,...}`. In JavaScript quell'oggetto è
+-- **vero**, quindi l'app la scambia per un profilo trovato e fa entrare
+-- chi ha sbagliato codice, dentro un profilo senza nome.
+--
+-- È successo davvero il 17 agosto, provando questa funzione. Ed è la
+-- seconda volta in questo progetto: identico difetto, stessa forma, a
+-- due settimane di distanza. Con `setof`, «non trovato» è una lista
+-- vuota, e una lista vuota non somiglia a niente.
+--
+-- ⚠️ Cambiare il tipo di ritorno vuole un `drop` prima: `create or
+-- replace` da solo fallisce.
+drop function if exists entra_col_codice(text);
+create function entra_col_codice(p_codice text)
+returns setof members
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  m members;
+begin
+  select * into m from members where access_code = upper(trim(p_codice));
+  if not found then
+    -- Qui il «non riconosciuto» è vero, e si può dire: lista vuota.
+    return;
+  end if;
+
+  -- ⚠️ Si aggancia solo se c'è una sessione. Senza, si restituisce
+  -- comunque il profilo: l'app deve poter dire «codice giusto» anche a
+  -- chi ha la rete che balla, e riproverà ad agganciarsi da sola alla
+  -- prossima apertura.
+  if auth.uid() is not null then
+    insert into member_devices (auth_id, member_id)
+         values (auth.uid(), m.id)
+    on conflict (auth_id) do update set member_id = excluded.member_id;
+  end if;
+
+  return next m;
+end $$;
+
+revoke execute on function entra_col_codice(text) from public, anon;
+grant execute on function entra_col_codice(text) to authenticated;
+
 -- ————————————————————————————————————————————————————— a che punto siamo
 
 -- ⚠️ Da guardare prima di chiudere le porte, ed è l'unica cosa che dice
