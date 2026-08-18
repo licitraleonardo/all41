@@ -4,6 +4,8 @@ import { dataDiOggi, statoDelViaggio } from '../lib/giorni.js'
 import { magliaNeraDelGiorno, mvpDelGiorno, saldiDelGiorno } from '../lib/classifica.js'
 import Proposta from './Proposta.jsx'
 import PropostaInAttesa from './PropostaInAttesa.jsx'
+import { useClassificaChiusa } from '../hooks/useClassificaChiusa.js'
+import { CLASSIFICA_CHIUSA } from '../config/podio.js'
 import Foglio from './Foglio.jsx'
 
 export default function Classifica({
@@ -82,6 +84,9 @@ export default function Classifica({
   // e basta: il suggerimento non dice né quale Legge c'è dietro né
   // quanto costa insistere, perché una trappola annunciata non è una
   // trappola. Chi preme lo stesso la fa scattare, e solo allora la vede.
+  // A viaggio finito la classifica si guarda e basta.
+  const chiusa = useClassificaChiusa()
+
   async function crea(dati) {
     const esito = await onCrea(dati)
     if (esito?.motivo === 'in-voto') {
@@ -142,7 +147,7 @@ export default function Classifica({
               type="button"
               className={m.id === ioId ? 'riga io' : 'riga'}
               onClick={() => setScelto(m.id)}
-              disabled={m.id === ioId && giaCascato}
+              disabled={chiusa || (m.id === ioId && giaCascato)}
             >
               <span className="posto">{i + 1}</span>
               <img
@@ -167,13 +172,13 @@ export default function Classifica({
                     una freccia. E' l'unica cosa dell'app che nessuno
                     indovina da solo: che i punti si possono dare **agli
                     altri**, anche a chi ti sta davanti. */}
-                {!(m.id === ioId && giaCascato) && (
+                {!chiusa && !(m.id === ioId && giaCascato) && (
                   <span className="riga-assegna">assegna punti</span>
                 )}
               </span>
               {/* Senza questa freccia niente dice che la riga si tocca:
                   è la stessa che segna le righe apribili nelle Spese. */}
-              {!(m.id === ioId && giaCascato) && (
+              {!chiusa && !(m.id === ioId && giaCascato) && (
                 <span className="riga-freccia" aria-hidden="true">
                   ›
                 </span>
@@ -183,7 +188,18 @@ export default function Classifica({
         ))}
       </ol>
 
-      <p className="classifica-invito">Tocca qualcuno per proporgli dei punti.</p>
+      {chiusa ? (
+        /* ⚠️ Il cartello sostituisce l'invito, non gli si aggiunge sotto:
+           lasciare «tocca qualcuno per proporgli dei punti» accanto a «la
+           classifica e' chiusa» vuol dire dire due cose opposte nello
+           stesso punto dello schermo. */
+        <p className="classifica-chiusa">
+          <strong>{CLASSIFICA_CHIUSA.titolo}</strong>
+          {CLASSIFICA_CHIUSA.testo}
+        </p>
+      ) : (
+        <p className="classifica-invito">Tocca qualcuno per proporgli dei punti.</p>
+      )}
 
       {destinatario && (
         <Proposta

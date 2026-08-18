@@ -131,5 +131,36 @@ console.log('\nla chiusura e sul database, non nell app')
   ))
 }
 
+console.log('\ne la classifica lo dice, invece di far premere a vuoto')
+{
+  // ⚠️ Questa famiglia nasce da un mio pezzo lasciato a meta': avevo
+  // scritto il rifiuto per chi prova a dare punti, e anche il cartello che
+  // spiega perche' no. Il primo era collegato, il secondo era rimasto nel
+  // file di configurazione senza che lo leggesse nessuno.
+  //
+  // Un testo scritto e mai usato non da' nessun errore: sembra fatto.
+  const classifica = readFileSync(new URL('../src/components/Classifica.jsx', import.meta.url), 'utf8')
+  const gioco = readFileSync(new URL('../src/components/Gioco.jsx', import.meta.url), 'utf8')
+
+  prova('il cartello arriva a schermo', /CLASSIFICA_CHIUSA\.titolo/.test(classifica) && /CLASSIFICA_CHIUSA\.testo/.test(classifica))
+  prova('e il rifiuto a chi ci prova lo stesso', /CLASSIFICA_CHIUSA\.rifiuto/.test(gioco))
+
+  // ⚠️ Il punto che conta: la riga non deve piu' aprire la proposta.
+  // Senza, il cartello dice «e' chiusa» e sotto ognuna delle otto righe
+  // continua a invitare a toccarla.
+  prova('le righe non si toccano piu', /disabled=\{chiusa \|\|/.test(classifica))
+  prova('e non invitano piu a toccarle', (classifica.match(/\{!chiusa && !\(m\.id === ioId/g) ?? []).length === 2)
+
+  // Il cartello PRENDE IL POSTO dell'invito invece di affiancarglisi: due
+  // frasi opposte nello stesso punto dello schermo sono peggio di una
+  // sola sbagliata.
+  prova('e l invito sparisce invece di restare accanto', /chiusa \? \(/.test(classifica))
+
+  // La verita' sta sul database. Un hook che parte da «chiusa» direbbe a
+  // tutti che il gioco e' finito ogni volta che una lettura va storta.
+  const hook = readFileSync(new URL('../src/hooks/useClassificaChiusa.js', import.meta.url), 'utf8')
+  prova('e si parte da «aperta» se non si sa', /useState\(false\)/.test(hook))
+}
+
 console.log(falliti === 0 ? '\nTutto a posto.\n' : `\n${falliti} falliti.\n`)
 process.exit(falliti === 0 ? 0 : 1)

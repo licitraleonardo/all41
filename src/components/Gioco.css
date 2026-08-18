@@ -972,3 +972,26 @@
   background: transparent;
   border-bottom-color: var(--sea);
 }
+
+/* Il cartello che prende il posto dell'invito, a viaggio finito. */
+.classifica-chiusa {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.classifica-chiusa strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 13.5px;
+  color: var(--gold);
+}
+
+/* Una riga che non si tocca piu' resta leggibile: senza, il browser la
+   sbiadisce da solo e la classifica sembra guasta invece che chiusa. */
+.riga:disabled {
+  opacity: 1;
+  cursor: default;
+}
