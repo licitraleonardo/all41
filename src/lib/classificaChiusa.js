@@ -25,11 +25,21 @@ export const classificaChiusa = conCache('viaggio.chiuso', async function classi
 
   if (error) throw error
 
-  // ⚠️ Nessuna riga = non lo so, e allora si risponde «aperta».
+  // ⚠️ Nessuna riga = **non lo so**, e non lo so non è «aperta»: si
+  // solleva.
   //
-  // È il verso giusto in cui sbagliare: sbagliando qui si mostra un tasto
-  // in più, e chi lo preme si sente dire di no dal database. Sbagliando al
-  // contrario si direbbe a tutti che il gioco è finito perché una lettura
-  // è andata storta.
-  return data?.punti_chiusi === true
+  // Rispondere `false` sembrava prudente e ha prodotto il difetto peggiore
+  // della serata. A porte chiuse questa lettura torna vuota per chi non è
+  // ancora riconosciuto — e siccome `conCache` mette da parte ogni
+  // risposta riuscita, quel «non è chiusa» finiva **in cache**: da lì in
+  // poi chiunque chiedesse «è chiusa?» si sentiva rispondere di no, con
+  // sicurezza, da una copia nata da una lettura che non aveva letto
+  // niente. Il podio non è mai partito sui telefoni veri per questo.
+  //
+  // Sollevando invece non si mette via niente, e ogni chiamante decide da
+  // sé — e tutti scelgono «aperta», che resta il verso giusto in cui
+  // sbagliare: si mostra un tasto in più e il database risponde di no con
+  // la sua frase.
+  if (!data) throw new Error('Non riesco a leggere il viaggio.')
+  return data.punti_chiusi === true
 })

@@ -131,6 +131,49 @@ console.log('\nla chiusura e sul database, non nell app')
   ))
 }
 
+console.log('\ne parte davvero, che e la parte che mi era sfuggita')
+{
+  // ⚠️ Questa famiglia nasce da un difetto vero: il podio era finito, era
+  // in produzione, ed era provato — e sui telefoni non e' mai partito.
+  //
+  // L'effetto girava al MONTAGGIO, quando l'app e' ancora sulla schermata
+  // d'avvio: nessuna sessione, nessun telefono agganciato. A porte chiuse
+  // la lettura del viaggio tornava vuota, il podio concludeva «non e'
+  // chiusa» e non ci riprovava mai piu'. Tutti i vicini avevano il filo
+  // giusto una riga sopra la mia.
+  const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
+
+  // Chi si prende lo schermo intero aspetta di essere dentro. Tutti.
+  //
+  // ⚠️ Si guarda la RIGA della chiamata, non una regex costruita a pezzi:
+  // il primo tentativo montava l'espressione con `new RegExp(nome +
+  // '...')` e i backslash si sono persi per strada, trasformando la
+  // parentesi da carattere in gruppo. La regex agganciava mezzo file e la
+  // prova diceva di no su codice giusto. E' la stessa trappola dei
+  // backslash che in questo progetto ha gia' fatto danni: quando si puo'
+  // guardare una riga, si guarda una riga.
+  const righe = app.split(/\r?\n/)
+  for (const gancio of ['useScoperte', 'useEventoTestamento', 'usePodio']) {
+    const riga = righe.find((r) => r.includes(gancio + '(') && !r.startsWith('import'))
+    prova(gancio + ' aspetta di essere dentro', /vista === 'dentro'/.test(riga ?? ''), { gancio, riga })
+  }
+
+  const hook = readFileSync(new URL('../src/hooks/usePodio.js', import.meta.url), 'utf8')
+  prova('e l hook quel filo lo guarda', /if \(!attivo\) return/.test(hook))
+  // Senza, il filo cambia e l'effetto non riparte: resterebbe fermo alla
+  // risposta presa quando ancora non si sapeva niente.
+  prova('e ci riprova quando cambia', /\}, \[attivo\]\)/.test(hook))
+
+  // ⚠️ E la seconda meta' del difetto, la piu' cattiva: `conCache` mette da
+  // parte ogni risposta riuscita. Rispondendo «non e' chiusa» a una
+  // lettura tornata vuota, quel no finiva in cache — e da li' in poi
+  // chiunque chiedesse si sentiva rispondere di no con sicurezza, da una
+  // copia nata da una lettura che non aveva letto niente.
+  const lettura = readFileSync(new URL('../src/lib/classificaChiusa.js', import.meta.url), 'utf8')
+  prova('senza riga non si risponde: si solleva', /if \(!data\) throw/.test(lettura))
+  prova('e non si risponde piu con un `?.`', !/data\?\.\s*punti_chiusi/.test(lettura))
+}
+
 console.log('\ne la classifica lo dice, invece di far premere a vuoto')
 {
   // ⚠️ Questa famiglia nasce da un mio pezzo lasciato a meta': avevo

@@ -12,10 +12,16 @@ const CHIAVE = 'all41.podioVisto'
 // Chi chiude l'app a metà premiazione non deve ritrovarsela addosso alla
 // prossima apertura: l'ha già vista, e una cosa che torna dopo che l'hai
 // chiusa smette di essere una festa e diventa un cartello.
-export function usePodio() {
+export function usePodio(attivo) {
   const [tre, setTre] = useState(null)
 
   useEffect(() => {
+    // ⚠️ Non prima di essere dentro. Le letture qui sotto passano dalle
+    // regole del viaggio: chiamate all'avvio, quando la sessione non e'
+    // ancora agganciata, tornano vuote — e questo effetto gira una volta
+    // sola, quindi «vuote» diventerebbe definitivo.
+    if (!attivo) return
+
     let vivo = true
 
     async function guarda() {
@@ -49,7 +55,7 @@ export function usePodio() {
     return () => {
       vivo = false
     }
-  }, [])
+  }, [attivo])
 
   return { tre, chiudi: () => setTre(null) }
 }

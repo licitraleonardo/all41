@@ -163,7 +163,13 @@ export default function App() {
 
   // L'arrabbiatura del Testamento: una volta a testa, appena apri l'app.
   const testamento = useEventoTestamento(vista === 'dentro')
-  const podio = usePodio()
+  // ⚠️ `vista === 'dentro'` come tutti i vicini, e senza non parte mai.
+  //
+  // Senza quel filo l'effetto girava al montaggio, quando l'app e' ancora
+  // sulla schermata d'avvio: nessuna sessione, nessun telefono agganciato,
+  // quindi la lettura del viaggio tornava vuota e il podio concludeva che
+  // la classifica era aperta. E non ci riprovava piu'.
+  const podio = usePodio(vista === 'dentro')
 
   // Chi si propone punti da solo lo scopre tutto il gruppo, subito e
   // dovunque sia: il momento va visto mentre succede.
